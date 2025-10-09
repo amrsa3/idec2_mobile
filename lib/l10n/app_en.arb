@@ -1,0 +1,956 @@
+{
+  "@@locale": "en",
+  "appTitle": "IDEC Dental Conference & Exhibition",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "welcome": "Welcome",
+  "@welcome": {
+    "description": "Welcome message"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Select language screen title"
+  },
+  "arabic": "العربية",
+  "@arabic": {
+    "description": "Arabic language option"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language option"
+  },
+  "continueButton": "Continue",
+  "@continueButton": {
+    "description": "Continue button text"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login button text"
+  },
+  "register": "Register",
+  "@register": {
+    "description": "Register button text"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email field label"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password field label"
+  },
+  "confirmPassword": "Confirm Password",
+  "@confirmPassword": {
+    "description": "Confirm password field label"
+  },
+  "firstName": "First Name",
+  "@firstName": {
+    "description": "First name field label"
+  },
+  "lastName": "Last Name",
+  "@lastName": {
+    "description": "Last name field label"
+  },
+  "phoneNumber": "Phone Number",
+  "@phoneNumber": {
+    "description": "Phone number field label"
+  },
+  "governorate": "Governorate",
+  "@governorate": {
+    "description": "Governorate field label"
+  },
+  "qualification": "Qualification",
+  "@qualification": {
+    "description": "Qualification field label"
+  },
+  "otpVerification": "OTP Verification",
+  "@otpVerification": {
+    "description": "OTP verification screen title"
+  },
+  "enterOtp": "Enter the verification code sent to your phone",
+  "@enterOtp": {
+    "description": "OTP instruction text"
+  },
+  "verify": "Verify",
+  "@verify": {
+    "description": "Verify button text"
+  },
+  "resendOtp": "Resend OTP",
+  "@resendOtp": {
+    "description": "Resend OTP button text"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile screen title"
+  },
+  "editProfile": "Edit Profile",
+  "@editProfile": {
+    "description": "Edit profile button text"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button text"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout button text"
+  },
+  "confirmLogout": "Confirm Logout",
+  "@confirmLogout": {
+    "description": "Logout confirmation dialog title"
+  },
+  "logoutConfirmation": "Are you sure you want to logout?",
+  "@logoutConfirmation": {
+    "description": "Logout confirmation dialog message"
+  },
+  "logoutButton": "Logout",
+  "@logoutButton": {
+    "description": "Logout button in confirmation dialog"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "connectionStatus": "Connection Status",
+  "@connectionStatus": {
+    "description": "Connection status screen title"
+  },
+  "connected": "Connected",
+  "@connected": {
+    "description": "Connected status"
+  },
+  "disconnected": "Disconnected",
+  "@disconnected": {
+    "description": "Disconnected status"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Error message"
+  },
+  "success": "Success",
+  "@success": {
+    "description": "Success message"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading message"
+  },
+  "noInternetConnection": "No internet connection",
+  "@noInternetConnection": {
+    "description": "No internet connection message"
+  },
+  "serverError": "Server error occurred",
+  "@serverError": {
+    "description": "Server error message"
+  },
+  "invalidCredentials": "Invalid email or password",
+  "@invalidCredentials": {
+    "description": "Invalid credentials error message"
+  },
+  "fieldRequired": "This field is required",
+  "@fieldRequired": {
+    "description": "Required field validation message"
+  },
+  "invalidEmail": "Please enter a valid email address",
+  "@invalidEmail": {
+    "description": "Invalid email validation message"
+  },
+  "passwordTooShort": "Password must be at least 8 characters",
+  "@passwordTooShort": {
+    "description": "Password too short validation message"
+  },
+  "passwordsDoNotMatch": "Passwords do not match",
+  "@passwordsDoNotMatch": {
+    "description": "Passwords do not match validation message"
+  },
+  "skip": "Skip",
+  "@skip": {
+    "description": "Skip button text"
+  },
+  "next": "Next",
+  "@next": {
+    "description": "Next button text"
+  },
+  "previous": "Previous",
+  "@previous": {
+    "description": "Previous button text"
+  },
+  "getStarted": "Get Started",
+  "@getStarted": {
+    "description": "Get started button text"
+  },
+  "onboardingTitle1": "Welcome to IDEC 2026",
+  "@onboardingTitle1": {
+    "description": "First onboarding screen title"
+  },
+  "onboardingDescription1": "Join the IDEC Dental Conference & Exhibition and connect with dentists, specialists, and innovators from around the world.",
+  "@onboardingDescription1": {
+    "description": "First onboarding screen description"
+  },
+  "onboardingTitle2": "Connect & Network",
+  "@onboardingTitle2": {
+    "description": "Second onboarding screen title"
+  },
+  "onboardingDescription2": "Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.",
+  "@onboardingDescription2": {
+    "description": "Second onboarding screen description"
+  },
+  "onboardingTitle3": "Exhibition & Trade",
+  "@onboardingTitle3": {
+    "description": "Third onboarding screen title"
+  },
+  "onboardingDescription3": "Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.",
+  "@onboardingDescription3": {
+    "description": "Third onboarding screen description"
+  },
+  "onboardingPage3Description": "Explore the latest products and technologies in the dental exhibition",
+  
+  "nameTooShort": "Name must be at least 2 characters",
+  "@nameTooShort": {
+    "description": "Name too short validation message"
+  },
+  "phoneTooShort": "Phone number must be at least 10 digits",
+  "@phoneTooShort": {
+    "description": "Phone number too short validation message"
+  },
+  "termsAndConditions": "Terms and Conditions",
+  "@termsAndConditions": {
+    "description": "Terms and conditions text"
+  },
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Privacy policy text"
+  },
+  "otpSentSuccessfully": "OTP sent successfully",
+  "@otpSentSuccessfully": {
+    "description": "OTP sent success message"
+  },
+  "pleaseAcceptTerms": "Please accept terms and conditions",
+  "welcome": "Welcome",
+  "quickActions": "Quick Actions",
+  "schedule": "Schedule",
+  "viewSchedule": "View Schedule",
+  "speakers": "Speakers",
+  "viewSpeakers": "View Speakers",
+  "exhibition": "Exhibition",
+  "viewExhibition": "View Exhibition",
+  "notifications": "Notifications",
+  "viewNotifications": "View Notifications",
+  "recentUpdates": "Recent Updates",
+  "conferenceUpdate": "Conference Update",
+  "conferenceUpdateDesc": "New sessions added to the conference",
+  "newSpeaker": "New Speaker",
+  "newSpeakerDesc": "A new speaker has joined the conference",
+  "scheduleChange": "Schedule Change",
+  "scheduleChangeDesc": "Some session times have been updated",
+  "hoursAgo": "hours ago",
+  "dayAgo": "day ago",
+  "home": "Home",
+  "comingSoon": "Coming Soon",
+  "scheduleComingSoon": "Schedule will be added soon",
+  "speakersComingSoon": "Speakers list will be added soon",
+  "exhibitionComingSoon": "Exhibition information will be added soon",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "phoneNumber": "Phone Number",
+  "confirmPassword": "Confirm Password",
+  "createAccount": "Create Account",
+  "enterFirstName": "Enter your first name",
+  "enterLastName": "Enter your last name",
+  "enterPhoneNumber": "Enter your phone number",
+  "confirmYourPassword": "Confirm your password",
+  "acceptTerms": "I agree to the Terms and Conditions and Privacy Policy",
+  "alreadyHaveAccount": "Already have an account?",
+  "verifyEmail": "Verify Your Email",
+  "verificationCodeSent": "We sent a verification code to",
+  "verify": "Verify",
+  "didntReceiveCode": "Didn't receive the code?",
+  "resend": "Resend",
+  "resendIn": "Resend in",
+  "clearCode": "Clear Code",
+  "and": "and",
+  "@pleaseAcceptTerms": {
+    "description": "Please accept terms validation message"
+  },
+  "forgotPassword": "Forgot Password?",
+  "@forgotPassword": {
+    "description": "Forgot password link text"
+  },
+  "or": "OR",
+  "@or": {
+    "description": "OR divider text"
+  },
+  "createAccount": "Create your account",
+  "@createAccount": {
+    "description": "Create account subtitle"
+  },
+  "enterFirstName": "Enter your first name",
+  "@enterFirstName": {
+    "description": "First name field hint"
+  },
+  "enterLastName": "Enter your last name",
+  "@enterLastName": {
+    "description": "Last name field hint"
+  },
+  "enterPhoneNumber": "Enter your phone number",
+  "@enterPhoneNumber": {
+    "description": "Phone number field hint"
+  },
+  "confirmYourPassword": "Confirm your password",
+  "@confirmYourPassword": {
+    "description": "Confirm password field hint"
+  },
+  "acceptTerms": "I agree to the Terms and Conditions and Privacy Policy",
+  "@acceptTerms": {
+    "description": "Accept terms checkbox text"
+  },
+  "alreadyHaveAccount": "Already have an account?",
+  "@alreadyHaveAccount": {
+    "description": "Already have account text"
+  },
+  "verifyEmail": "Verify Your Email",
+  "@verifyEmail": {
+    "description": "Verify email screen title"
+  },
+  "verificationCodeSent": "We sent a verification code to",
+  "@verificationCodeSent": {
+    "description": "Verification code sent message"
+  },
+  "didntReceiveCode": "Didn't receive the code?",
+  "@didntReceiveCode": {
+    "description": "Didn't receive code text"
+  },
+  "resend": "Resend",
+  "@resend": {
+    "description": "Resend button text"
+  },
+  "resendIn": "Resend in",
+  "@resendIn": {
+    "description": "Resend countdown text"
+  },
+  "clearCode": "Clear Code",
+  "@clearCode": {
+    "description": "Clear code button text"
+  },
+  "editProfileTitle": "Edit Profile",
+  "@editProfileTitle": {
+    "description": "Edit profile screen title"
+  },
+  "saveChanges": "Save Changes",
+  "@saveChanges": {
+    "description": "Save changes button text"
+  },
+  "bio": "Bio",
+  "@bio": {
+    "description": "Bio field label"
+  },
+  "tellAboutYourself": "Tell us about yourself",
+  "@tellAboutYourself": {
+    "description": "Bio field hint"
+  },
+  "security": "Security",
+  "@security": {
+    "description": "Security option title"
+  },
+  "securitySubtitle": "Change password and security settings",
+  "@securitySubtitle": {
+    "description": "Security option subtitle"
+  },
+  "changeLanguage": "Change app language",
+  "@changeLanguage": {
+    "description": "Change language subtitle"
+  },
+  "checkConnection": "Check your connection",
+  "@checkConnection": {
+    "description": "Check connection subtitle"
+  },
+  "helpSupport": "Help & Support",
+  "@helpSupport": {
+    "description": "Help and support option title"
+  },
+  "helpSupportSubtitle": "Get help and contact support",
+  "@helpSupportSubtitle": {
+    "description": "Help and support option subtitle"
+  },
+  "about": "About",
+  "@about": {
+    "description": "About option title"
+  },
+  "aboutSubtitle": "App version and information",
+  "@aboutSubtitle": {
+    "description": "About option subtitle"
+  },
+  "updatePersonalInfo": "Update your personal information",
+  "@updatePersonalInfo": {
+    "description": "Update personal info subtitle"
+  },
+  "pressBackAgainToExit": "Press back again to exit",
+  "@pressBackAgainToExit": {
+    "description": "Press back again to exit message"
+  },
+  "exit": "Exit",
+  "@exit": {
+    "description": "Exit button text"
+  },
+  "connectionTest": "Connection Test",
+  "@connectionTest": {
+    "description": "Connection test screen title"
+  },
+  "checkingConnection": "Checking connection...",
+  "@checkingConnection": {
+    "description": "Checking connection message"
+  },
+  "pleaseWait": "Please wait",
+  "@pleaseWait": {
+    "description": "Please wait message"
+  },
+  "connected": "Connected",
+  "@connected": {
+    "description": "Connected status"
+  },
+  "disconnected": "Disconnected",
+  "@disconnected": {
+    "description": "Disconnected status"
+  },
+  "excellent": "Excellent",
+  "@excellent": {
+    "description": "Excellent quality"
+  },
+  "good": "Good",
+  "@good": {
+    "description": "Good quality"
+  },
+  "fair": "Fair",
+  "@fair": {
+    "description": "Fair quality"
+  },
+  "poor": "Poor",
+  "@poor": {
+    "description": "Poor quality"
+  },
+  "noConnection": "No Connection",
+  "@noConnection": {
+    "description": "No connection status"
+  },
+  "networkInfo": "Network Information",
+  "@networkInfo": {
+    "description": "Network information section title"
+  },
+  "serverInfo": "Server Information",
+  "@serverInfo": {
+    "description": "Server information section title"
+  },
+  "testResults": "Test Results",
+  "@testResults": {
+    "description": "Test results section title"
+  },
+  "speedTest": "Speed Test",
+  "@speedTest": {
+    "description": "Speed test section title"
+  },
+  "connectionHistory": "Connection History",
+  "@connectionHistory": {
+    "description": "Connection history section title"
+  },
+  "startTest": "Start Test",
+  "@startTest": {
+    "description": "Start test button"
+  },
+  "download": "Download",
+  "@download": {
+    "description": "Download speed label"
+  },
+  "upload": "Upload",
+  "@upload": {
+    "description": "Upload speed label"
+  },
+  "ping": "Ping",
+  "@ping": {
+    "description": "Ping label"
+  },
+  "jitter": "Jitter",
+  "@jitter": {
+    "description": "Jitter label"
+  },
+  "connectionType": "Connection Type",
+  "@connectionType": {
+    "description": "Connection type label"
+  },
+  "networkName": "Network Name",
+  "@networkName": {
+    "description": "Network name label"
+  },
+  "ipAddress": "IP Address",
+  "@ipAddress": {
+    "description": "IP address label"
+  },
+  "signalStrength": "Signal Strength",
+  "@signalStrength": {
+    "description": "Signal strength label"
+  },
+  "serverAddress": "Server Address",
+  "@serverAddress": {
+    "description": "Server address label"
+  },
+  "port": "Port",
+  "@port": {
+    "description": "Port label"
+  },
+  "status": "Status",
+  "@status": {
+    "description": "Status label"
+  },
+  "responseTime": "Response Time",
+  "@responseTime": {
+    "description": "Response time label"
+  },
+  "serverVersion": "Server Version",
+  "@serverVersion": {
+    "description": "Server version label"
+  },
+  "lastError": "Last Error",
+  "@lastError": {
+    "description": "Last error label"
+  },
+  "available": "Available",
+  "@available": {
+    "description": "Available status"
+  },
+  "unavailable": "Unavailable",
+  "@unavailable": {
+    "description": "Unavailable status"
+  },
+  "wifi": "WiFi",
+  "@wifi": {
+    "description": "WiFi connection type"
+  },
+  "mobileData": "Mobile Data",
+  "@mobileData": {
+    "description": "Mobile data connection type"
+  },
+  "ethernet": "Ethernet",
+  "@ethernet": {
+    "description": "Ethernet connection type"
+  },
+  "bluetooth": "Bluetooth",
+  "@bluetooth": {
+    "description": "Bluetooth connection type"
+  },
+  "vpn": "VPN",
+  "@vpn": {
+    "description": "VPN connection type"
+  },
+  "other": "Other",
+  "@other": {
+    "description": "Other connection type"
+  },
+  "internetConnectivity": "Internet Connectivity",
+  "@internetConnectivity": {
+    "description": "Internet connectivity test"
+  },
+  "dnsResolution": "DNS Resolution",
+  "@dnsResolution": {
+    "description": "DNS resolution test"
+  },
+  "serverPing": "Server Ping",
+  "@serverPing": {
+    "description": "Server ping test"
+  },
+  "apiEndpoints": "API Endpoints",
+  "@apiEndpoints": {
+    "description": "API endpoints test"
+  },
+  "network": "Network",
+  "@network": {
+    "description": "Network indicator"
+  },
+  "server": "Server",
+  "@server": {
+    "description": "Server indicator"
+  },
+  "internet": "Internet",
+  "@internet": {
+    "description": "Internet indicator"
+  },
+  "connectionTestFailed": "Connection test failed",
+  "@connectionTestFailed": {
+    "description": "Connection test failed message"
+  },
+  "tryAgain": "Try Again",
+  "@tryAgain": {
+    "description": "Try again button"
+  },
+  "speedTestFailed": "Speed test failed",
+  "@speedTestFailed": {
+    "description": "Speed test failed message"
+  },
+  "clickStartTestToMeasure": "Click 'Start Test' to measure connection speed",
+  "@clickStartTestToMeasure": {
+    "description": "Click start test instruction"
+  },
+  "connectionHistoryWillBeShown": "Connection history will be shown here",
+  "@connectionHistoryWillBeShown": {
+    "description": "Connection history placeholder"
+  },
+  "exitAppTitle": "Exit App",
+  "@exitAppTitle": {
+    "description": "Exit app dialog title"
+  },
+  "exitAppMessage": "Are you sure you want to exit the app?",
+  "@exitAppMessage": {
+    "description": "Exit app dialog message"
+  },
+  "pressBackAgainToExit": "Press back again to exit",
+  "@pressBackAgainToExit": {
+    "description": "Press back again to exit message"
+  },
+  "serverConfiguration": "Server Configuration",
+  "@serverConfiguration": {
+    "description": "Server configuration screen title"
+  },
+  "serverUrl": "Server URL",
+  "@serverUrl": {
+    "description": "Server URL field label"
+  },
+  "serverPort": "Server Port",
+  "@serverPort": {
+    "description": "Server port field label"
+  },
+  "enterServerUrl": "Enter server URL",
+  "@enterServerUrl": {
+    "description": "Server URL field hint"
+  },
+  "enterServerPort": "Enter server port",
+  "@enterServerPort": {
+    "description": "Server port field hint"
+  },
+  "invalidUrl": "Please enter a valid URL",
+  "@invalidUrl": {
+    "description": "Invalid URL validation message"
+  },
+  "invalidPort": "Please enter a valid port number",
+  "@invalidPort": {
+    "description": "Invalid port validation message"
+  },
+  "portRange": "Port must be between 1 and 65535",
+  "@portRange": {
+    "description": "Port range validation message"
+  },
+  "testConnection": "Test Connection",
+  "@testConnection": {
+    "description": "Test connection button text"
+  },
+  "saveConfiguration": "Save Configuration",
+  "@saveConfiguration": {
+    "description": "Save configuration button text"
+  },
+  "resetToDefault": "Reset to Default",
+  "@resetToDefault": {
+    "description": "Reset to default button text"
+  },
+  "configurationSaved": "Configuration saved successfully",
+  "@configurationSaved": {
+    "description": "Configuration saved success message"
+  },
+  "configurationFailed": "Failed to save configuration",
+  "@configurationFailed": {
+    "description": "Configuration save failed message"
+  },
+  "resetConfiguration": "Reset Configuration",
+  "@resetConfiguration": {
+    "description": "Reset configuration dialog title"
+  },
+  "resetConfigurationMessage": "Are you sure you want to reset to default settings?",
+  "@resetConfigurationMessage": {
+    "description": "Reset configuration dialog message"
+  },
+  "currentConfiguration": "Current Configuration",
+  "@currentConfiguration": {
+    "description": "Current configuration section title"
+  },
+  "defaultConfiguration": "Default Configuration",
+  "@defaultConfiguration": {
+    "description": "Default configuration section title"
+  },
+  "testingConnection": "Testing connection...",
+  "@testingConnection": {
+    "description": "Testing connection message"
+  },
+  "connectionSuccessful": "Connection successful",
+  "@connectionSuccessful": {
+    "description": "Connection successful message"
+  },
+  "connectionFailed": "Connection failed",
+  "@connectionFailed": {
+    "description": "Connection failed message"
+  },
+  "serverReachable": "Server is reachable",
+  "@serverReachable": {
+    "description": "Server reachable message"
+  },
+  "serverUnreachable": "Server is unreachable",
+  "@serverUnreachable": {
+    "description": "Server unreachable message"
+  },
+  "pleaseVerifyAccount": "Please verify your account",
+  "@pleaseVerifyAccount": {
+    "description": "Please verify account message"
+  },
+  "accountUnderReview": "Account under review",
+  "@accountUnderReview": {
+    "description": "Account under review message"
+  },
+  "tapToCompleteProfile": "Tap to complete your profile",
+  "@tapToCompleteProfile": {
+    "description": "Tap to complete profile message"
+  },
+  "accountRejectedPleaseUpdate": "Account rejected, please update your information",
+  "@accountRejectedPleaseUpdate": {
+    "description": "Account rejected message"
+  },
+  "pleaseCompleteProfile": "Please complete your profile",
+  "@pleaseCompleteProfile": {
+    "description": "Please complete profile message"
+  },
+  "maintenanceMode": "Maintenance Mode",
+  "@maintenanceMode": {
+    "description": "Maintenance mode title"
+  },
+  "maintenanceMessage": "The app is under maintenance. Please try again later.",
+  "@maintenanceMessage": {
+    "description": "Maintenance mode message"
+  },
+  "estimatedTime": "Estimated Time",
+  "@estimatedTime": {
+    "description": "Estimated time label"
+  },
+  "checkBackLater": "Check Back Later",
+  "@checkBackLater": {
+    "description": "Check back later button"
+  },
+  "requestTimeout": "Request timeout",
+  "@requestTimeout": {
+    "description": "Request timeout error message"
+  },
+  "unknownError": "An unknown error occurred",
+  "@unknownError": {
+    "description": "Unknown error message"
+  },
+  "retryUpload": "Retry Upload",
+  "@retryUpload": {
+    "description": "Retry upload button"
+  },
+  "uploadProgress": "Uploading...",
+  "@uploadProgress": {
+    "description": "Upload progress message"
+  },
+  "uploadComplete": "Upload Complete",
+  "@uploadComplete": {
+    "description": "Upload complete message"
+  },
+  "uploadCancelled": "Upload Cancelled",
+  "@uploadCancelled": {
+    "description": "Upload cancelled message"
+  },
+  "operationFailed": "Operation failed",
+  "@operationFailed": {
+    "description": "Operation failed message"
+  },
+  "tryAgainLater": "Please try again later",
+  "@tryAgainLater": {
+    "description": "Try again later message"
+  },
+  "connectionLost": "Connection lost",
+  "@connectionLost": {
+    "description": "Connection lost message"
+  },
+  "reconnecting": "Reconnecting...",
+  "@reconnecting": {
+    "description": "Reconnecting message"
+  },
+  "offlineMode": "Offline Mode",
+  "@offlineMode": {
+    "description": "Offline mode indicator"
+  },
+  "queuedOperations": "Queued Operations",
+  "@queuedOperations": {
+    "description": "Queued operations label"
+  },
+  "syncPending": "Sync Pending",
+  "@syncPending": {
+    "description": "Sync pending message"
+  },
+  "selectOtpChannel": "Select Verification Method",
+  "@selectOtpChannel": {
+    "description": "Select OTP channel title"
+  },
+  "otpChannelSms": "SMS",
+  "@otpChannelSms": {
+    "description": "SMS OTP channel"
+  },
+  "otpChannelWhatsapp": "WhatsApp",
+  "@otpChannelWhatsapp": {
+    "description": "WhatsApp OTP channel"
+  },
+  "otpChannelEmail": "Email",
+  "@otpChannelEmail": {
+    "description": "Email OTP channel"
+  },
+  "registrationOpen": "Registration Open",
+  "@registrationOpen": {
+    "description": "Registration open status"
+  },
+  "registrationClosed": "Registration Closed",
+  "@registrationClosed": {
+    "description": "Registration closed status"
+  },
+  "registrationLimited": "Registration Limited",
+  "@registrationLimited": {
+    "description": "Registration limited status"
+  },
+  "contactSupport": "Contact Support",
+  "@contactSupport": {
+    "description": "Contact support button"
+  },
+  "nextAvailable": "Next Available",
+  "@nextAvailable": {
+    "description": "Next available time label"
+  },
+  "chooseVerificationMethod": "Choose how to receive your verification code",
+  "@chooseVerificationMethod": {
+    "description": "Choose verification method instruction"
+  },
+  "sendTo": "Send to",
+  "@sendTo": {
+    "description": "Send to phone number text"
+  },
+  "serverNotAvailable": "Server is not available",
+  "@serverNotAvailable": {
+    "description": "Server not available error message"
+  },
+  "sessionExpired": "Your session has expired",
+  "@sessionExpired": {
+    "description": "Session expired error message"
+  },
+  "fileTooLarge": "File is too large",
+  "@fileTooLarge": {
+    "description": "File too large error message"
+  },
+  "invalidFileType": "Invalid file type",
+  "@invalidFileType": {
+    "description": "Invalid file type error message"
+  },
+  "uploadFailed": "Upload failed",
+  "@uploadFailed": {
+    "description": "Upload failed error message"
+  },
+  "pleaseCheckInternet": "Please check your internet connection",
+  "@pleaseCheckInternet": {
+    "description": "Please check internet connection message"
+  },
+  "deleteDocument": "Delete Document",
+  "@deleteDocument": {
+    "description": "Delete document button text"
+  },
+  "deleteDocumentConfirmation": "Do you want to delete the document?",
+  "@deleteDocumentConfirmation": {
+    "description": "Confirmation message for deleting a document"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "accountVerified": "Account Verified",
+  "@accountVerified": {
+    "description": "Account verified status"
+  },
+  "verificationPending": "Verification Pending",
+  "@verificationPending": {
+    "description": "Verification pending status"
+  },
+  "verificationRejected": "Verification Rejected",
+  "@verificationRejected": {
+    "description": "Verification rejected status"
+  },
+  "accountNotVerified": "Account Not Verified",
+  "@accountNotVerified": {
+    "description": "Account not verified status"
+  },
+  "verifiedAccountDescription": "Your account has been successfully verified",
+  "@verifiedAccountDescription": {
+    "description": "Description for verified account"
+  },
+  "pendingVerificationDescription": "Your account is under review",
+  "@pendingVerificationDescription": {
+    "description": "Description for pending verification"
+  },
+  "rejectedVerificationDescription": "Your verification request has been rejected",
+  "@rejectedVerificationDescription": {
+    "description": "Description for rejected verification"
+  },
+  "unverifiedAccountDescription": "Your account is not verified",
+  "@unverifiedAccountDescription": {
+    "description": "Description for unverified account"
+  },
+  "verificationStatus": "Verification Status",
+  "@verificationStatus": {
+    "description": "Verification status label"
+  },
+  "rejectionReason": "Rejection Reason",
+  "@rejectionReason": {
+    "description": "Rejection reason label"
+  },
+  "lastUpdated": "Last Updated",
+  "@lastUpdated": {
+    "description": "Last updated label"
+  },
+  "verified": "Verified",
+  "@verified": {
+    "description": "Verified status"
+  },
+  "pendingVerification": "Pending Verification",
+  "@pendingVerification": {
+    "description": "Pending verification status"
+  },
+  "unverified": "Unverified",
+  "@unverified": {
+    "description": "Unverified status"
+  },
+  "replaceDocument": "Replace Document",
+  "@replaceDocument": {
+    "description": "Replace document button text"
+  },
+  "uploadedOn": "Uploaded on",
+  "@uploadedOn": {
+    "description": "Uploaded on date label"
+  },
+  "selectImageSource": "Select Image Source",
+  "@selectImageSource": {
+    "description": "Select image source dialog title"
+  },
+  "gallery": "Gallery",
+  "@gallery": {
+    "description": "Gallery option for image picker"
+  },
+  "camera": "Camera",
+  "@camera": {
+    "description": "Camera option for image picker"
+  },
+  "invalidImageFormat": "Invalid image format. Please select a JPG or PNG image",
+  "@invalidImageFormat": {
+    "description": "Invalid image format error message"
+  },
+  "imageTooLarge": "Image is too large. Maximum size is 5MB",
+  "@imageTooLarge": {
+    "description": "Image too large error message"
+  }
+}

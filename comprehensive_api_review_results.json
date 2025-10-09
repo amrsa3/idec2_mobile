@@ -1,0 +1,129 @@
+{
+  "timestamp": "2025-10-04T11:10:39.394Z",
+  "server_status": "healthy",
+  "endpoints": {
+    "health_check": {
+      "endpoint": "/api/v1/health",
+      "method": "GET",
+      "success": true,
+      "response_time": 85,
+      "status_code": 200,
+      "data_validation": {
+        "endpoint": "Health Check",
+        "valid": true,
+        "missing_fields": [],
+        "extra_fields": [],
+        "type_mismatches": [],
+        "recommendations": []
+      },
+      "recommendations": []
+    },
+    "otp_channels": {
+      "endpoint": "/api/v1/auth/channels",
+      "method": "GET",
+      "success": true,
+      "response_time": 176,
+      "status_code": 200,
+      "data_validation": {
+        "endpoint": "OTP Channels",
+        "valid": true,
+        "missing_fields": [],
+        "extra_fields": [],
+        "type_mismatches": [],
+        "recommendations": []
+      },
+      "recommendations": []
+    },
+    "user_registration": {
+      "endpoint": "/api/v1/auth/register",
+      "method": "POST",
+      "success": true,
+      "response_time": 290,
+      "status_code": 409,
+      "data_validation": null,
+      "recommendations": [
+        "المستخدم مسجل مسبقاً - هذا طبيعي في الاختبارات"
+      ]
+    },
+    "user_login": {
+      "endpoint": "/api/v1/auth/login",
+      "method": "POST",
+      "success": false,
+      "response_time": 89,
+      "status_code": 401,
+      "data_validation": null,
+      "recommendations": [
+        "قد يحتاج المستخدم إلى تفعيل رقم الهاتف أولاً"
+      ]
+    },
+    "request_otp": {
+      "endpoint": "/api/v1/auth/request-otp",
+      "method": "POST",
+      "success": false,
+      "response_time": 14,
+      "status_code": 400,
+      "data_validation": null,
+      "recommendations": [
+        "التحقق من صحة رقم الهاتف وإعدادات OTP"
+      ]
+    },
+    "file_upload_request": {
+      "endpoint": "/api/v1/files/upload/request",
+      "method": "POST",
+      "success": false,
+      "response_time": 9,
+      "status_code": 404,
+      "data_validation": null,
+      "recommendations": []
+    },
+    "notifications": {
+      "endpoint": "/api/v1/notifications",
+      "method": "GET",
+      "success": false,
+      "response_time": 8,
+      "status_code": 404,
+      "data_validation": null,
+      "recommendations": []
+    },
+    "error_handling_404": {
+      "endpoint": "/api/v1/nonexistent-endpoint",
+      "method": "GET",
+      "success": false,
+      "response_time": 7,
+      "status_code": 404,
+      "error_handling": {
+        "returns_proper_error": false,
+        "error_message_clear": false,
+        "status_code_appropriate": true
+      },
+      "recommendations": []
+    },
+    "invalid_data_handling": {
+      "endpoint": "/api/v1/auth/login (invalid data)",
+      "method": "POST",
+      "success": false,
+      "response_time": 19,
+      "status_code": 400,
+      "error_handling": {
+        "validates_input": true,
+        "returns_validation_errors": false,
+        "status_code_appropriate": true
+      },
+      "recommendations": []
+    }
+  },
+  "performance": {
+    "average_response_time": "77.44",
+    "fastest_response": 7,
+    "slowest_response": 290
+  },
+  "data_validation": {},
+  "error_handling": {},
+  "summary": {
+    "total_endpoints": 9,
+    "successful": 3,
+    "failed": 6,
+    "warnings": 3,
+    "success_rate": "33.3"
+  }
+}

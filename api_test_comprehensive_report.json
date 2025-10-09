@@ -1,0 +1,722 @@
+{
+  "timestamp": "2025-10-04T10:57:41.684Z",
+  "summary": {
+    "passed": 16,
+    "failed": 9,
+    "successRate": "64.0"
+  },
+  "categories": {
+    "health": {
+      "passed": 1,
+      "failed": 1
+    },
+    "auth": {
+      "passed": 4,
+      "failed": 4
+    },
+    "profile": {
+      "passed": 1,
+      "failed": 1
+    },
+    "files": {
+      "passed": 1,
+      "failed": 1
+    },
+    "notifications": {
+      "passed": 0,
+      "failed": 2
+    },
+    "users": {
+      "passed": 1,
+      "failed": 0
+    },
+    "comparison": {
+      "passed": 8,
+      "failed": 0
+    }
+  },
+  "endpointMismatches": [
+    {
+      "flutter": "/api/server/health",
+      "server": "/api/v1/health",
+      "description": "Health check endpoint"
+    },
+    {
+      "flutter": "/api/auth/register",
+      "server": "/api/v1/auth/register",
+      "description": "User registration"
+    },
+    {
+      "flutter": "/api/auth/login",
+      "server": "/api/v1/auth/login",
+      "description": "User login"
+    },
+    {
+      "flutter": "/api/auth/otp/send",
+      "server": "/api/v1/auth/request-otp",
+      "description": "Send OTP"
+    },
+    {
+      "flutter": "/api/auth/otp/verify",
+      "server": "/api/v1/auth/verify-otp",
+      "description": "Verify OTP"
+    },
+    {
+      "flutter": "/api/user/profile",
+      "server": "/api/v1/auth/profile",
+      "description": "User profile"
+    },
+    {
+      "flutter": "/api/files/*",
+      "server": "/api/v1/files/*",
+      "description": "File management"
+    },
+    {
+      "flutter": "/api/notifications",
+      "server": "/api/v1/notifications",
+      "description": "Notifications"
+    }
+  ],
+  "detailedResults": [
+    {
+      "name": "Health Check - Server Endpoint",
+      "status": "PASSED",
+      "result": {
+        "status": "ok",
+        "timestamp": "2025-10-04T10:57:40.519Z",
+        "uptime": 44925.7427667,
+        "version": "2.2.0",
+        "services": {
+          "database": {
+            "status": "healthy",
+            "responseTime": 3,
+            "message": "Database connection successful"
+          },
+          "redis": {
+            "status": "healthy",
+            "responseTime": 1,
+            "message": "Redis connection successful"
+          },
+          "documentation": {
+            "status": "healthy",
+            "message": "Documentation coverage: 96.0%"
+          }
+        },
+        "documentation": {
+          "totalEndpoints": 25,
+          "documentedEndpoints": 24,
+          "coveragePercentage": 96
+        }
+      },
+      "category": "health",
+      "timestamp": "2025-10-04T10:57:40.540Z"
+    },
+    {
+      "name": "Health Check - Flutter Expected Endpoint (Should Fail)",
+      "status": "FAILED",
+      "error": "Endpoint not found as expected - Flutter app uses wrong path",
+      "category": "health",
+      "timestamp": "2025-10-04T10:57:40.571Z"
+    },
+    {
+      "name": "Get Available OTP Channels",
+      "status": "PASSED",
+      "result": {
+        "channels": [
+          "WHATSAPP"
+        ]
+      },
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:40.757Z"
+    },
+    {
+      "name": "User Registration",
+      "status": "FAILED",
+      "error": "Request failed with status code 400",
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:40.806Z"
+    },
+    {
+      "name": "Check User Status",
+      "status": "FAILED",
+      "error": "Request failed with status code 400",
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:40.831Z"
+    },
+    {
+      "name": "Request OTP",
+      "status": "FAILED",
+      "error": "Request failed with status code 400",
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:40.861Z"
+    },
+    {
+      "name": "Resend OTP",
+      "status": "FAILED",
+      "error": "Request failed with status code 400",
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:41.049Z"
+    },
+    {
+      "name": "Verify OTP Endpoint Test",
+      "status": "PASSED",
+      "result": {
+        "message": "Endpoint exists, invalid code as expected"
+      },
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:41.067Z"
+    },
+    {
+      "name": "User Login Attempt",
+      "status": "PASSED",
+      "result": {
+        "message": "Login failed as expected (phone not verified)"
+      },
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:41.089Z"
+    },
+    {
+      "name": "Refresh Token Endpoint",
+      "status": "PASSED",
+      "result": {
+        "message": "Endpoint exists, invalid token as expected"
+      },
+      "category": "auth",
+      "timestamp": "2025-10-04T10:57:41.132Z"
+    },
+    {
+      "name": "Get User Profile - Server Endpoint",
+      "status": "PASSED",
+      "result": {
+        "message": "Endpoint exists, authentication required as expected"
+      },
+      "category": "profile",
+      "timestamp": "2025-10-04T10:57:41.146Z"
+    },
+    {
+      "name": "Get User Profile - Flutter Expected Endpoint (Should Fail)",
+      "status": "FAILED",
+      "error": "Endpoint not found as expected - Flutter app uses wrong path",
+      "category": "profile",
+      "timestamp": "2025-10-04T10:57:41.152Z"
+    },
+    {
+      "name": "Files Endpoint - Server",
+      "status": "PASSED",
+      "result": {
+        "message": "Endpoint exists, authentication required as expected"
+      },
+      "category": "files",
+      "timestamp": "2025-10-04T10:57:41.161Z"
+    },
+    {
+      "name": "Files Endpoint - Flutter Expected (Should Fail)",
+      "status": "FAILED",
+      "error": "Endpoint not found as expected - Flutter app uses wrong path",
+      "category": "files",
+      "timestamp": "2025-10-04T10:57:41.172Z"
+    },
+    {
+      "name": "Notifications Endpoint - Server",
+      "status": "FAILED",
+      "error": "Request failed with status code 404",
+      "category": "notifications",
+      "timestamp": "2025-10-04T10:57:41.182Z"
+    },
+    {
+      "name": "Notifications Endpoint - Flutter Expected (Should Fail)",
+      "status": "FAILED",
+      "error": "Endpoint not found as expected - Flutter app uses wrong path",
+      "category": "notifications",
+      "timestamp": "2025-10-04T10:57:41.192Z"
+    },
+    {
+      "name": "Get All Users",
+      "status": "PASSED",
+      "result": {
+        "data": [
+          {
+            "id": "cmga235q30000bya0dzqq2ey8",
+            "phone": "+967777000555",
+            "email": null,
+            "passwordHash": "$2b$12$j3ds.b0t5w6tlafFqz1uKejq690H.gkGla7zhqFKNbYeUA.YM9PHS",
+            "phoneVerifiedAt": "2025-10-02T18:29:26.051Z",
+            "createdAt": "2025-10-02T23:38:15.866Z",
+            "updatedAt": "2025-10-03T00:08:30.423Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmga235q90001bya0qe55nkvc",
+              "userId": "cmga235q30000bya0dzqq2ey8",
+              "fullNameAr": "هههه",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T23:38:15.866Z",
+              "updatedAt": "2025-10-02T23:38:15.866Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmga0wfln0000bytwrfyfhvv4",
+            "phone": "+967777002200",
+            "email": null,
+            "passwordHash": "$2b$12$b2PZNik4Mb.j4JQQOP8.2.3O8VROxSzWhgaa8LCfZBez16YwBOdy2",
+            "phoneVerifiedAt": null,
+            "createdAt": "2025-10-02T23:05:02.458Z",
+            "updatedAt": "2025-10-02T23:05:02.458Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmga0wflq0001bytwnf7e4dd9",
+              "userId": "cmga0wfln0000bytwrfyfhvv4",
+              "fullNameAr": "جككك",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T23:05:02.458Z",
+              "updatedAt": "2025-10-02T23:05:02.458Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmga0klms0002bylciytmo4h9",
+            "phone": "+967777001100",
+            "email": null,
+            "passwordHash": "$2b$12$Np0l.jfeTifWovEeTbhqb.LgBdFYNOwriQbtxDeH40To/aL.cUG1O",
+            "phoneVerifiedAt": null,
+            "createdAt": "2025-10-02T22:55:50.404Z",
+            "updatedAt": "2025-10-02T22:55:50.404Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmga0klms0003bylcfdg064ks",
+              "userId": "cmga0klms0002bylciytmo4h9",
+              "fullNameAr": "هلوو",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T22:55:50.404Z",
+              "updatedAt": "2025-10-02T22:55:50.404Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmga09xp50000bylc46eyiq0v",
+            "phone": "+967777000147",
+            "email": null,
+            "passwordHash": "$2b$12$Jq4HJTY3XvQWvTg3d83SJOXDrF5.z0KWzDDvoKRfI1n8XAYV4Yg42",
+            "phoneVerifiedAt": null,
+            "createdAt": "2025-10-02T22:47:32.822Z",
+            "updatedAt": "2025-10-02T22:47:32.822Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmga09xpa0001bylc3atq7gjp",
+              "userId": "cmga09xp50000bylc46eyiq0v",
+              "fullNameAr": "سلوم",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T22:47:32.822Z",
+              "updatedAt": "2025-10-02T22:47:32.822Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg9tcm950000bywcavzeeu0s",
+            "phone": "+967777686223",
+            "email": null,
+            "passwordHash": "$2b$12$JLNM0ddyvj7rLdDAESSFg.aPeuhaC3JDfJA09LrshpYPFw8xFOzNK",
+            "phoneVerifiedAt": null,
+            "createdAt": "2025-10-02T19:33:40.648Z",
+            "updatedAt": "2025-10-02T19:33:40.648Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg9tcm990001bywc8wg4v6iq",
+              "userId": "cmg9tcm950000bywcavzeeu0s",
+              "fullNameAr": "سلسبيله",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T19:33:40.648Z",
+              "updatedAt": "2025-10-02T19:33:40.648Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg9rnrpt0000by3082zxrwe5",
+            "phone": "+967777686222",
+            "email": null,
+            "passwordHash": "$2b$12$7alAEdvfRXqmNdt80LGLbu90IbtoUqeKYO.kBdiY2I2Nbw4GPKe3G",
+            "phoneVerifiedAt": null,
+            "createdAt": "2025-10-02T18:46:21.710Z",
+            "updatedAt": "2025-10-02T18:46:21.710Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg9rnrpw0001by30ymsk5jb8",
+              "userId": "cmg9rnrpt0000by3082zxrwe5",
+              "fullNameAr": "سلسبيل",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T18:46:21.710Z",
+              "updatedAt": "2025-10-02T18:46:21.710Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg9r1i4f0002byyge7x4e6uj",
+            "phone": "+967777000222",
+            "email": null,
+            "passwordHash": "$2b$12$lK3VIq00Zzrpx9DFeEcu5.gfd5YabK4Bf5BEX4cBOUOKIKxjSMAUm",
+            "phoneVerifiedAt": "2025-10-02T18:29:26.051Z",
+            "createdAt": "2025-10-02T18:29:02.848Z",
+            "updatedAt": "2025-10-02T18:29:26.052Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg9r1i4f0003byyg9go1yfeu",
+              "userId": "cmg9r1i4f0002byyge7x4e6uj",
+              "fullNameAr": "سماء",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T18:29:02.848Z",
+              "updatedAt": "2025-10-02T18:29:02.848Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg9qndcs0000byyg0ta95zk5",
+            "phone": "+967777000333",
+            "email": null,
+            "passwordHash": "$2b$12$y53hvJr4HfoxUrgIbFhA1eHQsBU88.17V.bu/bD0gAfO6RhLdvsEO",
+            "phoneVerifiedAt": "2025-10-02T18:18:30.877Z",
+            "createdAt": "2025-10-02T18:18:03.483Z",
+            "updatedAt": "2025-10-02T18:18:30.879Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg9qndcv0001byygiexn5d4g",
+              "userId": "cmg9qndcs0000byyg0ta95zk5",
+              "fullNameAr": "براء عمرو",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-10-02T18:18:03.483Z",
+              "updatedAt": "2025-10-02T18:18:03.483Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg6ley700002bytstatdvs5j",
+            "phone": "+967733034999",
+            "email": "ryan@ryan.com",
+            "passwordHash": "$2b$12$a1SdHZ60kdnrVGeM1pJZmevRK8V6k5cO1El5kgV1LxkZwYd6k9ViC",
+            "phoneVerifiedAt": "2025-09-30T13:28:22.464Z",
+            "createdAt": "2025-09-30T13:28:13.980Z",
+            "updatedAt": "2025-09-30T13:28:22.466Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg6ley710003byts362ixnkk",
+              "userId": "cmg6ley700002bytstatdvs5j",
+              "fullNameAr": "ريان",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-09-30T13:28:13.980Z",
+              "updatedAt": "2025-09-30T13:28:13.980Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          },
+          {
+            "id": "cmg6kqnzz0000bytsqdej505z",
+            "phone": "+967777000123",
+            "email": "amr@a.com",
+            "passwordHash": "$2b$12$djsuIDT8UPoLAWIXb7EYpe9VOP./LP6ZsW1kYpMT70h3duTYzvjLS",
+            "phoneVerifiedAt": "2025-09-30T13:09:37.272Z",
+            "createdAt": "2025-09-30T13:09:21.022Z",
+            "updatedAt": "2025-09-30T13:09:37.274Z",
+            "deletedAt": null,
+            "deletedBy": null,
+            "deletionReason": null,
+            "roles": [
+              "PARTICIPANT"
+            ],
+            "profile": {
+              "id": "cmg6kqo000001bytsgav53ati",
+              "userId": "cmg6kqnzz0000bytsqdej505z",
+              "fullNameAr": "عمرو سعيد",
+              "fullNameEn": null,
+              "birthDate": null,
+              "governorate": null,
+              "qualification": null,
+              "graduationYear": null,
+              "university": null,
+              "status": "UNVERIFIED",
+              "createdAt": "2025-09-30T13:09:21.022Z",
+              "updatedAt": "2025-09-30T13:09:21.022Z",
+              "profileData": null,
+              "categoryId": null,
+              "qualificationId": null
+            }
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 10,
+          "total": 11,
+          "totalPages": 2
+        }
+      },
+      "category": "users",
+      "timestamp": "2025-10-04T10:57:41.376Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: Health check endpoint",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 200,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.391Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: User registration",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.406Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: User login",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.423Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: Send OTP",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.436Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: Verify OTP",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.450Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: User profile",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 401,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.465Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: File management",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 401,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.482Z"
+    },
+    {
+      "name": "Endpoint Mismatch Analysis: Notifications",
+      "status": "PASSED",
+      "result": {
+        "flutter": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "server": {
+          "exists": true,
+          "status": 404,
+          "accessible": true
+        },
+        "mismatch": false
+      },
+      "category": "comparison",
+      "timestamp": "2025-10-04T10:57:41.500Z"
+    }
+  ]
+}

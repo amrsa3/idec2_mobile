@@ -2962,3 +2962,519 @@ abstract class _DocumentModel implements DocumentModel {
   _$$DocumentModelImplCopyWith<_$DocumentModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+RequestPasswordResetRequest _$RequestPasswordResetRequestFromJson(
+    Map<String, dynamic> json) {
+  return _RequestPasswordResetRequest.fromJson(json);
+}
+
+/// @nodoc
+mixin _$RequestPasswordResetRequest {
+  String get phone => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $RequestPasswordResetRequestCopyWith<RequestPasswordResetRequest>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $RequestPasswordResetRequestCopyWith<$Res> {
+  factory $RequestPasswordResetRequestCopyWith(
+          RequestPasswordResetRequest value,
+          $Res Function(RequestPasswordResetRequest) then) =
+      _$RequestPasswordResetRequestCopyWithImpl<$Res,
+          RequestPasswordResetRequest>;
+  @useResult
+  $Res call({String phone});
+}
+
+/// @nodoc
+class _$RequestPasswordResetRequestCopyWithImpl<$Res,
+        $Val extends RequestPasswordResetRequest>
+    implements $RequestPasswordResetRequestCopyWith<$Res> {
+  _$RequestPasswordResetRequestCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? phone = null,
+  }) {
+    return _then(_value.copyWith(
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$RequestPasswordResetRequestImplCopyWith<$Res>
+    implements $RequestPasswordResetRequestCopyWith<$Res> {
+  factory _$$RequestPasswordResetRequestImplCopyWith(
+          _$RequestPasswordResetRequestImpl value,
+          $Res Function(_$RequestPasswordResetRequestImpl) then) =
+      __$$RequestPasswordResetRequestImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String phone});
+}
+
+/// @nodoc
+class __$$RequestPasswordResetRequestImplCopyWithImpl<$Res>
+    extends _$RequestPasswordResetRequestCopyWithImpl<$Res,
+        _$RequestPasswordResetRequestImpl>
+    implements _$$RequestPasswordResetRequestImplCopyWith<$Res> {
+  __$$RequestPasswordResetRequestImplCopyWithImpl(
+      _$RequestPasswordResetRequestImpl _value,
+      $Res Function(_$RequestPasswordResetRequestImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? phone = null,
+  }) {
+    return _then(_$RequestPasswordResetRequestImpl(
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$RequestPasswordResetRequestImpl
+    with DiagnosticableTreeMixin
+    implements _RequestPasswordResetRequest {
+  const _$RequestPasswordResetRequestImpl({required this.phone});
+
+  factory _$RequestPasswordResetRequestImpl.fromJson(
+          Map<String, dynamic> json) =>
+      _$$RequestPasswordResetRequestImplFromJson(json);
+
+  @override
+  final String phone;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'RequestPasswordResetRequest(phone: $phone)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'RequestPasswordResetRequest'))
+      ..add(DiagnosticsProperty('phone', phone));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$RequestPasswordResetRequestImpl &&
+            (identical(other.phone, phone) || other.phone == phone));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, phone);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$RequestPasswordResetRequestImplCopyWith<_$RequestPasswordResetRequestImpl>
+      get copyWith => __$$RequestPasswordResetRequestImplCopyWithImpl<
+          _$RequestPasswordResetRequestImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$RequestPasswordResetRequestImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _RequestPasswordResetRequest
+    implements RequestPasswordResetRequest {
+  const factory _RequestPasswordResetRequest({required final String phone}) =
+      _$RequestPasswordResetRequestImpl;
+
+  factory _RequestPasswordResetRequest.fromJson(Map<String, dynamic> json) =
+      _$RequestPasswordResetRequestImpl.fromJson;
+
+  @override
+  String get phone;
+  @override
+  @JsonKey(ignore: true)
+  _$$RequestPasswordResetRequestImplCopyWith<_$RequestPasswordResetRequestImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+ResetPasswordRequest _$ResetPasswordRequestFromJson(Map<String, dynamic> json) {
+  return _ResetPasswordRequest.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ResetPasswordRequest {
+  String get phone => throw _privateConstructorUsedError;
+  String get otp => throw _privateConstructorUsedError;
+  String get newPassword => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $ResetPasswordRequestCopyWith<ResetPasswordRequest> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ResetPasswordRequestCopyWith<$Res> {
+  factory $ResetPasswordRequestCopyWith(ResetPasswordRequest value,
+          $Res Function(ResetPasswordRequest) then) =
+      _$ResetPasswordRequestCopyWithImpl<$Res, ResetPasswordRequest>;
+  @useResult
+  $Res call({String phone, String otp, String newPassword});
+}
+
+/// @nodoc
+class _$ResetPasswordRequestCopyWithImpl<$Res,
+        $Val extends ResetPasswordRequest>
+    implements $ResetPasswordRequestCopyWith<$Res> {
+  _$ResetPasswordRequestCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? phone = null,
+    Object? otp = null,
+    Object? newPassword = null,
+  }) {
+    return _then(_value.copyWith(
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String,
+      otp: null == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
+              as String,
+      newPassword: null == newPassword
+          ? _value.newPassword
+          : newPassword // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ResetPasswordRequestImplCopyWith<$Res>
+    implements $ResetPasswordRequestCopyWith<$Res> {
+  factory _$$ResetPasswordRequestImplCopyWith(_$ResetPasswordRequestImpl value,
+          $Res Function(_$ResetPasswordRequestImpl) then) =
+      __$$ResetPasswordRequestImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String phone, String otp, String newPassword});
+}
+
+/// @nodoc
+class __$$ResetPasswordRequestImplCopyWithImpl<$Res>
+    extends _$ResetPasswordRequestCopyWithImpl<$Res, _$ResetPasswordRequestImpl>
+    implements _$$ResetPasswordRequestImplCopyWith<$Res> {
+  __$$ResetPasswordRequestImplCopyWithImpl(_$ResetPasswordRequestImpl _value,
+      $Res Function(_$ResetPasswordRequestImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? phone = null,
+    Object? otp = null,
+    Object? newPassword = null,
+  }) {
+    return _then(_$ResetPasswordRequestImpl(
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
+              as String,
+      otp: null == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
+              as String,
+      newPassword: null == newPassword
+          ? _value.newPassword
+          : newPassword // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ResetPasswordRequestImpl
+    with DiagnosticableTreeMixin
+    implements _ResetPasswordRequest {
+  const _$ResetPasswordRequestImpl(
+      {required this.phone, required this.otp, required this.newPassword});
+
+  factory _$ResetPasswordRequestImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ResetPasswordRequestImplFromJson(json);
+
+  @override
+  final String phone;
+  @override
+  final String otp;
+  @override
+  final String newPassword;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'ResetPasswordRequest(phone: $phone, otp: $otp, newPassword: $newPassword)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ResetPasswordRequest'))
+      ..add(DiagnosticsProperty('phone', phone))
+      ..add(DiagnosticsProperty('otp', otp))
+      ..add(DiagnosticsProperty('newPassword', newPassword));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ResetPasswordRequestImpl &&
+            (identical(other.phone, phone) || other.phone == phone) &&
+            (identical(other.otp, otp) || other.otp == otp) &&
+            (identical(other.newPassword, newPassword) ||
+                other.newPassword == newPassword));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, phone, otp, newPassword);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ResetPasswordRequestImplCopyWith<_$ResetPasswordRequestImpl>
+      get copyWith =>
+          __$$ResetPasswordRequestImplCopyWithImpl<_$ResetPasswordRequestImpl>(
+              this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ResetPasswordRequestImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ResetPasswordRequest implements ResetPasswordRequest {
+  const factory _ResetPasswordRequest(
+      {required final String phone,
+      required final String otp,
+      required final String newPassword}) = _$ResetPasswordRequestImpl;
+
+  factory _ResetPasswordRequest.fromJson(Map<String, dynamic> json) =
+      _$ResetPasswordRequestImpl.fromJson;
+
+  @override
+  String get phone;
+  @override
+  String get otp;
+  @override
+  String get newPassword;
+  @override
+  @JsonKey(ignore: true)
+  _$$ResetPasswordRequestImplCopyWith<_$ResetPasswordRequestImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}
+
+PasswordResetResponse _$PasswordResetResponseFromJson(
+    Map<String, dynamic> json) {
+  return _PasswordResetResponse.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PasswordResetResponse {
+  bool get success => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $PasswordResetResponseCopyWith<PasswordResetResponse> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PasswordResetResponseCopyWith<$Res> {
+  factory $PasswordResetResponseCopyWith(PasswordResetResponse value,
+          $Res Function(PasswordResetResponse) then) =
+      _$PasswordResetResponseCopyWithImpl<$Res, PasswordResetResponse>;
+  @useResult
+  $Res call({bool success, String? message});
+}
+
+/// @nodoc
+class _$PasswordResetResponseCopyWithImpl<$Res,
+        $Val extends PasswordResetResponse>
+    implements $PasswordResetResponseCopyWith<$Res> {
+  _$PasswordResetResponseCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = null,
+    Object? message = freezed,
+  }) {
+    return _then(_value.copyWith(
+      success: null == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$PasswordResetResponseImplCopyWith<$Res>
+    implements $PasswordResetResponseCopyWith<$Res> {
+  factory _$$PasswordResetResponseImplCopyWith(
+          _$PasswordResetResponseImpl value,
+          $Res Function(_$PasswordResetResponseImpl) then) =
+      __$$PasswordResetResponseImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({bool success, String? message});
+}
+
+/// @nodoc
+class __$$PasswordResetResponseImplCopyWithImpl<$Res>
+    extends _$PasswordResetResponseCopyWithImpl<$Res,
+        _$PasswordResetResponseImpl>
+    implements _$$PasswordResetResponseImplCopyWith<$Res> {
+  __$$PasswordResetResponseImplCopyWithImpl(_$PasswordResetResponseImpl _value,
+      $Res Function(_$PasswordResetResponseImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? success = null,
+    Object? message = freezed,
+  }) {
+    return _then(_$PasswordResetResponseImpl(
+      success: null == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PasswordResetResponseImpl
+    with DiagnosticableTreeMixin
+    implements _PasswordResetResponse {
+  const _$PasswordResetResponseImpl({this.success = true, this.message});
+
+  factory _$PasswordResetResponseImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PasswordResetResponseImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final bool success;
+  @override
+  final String? message;
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'PasswordResetResponse(success: $success, message: $message)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'PasswordResetResponse'))
+      ..add(DiagnosticsProperty('success', success))
+      ..add(DiagnosticsProperty('message', message));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PasswordResetResponseImpl &&
+            (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, success, message);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PasswordResetResponseImplCopyWith<_$PasswordResetResponseImpl>
+      get copyWith => __$$PasswordResetResponseImplCopyWithImpl<
+          _$PasswordResetResponseImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PasswordResetResponseImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PasswordResetResponse implements PasswordResetResponse {
+  const factory _PasswordResetResponse(
+      {final bool success,
+      final String? message}) = _$PasswordResetResponseImpl;
+
+  factory _PasswordResetResponse.fromJson(Map<String, dynamic> json) =
+      _$PasswordResetResponseImpl.fromJson;
+
+  @override
+  bool get success;
+  @override
+  String? get message;
+  @override
+  @JsonKey(ignore: true)
+  _$$PasswordResetResponseImplCopyWith<_$PasswordResetResponseImpl>
+      get copyWith => throw _privateConstructorUsedError;
+}

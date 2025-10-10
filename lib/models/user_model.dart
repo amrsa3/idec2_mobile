@@ -300,3 +300,36 @@ class DocumentModel with _$DocumentModel {
   factory DocumentModel.fromJson(Map<String, dynamic> json) =>
       _$DocumentModelFromJson(json);
 }
+
+@freezed
+class RequestPasswordResetRequest with _$RequestPasswordResetRequest {
+  const factory RequestPasswordResetRequest({
+    required String phone,
+  }) = _RequestPasswordResetRequest;
+
+  factory RequestPasswordResetRequest.fromJson(Map<String, dynamic> json) =>
+      _$RequestPasswordResetRequestFromJson(json);
+}
+
+@freezed
+class ResetPasswordRequest with _$ResetPasswordRequest {
+  const factory ResetPasswordRequest({
+    required String phone,
+    required String otp,
+    required String newPassword,
+  }) = _ResetPasswordRequest;
+
+  factory ResetPasswordRequest.fromJson(Map<String, dynamic> json) =>
+      _$ResetPasswordRequestFromJson(json);
+}
+
+@freezed
+class PasswordResetResponse with _$PasswordResetResponse {
+  const factory PasswordResetResponse({
+    @Default(true) bool success,
+    String? message,
+  }) = _PasswordResetResponse;
+
+  factory PasswordResetResponse.fromJson(Map<String, dynamic> json) =>
+      _$PasswordResetResponseFromJson(json);
+}

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/forgot_password_screen.dart';
+import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/connection/presentation/connection_status_screen.dart';
 import '../../features/connection/presentation/error_reporting_screen.dart';
 import '../../features/connection/presentation/server_config_screen.dart';
@@ -27,6 +29,8 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String otpVerification = '/otp-verification';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPasswordOtp = '/reset-password-otp';
   static const String main = '/main';
   static const String profile = '/profile';
   static const String profileView = '/profile/view';
@@ -37,11 +41,27 @@ class AppRoutes {
   static const String notificationsTest = '/notifications-test';
 }
 
+// Auth change notifier for GoRouter
+class AuthChangeNotifier extends ChangeNotifier {
+  final Ref ref;
+  
+  AuthChangeNotifier(this.ref) {
+    // Listen to auth state changes
+    ref.listen(authProvider, (previous, next) {
+      notifyListeners();
+    });
+  }
+}
+
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = AuthChangeNotifier(ref);
+  
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    // Listen to auth state changes to trigger router refresh
+    refreshListenable: authNotifier,
     // Deep linking configuration
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -63,6 +83,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.login,
         AppRoutes.register,
         AppRoutes.otpVerification,
+        AppRoutes.forgotPassword,
+        AppRoutes.resetPasswordOtp,
         AppRoutes.connectionStatus,
         AppRoutes.serverConfig,
         AppRoutes.errorReporting,
@@ -134,6 +156,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
           return OtpVerificationScreen(phone: phone);
+        },
+      ),
+
+      // Forgot Password Routes
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.resetPasswordOtp,
+        name: 'reset-password-otp',
+        builder: (context, state) {
+          final phone = state.uri.queryParameters['phone'] ?? '';
+          return ResetPasswordScreen(phone: phone);
         },
       ),
 

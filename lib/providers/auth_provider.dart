@@ -463,6 +463,57 @@ class AuthNotifier extends StateNotifier<AuthState> {
     print('🔍 [AUTH_DEBUG] _clearAuthData - all authentication data cleared');
   }
 
+  // Request password reset OTP
+  Future<void> requestPasswordReset(String phone) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final response = await _authService.requestPasswordReset(phone);
+      
+      if (response.success) {
+        state = state.copyWith(
+          isLoading: false,
+          error: null,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.message ?? 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
+  }
+
+  // Reset password with OTP
+  Future<void> resetPassword(String phone, String otp, String newPassword) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final response = await _authService.resetPassword(phone, otp, newPassword);
+      
+      if (response.success) {
+        state = state.copyWith(
+          isLoading: false,
+          error: null,
+        );
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: response.message ?? 'حدث خطأ أثناء إعادة تعيين كلمة المرور',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
+  }
 
 }
 

@@ -69,10 +69,22 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   void _loadData() {
-    // Load profile data which includes governorates and qualifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(profileProvider.notifier).initializeProfilePage();
     });
+  }
+
+  void _retryLoadData() {
+    // إعادة تحميل البيانات مع مسح الكاش
+    ref.read(profileProvider.notifier).refresh();
+    
+    // إظهار رسالة للمستخدم
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('جاري إعادة تحميل البيانات...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _initializeForm() {
@@ -165,9 +177,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (_selectedBirthDate == null) {
       _missingRequiredFields.add('تاريخ الميلاد');
     }
-    if (_graduationYearController.text.trim().isEmpty) {
-      _missingRequiredFields.add('سنة التخرج');
-    }
+    // سنة التخرج لم تعد مطلوبة
   }
 
   bool _canRequestVerification() {
@@ -403,12 +413,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         
         const SizedBox(height: 16),
 
-        // سنة التخرج
+        // سنة التخرج (اختياري)
         CustomTextField(
           controller: _graduationYearController,
-          label: 'سنة التخرج',
+          label: 'سنة التخرج (اختياري)',
           keyboardType: TextInputType.number,
-          isRequired: true,
+          isRequired: false,
           enabled: _isFieldEditable('graduationYear'),
           validator: (value) => _validateField('graduationYear', value),
           errorText: _fieldErrors['graduationYear'],
@@ -503,14 +513,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     // التحقق من قواعد التوثيق الديناميكية
     final verificationRules = ref.read(profileProvider).verificationRules;
     
-    // الحقول المطلوبة الافتراضية (الجامعة اختيارية الآن)
+    // الحقول المطلوبة الافتراضية (الجامعة وسنة التخرج اختياريتان الآن)
     final defaultRequiredFields = [
       'fullNameAr',
       'fullNameEn',
       'birthDate',
       'governorateId',
       'qualificationId',
-      'graduationYear',
     ];
     
     bool isRequired = defaultRequiredFields.contains(fieldName);
@@ -548,11 +557,43 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   List<DropdownMenuItem<String>> _getGovernorateItems(ProfileState state) {
+    // إذا كانت البيانات فارغة أو null
     if (state.governorates?.isEmpty ?? true) {
+      // إذا كان هناك خطأ في التحميل
+      if (state.error != null && state.error!.isNotEmpty) {
+        return [
+          DropdownMenuItem<String>(
+            value: null,
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('فشل تحميل المحافظات')),
+                TextButton(
+                  onPressed: () => _retryLoadData(),
+                  child: const Text('إعادة المحاولة', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ];
+      }
+      
+      // إذا كان التحميل جاري
       return [
         const DropdownMenuItem<String>(
           value: null,
-          child: Text('جاري تحميل المحافظات...'),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 8),
+              Text('جاري تحميل المحافظات...'),
+            ],
+          ),
         ),
       ];
     }
@@ -566,11 +607,43 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   List<DropdownMenuItem<String>> _getQualificationItems(ProfileState state) {
+    // إذا كانت البيانات فارغة أو null
     if (state.qualifications?.isEmpty ?? true) {
+      // إذا كان هناك خطأ في التحميل
+      if (state.error != null && state.error!.isNotEmpty) {
+        return [
+          DropdownMenuItem<String>(
+            value: null,
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('فشل تحميل المؤهلات')),
+                TextButton(
+                  onPressed: () => _retryLoadData(),
+                  child: const Text('إعادة المحاولة', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ];
+      }
+      
+      // إذا كان التحميل جاري
       return [
         const DropdownMenuItem<String>(
           value: null,
-          child: Text('جاري تحميل المؤهلات...'),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 8),
+              Text('جاري تحميل المؤهلات...'),
+            ],
+          ),
         ),
       ];
     }

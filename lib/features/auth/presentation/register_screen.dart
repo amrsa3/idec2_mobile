@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/language_provider.dart';
+import '../../../services/notification_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 
@@ -97,11 +98,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
 
     if (!_registrationEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('التسجيل مغلق حالياً'),
-          backgroundColor: AppColors.error,
-        ),
+      await NotificationService.showError(
+        title: 'التسجيل مغلق',
+        message: 'التسجيل مغلق حالياً، يرجى المحاولة لاحقاً',
       );
       return;
     }
@@ -121,45 +120,50 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Registration successful - navigate to OTP verification
+      // Registration successful - show success message and navigate to OTP verification
+      await NotificationService.showSuccess(
+        title: 'تم التسجيل بنجاح',
+        message: 'تم إنشاء الحساب بنجاح، يرجى التحقق من رمز التأكيد',
+      );
+      
       print('Registration successful, navigating to OTP verification with phone: $fullPhoneNumber');
       // Use push instead of go to avoid GoRouter redirects
-      context.push('${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
+      if (mounted) {
+        context.push('${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
+      }
     } else {
-      // Registration failed - show error message
+      // Registration failed - show enhanced error message
       final authState = ref.read(authProvider);
-      String errorMessage = authState.error ?? 'فشل في التسجيل. يرجى المحاولة مرة أخرى.';
+      String errorMessage = 'فشل في التسجيل. يرجى المحاولة مرة أخرى.';
       
-      // Show error in SnackBar for immediate feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  errorMessage,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+      if (authState.error != null) {
+        // تحسين رسائل الخطأ لتكون أكثر وضوحاً
+        if (authState.error!.contains('already exists') || 
+            authState.error!.contains('duplicate') ||
+            authState.error!.contains('phone already registered')) {
+          errorMessage = 'رقم الهاتف مسجل مسبقاً، يرجى استخدام رقم آخر أو تسجيل الدخول';
+        } else if (authState.error!.contains('invalid phone') ||
+                   authState.error!.contains('phone format')) {
+          errorMessage = 'رقم الهاتف غير صحيح، يرجى التحقق من الرقم';
+        } else if (authState.error!.contains('weak password') ||
+                   authState.error!.contains('password too short')) {
+          errorMessage = 'كلمة المرور ضعيفة، يرجى استخدام كلمة مرور أقوى';
+        } else if (authState.error!.contains('Network error') ||
+                   authState.error!.contains('connection')) {
+          errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
+        } else if (authState.error!.contains('timeout')) {
+          errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
+        } else if (authState.error!.contains('server error') ||
+                   authState.error!.contains('500')) {
+          errorMessage = 'خطأ في الخادم، يرجى المحاولة لاحقاً';
+        } else {
+          errorMessage = authState.error!;
+        }
+      }
+      
+      await NotificationService.showError(
+        title: 'خطأ في التسجيل',
+        message: errorMessage,
       );
       
       // Also trigger a rebuild to show the error in the UI

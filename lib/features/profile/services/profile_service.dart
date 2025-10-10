@@ -824,11 +824,26 @@ class LocalProfileService {
       debugPrint('🎓 ProfileService: Qualifications response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final responseData = response.data;
         debugPrint('🎓 ProfileService: Qualifications received successfully');
-        debugPrint('🎓 ProfileService: Qualifications data: $data');
+        debugPrint('🎓 ProfileService: Qualifications response: $responseData');
         
-        return List<dynamic>.from(data ?? []);
+        // Handle the API response format {success: true, data: [...]}
+        if (responseData is Map<String, dynamic> && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data is List) {
+            debugPrint('🎓 ProfileService: Returning ${data.length} qualifications');
+            return List<dynamic>.from(data);
+          }
+        }
+        
+        // Fallback for direct array response
+        if (responseData is List) {
+          return List<dynamic>.from(responseData);
+        }
+        
+        debugPrint('❌ ProfileService: Unexpected qualifications data format');
+        return [];
       } else {
         debugPrint('❌ ProfileService: Failed to fetch qualifications: ${response.statusCode}');
         return [];
@@ -854,11 +869,26 @@ class LocalProfileService {
       debugPrint('🏛️ ProfileService: Governorates response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final responseData = response.data;
         debugPrint('🏛️ ProfileService: Governorates received successfully');
-        debugPrint('🏛️ ProfileService: Governorates data: $data');
+        debugPrint('🏛️ ProfileService: Governorates response: $responseData');
         
-        return List<dynamic>.from(data ?? []);
+        // Handle the API response format {success: true, data: [...]}
+        if (responseData is Map<String, dynamic> && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data is List) {
+            debugPrint('🏛️ ProfileService: Returning ${data.length} governorates');
+            return List<dynamic>.from(data);
+          }
+        }
+        
+        // Fallback for direct array response
+        if (responseData is List) {
+          return List<dynamic>.from(responseData);
+        }
+        
+        debugPrint('❌ ProfileService: Unexpected governorates data format');
+        return [];
       } else {
         debugPrint('❌ ProfileService: Failed to fetch governorates: ${response.statusCode}');
         return [];
@@ -970,7 +1000,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.put(
-        '${AppConstants.baseUrl}/api/v1/profile/update-data',
+        '${AppConstants.baseUrl}/api/v1/profiles/me',
         data: request.toJson(),
         options: Options(
           headers: {

@@ -20,7 +20,6 @@ import '../widgets/verification_status_badge.dart';
 import '../widgets/verification_notification_banner.dart';
 import '../../../../shared/widgets/profile_picture_widget.dart';
 import 'profile_edit_screen.dart';
-import 'document_management_screen.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/router/app_router.dart';
@@ -161,17 +160,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToEditProfile(context, profile);
-                    },
-                  ),
-                
-                // إدارة الوثائق
-                if (profile != null)
-                  ListTile(
-                    leading: Icon(Icons.folder_outlined, color: AppColors.primary),
-                    title: const Text('إدارة الوثائق'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _navigateToDocumentManagement(context, profile);
                     },
                   ),
                 
@@ -400,11 +388,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           
           const SizedBox(height: 24),
 
-          // الوثائق
-          _buildDocumentsSection(profile),
-          
-          const SizedBox(height: 24),
-
           // أزرار الإجراءات
           _buildActionButtons(profile),
         ],
@@ -556,79 +539,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-  Widget _buildDocumentsSection(ProfileModel profile) {
-    final hasDocuments = profile.documents.isNotEmpty;
-    final verificationRules = ref.read(profileProvider).verificationRules;
-    
-    // جمع الوثائق المطلوبة حسب القواعد الديناميكية
-    final requiredDocuments = <String>[];
-    // إضافة الوثائق الأساسية المطلوبة
-    requiredDocuments.addAll(['identity', 'qualification']);
-    
-    return _buildSection(
-      title: 'الوثائق المرفقة',
-      icon: Icons.description_outlined,
-      children: [
-        // عرض الوثائق المطلوبة
-        if (requiredDocuments.isNotEmpty) ...[
-          Text(
-            'الوثائق المطلوبة:',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...requiredDocuments.map((fieldName) => _buildRequiredDocumentRow(
-            fieldName, 
-            _getDocumentUrl(profile, fieldName),
-          )),
-          const SizedBox(height: 16),
-        ],
-        
-        // عرض الوثائق الموجودة
-        if (!hasDocuments && requiredDocuments.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'لم يتم رفع أي وثائق بعد',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else if (hasDocuments && requiredDocuments.isEmpty)
-          ...profile.documents.map(
-            (doc) => _buildDocumentRow(doc.documentType.toString(), doc.fileUrl),
-          ),
-        
-        const SizedBox(height: 12),
-        
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () => _navigateToDocumentManagement(context, profile),
-            icon: const Icon(Icons.upload_file),
-            label: const Text('إدارة الوثائق'),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildSection({
     required String title,
@@ -707,72 +618,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-  Widget _buildDocumentRow(String fieldName, String documentUrl) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.description,
-            color: AppColors.success,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _getDocumentDisplayName(fieldName),
-              style: AppTextStyles.bodyMedium,
-            ),
-          ),
-          IconButton(
-            onPressed: () => _viewDocument(context, documentUrl),
-            icon: const Icon(Icons.visibility_outlined),
-            iconSize: 20,
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildRequiredDocumentRow(String fieldName, String? documentUrl) {
-    final hasDocument = documentUrl != null && documentUrl.isNotEmpty;
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            hasDocument ? Icons.check_circle : Icons.warning,
-            color: hasDocument ? AppColors.success : AppColors.warning,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _getDocumentDisplayName(fieldName),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: hasDocument ? AppColors.textPrimary : AppColors.warning,
-              ),
-            ),
-          ),
-          if (hasDocument)
-            IconButton(
-              onPressed: () => _viewDocument(context, documentUrl!),
-              icon: const Icon(Icons.visibility_outlined),
-              iconSize: 20,
-            )
-          else
-            Text(
-              'مطلوب',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.warning,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActionButtons(ProfileModel profile) {
     final verificationRules = ref.read(profileProvider).verificationRules;
@@ -872,23 +718,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     return 'غير محدد';
   }
 
-  String _getDocumentDisplayName(String fieldName) {
-    switch (fieldName) {
-      case 'qualification':
-      case 'qualificationId':
-        return 'وثيقة المؤهل العلمي';
-      case 'identity':
-        return 'وثيقة الهوية';
-      case 'certificate':
-        return 'الشهادات';
-      case 'graduationCertificate':
-        return 'شهادة التخرج';
-      case 'workCertificate':
-        return 'شهادة العمل';
-      default:
-        return fieldName;
-    }
-  }
+
 
   // Navigation methods
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
@@ -900,14 +730,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-  void _navigateToDocumentManagement(BuildContext context, ProfileModel profile) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DocumentManagementScreen(profile: profile),
-      ),
-    );
-  }
+
 
   // Action methods
   void _showProfileImageOptions(BuildContext context, ProfileModel profile) {
@@ -987,39 +810,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-  String? _getDocumentUrl(ProfileModel profile, String fieldName) {
-    final docType = _getDocumentTypeFromString(fieldName);
-    try {
-      final doc = profile.documents.firstWhere(
-        (doc) => doc.documentType == docType,
-      );
-      return doc.fileUrl;
-    } catch (e) {
-      return null;
-    }
-  }
 
-  DocumentType _getDocumentTypeFromString(String fieldName) {
-    switch (fieldName.toLowerCase()) {
-      case 'qualification':
-        return DocumentType.qualification;
-      case 'identity':
-        return DocumentType.identity;
-      case 'certificate':
-        return DocumentType.certificate;
-      case 'license':
-        return DocumentType.license;
-      default:
-        return DocumentType.other;
-    }
-  }
-
-  void _viewDocument(BuildContext context, String documentUrl) {
-    // TODO: Implement document viewer
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('سيتم تنفيذ عارض الوثائق قريباً')),
-    );
-  }
 
   void _submitForVerification(BuildContext context, WidgetRef ref, ProfileModel profile) {
     showDialog(

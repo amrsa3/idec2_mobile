@@ -151,7 +151,7 @@ class __$$ApiResponseImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$ApiResponseImpl implements _ApiResponse {
+class _$ApiResponseImpl with DiagnosticableTreeMixin implements _ApiResponse {
   const _$ApiResponseImpl(
       {required this.success,
       required this.message,
@@ -201,8 +201,20 @@ class _$ApiResponseImpl implements _ApiResponse {
   }
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'ApiResponse(success: $success, message: $message, data: $data, errors: $errors, metadata: $metadata)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ApiResponse'))
+      ..add(DiagnosticsProperty('success', success))
+      ..add(DiagnosticsProperty('message', message))
+      ..add(DiagnosticsProperty('data', data))
+      ..add(DiagnosticsProperty('errors', errors))
+      ..add(DiagnosticsProperty('metadata', metadata));
   }
 
   @override
@@ -431,7 +443,9 @@ class __$$ServerSettingsModelImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$ServerSettingsModelImpl implements _ServerSettingsModel {
+class _$ServerSettingsModelImpl
+    with DiagnosticableTreeMixin
+    implements _ServerSettingsModel {
   const _$ServerSettingsModelImpl(
       {required this.registrationEnabled,
       required final List<String> availableOtpChannels,
@@ -483,8 +497,22 @@ class _$ServerSettingsModelImpl implements _ServerSettingsModel {
   final bool? isMaintenanceMode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'ServerSettingsModel(registrationEnabled: $registrationEnabled, availableOtpChannels: $availableOtpChannels, supportedLanguages: $supportedLanguages, defaultLanguage: $defaultLanguage, appConfig: $appConfig, maintenanceMessage: $maintenanceMessage, isMaintenanceMode: $isMaintenanceMode)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ServerSettingsModel'))
+      ..add(DiagnosticsProperty('registrationEnabled', registrationEnabled))
+      ..add(DiagnosticsProperty('availableOtpChannels', availableOtpChannels))
+      ..add(DiagnosticsProperty('supportedLanguages', supportedLanguages))
+      ..add(DiagnosticsProperty('defaultLanguage', defaultLanguage))
+      ..add(DiagnosticsProperty('appConfig', appConfig))
+      ..add(DiagnosticsProperty('maintenanceMessage', maintenanceMessage))
+      ..add(DiagnosticsProperty('isMaintenanceMode', isMaintenanceMode));
   }
 
   @override
@@ -691,7 +719,9 @@ class __$$HealthCheckModelImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$HealthCheckModelImpl implements _HealthCheckModel {
+class _$HealthCheckModelImpl
+    with DiagnosticableTreeMixin
+    implements _HealthCheckModel {
   const _$HealthCheckModelImpl(
       {required this.status,
       required this.version,
@@ -719,8 +749,19 @@ class _$HealthCheckModelImpl implements _HealthCheckModel {
   }
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'HealthCheckModel(status: $status, version: $version, timestamp: $timestamp, services: $services)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'HealthCheckModel'))
+      ..add(DiagnosticsProperty('status', status))
+      ..add(DiagnosticsProperty('version', version))
+      ..add(DiagnosticsProperty('timestamp', timestamp))
+      ..add(DiagnosticsProperty('services', services));
   }
 
   @override
@@ -902,7 +943,7 @@ class __$$ErrorModelImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$ErrorModelImpl implements _ErrorModel {
+class _$ErrorModelImpl with DiagnosticableTreeMixin implements _ErrorModel {
   const _$ErrorModelImpl(
       {required this.code,
       required this.message,
@@ -930,8 +971,19 @@ class _$ErrorModelImpl implements _ErrorModel {
   }
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'ErrorModel(code: $code, message: $message, details: $details, context: $context)';
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(DiagnosticsProperty('type', 'ErrorModel'))
+      ..add(DiagnosticsProperty('code', code))
+      ..add(DiagnosticsProperty('message', message))
+      ..add(DiagnosticsProperty('details', details))
+      ..add(DiagnosticsProperty('context', context));
   }
 
   @override

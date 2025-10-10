@@ -265,82 +265,104 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               const SizedBox(height: 48),
               
               // OTP Input Fields
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(4, (index) {
-                  return SizedBox(
-                    width: 60,
-                    height: 65,
-                    child: RawKeyboardListener(
-                      focusNode: FocusNode(),
-                      onKey: (RawKeyEvent event) {
-                        if (event is RawKeyDownEvent) {
-                          if (event.logicalKey == LogicalKeyboardKey.backspace) {
-                            if (_controllers[index].text.isEmpty && index > 0) {
-                              _controllers[index - 1].clear();
-                              _focusNodes[index - 1].requestFocus();
+              Directionality(
+                textDirection: TextDirection.ltr, // Force LTR for numbers
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(4, (index) {
+                    return SizedBox(
+                      width: 60,
+                      height: 65,
+                      child: RawKeyboardListener(
+                        focusNode: FocusNode(),
+                        onKey: (RawKeyEvent event) {
+                          if (event is RawKeyDownEvent) {
+                            if (event.logicalKey == LogicalKeyboardKey.backspace) {
+                              if (_controllers[index].text.isEmpty && index > 0) {
+                                _controllers[index - 1].clear();
+                                _focusNodes[index - 1].requestFocus();
+                              }
                             }
                           }
-                        }
-                      },
-                      child: TextFormField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        },
+                        child: AnimatedBuilder(
+                          animation: _focusNodes[index],
+                          builder: (context, child) {
+                            final bool isFocused = _focusNodes[index].hasFocus;
+                            return Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: isFocused ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ] : null,
+                              ),
+                              child: TextFormField(
+                                controller: _controllers[index],
+                                focusNode: _focusNodes[index],
+                                textAlign: TextAlign.center,
+                                textDirection: TextDirection.ltr, // Force LTR for numbers
+                                keyboardType: TextInputType.number,
+                                maxLength: 1,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  counterText: '',
+                                  filled: true,
+                                  fillColor: isFocused ? AppColors.primary.withOpacity(0.05) : Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.primary, width: 3),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: AppColors.error, width: 2),
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                onChanged: (value) => _onOtpChanged(value, index),
+                                onTap: () {
+                                  _controllers[index].selection = TextSelection.fromPosition(
+                                    TextPosition(offset: _controllers[index].text.length),
+                                  );
+                                },
+                                onFieldSubmitted: (_) {
+                                  if (_isOtpComplete) {
+                                    _verifyOtp();
+                                  } else if (index < 3) {
+                                    _focusNodes[index + 1].requestFocus();
+                                  }
+                                },
+                                onEditingComplete: () {
+                                  // Handle when user finishes editing a field
+                                  if (_isOtpComplete) {
+                                    _verifyOtp();
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.error, width: 2),
-                        ),
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      onChanged: (value) => _onOtpChanged(value, index),
-                      onTap: () {
-                        _controllers[index].selection = TextSelection.fromPosition(
-                          TextPosition(offset: _controllers[index].text.length),
-                        );
-                      },
-                      onFieldSubmitted: (_) {
-                        if (_isOtpComplete) {
-                          _verifyOtp();
-                        } else if (index < 3) {
-                          _focusNodes[index + 1].requestFocus();
-                        }
-                      },
-                      onEditingComplete: () {
-                        // Handle when user finishes editing a field
-                        if (_isOtpComplete) {
-                          _verifyOtp();
-                        }
-                      },
-                      ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
               
               const SizedBox(height: 32),

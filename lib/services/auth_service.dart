@@ -210,19 +210,71 @@ class AuthService {
         }
       }
       
-      if (e.response?.statusCode == 401) {
-        final errorMessage = e.response?.data['message'] ?? 'Invalid credentials or inactive account';
-        return _createErrorResponse(errorMessage);
-      } else if (e.response?.statusCode == 422) {
-        final errors = e.response?.data['errors'] as Map<String, dynamic>?;
-        final message = errors?.values.first?.first ?? 'Validation error';
-        return _createErrorResponse(message);
-      } else if (e.response?.statusCode == 400) {
-        final errorMessage = e.response?.data['message'] ?? 'Bad request';
-        return _createErrorResponse(errorMessage);
+      // Extract error message from server response with better handling for Arabic text
+      String errorMessage = 'فشل في تسجيل الدخول';
+      
+      if (e.response?.data != null) {
+        debugPrint('🔍 [AUTH_DEBUG] Error response data: ${e.response?.data}');
+        debugPrint('🔍 [AUTH_DEBUG] Error response type: ${e.response?.data.runtimeType}');
+        
+        // Try to extract error message from different possible locations
+        if (e.response?.data is Map<String, dynamic>) {
+          final responseData = e.response?.data as Map<String, dynamic>;
+          
+          // Check for 'message' field first (most common)
+          if (responseData.containsKey('message') && responseData['message'] != null) {
+            errorMessage = responseData['message'].toString();
+            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "message" field: $errorMessage');
+          }
+          // Check for 'error' field
+          else if (responseData.containsKey('error') && responseData['error'] != null) {
+            if (responseData['error'] is Map<String, dynamic>) {
+              final errorData = responseData['error'] as Map<String, dynamic>;
+              errorMessage = errorData['message']?.toString() ?? errorData.toString();
+            } else {
+              errorMessage = responseData['error'].toString();
+            }
+            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "error" field: $errorMessage');
+          }
+          // Check for validation errors (422 status)
+          else if (responseData.containsKey('errors') && responseData['errors'] != null) {
+            final errors = responseData['errors'] as Map<String, dynamic>?;
+            if (errors != null && errors.isNotEmpty) {
+              // Get first error message
+              final firstError = errors.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMessage = firstError.first.toString();
+              } else {
+                errorMessage = firstError.toString();
+              }
+            }
+            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "errors" field: $errorMessage');
+          }
+        } else if (e.response?.data is String) {
+          errorMessage = e.response?.data as String;
+          debugPrint('🔍 [AUTH_DEBUG] Extracted error message from string response: $errorMessage');
+        }
       }
       
-      return _createErrorResponse(e.response?.data['message'] ?? 'Login failed');
+      // Handle specific status codes with fallback to extracted message
+      if (e.response?.statusCode == 401) {
+        // Use extracted message if available, otherwise use default
+        if (errorMessage == 'فشل في تسجيل الدخول') {
+          errorMessage = 'رقم الهاتف أو كلمة المرور غير صحيحة، أو أن رقم الهاتف غير مفعل';
+        }
+      } else if (e.response?.statusCode == 422) {
+        // For validation errors, we already extracted the message above
+        if (errorMessage == 'فشل في تسجيل الدخول') {
+          errorMessage = 'خطأ في البيانات المدخلة';
+        }
+      } else if (e.response?.statusCode == 400) {
+        if (errorMessage == 'فشل في تسجيل الدخول') {
+          errorMessage = 'طلب غير صحيح';
+        }
+      }
+      
+      debugPrint('🔍 [AUTH_DEBUG] Final error message to return: $errorMessage');
+      return _createErrorResponse(errorMessage);
     } catch (e) {
       debugPrint('🔍 [AUTH_DEBUG] General error: $e');
       debugPrint('🔍 [AUTH_DEBUG] General error type: ${e.runtimeType}');
@@ -752,6 +804,108 @@ class AuthService {
     } catch (e) {
       debugPrint('Error updating profile: $e');
       rethrow;
+    }
+  }
+
+  // Request password reset OTP
+  Future<PasswordResetResponse> requestPasswordReset(String phone) async {
+    try {
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Requesting password reset for phone: $phone');
+      
+      final request = RequestPasswordResetRequest(phone: phone);
+      
+      // Make direct Dio call to handle response manually
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/request-password-reset',
+        data: request.toJson(),
+      );
+      
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Raw response received successfully');
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Response status: ${response.statusCode}');
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Response data: ${response.data}');
+      
+      if (response.data == null) {
+        throw Exception('Response data is null');
+      }
+      
+      if (response.data is! Map<String, dynamic>) {
+        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
+      }
+      
+      final responseData = response.data as Map<String, dynamic>;
+      final passwordResetResponse = PasswordResetResponse.fromJson(responseData);
+      
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Password reset request successful');
+      return passwordResetResponse;
+      
+    } on DioException catch (e) {
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] DioException occurred: ${e.message}');
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Response data: ${e.response?.data}');
+      
+      if (e.response?.data != null && e.response?.data is Map<String, dynamic>) {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final errorMessage = errorData['message'] ?? 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور';
+        throw Exception(errorMessage);
+      }
+      
+      throw Exception('حدث خطأ في الشبكة أثناء طلب إعادة تعيين كلمة المرور');
+    } catch (e) {
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Unexpected error: $e');
+      throw Exception('حدث خطأ غير متوقع أثناء طلب إعادة تعيين كلمة المرور');
+    }
+  }
+
+  // Reset password with OTP
+  Future<PasswordResetResponse> resetPassword(String phone, String otp, String newPassword) async {
+    try {
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Resetting password for phone: $phone');
+      
+      final request = ResetPasswordRequest(
+        phone: phone,
+        otp: otp,
+        newPassword: newPassword,
+      );
+      
+      // Make direct Dio call to handle response manually
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/reset-password',
+        data: request.toJson(),
+      );
+      
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Raw response received successfully');
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Response status: ${response.statusCode}');
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Response data: ${response.data}');
+      
+      if (response.data == null) {
+        throw Exception('Response data is null');
+      }
+      
+      if (response.data is! Map<String, dynamic>) {
+        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
+      }
+      
+      final responseData = response.data as Map<String, dynamic>;
+      final passwordResetResponse = PasswordResetResponse.fromJson(responseData);
+      
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Password reset successful');
+      return passwordResetResponse;
+      
+    } on DioException catch (e) {
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] DioException occurred: ${e.message}');
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Response data: ${e.response?.data}');
+      
+      if (e.response?.data != null && e.response?.data is Map<String, dynamic>) {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final errorMessage = errorData['message'] ?? 'حدث خطأ أثناء إعادة تعيين كلمة المرور';
+        throw Exception(errorMessage);
+      }
+      
+      throw Exception('حدث خطأ في الشبكة أثناء إعادة تعيين كلمة المرور');
+    } catch (e) {
+      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Unexpected error: $e');
+      throw Exception('حدث خطأ غير متوقع أثناء إعادة تعيين كلمة المرور');
     }
   }
 }

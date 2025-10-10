@@ -54,7 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         if (success) {
-          debugPrint('LoginScreen: Login successful, letting GoRouter handle navigation');
+          debugPrint('LoginScreen: Login successful, navigating to main screen');
           
           // إرسال إشعار نجاح عبر النظام المركزي
           await NotificationService.showSuccess(
@@ -62,55 +62,115 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             message: 'تم تسجيل الدخول بنجاح',
           );
           
-          // GoRouter will handle navigation automatically
+          // Wait a moment for auth state to fully update, then navigate
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Navigate explicitly to main screen
+          if (mounted) {
+            try {
+              context.go(AppRoutes.main);
+              debugPrint('LoginScreen: Successfully navigated to main screen');
+            } catch (e) {
+              debugPrint('LoginScreen: Navigation error: $e');
+              // Fallback: try using pushReplacement
+              if (mounted) {
+                context.pushReplacement(AppRoutes.main);
+              }
+            }
+          }
         } else {
           // Show error message using central notification system
           final authState = ref.read(authProvider);
           String errorMessage = 'فشل في تسجيل الدخول';
           
-          if (authState.error != null) {
-            // تحسين رسائل الخطأ لتكون أكثر وضوحاً
-            if (authState.error!.contains('Invalid credentials') || 
-                authState.error!.contains('401') ||
-                authState.error!.contains('Unauthorized')) {
-              errorMessage = 'رقم الهاتف أو كلمة المرور غير صحيحة';
-            } else if (authState.error!.contains('inactive account') ||
-                       authState.error!.contains('account is disabled')) {
-              errorMessage = 'الحساب غير مفعل، يرجى التواصل مع الإدارة';
-            } else if (authState.error!.contains('Network error') ||
-                       authState.error!.contains('connection')) {
+          if (authState.error != null && authState.error!.isNotEmpty) {
+            // Use the actual error message from the server
+            errorMessage = authState.error!;
+            
+            // Only apply fallback messages for specific network/connection errors
+            if (authState.error!.contains('Network error') ||
+                authState.error!.contains('SocketException') ||
+                authState.error!.contains('connection refused') ||
+                authState.error!.contains('No route to host')) {
               errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
-            } else if (authState.error!.contains('timeout')) {
+            } else if (authState.error!.contains('timeout') ||
+                       authState.error!.contains('TimeoutException')) {
               errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
-            } else {
-              errorMessage = authState.error!;
             }
+            // For all other errors (including server messages), use the original message
+            
+            debugPrint('🔍 [LOGIN_SCREEN] Displaying error message: $errorMessage');
           }
           
           await NotificationService.showError(
             title: 'خطأ في تسجيل الدخول',
             message: errorMessage,
           );
+          
+          // Fallback: Show error using ScaffoldMessenger if NotificationService fails
+          if (mounted) {
+            try {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('خطأ في تسجيل الدخول - $errorMessage'),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  duration: const Duration(seconds: 4),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } catch (e) {
+              debugPrint('❌ [LOGIN_SCREEN] Failed to show fallback notification: $e');
+            }
+          }
         }
       }
     } catch (e) {
       if (mounted) {
-        // تحسين رسائل الخطأ العامة
+        // Handle unexpected errors with better error messages
         String errorMessage = 'حدث خطأ غير متوقع';
+        
+        debugPrint('🔍 [LOGIN_SCREEN] Caught exception: $e');
+        debugPrint('🔍 [LOGIN_SCREEN] Exception type: ${e.runtimeType}');
+        
         if (e.toString().contains('SocketException') || 
-            e.toString().contains('connection')) {
+            e.toString().contains('connection') ||
+            e.toString().contains('NetworkException')) {
           errorMessage = 'لا يمكن الاتصال بالخادم، يرجى التحقق من الإنترنت';
-        } else if (e.toString().contains('timeout')) {
+        } else if (e.toString().contains('timeout') ||
+                   e.toString().contains('TimeoutException')) {
           errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
-        } else if (e.toString().contains('format')) {
+        } else if (e.toString().contains('format') ||
+                   e.toString().contains('FormatException')) {
           errorMessage = 'خطأ في تنسيق البيانات، يرجى المحاولة مرة أخرى';
+        } else {
+          // For other exceptions, include the actual error message if it's meaningful
+          final exceptionMessage = e.toString();
+          if (exceptionMessage.length < 200 && !exceptionMessage.contains('Exception:')) {
+            errorMessage = 'خطأ: $exceptionMessage';
+          }
         }
+        
+        debugPrint('🔍 [LOGIN_SCREEN] Final exception error message: $errorMessage');
         
         // إرسال إشعار خطأ عبر النظام المركزي
         await NotificationService.showError(
           title: 'خطأ في تسجيل الدخول',
           message: errorMessage,
         );
+        
+        // Fallback: Show error using ScaffoldMessenger if NotificationService fails
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('خطأ في تسجيل الدخول - $errorMessage'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } catch (e) {
+          debugPrint('❌ [LOGIN_SCREEN] Failed to show fallback notification: $e');
+        }
       }
     }
   }
@@ -294,74 +354,52 @@ Widget build(BuildContext context) {
                 ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               
-              // Password field
-              CustomTextField(
-                controller: _passwordController,
-                label: l10n.password,
-                hint: l10n.password,
-                obscureText: _obscurePassword,
-                textInputAction: TextInputAction.done,
-                validator: _validatePassword,
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: AppColors.textSecondary,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+              // Password field without label
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
-                onSubmitted: (_) => _login(),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Connection buttons row
-              Row(
-                children: [
-                  // Connection test button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _checkConnection,
-                      icon: const Icon(Icons.wifi_find, color: AppColors.primary),
-                      label: const Text(
-                        'فحص الاتصال',
-                        style: TextStyle(color: AppColors.primary),
+                child: TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.done,
+                  validator: _validatePassword,
+                  decoration: InputDecoration(
+                    hintText: 'أدخل كلمة المرور',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    hintStyle: const TextStyle(
+                      color: AppColors.textSecondary,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: AppColors.textSecondary,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        color: AppColors.textSecondary,
                       ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: AppColors.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Advanced monitoring button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.go(AppRoutes.connectionStatus),
-                      icon: const Icon(Icons.analytics, color: AppColors.secondary),
-                      label: const Text(
-                        'مراقبة متقدمة',
-                        style: TextStyle(color: AppColors.secondary),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: AppColors.secondary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
                   ),
-                ],
+                  onFieldSubmitted: (_) => _login(),
+                ),
               ),
               
               const SizedBox(height: 24),
@@ -422,7 +460,7 @@ Widget build(BuildContext context) {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    // TODO: Implement forgot password
+                    context.push(AppRoutes.forgotPassword);
                   },
                   child: Text(
                     l10n.forgotPassword,
@@ -477,6 +515,32 @@ Widget build(BuildContext context) {
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Check Connection button
+                OutlinedButton.icon(
+                  onPressed: _checkConnection,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: AppColors.secondary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.wifi_find,
+                    color: AppColors.secondary,
+                    size: 20,
+                  ),
+                  label: Text(
+                    'فحص الاتصال',
+                    style: const TextStyle(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

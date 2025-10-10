@@ -42,6 +42,13 @@ abstract class ApiService {
   @GET('/api/v1/auth/channels')
   Future<ApiResponse> getOtpChannels();
 
+  // Password Reset - New endpoints
+  @POST('/api/v1/auth/request-password-reset')
+  Future<PasswordResetResponse> requestPasswordReset(@Body() RequestPasswordResetRequest request);
+
+  @POST('/api/v1/auth/reset-password')
+  Future<PasswordResetResponse> resetPassword(@Body() ResetPasswordRequest request);
+
   // User Profile - Updated to match server implementation
   @GET('/api/v1/auth/profile')
   Future<UserModel> getUserProfile();

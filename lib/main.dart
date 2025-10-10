@@ -12,6 +12,7 @@ import 'l10n/app_localizations.dart';
 import 'services/storage_service.dart';
 import 'services/retry_service.dart';
 import 'services/registration_settings_service.dart';
+import 'services/notification_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
@@ -137,6 +138,9 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     return MaterialApp.router(
       title: 'IDEC',
       debugShowCheckedModeBanner: false,
+      
+      // ScaffoldMessenger configuration
+      scaffoldMessengerKey: NotificationService.scaffoldMessengerKey,
       
       // Theme configuration
       theme: AppTheme.lightTheme,

@@ -260,3 +260,45 @@ Map<String, dynamic> _$$DocumentModelImplToJson(_$DocumentModelImpl instance) =>
       'status': instance.status,
       'uploadedAt': instance.uploadedAt?.toIso8601String(),
     };
+
+_$RequestPasswordResetRequestImpl _$$RequestPasswordResetRequestImplFromJson(
+        Map<String, dynamic> json) =>
+    _$RequestPasswordResetRequestImpl(
+      phone: json['phone'] as String,
+    );
+
+Map<String, dynamic> _$$RequestPasswordResetRequestImplToJson(
+        _$RequestPasswordResetRequestImpl instance) =>
+    <String, dynamic>{
+      'phone': instance.phone,
+    };
+
+_$ResetPasswordRequestImpl _$$ResetPasswordRequestImplFromJson(
+        Map<String, dynamic> json) =>
+    _$ResetPasswordRequestImpl(
+      phone: json['phone'] as String,
+      otp: json['otp'] as String,
+      newPassword: json['newPassword'] as String,
+    );
+
+Map<String, dynamic> _$$ResetPasswordRequestImplToJson(
+        _$ResetPasswordRequestImpl instance) =>
+    <String, dynamic>{
+      'phone': instance.phone,
+      'otp': instance.otp,
+      'newPassword': instance.newPassword,
+    };
+
+_$PasswordResetResponseImpl _$$PasswordResetResponseImplFromJson(
+        Map<String, dynamic> json) =>
+    _$PasswordResetResponseImpl(
+      success: json['success'] as bool? ?? true,
+      message: json['message'] as String?,
+    );
+
+Map<String, dynamic> _$$PasswordResetResponseImplToJson(
+        _$PasswordResetResponseImpl instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+    };

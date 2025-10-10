@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/api_constants.dart';
 import 'dio_service.dart';
 
 /// خدمة لتحميل الصور مع المصادقة
@@ -52,7 +53,7 @@ class AuthenticatedImageService {
     // إزالة الشرطة المائلة في البداية إذا كانت موجودة
     final cleanUrl = relativeUrl.startsWith('/') ? relativeUrl.substring(1) : relativeUrl;
     
-    return '${AppConstants.baseUrl}/$cleanUrl';
+    return '${ApiConstants.baseUrl}/$cleanUrl';
   }
 
   /// فحص ما إذا كان URL يحتاج إلى مصادقة

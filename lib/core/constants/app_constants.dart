@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // API Configuration
-  static const String baseUrl = 'http://192.168.0.165:3000';
+  static const String baseUrl = 'http://idec-ye.com:3000';
 
   // Supported Locales
   static const List<Locale> supportedLocales = [

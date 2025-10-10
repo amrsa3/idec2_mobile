@@ -532,5 +532,20 @@
   "gallery": "المعرض",
   "camera": "الكاميرا",
   "invalidImageFormat": "صيغة الصورة غير صحيحة. يرجى اختيار صورة بصيغة JPG أو PNG",
-  "imageTooLarge": "حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت"
+  "imageTooLarge": "حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت",
+  "serverSettings": "إعدادات الخادم",
+  "editServerSettings": "تعديل إعدادات الخادم",
+  "serverHost": "عنوان الخادم",
+  "serverPortNumber": "رقم المنفذ",
+  "mainServer": "الخادم الرئيسي",
+  "localServer": "خادم محلي",
+  "saveServerSettings": "حفظ إعدادات الخادم",
+  "serverSettingsSaved": "تم حفظ إعدادات الخادم بنجاح",
+  "serverSettingsFailed": "فشل في حفظ إعدادات الخادم",
+  "invalidServerHost": "عنوان الخادم غير صحيح",
+  "invalidServerPort": "رقم المنفذ غير صحيح",
+  "enterValidHost": "يرجى إدخال عنوان خادم صحيح",
+  "enterValidPort": "يرجى إدخال رقم منفذ صحيح (1-65535)",
+  "currentServerSettings": "إعدادات الخادم الحالية",
+  "savingSettings": "جاري حفظ الإعدادات..."
 }

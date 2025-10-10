@@ -6,6 +6,7 @@ import '../core/constants/api_constants.dart';
 import '../core/errors/app_error.dart';
 import '../core/errors/error_handler.dart';
 import 'retry_service.dart';
+import 'session_manager.dart';
 
 class DioService {
   static DioService? _instance;
@@ -33,8 +34,14 @@ class DioService {
         onRequest: (options, handler) async {
           // Add authorization header
           final token = await _storage.read(key: 'access_token');
-          if (token != null) {
+          debugPrint('🔑 [DIO_DEBUG] Request to: ${options.path}');
+          debugPrint('🔑 [DIO_DEBUG] Token status: ${token != null && token.isNotEmpty ? "found (${token.length} chars)" : "not found"}');
+          if (token != null && token.isNotEmpty) {
+            debugPrint('🔑 [DIO_DEBUG] Token first 20 chars: ${token.length > 20 ? token.substring(0, 20) + "..." : token}');
             options.headers['Authorization'] = 'Bearer $token';
+            debugPrint('🔑 [DIO_DEBUG] Authorization header set: Bearer ${token.length > 20 ? token.substring(0, 20) + "..." : token}');
+          } else {
+            debugPrint('🔑 [DIO_DEBUG] No token available for request');
           }
 
           // Add content type
@@ -45,30 +52,66 @@ class DioService {
           final language = await _storage.read(key: 'selected_language') ?? 'ar';
           options.headers['Accept-Language'] = language;
 
+          // debugPrint('🔑 [DIO_DEBUG] Request headers: ${options.headers}');
           handler.next(options);
         },
         onResponse: (response, handler) {
+          // debugPrint('✅ [DIO_DEBUG] Response ${response.statusCode} for: ${response.requestOptions.path}');
           handler.next(response);
         },
         onError: (error, handler) async {
+          // debugPrint('❌ [DIO_DEBUG] Error ${error.response?.statusCode} for: ${error.requestOptions.path}');
+          // debugPrint('❌ [DIO_DEBUG] Error message: ${error.message}');
+          // debugPrint('❌ [DIO_DEBUG] Error response data: ${error.response?.data}');
+          
           // Handle token refresh
           if (error.response?.statusCode == 401) {
+            debugPrint('🔑 DioService: Received 401 Unauthorized, attempting token refresh');
             final refreshToken = await _storage.read(key: 'refresh_token');
             if (refreshToken != null) {
               try {
                 final newTokens = await _refreshToken(refreshToken);
                 if (newTokens != null) {
+                  debugPrint('✅ DioService: Token refresh successful, retrying request');
                   // Retry the original request
                   final options = error.requestOptions;
                   options.headers['Authorization'] = 'Bearer ${newTokens['access_token']}';
                   final response = await _dio.fetch(options);
                   handler.resolve(response);
                   return;
+                } else {
+                  debugPrint('❌ DioService: Token refresh failed, clearing tokens');
+                  await _clearTokens();
+                  // Add small delay before notifying session expiration
+                  await Future.delayed(const Duration(milliseconds: 50));
+                  // Notify session manager about session expiration
+                  SessionManager.instance.notifySessionExpired(
+                    reason: 'فشل في تحديث رمز المصادقة',
+                    shouldRedirectToLogin: true,
+                  );
                 }
               } catch (e) {
+                debugPrint('❌ DioService: Token refresh exception: $e');
                 // Refresh failed, logout user
                 await _clearTokens();
+                // Add small delay before notifying session expiration
+                await Future.delayed(const Duration(milliseconds: 50));
+                // Notify session manager about session expiration
+                SessionManager.instance.notifySessionExpired(
+                  reason: 'انتهت صلاحية جلسة العمل',
+                  shouldRedirectToLogin: true,
+                );
               }
+            } else {
+              debugPrint('❌ DioService: No refresh token available');
+              await _clearTokens();
+              // Add small delay before notifying session expiration
+              await Future.delayed(const Duration(milliseconds: 50));
+              // Notify session manager about session expiration
+              SessionManager.instance.notifySessionExpired(
+                reason: 'لا يوجد رمز تحديث صالح',
+                shouldRedirectToLogin: true,
+              );
             }
           }
 
@@ -173,8 +216,15 @@ class DioService {
 
   Future<String?> getAccessToken() async {
     final token = await _storage.read(key: 'access_token');
-    debugPrint('🔑 DioService.getAccessToken: Token ${token != null && token.isNotEmpty ? "found" : "not found"}');
+    // debugPrint('🔑 DioService.getAccessToken: Token ${token != null && token.isNotEmpty ? "found" : "not found"}');
     return token;
+  }
+
+  /// Refresh DioService after server settings change
+  void refreshAfterServerChange() {
+    // Update base URL
+    _dio.options.baseUrl = ApiConstants.baseUrl;
+    debugPrint('🔄 DioService: Base URL updated to ${ApiConstants.baseUrl}');
   }
 
   Future<String?> getRefreshToken() async {

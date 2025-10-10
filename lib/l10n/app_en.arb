@@ -965,5 +965,65 @@
   "imageTooLarge": "Image is too large. Maximum size is 5MB",
   "@imageTooLarge": {
     "description": "Image too large error message"
+  },
+  "serverSettings": "Server Settings",
+  "@serverSettings": {
+    "description": "Server settings title"
+  },
+  "editServerSettings": "Edit Server Settings",
+  "@editServerSettings": {
+    "description": "Edit server settings button text"
+  },
+  "serverHost": "Server Host",
+  "@serverHost": {
+    "description": "Server host field label"
+  },
+  "serverPortNumber": "Port Number",
+  "@serverPortNumber": {
+    "description": "Server port number field label"
+  },
+  "mainServer": "Main Server",
+  "@mainServer": {
+    "description": "Main server button text"
+  },
+  "localServer": "Local Server",
+  "@localServer": {
+    "description": "Local server button text"
+  },
+  "saveServerSettings": "Save Server Settings",
+  "@saveServerSettings": {
+    "description": "Save server settings button text"
+  },
+  "serverSettingsSaved": "Server settings saved successfully",
+  "@serverSettingsSaved": {
+    "description": "Server settings saved success message"
+  },
+  "serverSettingsFailed": "Failed to save server settings",
+  "@serverSettingsFailed": {
+    "description": "Server settings save failed message"
+  },
+  "invalidServerHost": "Invalid server host",
+  "@invalidServerHost": {
+    "description": "Invalid server host error message"
+  },
+  "invalidServerPort": "Invalid server port",
+  "@invalidServerPort": {
+    "description": "Invalid server port error message"
+  },
+  "enterValidHost": "Please enter a valid server host",
+  "@enterValidHost": {
+    "description": "Enter valid host validation message"
+  },
+  "enterValidPort": "Please enter a valid port number (1-65535)",
+  "@enterValidPort": {
+    "description": "Enter valid port validation message"
+  },
+  "currentServerSettings": "Current Server Settings",
+  "@currentServerSettings": {
+    "description": "Current server settings label"
+  },
+  "savingSettings": "Saving settings...",
+  "@savingSettings": {
+    "description": "Saving settings loading message"
   }
 }

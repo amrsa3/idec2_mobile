@@ -20,49 +20,72 @@ class ProfileService {
     try {
       debugPrint('🔍 [PROFILE_SERVICE] جلب بيانات الملف الشخصي...');
 
-      // Use direct API call since getMyProfile returns UserModel with profile
-      final dio = DioService.instance.dio;
-      final response = await dio.get('/api/v1/profiles/me');
-
-      debugPrint('✅ [PROFILE_SERVICE] تم جلب بيانات الملف الشخصي بنجاح');
-
-      final data = response.data;
-      final profileData = data['profile'];
-
-      if (profileData == null) {
-        throw Exception('لا توجد بيانات ملف شخصي');
+      // Check token before making request
+      final token = await DioService.instance.getAccessToken();
+      debugPrint(
+          '🔑 [PROFILE_SERVICE] Token status: ${token != null && token.isNotEmpty ? "found (${token.length} chars)" : "not found"}');
+      if (token != null && token.isNotEmpty) {
+        debugPrint(
+            '🔑 [PROFILE_SERVICE] Token first 20 chars: ${token.length > 20 ? token.substring(0, 20) + "..." : token}');
       }
 
-      // Convert server response to ProfileModel
+      // Use direct API call to auth/profile endpoint (correct endpoint)
+      final dio = DioService.instance.dio;
+      debugPrint('🔍 [PROFILE_SERVICE] Making request to /api/v1/auth/profile');
+      final response = await dio.get('/api/v1/auth/profile');
+
+      debugPrint('✅ [PROFILE_SERVICE] تم جلب بيانات الملف الشخصي بنجاح');
+      debugPrint('✅ [PROFILE_SERVICE] Response status: ${response.statusCode}');
+      debugPrint(
+          '✅ [PROFILE_SERVICE] Response data type: ${response.data.runtimeType}');
+
+      final data = response.data;
+      debugPrint(
+          '🔍 [PROFILE_SERVICE] Response data keys: ${data is Map ? (data as Map).keys.toList() : "Not a Map"}');
+
+      // /api/v1/auth/profile returns basic user data, not full profile
+      // This endpoint returns: {id, phone, email, phoneVerified, roles}
+      // We need to create a basic ProfileModel with available data
+      debugPrint('🔍 [PROFILE_SERVICE] Auth profile data: $data');
+
+      // Convert server response to ProfileModel with available data
       return ProfileModel(
-        id: profileData['id'] ?? '',
-        userId: profileData['userId'] ?? '',
-        fullNameAr: profileData['fullNameAr'] ?? '',
-        fullNameEn: profileData['fullNameEn'] ?? '',
+        id: data['id'] ?? '',
+        userId: data['id'] ?? '', // Use user ID as profile ID for now
+        fullNameAr: '', // Not available in auth/profile response
+        fullNameEn: '', // Not available in auth/profile response
         email: data['email'] ?? '',
-        birthDate: profileData['birthDate'] != null
-            ? DateTime.parse(profileData['birthDate'])
-            : null,
-        governorateId: profileData['governorateId'],
-        qualificationId: profileData['qualificationId'],
-        graduationYear: profileData['graduationYear'] ?? 0,
-        university: profileData['university'] ?? '',
-        workplace: '', // Not available in this response
-        verificationStatus: _mapVerificationStatus(profileData['status']),
+        birthDate: null, // Not available in auth/profile response
+        governorateId: null,
+        qualificationId: null,
+        graduationYear: 0,
+        university: '',
+        workplace: '',
+        verificationStatus: VerificationStatus.unverified, // Default status
         completionPercentage: 0.0,
         profilePictureUrl: null,
         documents: [],
         requiredDocuments: [],
-        createdAt: profileData['createdAt'] != null
-            ? DateTime.parse(profileData['createdAt'])
-            : DateTime.now(),
-        updatedAt: profileData['updatedAt'] != null
-            ? DateTime.parse(profileData['updatedAt'])
-            : null,
+        createdAt: DateTime.now(), // Default to current time
+        updatedAt: null,
         verifiedAt: null,
       );
     } catch (e) {
       debugPrint('❌ [PROFILE_SERVICE] خطأ في جلب بيانات الملف الشخصي: $e');
+
+      // Enhanced error logging to distinguish between auth and endpoint errors
+      if (e.toString().contains('401')) {
+        debugPrint(
+            '🔐 [PROFILE_SERVICE] خطأ مصادقة (401) - تحقق من صحة الرمز المميز');
+      } else if (e.toString().contains('404')) {
+        debugPrint(
+            '🔍 [PROFILE_SERVICE] خطأ endpoint (404) - تحقق من صحة المسار');
+      } else if (e.toString().contains('500')) {
+        debugPrint('🔧 [PROFILE_SERVICE] خطأ خادم (500) - مشكلة في الخادم');
+      } else {
+        debugPrint('⚠️ [PROFILE_SERVICE] خطأ غير متوقع: ${e.runtimeType}');
+      }
+
       rethrow;
     }
   }
@@ -134,10 +157,11 @@ class ProfileService {
   static Future<String?> uploadProfilePicture(File imageFile) async {
     try {
       debugPrint('📤 [PROFILE] بدء رفع صورة الملف الشخصي');
-      
+
       // التحقق من حالة المصادقة قبل الرفع
       final token = await DioService.instance.getAccessToken();
-      debugPrint('🔑 [PROFILE] حالة التوكن: ${token != null && token.isNotEmpty ? "موجود (${token.length} حرف)" : "غير موجود"}');
+      debugPrint(
+          '🔑 [PROFILE] حالة التوكن: ${token != null && token.isNotEmpty ? "موجود (${token.length} حرف)" : "غير موجود"}');
 
       // ضغط الصورة قبل الرفع
       final compressedFile = await _compressProfileImage(imageFile);
@@ -564,7 +588,7 @@ class ProfileService {
       if (response.statusCode == 200) {
         final data = response.data;
         List<dynamic> qualifications;
-        
+
         if (data is List) {
           qualifications = data;
         } else if (data is Map<String, dynamic>) {

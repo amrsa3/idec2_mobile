@@ -1,8 +1,13 @@
+import '../services/server_settings_service.dart';
+
 class ApiConstants {
-  // Base URLs
-  static const String baseUrl = 'http://192.168.0.165:3000';
+  // Default Base URLs (fallback values)
+  static const String defaultBaseUrl = 'http://192.168.0.165:3000';
   static const String devUrl = 'http://10.0.2.2:3000'; // For Android emulator
-  static const String prodUrl = 'https://api.idec.com'; // Production URL
+  static const String prodUrl = 'http://idec-ye.com:3000'; // Production URL
+  
+  // Dynamic base URL - will be updated from server settings
+  static String baseUrl = defaultBaseUrl;
 
   // API Version
   static const String apiVersion = '/api/v1';
@@ -128,6 +133,19 @@ class ApiConstants {
   static const bool isDevelopment = true;
   static const bool enableLogging = true;
   static const bool enableMockData = false;
+
+  // Update base URL from server settings
+  static Future<void> updateBaseUrlFromSettings(ServerSettingsService serverSettingsService) async {
+    try {
+      final settings = await serverSettingsService.getCurrentSettings();
+      baseUrl = settings.baseUrl;
+      print('🔄 ApiConstants: Base URL updated to ${baseUrl}');
+    } catch (e) {
+      // Fallback to default if there's an error
+      baseUrl = defaultBaseUrl;
+      print('❌ ApiConstants: Failed to update base URL, using default: ${baseUrl}');
+    }
+  }
 
   // Get full URL
   static String getFullUrl(String endpoint) {

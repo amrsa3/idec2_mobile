@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/api_constants.dart';
 import '../../services/storage_service.dart';
 
 /// Upload file types
@@ -205,11 +206,11 @@ class FileUploadService {
         },
       );
 
-      debugPrint('📤 FileUploadService: Uploading to ${AppConstants.baseUrl}/upload');
+      debugPrint('📤 FileUploadService: Uploading to ${ApiConstants.baseUrl}/upload');
 
       // Upload file
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/upload',
+        '${ApiConstants.baseUrl}/upload',
         data: formData,
         options: options,
         onSendProgress: onProgress,
@@ -295,7 +296,7 @@ class FileUploadService {
       }
 
       final response = await _dio.delete(
-        '${AppConstants.baseUrl}/upload',
+        '${ApiConstants.baseUrl}/upload',
         data: {'fileUrl': fileUrl},
         options: Options(
           headers: {'Authorization': 'Bearer $token'},

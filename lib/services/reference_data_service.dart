@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constants/app_constants.dart';
+import '../core/constants/api_constants.dart';
 import '../models/governorate_model.dart';
 import '../services/storage_service.dart';
 
@@ -31,7 +32,7 @@ class ReferenceDataService {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/rule-data/governorates'),
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/rule-data/governorates'),
         headers: headers,
       );
 
@@ -55,7 +56,7 @@ class ReferenceDataService {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/qualifications/active'),
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/qualifications'),
         headers: headers,
       );
 

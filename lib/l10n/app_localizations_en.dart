@@ -782,4 +782,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get imageTooLarge => 'Image is too large. Maximum size is 5MB';
+
+  @override
+  String get serverSettings => 'Server Settings';
+
+  @override
+  String get editServerSettings => 'Edit Server Settings';
+
+  @override
+  String get serverHost => 'Server Host';
+
+  @override
+  String get serverPortNumber => 'Port Number';
+
+  @override
+  String get mainServer => 'Main Server';
+
+  @override
+  String get localServer => 'Local Server';
+
+  @override
+  String get saveServerSettings => 'Save Server Settings';
+
+  @override
+  String get serverSettingsSaved => 'Server settings saved successfully';
+
+  @override
+  String get serverSettingsFailed => 'Failed to save server settings';
+
+  @override
+  String get invalidServerHost => 'Invalid server host';
+
+  @override
+  String get invalidServerPort => 'Invalid server port';
+
+  @override
+  String get enterValidHost => 'Please enter a valid server host';
+
+  @override
+  String get enterValidPort => 'Please enter a valid port number (1-65535)';
+
+  @override
+  String get currentServerSettings => 'Current Server Settings';
+
+  @override
+  String get savingSettings => 'Saving settings...';
 }

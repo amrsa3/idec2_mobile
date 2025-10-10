@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/api_constants.dart';
 import '../core/utils/storage_helper.dart';
 import '../core/theme/app_colors.dart';
 import '../models/notification_model.dart' hide NotificationResponse;
@@ -10,7 +11,7 @@ import '../models/notification_model.dart' hide NotificationResponse;
 /// خدمة الإشعارات المركزية
 /// تدير جميع الإشعارات في التطبيق
 class NotificationService {
-  static const String _baseUrl = AppConstants.baseUrl;
+  static String get _baseUrl => ApiConstants.baseUrl;
   static const String _notificationsEndpoint = '/api/notifications';
   
   // مفتاح الـ GlobalKey للـ ScaffoldMessenger
@@ -549,7 +550,7 @@ class NotificationService {
       }
 
       final response = await http.post(
-        Uri.parse('${AppConstants.baseUrl}/api/notifications/test'),
+        Uri.parse('${ApiConstants.baseUrl}/api/notifications/test'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

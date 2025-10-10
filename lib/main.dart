@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/errors/error_handler.dart';
+import 'core/constants/api_constants.dart';
 import 'providers/language_provider.dart';
 import 'providers/auth_provider.dart';
 import 'l10n/app_localizations.dart';
@@ -13,6 +14,8 @@ import 'services/storage_service.dart';
 import 'services/retry_service.dart';
 import 'services/registration_settings_service.dart';
 import 'services/notification_service.dart';
+import 'services/dio_service.dart';
+import 'core/services/server_settings_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
@@ -29,14 +32,6 @@ void main() async {
   RetryService.instance.initialize();
   debugPrint('✅ Retry service initialized');
   
-  // Initialize registration settings service (non-blocking)
-  RegistrationSettingsService.instance.initialize().then((_) {
-    debugPrint('✅ Registration settings service initialized');
-  }).catchError((e) {
-    debugPrint('⚠️ Registration settings service initialization failed: $e');
-  });
-  debugPrint('🚀 Registration settings service initialization started (non-blocking)');
-  
   // Web-specific configuration
   if (kIsWeb) {
     // Force HTML renderer for better text support
@@ -50,6 +45,23 @@ void main() async {
   // Initialize StorageService first
   await StorageService.instance.init();
   debugPrint('✅ StorageService initialized successfully');
+  
+  // Update ApiConstants with saved server settings
+  final serverSettingsService = ServerSettingsService(StorageService.instance);
+  await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
+  debugPrint('✅ ApiConstants updated with server settings');
+  
+  // Update DioService with new base URL
+  DioService.instance.refreshAfterServerChange();
+  debugPrint('✅ DioService updated with new server settings');
+  
+  // Initialize registration settings service after API constants are updated
+  RegistrationSettingsService.instance.initialize().then((_) {
+    debugPrint('✅ Registration settings service initialized');
+  }).catchError((e) {
+    debugPrint('⚠️ Registration settings service initialization failed: $e');
+  });
+  debugPrint('🚀 Registration settings service initialization started (non-blocking)');
   
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();

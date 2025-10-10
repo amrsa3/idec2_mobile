@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/dio_service.dart';
 import '../../../services/auth_service.dart';
@@ -110,7 +111,7 @@ class LocalProfileService {
       debugPrint('🔑 ProfileService: Token found, length: ${token.length}');
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profile-data',
+        '${ApiConstants.baseUrl}/api/v1/profile-data',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -146,7 +147,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/completion-status',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/completion-status',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -169,38 +170,62 @@ class LocalProfileService {
     }
   }
 
-  /// Get current user profile
-  static Future<ProfileModel?> getProfile() async {
+  /// Get current user profile with caching and offline support
+  /// [forceRefresh] - Force fetch from server even if cache is valid
+  /// [useRecentCache] - Use cache if it's very recent (less than 5 minutes)
+  static Future<ProfileModel?> getProfile({
+    bool forceRefresh = false, 
+    bool useRecentCache = true
+  }) async {
     try {
-      debugPrint('👤 ProfileService: Fetching user profile');
+      debugPrint('👤 ProfileService: Fetching user profile (forceRefresh: $forceRefresh)');
 
-      // Check if we have cached data and it's still valid
-      if (await _isCacheValid()) {
+      // Check connectivity
+      final isConnected = await _isConnected();
+      
+      // If not connected, try to return cached data
+      if (!isConnected) {
+        debugPrint('📱 ProfileService: No internet connection, trying cached data');
         final cachedProfile = await _getCachedProfile();
         if (cachedProfile != null) {
-          debugPrint('✅ ProfileService: Using cached profile data');
+          debugPrint('✅ ProfileService: Returning cached profile data');
           return cachedProfile;
+        } else {
+          debugPrint('❌ ProfileService: No cached data available');
+          throw Exception('لا يوجد اتصال بالإنترنت ولا توجد بيانات محفوظة');
         }
       }
 
-      // Check internet connectivity
-      if (!await _isConnected()) {
-        debugPrint('⚠️ ProfileService: No internet connection, trying cache');
-        final cachedProfile = await _getCachedProfile();
-        if (cachedProfile != null) {
-          return cachedProfile;
+      // If connected, check cache strategy
+      if (!forceRefresh) {
+        // Use recent cache if available and requested
+        if (useRecentCache && await _isRecentCache()) {
+          final cachedProfile = await _getCachedProfile();
+          if (cachedProfile != null) {
+            debugPrint('✅ ProfileService: Returning recent cached profile data');
+            return cachedProfile;
+          }
         }
-        throw Exception('لا يوجد اتصال بالإنترنت ولا توجد بيانات محفوظة');
+        
+        // Use regular cache if valid
+        if (await _isCacheValid()) {
+          final cachedProfile = await _getCachedProfile();
+          if (cachedProfile != null) {
+            debugPrint('✅ ProfileService: Using cached profile data');
+            return cachedProfile;
+          }
+        }
       }
 
-      final token = await StorageService.instance.getToken();
-      if (token == null) {
+      // Fetch fresh data from server
+      final token = await DioService.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         throw Exception('لم يتم العثور على رمز المصادقة');
       }
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profiles/me',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -211,8 +236,34 @@ class LocalProfileService {
       if (response.statusCode == 200) {
         final data = response.data;
         debugPrint('👤 ProfileService: Profile received successfully');
+        debugPrint('📊 ProfileService: Response data: $data');
         
-        final profile = ProfileModel.fromJson(data);
+        // Transform the response to match ProfileModel structure
+        // /api/v1/profiles/me returns user data with profile object
+        final profileData = data['profile'] ?? {};
+        final transformedData = {
+          'id': profileData['id']?.toString() ?? '',
+          'userId': data['id']?.toString() ?? '',
+          'full_name_ar': profileData['fullNameAr']?.toString() ?? '',
+          'full_name_en': profileData['fullNameEn']?.toString() ?? '',
+          'email': data['email']?.toString() ?? '',
+          'birth_date': profileData['birthDate']?.toString(),
+          'governorate_id': profileData['governorateId']?.toString(),
+          'qualification_id': profileData['qualificationId']?.toString(),
+          'graduation_year': profileData['graduationYear'] ?? 0,
+          'university': profileData['university']?.toString() ?? '',
+          'workplace': profileData['profileData']?['workplace']?.toString() ?? '',
+          'verification_status': profileData['status']?.toString() ?? 'unverified',
+          'completion_percentage': 0.0, // Will be calculated
+          'profile_picture_url': profileData['profilePhotoUrl']?.toString(),
+          'documents': [], // Will be loaded separately
+          'required_documents': [], // Will be loaded separately
+          'created_at': profileData['createdAt']?.toString(),
+          'updated_at': profileData['updatedAt']?.toString(),
+          'verified_at': null, // Not available from this endpoint
+        };
+        
+        final profile = ProfileModel.fromJson(transformedData);
         
         // Cache the profile data
         await _cacheProfile(profile);
@@ -249,7 +300,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.put(
-        '${AppConstants.baseUrl}/api/v1/profiles/me',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me',
         data: profile.toJson(),
         options: Options(
           headers: {
@@ -295,7 +346,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
         data: {
           'documentType': documentType,
           'fileUrl': fileUrl,
@@ -339,7 +390,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -361,6 +412,14 @@ class LocalProfileService {
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching documents: $e');
+      
+      // إذا كان الخطأ 401 (Unauthorized) أو 404 (Not Found)، فهذا يعني أن المستخدم ليس لديه ملف شخصي كامل
+      // في هذه الحالة، نعيد قائمة فارغة بدلاً من إيقاف تحميل الصفحة
+      if (e.toString().contains('401') || e.toString().contains('404')) {
+        debugPrint('📄 ProfileService: User has no complete profile yet, returning empty documents list');
+        return [];
+      }
+      
       return [];
     }
   }
@@ -377,7 +436,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.delete(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/documents/$documentId',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents/$documentId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -404,7 +463,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/submit-verification',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/submit-verification',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -430,7 +489,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/verification-history',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/verification-history',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -466,7 +525,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/verification/rules',
+        '${ApiConstants.baseUrl}/api/v1/verification/rules',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -545,7 +604,7 @@ class LocalProfileService {
 
       // Use the correct endpoint that matches the backend
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/api/v1/files/upload',
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
@@ -651,7 +710,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/api/v1/verification/submit',
+        '${ApiConstants.baseUrl}/api/v1/verification/submit',
         data: request.toJson(),
         options: Options(
           headers: {
@@ -678,115 +737,10 @@ class LocalProfileService {
     }
   }
 
-  /// Get current user profile with caching and offline support
+  /// Alias for getProfile() for backward compatibility
+  /// Use getProfile() instead - this method will be deprecated
   static Future<ProfileModel?> getCurrentProfile({bool forceRefresh = false}) async {
-    try {
-      debugPrint('👤 ProfileService: Fetching current profile (forceRefresh: $forceRefresh)');
-  
-      // Check connectivity
-      final isConnected = await _isConnected();
-      
-      // If not connected, try to return cached data
-      if (!isConnected) {
-        debugPrint('📱 ProfileService: No internet connection, trying cached data');
-        final cachedProfile = await _getCachedProfile();
-        if (cachedProfile != null) {
-          debugPrint('✅ ProfileService: Returning cached profile data');
-          return cachedProfile;
-        } else {
-          debugPrint('❌ ProfileService: No cached data available');
-          throw Exception('لا يوجد اتصال بالإنترنت ولا توجد بيانات محفوظة');
-        }
-      }
-  
-      // If connected, always fetch fresh data unless specifically using cache
-      // Only use cache if explicitly not forcing refresh AND cache is very recent (less than 5 minutes)
-      if (!forceRefresh && await _isRecentCache()) {
-        final cachedProfile = await _getCachedProfile();
-        if (cachedProfile != null) {
-          debugPrint('✅ ProfileService: Returning recent cached profile data');
-          return cachedProfile;
-        }
-      }
-  
-      // Fetch fresh data from server
-      debugPrint('🌐 ProfileService: Fetching fresh data from server');
-      
-      final token = await DioService.instance.getAccessToken();
-      if (token == null || token.isEmpty) {
-        debugPrint('❌ ProfileService: No authentication token found');
-        throw Exception('لم يتم العثور على رمز المصادقة');
-      }
-  
-      final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/profiles/me',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-  
-      debugPrint('👤 ProfileService: Current profile response status: ${response.statusCode}');
-  
-      if (response.statusCode == 200) {
-        final data = response.data;
-        debugPrint('👤 ProfileService: Current profile received successfully');
-        
-        // Transform the response to match ProfileModel structure
-        final profileData = data['profile'];
-        final userData = data;
-        
-        final transformedData = {
-          'id': profileData['id']?.toString() ?? '',
-          'userId': profileData['userId']?.toString() ?? '',
-          'full_name_ar': profileData['fullNameAr']?.toString() ?? '',
-          'full_name_en': profileData['fullNameEn']?.toString() ?? '',
-          'email': userData['email']?.toString() ?? '',
-          'birth_date': profileData['birthDate']?.toString(),
-          'governorate_id': profileData['governorateId']?.toString(),
-          'qualification_id': profileData['qualificationId']?.toString(),
-          'graduation_year': profileData['graduationYear'] ?? 0,
-          'university': profileData['university']?.toString() ?? '',
-          'workplace': '', // Default value since it's not in the response
-          'verification_status': 'unverified', // Default value
-          'completion_percentage': 0.0, // Default value
-          'profile_picture_url': profileData['profilePhotoUrl']?.toString(),
-          'documents': [], // Default value
-          'required_documents': [], // Default value
-          'created_at': profileData['createdAt']?.toString(),
-          'updated_at': profileData['updatedAt']?.toString(),
-          'verified_at': null, // Default value
-        };
-        
-        final profile = ProfileModel.fromJson(transformedData);
-        
-        // Cache the profile for offline use
-        await _cacheProfile(profile);
-        
-        return profile;
-      } else {
-        debugPrint('❌ ProfileService: Failed to get current profile. Status: ${response.statusCode}');
-        
-        // Try to return cached data as fallback
-        final cachedProfile = await _getCachedProfile();
-        if (cachedProfile != null) {
-          debugPrint('⚠️ ProfileService: Returning cached data as fallback');
-          return cachedProfile;
-        }
-        
-        throw Exception('فشل في جلب بيانات الملف الشخصي');
-      }
-    } catch (e) {
-      debugPrint('❌ ProfileService: Error getting current profile: $e');
-      
-      // Try to return cached data as fallback
-      final cachedProfile = await _getCachedProfile();
-      if (cachedProfile != null) {
-        debugPrint('⚠️ ProfileService: Returning cached data due to error');
-        return cachedProfile;
-      }
-      
-      rethrow;
-    }
+    return getProfile(forceRefresh: forceRefresh, useRecentCache: true);
   }
 
 
@@ -815,7 +769,7 @@ class LocalProfileService {
       debugPrint('🎓 ProfileService: Fetching qualifications');
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/rule-data/qualifications',
+        '${ApiConstants.baseUrl}/api/v1/rule-data/qualifications',
         options: Options(
           headers: {'Content-Type': 'application/json'},
         ),
@@ -860,7 +814,7 @@ class LocalProfileService {
       debugPrint('🏛️ ProfileService: Fetching governorates');
 
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/rule-data/governorates',
+        '${ApiConstants.baseUrl}/api/v1/rule-data/governorates',
         options: Options(
           headers: {'Content-Type': 'application/json'},
         ),
@@ -926,7 +880,7 @@ class LocalProfileService {
       });
 
       final response = await _dio.post(
-        '${AppConstants.baseUrl}/api/v1/profiles/me/documents', // الـ endpoint الصحيح
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents', // الـ endpoint الصحيح
         data: formData,
         options: Options(
           headers: {
@@ -1000,7 +954,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.put(
-        '${AppConstants.baseUrl}/api/v1/profiles/me',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me',
         data: request.toJson(),
         options: Options(
           headers: {

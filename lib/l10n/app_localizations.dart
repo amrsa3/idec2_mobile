@@ -1615,6 +1615,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Image is too large. Maximum size is 5MB'**
   String get imageTooLarge;
+
+  /// Server settings title
+  ///
+  /// In en, this message translates to:
+  /// **'Server Settings'**
+  String get serverSettings;
+
+  /// Edit server settings button text
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Server Settings'**
+  String get editServerSettings;
+
+  /// Server host field label
+  ///
+  /// In en, this message translates to:
+  /// **'Server Host'**
+  String get serverHost;
+
+  /// Server port number field label
+  ///
+  /// In en, this message translates to:
+  /// **'Port Number'**
+  String get serverPortNumber;
+
+  /// Main server button text
+  ///
+  /// In en, this message translates to:
+  /// **'Main Server'**
+  String get mainServer;
+
+  /// Local server button text
+  ///
+  /// In en, this message translates to:
+  /// **'Local Server'**
+  String get localServer;
+
+  /// Save server settings button text
+  ///
+  /// In en, this message translates to:
+  /// **'Save Server Settings'**
+  String get saveServerSettings;
+
+  /// Server settings saved success message
+  ///
+  /// In en, this message translates to:
+  /// **'Server settings saved successfully'**
+  String get serverSettingsSaved;
+
+  /// Server settings save failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save server settings'**
+  String get serverSettingsFailed;
+
+  /// Invalid server host error message
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid server host'**
+  String get invalidServerHost;
+
+  /// Invalid server port error message
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid server port'**
+  String get invalidServerPort;
+
+  /// Enter valid host validation message
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid server host'**
+  String get enterValidHost;
+
+  /// Enter valid port validation message
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid port number (1-65535)'**
+  String get enterValidPort;
+
+  /// Current server settings label
+  ///
+  /// In en, this message translates to:
+  /// **'Current Server Settings'**
+  String get currentServerSettings;
+
+  /// Saving settings loading message
+  ///
+  /// In en, this message translates to:
+  /// **'Saving settings...'**
+  String get savingSettings;
 }
 
 class _AppLocalizationsDelegate

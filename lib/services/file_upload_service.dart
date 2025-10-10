@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 
 import '../core/constants/api_constants.dart';
 import '../core/constants/app_constants.dart';
+import '../core/constants/api_constants.dart';
 import '../core/utils/storage_helper.dart';
 import 'dio_service.dart';
 import 'notification_service.dart';
@@ -16,7 +17,7 @@ import 'notification_service.dart';
 /// خدمة رفع الملفات المركزية
 /// تدير جميع عمليات رفع الملفات والصور في التطبيق
 class FileUploadService {
-  static const String _baseUrl = AppConstants.baseUrl;
+  static String get _baseUrl => ApiConstants.baseUrl;
 
   /// رفع ملف إلى الخادم
   static Future<FileUploadResult> uploadFile({
@@ -516,7 +517,7 @@ class UserFileModel {
     if (filePath.startsWith('http')) {
       return filePath;
     }
-    return '${AppConstants.baseUrl}$filePath';
+    return '${ApiConstants.baseUrl}$filePath';
   }
 
   /// تحديد ما إذا كان الملف صورة

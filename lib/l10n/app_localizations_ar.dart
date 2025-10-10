@@ -774,4 +774,49 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get imageTooLarge => 'حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت';
+
+  @override
+  String get serverSettings => 'إعدادات الخادم';
+
+  @override
+  String get editServerSettings => 'تعديل إعدادات الخادم';
+
+  @override
+  String get serverHost => 'عنوان الخادم';
+
+  @override
+  String get serverPortNumber => 'رقم المنفذ';
+
+  @override
+  String get mainServer => 'الخادم الرئيسي';
+
+  @override
+  String get localServer => 'خادم محلي';
+
+  @override
+  String get saveServerSettings => 'حفظ إعدادات الخادم';
+
+  @override
+  String get serverSettingsSaved => 'تم حفظ إعدادات الخادم بنجاح';
+
+  @override
+  String get serverSettingsFailed => 'فشل في حفظ إعدادات الخادم';
+
+  @override
+  String get invalidServerHost => 'عنوان الخادم غير صحيح';
+
+  @override
+  String get invalidServerPort => 'رقم المنفذ غير صحيح';
+
+  @override
+  String get enterValidHost => 'يرجى إدخال عنوان خادم صحيح';
+
+  @override
+  String get enterValidPort => 'يرجى إدخال رقم منفذ صحيح (1-65535)';
+
+  @override
+  String get currentServerSettings => 'إعدادات الخادم الحالية';
+
+  @override
+  String get savingSettings => 'جاري حفظ الإعدادات...';
 }

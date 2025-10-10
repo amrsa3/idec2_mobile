@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../core/services/server_settings_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/connection_status.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/advanced_connectivity_service.dart';
+import '../../../services/dio_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../connection/presentation/server_config_screen.dart';
 import '../../connection/presentation/error_reporting_screen.dart';
@@ -37,6 +40,13 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
   bool _hasManualTested = false;
   String? _manualTestError;
 
+  // متغيرات إعدادات الخادم
+  final TextEditingController _hostController = TextEditingController();
+  final TextEditingController _portController = TextEditingController();
+  bool _isEditingServer = false;
+  bool _isSavingSettings = false;
+  ServerSettings? _currentSettings;
+
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -56,12 +66,15 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
       curve: Curves.easeInOut,
     ));
 
+    _loadServerSettings();
     _runConnectionTest();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _hostController.dispose();
+    _portController.dispose();
     super.dispose();
   }
 
@@ -182,6 +195,118 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
         _isManualTesting = false;
       });
       print('🏁 انتهى الفحص اليدوي: _isManualTesting=false');
+    }
+  }
+
+  // تحميل إعدادات الخادم الحالية
+  Future<void> _loadServerSettings() async {
+    try {
+      final serverSettingsService = ref.read(serverSettingsServiceProvider);
+      final settings = await serverSettingsService.getCurrentSettings();
+      
+      setState(() {
+        _currentSettings = settings;
+        _hostController.text = settings.host;
+        _portController.text = settings.port.toString();
+      });
+      
+      // تحديث ApiConstants
+      await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
+    } catch (e) {
+      print('خطأ في تحميل إعدادات الخادم: $e');
+    }
+  }
+
+  // حفظ إعدادات الخادم
+  Future<void> _saveServerSettings() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    if (_hostController.text.isEmpty || _portController.text.isEmpty) {
+      _showErrorSnackBar(l10n.enterValidHost);
+      return;
+    }
+
+    final port = int.tryParse(_portController.text);
+    if (port == null || port <= 0 || port > 65535) {
+      _showErrorSnackBar(l10n.enterValidPort);
+      return;
+    }
+
+    setState(() {
+      _isSavingSettings = true;
+    });
+
+    try {
+      final serverSettingsService = ref.read(serverSettingsServiceProvider);
+      final newSettings = ServerSettings(
+        host: _hostController.text.trim(),
+        port: port,
+      );
+
+      await serverSettingsService.saveSettings(newSettings);
+      await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
+
+      // إعادة تهيئة جميع الخدمات مع الإعدادات الجديدة
+      DioService.instance.refreshAfterServerChange();
+      await _connectivityService.refreshAfterServerChange();
+
+      setState(() {
+        _currentSettings = newSettings;
+        _isEditingServer = false;
+        _isSavingSettings = false;
+      });
+
+      _showSuccessSnackBar(l10n.serverSettingsSaved);
+      
+      // إعادة تشغيل فحص الاتصال مع الإعدادات الجديدة
+      _runConnectionTest();
+    } catch (e) {
+      setState(() {
+        _isSavingSettings = false;
+      });
+      _showErrorSnackBar('${l10n.serverSettingsFailed}: $e');
+    }
+  }
+
+  // تعبئة إعدادات الخادم الرئيسي
+  void _setMainServer() {
+    setState(() {
+      _hostController.text = ServerSettingsService.mainServer.host;
+      _portController.text = ServerSettingsService.mainServer.port.toString();
+    });
+  }
+
+  // تعبئة إعدادات الخادم المحلي
+  void _setLocalServer() {
+    setState(() {
+      _hostController.text = ServerSettingsService.localServer.host;
+      _portController.text = ServerSettingsService.localServer.port.toString();
+    });
+  }
+
+  // إظهار رسالة خطأ
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // إظهار رسالة نجاح
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -368,6 +493,8 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
         children: [
           _buildOverallStatusCard(status),
           const SizedBox(height: 16),
+          _buildServerSettingsCard(),
+          const SizedBox(height: 16),
           _buildNetworkInfoCard(status.networkInfo),
           const SizedBox(height: 16),
           _buildServerInfoCard(status.serverInfo),
@@ -471,6 +598,150 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildServerSettingsCard() {
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.settings,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  l10n.serverSettings,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    _isEditingServer ? Icons.close : Icons.edit,
+                    color: AppColors.primary,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isEditingServer = !_isEditingServer;
+                      if (!_isEditingServer) {
+                        // إعادة تعيين القيم عند الإلغاء
+                        if (_currentSettings != null) {
+                          _hostController.text = _currentSettings!.host;
+                          _portController.text = _currentSettings!.port.toString();
+                        }
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_isEditingServer) ...[
+              // حقول التعديل
+              TextField(
+                controller: _hostController,
+                decoration: InputDecoration(
+                  labelText: l10n.serverHost,
+                  hintText: 'idec-ye.com',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.dns),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _portController,
+                decoration: InputDecoration(
+                  labelText: l10n.serverPortNumber,
+                  hintText: '3000',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.numbers),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              // أزرار الإعدادات المسبقة
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _setMainServer,
+                      icon: const Icon(Icons.cloud),
+                      label: Text(l10n.mainServer),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _setLocalServer,
+                      icon: const Icon(Icons.computer),
+                      label: Text(l10n.localServer),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // زر الحفظ
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSavingSettings ? null : _saveServerSettings,
+                  icon: _isSavingSettings
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(_isSavingSettings ? l10n.savingSettings : l10n.saveServerSettings),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // عرض الإعدادات الحالية
+              if (_currentSettings != null) ...[
+                _buildInfoRow(l10n.serverHost, _currentSettings!.host),
+                _buildInfoRow(l10n.serverPortNumber, _currentSettings!.port.toString()),
+                _buildInfoRow(l10n.serverUrl, _currentSettings!.baseUrl),
+              ] else ...[
+                Text(
+                  l10n.currentServerSettings,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
     );
   }
 

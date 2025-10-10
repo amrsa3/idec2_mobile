@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/session_manager.dart';
 
 // Auth state class
 class AuthState {
@@ -16,6 +18,8 @@ class AuthState {
   final bool isEmailVerified;
   final bool phoneVerified;
   final bool isRegistering; // New field to track registration process
+  final bool sessionExpired; // New field to track session expiration
+  final String? sessionExpiredReason; // Reason for session expiration
 
   const AuthState({
     this.user,
@@ -25,6 +29,8 @@ class AuthState {
     this.isEmailVerified = false,
     this.phoneVerified = false,
     this.isRegistering = false, // Default to false
+    this.sessionExpired = false,
+    this.sessionExpiredReason,
   });
 
   AuthState copyWith({
@@ -35,6 +41,8 @@ class AuthState {
     bool? isEmailVerified,
     bool? phoneVerified,
     bool? isRegistering,
+    bool? sessionExpired,
+    String? sessionExpiredReason,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -44,6 +52,8 @@ class AuthState {
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       phoneVerified: phoneVerified ?? this.phoneVerified,
       isRegistering: isRegistering ?? this.isRegistering,
+      sessionExpired: sessionExpired ?? this.sessionExpired,
+      sessionExpiredReason: sessionExpiredReason ?? this.sessionExpiredReason,
     );
   }
 
@@ -57,7 +67,9 @@ class AuthState {
         other.error == error &&
         other.isEmailVerified == isEmailVerified &&
         other.phoneVerified == phoneVerified &&
-        other.isRegistering == isRegistering;
+        other.isRegistering == isRegistering &&
+        other.sessionExpired == sessionExpired &&
+        other.sessionExpiredReason == sessionExpiredReason;
   }
 
   @override
@@ -69,15 +81,19 @@ class AuthState {
         isEmailVerified,
         phoneVerified,
         isRegistering,
+        sessionExpired,
+        sessionExpiredReason,
       );
 }
 
 // Auth provider
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
+  StreamSubscription<SessionExpiredEvent>? _sessionSubscription;
 
   AuthNotifier(this._authService) : super(const AuthState()) {
     _checkAuthStatus();
+    _listenToSessionExpiration();
   }
 
   // Check if user is already authenticated
@@ -393,6 +409,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
     
     print('🔍 [AUTH_DEBUG] logout - authentication data cleared, user logged out');
+  }
+
+  // Listen to session expiration events
+  void _listenToSessionExpiration() {
+    _sessionSubscription = SessionManager.instance.sessionExpiredStream.listen((event) {
+      print('🔍 [AUTH_DEBUG] Session expired: ${event.reason}');
+      
+      // Update state to indicate session expiration
+      state = state.copyWith(
+        sessionExpired: true,
+        sessionExpiredReason: event.reason,
+        isAuthenticated: false,
+        error: event.reason,
+      );
+      
+      // Clear authentication data
+      _clearAuthData();
+      
+      print('🔍 [AUTH_DEBUG] Session expiration handled, user logged out');
+    });
+  }
+
+  // Clear session expiration state and refresh authentication status
+  void clearSessionExpiration() {
+    print('🔍 [AUTH_DEBUG] clearSessionExpiration - clearing session expiration state');
+    state = state.copyWith(
+      sessionExpired: false,
+      sessionExpiredReason: null,
+      error: null,
+    );
+    
+    // Re-check authentication status to ensure consistency
+    _checkAuthStatus();
+  }
+
+  @override
+  void dispose() {
+    _sessionSubscription?.cancel();
+    super.dispose();
   }
 
   // Upload profile picture

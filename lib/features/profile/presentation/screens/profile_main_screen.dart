@@ -38,7 +38,19 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     super.initState();
     // تحميل بيانات الملف الشخصي عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
+      // Check if user is authenticated before loading profile
+      final authState = ref.read(authProvider);
+      if (authState.isAuthenticated && !authState.sessionExpired) {
+        ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+      } else {
+        // Wait a bit for auth state to stabilize, then try again
+        Future.delayed(const Duration(milliseconds: 500), () {
+          final updatedAuthState = ref.read(authProvider);
+          if (updatedAuthState.isAuthenticated && !updatedAuthState.sessionExpired) {
+            ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+          }
+        });
+      }
     });
   }
 

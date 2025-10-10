@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/constants/api_constants.dart';
 import '../models/connection_status.dart';
 
 class AdvancedConnectivityService {
@@ -124,7 +125,7 @@ class AdvancedConnectivityService {
 
   /// Get server connection information
   Future<ServerInfo> _getServerInfo() async {
-    const serverUrl = AppConstants.baseUrl;
+    final serverUrl = ApiConstants.baseUrl;
     final uri = Uri.parse(serverUrl);
     final port = uri.port != 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80);
 
@@ -241,7 +242,7 @@ class AdvancedConnectivityService {
     final stopwatch = Stopwatch()..start();
 
     try {
-      final uri = Uri.parse(AppConstants.baseUrl);
+      final uri = Uri.parse(ApiConstants.baseUrl);
       final result = await InternetAddress.lookup(uri.host)
           .timeout(_timeout);
       
@@ -285,7 +286,7 @@ class AdvancedConnectivityService {
     try {
       // Use the health endpoint for ping test
       final response = await _dio.get(
-        '${AppConstants.baseUrl}/api/v1/health',
+        '${ApiConstants.baseUrl}/api/v1/health',
         options: Options(
           sendTimeout: _pingTimeout,
           receiveTimeout: _pingTimeout,
@@ -352,7 +353,7 @@ class AdvancedConnectivityService {
           
           if (method == 'GET') {
             response = await _dio.get(
-              '${AppConstants.baseUrl}$endpoint',
+              '${ApiConstants.baseUrl}$endpoint',
               options: Options(
                 sendTimeout: const Duration(seconds: 5),
                 receiveTimeout: const Duration(seconds: 5),
@@ -449,7 +450,7 @@ class AdvancedConnectivityService {
       final responses = <Response>[];
       for (int i = 0; i < 5; i++) { // Reduced from 10 to 5 requests
         final response = await _dio.get(
-          '${AppConstants.baseUrl}/api/v1/health',
+          '${ApiConstants.baseUrl}/api/v1/health',
           options: Options(
             sendTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
@@ -510,7 +511,7 @@ class AdvancedConnectivityService {
           // Simulate upload by adding query parameters to GET request
           // This creates slightly more network traffic without using POST
           final response = await _dio.get(
-            '${AppConstants.baseUrl}/api/v1/health',
+            '${ApiConstants.baseUrl}/api/v1/health',
             queryParameters: {
               'test': 'upload_speed_simulation',
               'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -576,7 +577,7 @@ class AdvancedConnectivityService {
         
         // Use the health endpoint for ping test instead of HEAD to baseUrl
         await _dio.get(
-          '${AppConstants.baseUrl}/api/v1/health',
+          '${ApiConstants.baseUrl}/api/v1/health',
           options: Options(
             sendTimeout: _pingTimeout,
             receiveTimeout: _pingTimeout,
@@ -707,6 +708,18 @@ class AdvancedConnectivityService {
   void clearCache() {
     _cachedStatus = null;
     _lastStatusUpdate = null;
+  }
+
+  /// Refresh service after server settings change
+  Future<void> refreshAfterServerChange() async {
+    // Clear all cached data
+    clearCache();
+    
+    // Update Dio base URL
+    _dio.options.baseUrl = ApiConstants.baseUrl;
+    
+    // Force refresh of all data
+    await getConnectionStatus();
   }
 }
 

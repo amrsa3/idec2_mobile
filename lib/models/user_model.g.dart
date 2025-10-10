@@ -30,7 +30,6 @@ _$UserModelImpl _$$UserModelImplFromJson(Map<String, dynamic> json) =>
       isVerified: json['isVerified'] as bool? ?? true,
       isActive: json['isActive'] as bool? ?? true,
       isEmailVerified: json['isEmailVerified'] as bool? ?? false,
-      isPhoneVerified: json['isPhoneVerified'] as bool? ?? false,
       profile: json['profile'] == null
           ? null
           : UserProfileModel.fromJson(json['profile'] as Map<String, dynamic>),
@@ -54,7 +53,6 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'isVerified': instance.isVerified,
       'isActive': instance.isActive,
       'isEmailVerified': instance.isEmailVerified,
-      'isPhoneVerified': instance.isPhoneVerified,
       'profile': instance.profile,
     };
 
@@ -172,8 +170,8 @@ Map<String, dynamic> _$$RegisterRequestImplToJson(
 
 _$AuthResponseImpl _$$AuthResponseImplFromJson(Map<String, dynamic> json) =>
     _$AuthResponseImpl(
-      accessToken: json['accessToken'] as String,
-      refreshToken: json['refreshToken'] as String,
+      accessToken: json['accessToken'] as String?,
+      refreshToken: json['refreshToken'] as String?,
       user: json['user'] == null
           ? null
           : UserModel.fromJson(json['user'] as Map<String, dynamic>),
@@ -194,28 +192,28 @@ Map<String, dynamic> _$$AuthResponseImplToJson(_$AuthResponseImpl instance) =>
 
 _$OtpRequestImpl _$$OtpRequestImplFromJson(Map<String, dynamic> json) =>
     _$OtpRequestImpl(
-      email: json['email'] as String,
+      phone: json['phone'] as String,
       channel: json['channel'] as String,
     );
 
 Map<String, dynamic> _$$OtpRequestImplToJson(_$OtpRequestImpl instance) =>
     <String, dynamic>{
-      'email': instance.email,
+      'phone': instance.phone,
       'channel': instance.channel,
     };
 
 _$OtpVerifyRequestImpl _$$OtpVerifyRequestImplFromJson(
         Map<String, dynamic> json) =>
     _$OtpVerifyRequestImpl(
-      email: json['email'] as String,
-      code: json['code'] as String,
+      phone: json['phone'] as String,
+      otp: json['otp'] as String,
     );
 
 Map<String, dynamic> _$$OtpVerifyRequestImplToJson(
         _$OtpVerifyRequestImpl instance) =>
     <String, dynamic>{
-      'email': instance.email,
-      'code': instance.code,
+      'phone': instance.phone,
+      'otp': instance.otp,
     };
 
 _$ProfileStatusModelImpl _$$ProfileStatusModelImplFromJson(

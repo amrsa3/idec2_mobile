@@ -37,82 +37,61 @@ class AppRoutes {
   static const String notificationsTest = '/notifications-test';
 }
 
-// Navigation Guard Service
-class NavigationGuard {
-  static bool canAccessRoute(String route, bool isAuthenticated) {
-    final publicRoutes = [
-      AppRoutes.splash,
-      AppRoutes.languageSelection,
-      AppRoutes.onboarding,
-      AppRoutes.login,
-      AppRoutes.register,
-      AppRoutes.otpVerification,
-      AppRoutes.connectionStatus,
-      AppRoutes.serverConfig,
-      AppRoutes.errorReporting,
-    ];
-
-    return publicRoutes.contains(route) || isAuthenticated;
-  }
-
-  static String? getRedirectRoute(
-      String currentRoute, bool isAuthenticated, bool isLoading) {
-    // Don't redirect while loading
-    if (isLoading) return null;
-
-    // Public routes that don't require authentication
-    final publicRoutes = [
-      AppRoutes.splash,
-      AppRoutes.languageSelection,
-      AppRoutes.onboarding,
-      AppRoutes.login,
-      AppRoutes.register,
-      AppRoutes.otpVerification,
-      AppRoutes.connectionStatus,
-      AppRoutes.serverConfig,
-      AppRoutes.errorReporting,
-    ];
-
-    // If user is not authenticated and trying to access protected route
-    if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
-      return AppRoutes.login;
-    }
-
-    // If user is authenticated and trying to access auth routes (except OTP verification)
-    if (isAuthenticated &&
-        (currentRoute == AppRoutes.login ||
-            currentRoute == AppRoutes.register)) {
-      return AppRoutes.main;
-    }
-
-    // Special case: Don't redirect from OTP verification unless user is fully authenticated
-    if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
-      return null; // Stay on OTP verification page
-    }
-
-    return null; // No redirect needed
-  }
-}
-
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     // Deep linking configuration
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
       final isLoading = authState.isLoading;
-      final user = authState.user;
-      final currentLocation = state.uri.path;
+      final isRegistering = authState.isRegistering;
+      final currentRoute = state.uri.path;
 
-      print(
-          'GoRouter redirect: currentLocation=$currentLocation, isAuthenticated=$isAuthenticated, isLoading=$isLoading, user=${user?.fullNameAr}');
+      print('GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, isRegistering=$isRegistering, user=${authState.user}');
 
-      return NavigationGuard.getRedirectRoute(
-          currentLocation, isAuthenticated, isLoading);
+      // Don't redirect while loading
+      if (isLoading) return null;
+
+      // Public routes that don't require authentication
+      final publicRoutes = [
+        AppRoutes.splash,
+        AppRoutes.languageSelection,
+        AppRoutes.onboarding,
+        AppRoutes.login,
+        AppRoutes.register,
+        AppRoutes.otpVerification,
+        AppRoutes.connectionStatus,
+        AppRoutes.serverConfig,
+        AppRoutes.errorReporting,
+      ];
+
+      // Special case: If user is registering, don't redirect from register or OTP pages
+      if (isRegistering && 
+          (currentRoute == AppRoutes.register || currentRoute == AppRoutes.otpVerification)) {
+        return null; // Stay on current page during registration process
+      }
+
+      // If user is not authenticated and trying to access protected route
+      if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
+        return AppRoutes.login;
+      }
+
+      // If user is authenticated and trying to access auth routes (except OTP verification)
+      if (isAuthenticated &&
+          (currentRoute == AppRoutes.login ||
+              currentRoute == AppRoutes.register)) {
+        return AppRoutes.main;
+      }
+
+      // Special case: Don't redirect from OTP verification unless user is fully authenticated
+      if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
+        return null; // Stay on OTP verification page
+      }
+
+      return null; // No redirect needed
     },
     routes: [
       // Splash Screen

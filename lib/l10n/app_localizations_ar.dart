@@ -286,6 +286,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get verifyEmail => 'تحقق من بريدك الإلكتروني';
 
   @override
+  String get verifyPhone => 'تحقق من رقم هاتفك';
+
+  @override
   String get verificationCodeSent => 'لقد أرسلنا رمز التحقق إلى';
 
   @override
@@ -308,6 +311,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get or => 'أو';
+
+  @override
+  String get invalidOtpCode => 'رمز التحقق غير صحيح';
+
+  @override
+  String get otpExpired => 'انتهت صلاحية رمز التحقق';
+
+  @override
+  String get tooManyAttempts => 'محاولات كثيرة جداً. يرجى طلب رمز جديد';
 
   @override
   String get editProfileTitle => 'تعديل الملف الشخصي';

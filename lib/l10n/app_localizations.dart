@@ -644,6 +644,12 @@ abstract class AppLocalizations {
   /// **'Verify Your Email'**
   String get verifyEmail;
 
+  /// No description provided for @verifyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Your Phone'**
+  String get verifyPhone;
+
   /// Verification code sent message
   ///
   /// In en, this message translates to:
@@ -691,6 +697,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OR'**
   String get or;
+
+  /// Invalid OTP code error message
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid OTP code'**
+  String get invalidOtpCode;
+
+  /// OTP expired error message
+  ///
+  /// In en, this message translates to:
+  /// **'OTP code has expired'**
+  String get otpExpired;
+
+  /// Too many OTP attempts error message
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please request a new code'**
+  String get tooManyAttempts;
 
   /// Edit profile screen title
   ///

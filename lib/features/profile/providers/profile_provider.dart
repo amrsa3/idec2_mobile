@@ -8,6 +8,7 @@ import '../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../models/verification_request_model.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../services/profile_service.dart' as GlobalProfileService;
+import '../../../services/image_cache_service.dart';
 import '../services/profile_service.dart';
 
 /// Profile state
@@ -497,6 +498,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       
       final currentProfile = await LocalProfileService.getCurrentProfile(forceRefresh: forceRefresh);
       
+      // إضافة تسجيل تفصيلي لمعرفة قيمة profilePictureUrl
+      debugPrint('🖼️ ProfileProvider: Profile loaded with profilePictureUrl: ${currentProfile?.profilePictureUrl}');
+      debugPrint('🖼️ ProfileProvider: Profile loaded - full profile data: $currentProfile');
+      
       state = state.copyWith(
         currentProfile: currentProfile,
         isLoading: false,
@@ -521,49 +526,77 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       
       final response = await LocalProfileService.uploadProfilePicture(imageFile);
       
-      // Only proceed if upload was successful
-      if (response != null) {
-        // Reload current profile to get updated picture URL
-        await loadCurrentProfile(forceRefresh: true);
+      // If we reach here, upload was successful (no exception thrown)
+      debugPrint('✅ ProfileProvider: Profile picture upload response received: $response');
+      
+      // Extract the new image URL from the response
+      String? newImageUrl;
+      if (response != null && response.url != null) {
+        newImageUrl = response.url;
+        debugPrint('🖼️ ProfileProvider: New image URL from upload response: $newImageUrl');
         
-        state = state.copyWith(
-          isUploadingProfilePicture: false,
-          successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
-        );
-        
-        debugPrint('✅ ProfileProvider: Profile picture uploaded successfully');
-        
-        NotificationService.showSuccess('تم تحديث صورة الملف الشخصي بنجاح');
-        
-        return true;
-      } else {
-        throw Exception('فشل في رفع الصورة - لم يتم الحصول على استجابة صحيحة من الخادم');
+        // Update the current profile immediately with the new image URL
+        if (state.currentProfile != null) {
+          final updatedProfile = state.currentProfile!.copyWith(
+            profilePictureUrl: newImageUrl,
+          );
+          
+          state = state.copyWith(
+            currentProfile: updatedProfile,
+            isUploadingProfilePicture: false,
+            successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
+          );
+          
+          debugPrint('🔄 ProfileProvider: Profile updated immediately with new image URL');
+        }
       }
+      
+      // Reload profile data to ensure consistency and wait for it
+      await loadCurrentProfile(forceRefresh: true);
+      debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
+      
+      // Clear any cached images to force reload
+      try {
+        // Clear image cache for both old and new URLs
+        final oldImageUrl = state.currentProfile?.profilePictureUrl;
+        if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+          await ImageCacheService.evictImage(oldImageUrl);
+          debugPrint('🗑️ ProfileProvider: Cleared cache for old image: $oldImageUrl');
+        }
+        
+        if (newImageUrl != null && newImageUrl != oldImageUrl) {
+          await ImageCacheService.evictImage(newImageUrl);
+          debugPrint('🗑️ ProfileProvider: Cleared cache for new image: $newImageUrl');
+        }
+      } catch (e) {
+        debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
+      }
+      
+      debugPrint('✅ ProfileProvider: Profile picture uploaded successfully');
+      
+      NotificationService.showSuccess('تم تحديث صورة الملف الشخصي بنجاح');
+      
+      return true;
     } catch (e) {
+      debugPrint('❌ ProfileProvider: Exception caught during profile picture upload: $e');
+      debugPrint('❌ ProfileProvider: Exception type: ${e.runtimeType}');
+      
       String errorMessage = 'فشل في رفع صورة الملف الشخصي';
       
-      // Extract more specific error messages
-      String errorString = e.toString().toLowerCase();
-      
-      if (errorString.contains('خطأ في المصادقة') || errorString.contains('authentication')) {
-        errorMessage = 'خطأ في المصادقة - يرجى تسجيل الدخول أولاً';
-      } else if (errorString.contains('network') || errorString.contains('connection') || errorString.contains('اتصال')) {
-        errorMessage = 'خطأ في الاتصال - يرجى التحقق من الإنترنت';
-      } else if (errorString.contains('نوع الملف غير مدعوم') || errorString.contains('unsupported file type')) {
-        errorMessage = 'نوع الملف غير مدعوم - يرجى اختيار صورة بصيغة صحيحة';
-      } else if (errorString.contains('حجم الملف') || errorString.contains('file size')) {
-        errorMessage = 'حجم الملف كبير جداً - يرجى اختيار صورة أصغر';
-      } else if (errorString.contains('400')) {
-        errorMessage = 'خطأ في البيانات المرسلة - يرجى المحاولة مرة أخرى';
-      } else if (errorString.contains('500')) {
-        errorMessage = 'خطأ في الخادم - يرجى المحاولة لاحقاً';
+      // Extract the actual error message from the exception
+      String exceptionMessage = e.toString();
+      if (exceptionMessage.contains('Exception:')) {
+        errorMessage = exceptionMessage.replaceFirst('Exception:', '').trim();
+      } else if (exceptionMessage.contains('DioException')) {
+        errorMessage = 'خطأ في الاتصال بالخادم';
       }
       
       state = state.copyWith(
         isUploadingProfilePicture: false,
         error: errorMessage,
       );
-      debugPrint('❌ [PROFILE_PROVIDER] خطأ في رفع صورة الملف الشخصي: $e');
+      
+      debugPrint('❌ ProfileProvider: Error uploading profile picture: $errorMessage');
       
       NotificationService.showError(errorMessage);
       

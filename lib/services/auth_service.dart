@@ -73,12 +73,12 @@ class AuthService {
       debugPrint('🔍 [AUTH_DEBUG] AuthResponse parsed successfully with fromJsonSafe');
       
       // Check if login was successful
-      if (authResponse.success || (authResponse.user != null && (authResponse.accessToken.isNotEmpty || authResponse.token?.isNotEmpty == true))) {
+      if (authResponse.success || (authResponse.user != null && (authResponse.accessToken?.isNotEmpty == true || authResponse.token?.isNotEmpty == true))) {
         debugPrint('🔍 [AUTH_DEBUG] Login appears successful, processing response...');
         
         // Extract tokens - handle both formats from server
-        String accessToken = authResponse.accessToken;
-        String refreshToken = authResponse.refreshToken;
+        String accessToken = authResponse.accessToken ?? '';
+        String refreshToken = authResponse.refreshToken ?? '';
         
         debugPrint('🔍 [AUTH_DEBUG] Initial tokens - accessToken: ${accessToken.isNotEmpty ? "present" : "empty"}, refreshToken: ${refreshToken.isNotEmpty ? "present" : "empty"}');
         
@@ -242,15 +242,42 @@ class AuthService {
         return _createErrorResponse(status.message ?? 'Registration is not currently available');
       }
       
-      final response = await _apiService.register(request);
+      // Make direct API call instead of using the wrapped ApiService
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/register',
+        data: request.toJson(),
+      );
       
-      if (response.success && response.data != null) {
-        final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
-        debugPrint('Registration successful');
-        return authResponse;
+      debugPrint('Registration API response: status=${response.statusCode}, data=${response.data}');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          // The backend returns direct response: {message, phone, otpCode}
+          // We need to create an AuthResponse from this
+          final responseData = response.data as Map<String, dynamic>;
+          
+          // Create a registration success response
+          final authResponse = AuthResponse(
+            success: true,
+            message: responseData['message'] as String? ?? 'Registration successful',
+            accessToken: null,
+            refreshToken: null,
+            user: null,
+            token: null,
+          );
+          
+          debugPrint('Registration successful - AuthResponse created');
+          return authResponse;
+        } catch (e, stackTrace) {
+          debugPrint('Error parsing registration response: $e');
+          debugPrint('Stack trace: $stackTrace');
+          debugPrint('Raw response data: ${response.data}');
+          return _createErrorResponse('Registration parsing error: $e');
+        }
       } else {
-        debugPrint('Registration failed: ${response.message}');
-        return _createErrorResponse(response.message ?? 'Registration failed');
+        debugPrint('Registration failed with status: ${response.statusCode}');
+        return _createErrorResponse('Registration failed');
       }
     } on DioException catch (e) {
       debugPrint('Registration DioException: ${e.response?.statusCode} - ${e.response?.data}');
@@ -269,7 +296,7 @@ class AuthService {
         return _createErrorResponse('Registration is temporarily unavailable');
       }
       
-      return _createErrorResponse(e.response?.data['message'] ?? 'Registration failed');
+      return _createErrorResponse('Registration failed: ${e.message}');
     } catch (e) {
       debugPrint('Registration error: $e');
       return _createErrorResponse('Network error: $e');
@@ -326,42 +353,100 @@ class AuthService {
       debugPrint('Verifying OTP for phone: $phoneNumber');
       
       final otpRequest = OtpVerifyRequest(
-        email: phoneNumber, // Server expects email field for phone
-        code: otp,
+        phone: phoneNumber,
+        otp: otp,
       );
       
-      final response = await _apiService.verifyOtp(otpRequest);
+      // Make direct Dio call to bypass generated API service and handle response manually
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/verify-otp',
+        data: otpRequest.toJson(),
+      );
       
-      if (response.success && response.data != null) {
-        final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
-        
-        // Store tokens
-        await _storageService.setString('access_token', authResponse.accessToken);
-        await _storageService.setString('refresh_token', authResponse.refreshToken);
-        
-        // Store user data
-        if (authResponse.user != null) {
-          await _storageService.setString('user_data', authResponse.user!.toJson().toString());
-        }
-        
-        debugPrint('OTP verification successful');
-        return authResponse;
-      } else {
-        debugPrint('OTP verification failed: ${response.message}');
-        return _createErrorResponse(response.message ?? 'OTP verification failed');
+      debugPrint('🔍 [OTP_DEBUG] Raw response received successfully');
+      debugPrint('🔍 [OTP_DEBUG] Response status: ${response.statusCode}');
+      debugPrint('🔍 [OTP_DEBUG] Response data type: ${response.data.runtimeType}');
+      debugPrint('🔍 [OTP_DEBUG] Response data: ${response.data}');
+      
+      if (response.data == null) {
+        throw Exception('Response data is null');
       }
+      
+      if (response.data is! Map<String, dynamic>) {
+        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
+      }
+      
+      final responseData = response.data as Map<String, dynamic>;
+      debugPrint('🔍 [OTP_DEBUG] Response data keys: ${responseData.keys.toList()}');
+      
+      // Use AuthResponse.fromJsonSafe to parse the response directly
+      debugPrint('🔍 [OTP_DEBUG] Attempting to parse AuthResponse with fromJsonSafe...');
+      final authResponse = AuthResponse.fromJsonSafe(responseData);
+      
+      // Store tokens using DioService to ensure consistency
+      final accessToken = authResponse.accessToken ?? '';
+      final refreshToken = authResponse.refreshToken ?? '';
+      
+      if (accessToken.isNotEmpty) {
+        await DioService.instance.setTokens(accessToken, refreshToken);
+      }
+      
+      // Store user data
+      if (authResponse.user != null) {
+        await _storageService.setString('user_data', jsonEncode(authResponse.user!.toJson()));
+      }
+      
+      debugPrint('🔍 [OTP_DEBUG] OTP verification successful');
+      return authResponse;
+      
     } on DioException catch (e) {
-      debugPrint('OTP verification DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      debugPrint('🔍 [OTP_DEBUG] DioException caught: ${e.response?.statusCode} - ${e.message}');
+      
+      // Handle successful response that comes as DioException due to parsing issues
+      if (e.response?.statusCode == 200 && e.response?.data != null) {
+        try {
+          debugPrint('🔍 [OTP_DEBUG] Processing 200 response from DioException...');
+          final data = e.response!.data as Map<String, dynamic>;
+          debugPrint('🔍 [OTP_DEBUG] Raw response data: $data');
+          
+          final authResponse = AuthResponse.fromJsonSafe(data);
+          
+          // Store tokens using DioService to ensure consistency
+          final accessToken = authResponse.accessToken ?? '';
+          final refreshToken = authResponse.refreshToken ?? '';
+          
+          if (accessToken.isNotEmpty) {
+            await DioService.instance.setTokens(accessToken, refreshToken);
+          }
+          
+          // Store user data
+          if (authResponse.user != null) {
+            await _storageService.setString('user_data', jsonEncode(authResponse.user!.toJson()));
+          }
+          
+          debugPrint('🔍 [OTP_DEBUG] OTP verification successful (from DioException)');
+          return authResponse;
+        } catch (parseError) {
+          debugPrint('🔍 [OTP_DEBUG] Error parsing successful OTP response: $parseError');
+        }
+      }
       
       if (e.response?.statusCode == 400) {
-        final errorMessage = e.response?.data['message'] ?? 'Invalid OTP code';
-        return _createErrorResponse(errorMessage);
+        final errorMessage = e.response?.data['message'] ?? 'رمز التحقق غير صحيح';
+        // Check for specific error messages
+        if (errorMessage.toLowerCase().contains('expired')) {
+          return _createErrorResponse('انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد');
+        } else if (errorMessage.toLowerCase().contains('attempts')) {
+          return _createErrorResponse('محاولات كثيرة جداً. يرجى طلب رمز جديد');
+        }
+        return _createErrorResponse('رمز التحقق غير صحيح');
       } else if (e.response?.statusCode == 422) {
         final errors = e.response?.data['errors'] as Map<String, dynamic>?;
-        final message = errors?.values.first?.first ?? 'Validation error';
-        return _createErrorResponse(message);
+        final message = errors?.values.first?.first ?? 'خطأ في التحقق من البيانات';
+        return _createErrorResponse('رمز التحقق غير صحيح');
       } else if (e.response?.statusCode == 410) {
-        return _createErrorResponse('OTP has expired. Please request a new one.');
+        return _createErrorResponse('انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد');
       }
       
       return _createErrorResponse(e.response?.data['message'] ?? 'OTP verification failed');
@@ -377,7 +462,7 @@ class AuthService {
       debugPrint('Resending OTP for phone: $phoneNumber via $channel');
       
       final otpRequest = OtpRequest(
-        email: phoneNumber,
+        phone: phoneNumber,
         channel: channel,
       );
       
@@ -462,9 +547,9 @@ class AuthService {
       
       final response = await _apiService.refreshToken(storedRefreshToken);
       
-      if (response.success && response.accessToken.isNotEmpty) {
+      if (response.success && response.accessToken != null && response.accessToken!.isNotEmpty) {
         // Store new tokens using DioService to ensure consistency
-        await DioService.instance.setTokens(response.accessToken, response.refreshToken);
+        await DioService.instance.setTokens(response.accessToken!, response.refreshToken!);
         
         debugPrint('Token refresh successful');
         return response;

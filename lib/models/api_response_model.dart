@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 
 part 'api_response_model.freezed.dart';
 part 'api_response_model.g.dart';
@@ -15,6 +16,37 @@ class ApiResponse with _$ApiResponse {
 
   factory ApiResponse.fromJson(Map<String, dynamic> json) =>
       _$ApiResponseFromJson(json);
+
+  // Safe fromJson with detailed debugging
+  factory ApiResponse.fromJsonSafe(Map<String, dynamic> json) {
+    try {
+      debugPrint('ApiResponse.fromJsonSafe: Starting parsing');
+      debugPrint('ApiResponse.fromJsonSafe: Input JSON: $json');
+      
+      // Extract fields with safe casting
+      final success = json['success'] as bool? ?? true; // Default to true if not present
+      final message = json['message'] as String? ?? '';
+      final data = json['data'] as Map<String, dynamic>?;
+      final errors = (json['errors'] as List<dynamic>?)?.map((e) => e.toString()).toList();
+      final metadata = json['metadata'] as Map<String, dynamic>?;
+      
+      final apiResponse = ApiResponse(
+        success: success,
+        message: message,
+        data: data,
+        errors: errors,
+        metadata: metadata,
+      );
+      
+      debugPrint('ApiResponse.fromJsonSafe: Success');
+      return apiResponse;
+      
+    } catch (e, stackTrace) {
+      debugPrint('ApiResponse.fromJsonSafe: Error: $e');
+      debugPrint('ApiResponse.fromJsonSafe: Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
 }
 
 @freezed

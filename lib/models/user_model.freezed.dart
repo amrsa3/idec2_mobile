@@ -38,7 +38,6 @@ mixin _$UserModel {
   bool get isVerified => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
   bool get isEmailVerified => throw _privateConstructorUsedError;
-  bool get isPhoneVerified => throw _privateConstructorUsedError;
   UserProfileModel? get profile => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -69,7 +68,6 @@ abstract class $UserModelCopyWith<$Res> {
       bool isVerified,
       bool isActive,
       bool isEmailVerified,
-      bool isPhoneVerified,
       UserProfileModel? profile});
 
   $UserProfileModelCopyWith<$Res>? get profile;
@@ -104,7 +102,6 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? isVerified = null,
     Object? isActive = null,
     Object? isEmailVerified = null,
-    Object? isPhoneVerified = null,
     Object? profile = freezed,
   }) {
     return _then(_value.copyWith(
@@ -172,10 +169,6 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.isEmailVerified
           : isEmailVerified // ignore: cast_nullable_to_non_nullable
               as bool,
-      isPhoneVerified: null == isPhoneVerified
-          ? _value.isPhoneVerified
-          : isPhoneVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
       profile: freezed == profile
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
@@ -221,7 +214,6 @@ abstract class _$$UserModelImplCopyWith<$Res>
       bool isVerified,
       bool isActive,
       bool isEmailVerified,
-      bool isPhoneVerified,
       UserProfileModel? profile});
 
   @override
@@ -255,7 +247,6 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? isVerified = null,
     Object? isActive = null,
     Object? isEmailVerified = null,
-    Object? isPhoneVerified = null,
     Object? profile = freezed,
   }) {
     return _then(_$UserModelImpl(
@@ -323,10 +314,6 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value.isEmailVerified
           : isEmailVerified // ignore: cast_nullable_to_non_nullable
               as bool,
-      isPhoneVerified: null == isPhoneVerified
-          ? _value.isPhoneVerified
-          : isPhoneVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
       profile: freezed == profile
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
@@ -355,7 +342,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       this.isVerified = true,
       this.isActive = true,
       this.isEmailVerified = false,
-      this.isPhoneVerified = false,
       this.profile})
       : _roles = roles;
 
@@ -410,14 +396,11 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
   @JsonKey()
   final bool isEmailVerified;
   @override
-  @JsonKey()
-  final bool isPhoneVerified;
-  @override
   final UserProfileModel? profile;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'UserModel(id: $id, phone: $phone, email: $email, firstName: $firstName, lastName: $lastName, fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profilePictureUrl: $profilePictureUrl, profilePicture: $profilePicture, isVerified: $isVerified, isActive: $isActive, isEmailVerified: $isEmailVerified, isPhoneVerified: $isPhoneVerified, profile: $profile)';
+    return 'UserModel(id: $id, phone: $phone, email: $email, firstName: $firstName, lastName: $lastName, fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profilePictureUrl: $profilePictureUrl, profilePicture: $profilePicture, isVerified: $isVerified, isActive: $isActive, isEmailVerified: $isEmailVerified, profile: $profile)';
   }
 
   @override
@@ -441,7 +424,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       ..add(DiagnosticsProperty('isVerified', isVerified))
       ..add(DiagnosticsProperty('isActive', isActive))
       ..add(DiagnosticsProperty('isEmailVerified', isEmailVerified))
-      ..add(DiagnosticsProperty('isPhoneVerified', isPhoneVerified))
       ..add(DiagnosticsProperty('profile', profile));
   }
 
@@ -478,8 +460,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
                 other.isActive == isActive) &&
             (identical(other.isEmailVerified, isEmailVerified) ||
                 other.isEmailVerified == isEmailVerified) &&
-            (identical(other.isPhoneVerified, isPhoneVerified) ||
-                other.isPhoneVerified == isPhoneVerified) &&
             (identical(other.profile, profile) || other.profile == profile));
   }
 
@@ -503,7 +483,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       isVerified,
       isActive,
       isEmailVerified,
-      isPhoneVerified,
       profile);
 
   @JsonKey(ignore: true)
@@ -538,7 +517,6 @@ abstract class _UserModel implements UserModel {
       final bool isVerified,
       final bool isActive,
       final bool isEmailVerified,
-      final bool isPhoneVerified,
       final UserProfileModel? profile}) = _$UserModelImpl;
 
   factory _UserModel.fromJson(Map<String, dynamic> json) =
@@ -578,8 +556,6 @@ abstract class _UserModel implements UserModel {
   bool get isActive;
   @override
   bool get isEmailVerified;
-  @override
-  bool get isPhoneVerified;
   @override
   UserProfileModel? get profile;
   @override
@@ -1883,8 +1859,8 @@ AuthResponse _$AuthResponseFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$AuthResponse {
-  String get accessToken => throw _privateConstructorUsedError;
-  String get refreshToken => throw _privateConstructorUsedError;
+  String? get accessToken => throw _privateConstructorUsedError;
+  String? get refreshToken => throw _privateConstructorUsedError;
   UserModel? get user => throw _privateConstructorUsedError;
   bool get success => throw _privateConstructorUsedError;
   String? get message => throw _privateConstructorUsedError;
@@ -1903,8 +1879,8 @@ abstract class $AuthResponseCopyWith<$Res> {
       _$AuthResponseCopyWithImpl<$Res, AuthResponse>;
   @useResult
   $Res call(
-      {String accessToken,
-      String refreshToken,
+      {String? accessToken,
+      String? refreshToken,
       UserModel? user,
       bool success,
       String? message,
@@ -1926,22 +1902,22 @@ class _$AuthResponseCopyWithImpl<$Res, $Val extends AuthResponse>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? accessToken = null,
-    Object? refreshToken = null,
+    Object? accessToken = freezed,
+    Object? refreshToken = freezed,
     Object? user = freezed,
     Object? success = null,
     Object? message = freezed,
     Object? token = freezed,
   }) {
     return _then(_value.copyWith(
-      accessToken: null == accessToken
+      accessToken: freezed == accessToken
           ? _value.accessToken
           : accessToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      refreshToken: null == refreshToken
+              as String?,
+      refreshToken: freezed == refreshToken
           ? _value.refreshToken
           : refreshToken // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       user: freezed == user
           ? _value.user
           : user // ignore: cast_nullable_to_non_nullable
@@ -1983,8 +1959,8 @@ abstract class _$$AuthResponseImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String accessToken,
-      String refreshToken,
+      {String? accessToken,
+      String? refreshToken,
       UserModel? user,
       bool success,
       String? message,
@@ -2005,22 +1981,22 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? accessToken = null,
-    Object? refreshToken = null,
+    Object? accessToken = freezed,
+    Object? refreshToken = freezed,
     Object? user = freezed,
     Object? success = null,
     Object? message = freezed,
     Object? token = freezed,
   }) {
     return _then(_$AuthResponseImpl(
-      accessToken: null == accessToken
+      accessToken: freezed == accessToken
           ? _value.accessToken
           : accessToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      refreshToken: null == refreshToken
+              as String?,
+      refreshToken: freezed == refreshToken
           ? _value.refreshToken
           : refreshToken // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       user: freezed == user
           ? _value.user
           : user // ignore: cast_nullable_to_non_nullable
@@ -2045,8 +2021,8 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
   const _$AuthResponseImpl(
-      {required this.accessToken,
-      required this.refreshToken,
+      {this.accessToken,
+      this.refreshToken,
       this.user,
       this.success = true,
       this.message,
@@ -2056,9 +2032,9 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
       _$$AuthResponseImplFromJson(json);
 
   @override
-  final String accessToken;
+  final String? accessToken;
   @override
-  final String refreshToken;
+  final String? refreshToken;
   @override
   final UserModel? user;
   @override
@@ -2123,8 +2099,8 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
 
 abstract class _AuthResponse implements AuthResponse {
   const factory _AuthResponse(
-      {required final String accessToken,
-      required final String refreshToken,
+      {final String? accessToken,
+      final String? refreshToken,
       final UserModel? user,
       final bool success,
       final String? message,
@@ -2134,9 +2110,9 @@ abstract class _AuthResponse implements AuthResponse {
       _$AuthResponseImpl.fromJson;
 
   @override
-  String get accessToken;
+  String? get accessToken;
   @override
-  String get refreshToken;
+  String? get refreshToken;
   @override
   UserModel? get user;
   @override
@@ -2157,7 +2133,7 @@ OtpRequest _$OtpRequestFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$OtpRequest {
-  String get email => throw _privateConstructorUsedError;
+  String get phone => throw _privateConstructorUsedError;
   String get channel => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -2172,7 +2148,7 @@ abstract class $OtpRequestCopyWith<$Res> {
           OtpRequest value, $Res Function(OtpRequest) then) =
       _$OtpRequestCopyWithImpl<$Res, OtpRequest>;
   @useResult
-  $Res call({String email, String channel});
+  $Res call({String phone, String channel});
 }
 
 /// @nodoc
@@ -2188,13 +2164,13 @@ class _$OtpRequestCopyWithImpl<$Res, $Val extends OtpRequest>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? email = null,
+    Object? phone = null,
     Object? channel = null,
   }) {
     return _then(_value.copyWith(
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
               as String,
       channel: null == channel
           ? _value.channel
@@ -2212,7 +2188,7 @@ abstract class _$$OtpRequestImplCopyWith<$Res>
       __$$OtpRequestImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String email, String channel});
+  $Res call({String phone, String channel});
 }
 
 /// @nodoc
@@ -2226,13 +2202,13 @@ class __$$OtpRequestImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? email = null,
+    Object? phone = null,
     Object? channel = null,
   }) {
     return _then(_$OtpRequestImpl(
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
               as String,
       channel: null == channel
           ? _value.channel
@@ -2245,19 +2221,19 @@ class __$$OtpRequestImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$OtpRequestImpl with DiagnosticableTreeMixin implements _OtpRequest {
-  const _$OtpRequestImpl({required this.email, required this.channel});
+  const _$OtpRequestImpl({required this.phone, required this.channel});
 
   factory _$OtpRequestImpl.fromJson(Map<String, dynamic> json) =>
       _$$OtpRequestImplFromJson(json);
 
   @override
-  final String email;
+  final String phone;
   @override
   final String channel;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OtpRequest(email: $email, channel: $channel)';
+    return 'OtpRequest(phone: $phone, channel: $channel)';
   }
 
   @override
@@ -2265,7 +2241,7 @@ class _$OtpRequestImpl with DiagnosticableTreeMixin implements _OtpRequest {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'OtpRequest'))
-      ..add(DiagnosticsProperty('email', email))
+      ..add(DiagnosticsProperty('phone', phone))
       ..add(DiagnosticsProperty('channel', channel));
   }
 
@@ -2274,13 +2250,13 @@ class _$OtpRequestImpl with DiagnosticableTreeMixin implements _OtpRequest {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OtpRequestImpl &&
-            (identical(other.email, email) || other.email == email) &&
+            (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.channel, channel) || other.channel == channel));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, email, channel);
+  int get hashCode => Object.hash(runtimeType, phone, channel);
 
   @JsonKey(ignore: true)
   @override
@@ -2298,14 +2274,14 @@ class _$OtpRequestImpl with DiagnosticableTreeMixin implements _OtpRequest {
 
 abstract class _OtpRequest implements OtpRequest {
   const factory _OtpRequest(
-      {required final String email,
+      {required final String phone,
       required final String channel}) = _$OtpRequestImpl;
 
   factory _OtpRequest.fromJson(Map<String, dynamic> json) =
       _$OtpRequestImpl.fromJson;
 
   @override
-  String get email;
+  String get phone;
   @override
   String get channel;
   @override
@@ -2320,8 +2296,8 @@ OtpVerifyRequest _$OtpVerifyRequestFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$OtpVerifyRequest {
-  String get email => throw _privateConstructorUsedError;
-  String get code => throw _privateConstructorUsedError;
+  String get phone => throw _privateConstructorUsedError;
+  String get otp => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2335,7 +2311,7 @@ abstract class $OtpVerifyRequestCopyWith<$Res> {
           OtpVerifyRequest value, $Res Function(OtpVerifyRequest) then) =
       _$OtpVerifyRequestCopyWithImpl<$Res, OtpVerifyRequest>;
   @useResult
-  $Res call({String email, String code});
+  $Res call({String phone, String otp});
 }
 
 /// @nodoc
@@ -2351,17 +2327,17 @@ class _$OtpVerifyRequestCopyWithImpl<$Res, $Val extends OtpVerifyRequest>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? email = null,
-    Object? code = null,
+    Object? phone = null,
+    Object? otp = null,
   }) {
     return _then(_value.copyWith(
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
               as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
+      otp: null == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
               as String,
     ) as $Val);
   }
@@ -2375,7 +2351,7 @@ abstract class _$$OtpVerifyRequestImplCopyWith<$Res>
       __$$OtpVerifyRequestImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String email, String code});
+  $Res call({String phone, String otp});
 }
 
 /// @nodoc
@@ -2389,17 +2365,17 @@ class __$$OtpVerifyRequestImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? email = null,
-    Object? code = null,
+    Object? phone = null,
+    Object? otp = null,
   }) {
     return _then(_$OtpVerifyRequestImpl(
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phone: null == phone
+          ? _value.phone
+          : phone // ignore: cast_nullable_to_non_nullable
               as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
+      otp: null == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
               as String,
     ));
   }
@@ -2410,19 +2386,19 @@ class __$$OtpVerifyRequestImplCopyWithImpl<$Res>
 class _$OtpVerifyRequestImpl
     with DiagnosticableTreeMixin
     implements _OtpVerifyRequest {
-  const _$OtpVerifyRequestImpl({required this.email, required this.code});
+  const _$OtpVerifyRequestImpl({required this.phone, required this.otp});
 
   factory _$OtpVerifyRequestImpl.fromJson(Map<String, dynamic> json) =>
       _$$OtpVerifyRequestImplFromJson(json);
 
   @override
-  final String email;
+  final String phone;
   @override
-  final String code;
+  final String otp;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OtpVerifyRequest(email: $email, code: $code)';
+    return 'OtpVerifyRequest(phone: $phone, otp: $otp)';
   }
 
   @override
@@ -2430,8 +2406,8 @@ class _$OtpVerifyRequestImpl
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'OtpVerifyRequest'))
-      ..add(DiagnosticsProperty('email', email))
-      ..add(DiagnosticsProperty('code', code));
+      ..add(DiagnosticsProperty('phone', phone))
+      ..add(DiagnosticsProperty('otp', otp));
   }
 
   @override
@@ -2439,13 +2415,13 @@ class _$OtpVerifyRequestImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$OtpVerifyRequestImpl &&
-            (identical(other.email, email) || other.email == email) &&
-            (identical(other.code, code) || other.code == code));
+            (identical(other.phone, phone) || other.phone == phone) &&
+            (identical(other.otp, otp) || other.otp == otp));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, email, code);
+  int get hashCode => Object.hash(runtimeType, phone, otp);
 
   @JsonKey(ignore: true)
   @override
@@ -2464,16 +2440,16 @@ class _$OtpVerifyRequestImpl
 
 abstract class _OtpVerifyRequest implements OtpVerifyRequest {
   const factory _OtpVerifyRequest(
-      {required final String email,
-      required final String code}) = _$OtpVerifyRequestImpl;
+      {required final String phone,
+      required final String otp}) = _$OtpVerifyRequestImpl;
 
   factory _OtpVerifyRequest.fromJson(Map<String, dynamic> json) =
       _$OtpVerifyRequestImpl.fromJson;
 
   @override
-  String get email;
+  String get phone;
   @override
-  String get code;
+  String get otp;
   @override
   @JsonKey(ignore: true)
   _$$OtpVerifyRequestImplCopyWith<_$OtpVerifyRequestImpl> get copyWith =>

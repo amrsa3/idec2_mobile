@@ -271,6 +271,7 @@
   "acceptTerms": "I agree to the Terms and Conditions and Privacy Policy",
   "alreadyHaveAccount": "Already have an account?",
   "verifyEmail": "Verify Your Email",
+  "verifyPhone": "Verify Your Phone",
   "verificationCodeSent": "We sent a verification code to",
   "verify": "Verify",
   "didntReceiveCode": "Didn't receive the code?",
@@ -324,6 +325,18 @@
   "verificationCodeSent": "We sent a verification code to",
   "@verificationCodeSent": {
     "description": "Verification code sent message"
+  },
+  "invalidOtpCode": "Invalid OTP code",
+  "@invalidOtpCode": {
+    "description": "Invalid OTP code error message"
+  },
+  "otpExpired": "OTP code has expired",
+  "@otpExpired": {
+    "description": "OTP expired error message"
+  },
+  "tooManyAttempts": "Too many attempts. Please request a new code",
+  "@tooManyAttempts": {
+    "description": "Too many OTP attempts error message"
   },
   "didntReceiveCode": "Didn't receive the code?",
   "@didntReceiveCode": {

@@ -310,8 +310,30 @@ class RegistrationSettingsService {
       final channelsData = data['channels'] as List<dynamic>? ?? [];
       
       final channels = channelsData.map((channelData) {
-        final channelMap = channelData as Map<String, dynamic>;
-        return OtpChannelModel.fromJson(channelMap);
+        // Handle both string and object formats
+        if (channelData is String) {
+          // Convert string channel to OtpChannelModel
+          return OtpChannelModel(
+            id: channelData.toLowerCase(),
+            name: channelData.toLowerCase(),
+            displayName: channelData,
+            enabled: true,
+            isDefault: channelData.toLowerCase() == 'sms',
+            priority: channelData.toLowerCase() == 'sms' ? 1 : 2,
+          );
+        } else if (channelData is Map<String, dynamic>) {
+          return OtpChannelModel.fromJson(channelData);
+        } else {
+          // Fallback for unknown format
+          return const OtpChannelModel(
+            id: 'sms',
+            name: 'sms',
+            displayName: 'SMS',
+            enabled: true,
+            isDefault: true,
+            priority: 1,
+          );
+        }
       }).toList();
 
       debugPrint('✅ Public OTP channels fetched: ${channels.length} channels');

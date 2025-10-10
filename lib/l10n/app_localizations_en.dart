@@ -288,6 +288,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyEmail => 'Verify Your Email';
 
   @override
+  String get verifyPhone => 'Verify Your Phone';
+
+  @override
   String get verificationCodeSent => 'We sent a verification code to';
 
   @override
@@ -310,6 +313,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get or => 'OR';
+
+  @override
+  String get invalidOtpCode => 'Invalid OTP code';
+
+  @override
+  String get otpExpired => 'OTP code has expired';
+
+  @override
+  String get tooManyAttempts => 'Too many attempts. Please request a new code';
 
   @override
   String get editProfileTitle => 'Edit Profile';

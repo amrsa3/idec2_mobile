@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../services/file_upload_service.dart';
 import '../services/profile_rules_service.dart';
 import '../services/profile_service.dart';
+import '../services/image_cache_service.dart';
 
 /// حالة الملف الشخصي
 class ProfileState {
@@ -16,8 +17,10 @@ class ProfileState {
   final bool isLoading;
   final bool isSaving;
   final bool isUploadingDocument;
+  final bool isUploadingProfilePicture;
   final String? error;
   final String? successMessage;
+  final String? errorMessage;
   final bool showApprovalWarning;
   final String? approvalWarningMessage;
   final ProfileValidationResult? validationResult;
@@ -29,8 +32,10 @@ class ProfileState {
     this.isLoading = false,
     this.isSaving = false,
     this.isUploadingDocument = false,
+    this.isUploadingProfilePicture = false,
     this.error,
     this.successMessage,
+    this.errorMessage,
     this.showApprovalWarning = false,
     this.approvalWarningMessage,
     this.validationResult,
@@ -46,8 +51,10 @@ class ProfileState {
     bool? isLoading,
     bool? isSaving,
     bool? isUploadingDocument,
+    bool? isUploadingProfilePicture,
     String? error,
     String? successMessage,
+    String? errorMessage,
     bool? showApprovalWarning,
     String? approvalWarningMessage,
     ProfileValidationResult? validationResult,
@@ -59,8 +66,10 @@ class ProfileState {
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
       isUploadingDocument: isUploadingDocument ?? this.isUploadingDocument,
+      isUploadingProfilePicture: isUploadingProfilePicture ?? this.isUploadingProfilePicture,
       error: error,
       successMessage: successMessage,
+      errorMessage: errorMessage,
       showApprovalWarning: showApprovalWarning ?? this.showApprovalWarning,
       approvalWarningMessage: approvalWarningMessage,
       validationResult: validationResult ?? this.validationResult,
@@ -71,6 +80,7 @@ class ProfileState {
     return copyWith(
       error: null,
       successMessage: null,
+      errorMessage: null,
       showApprovalWarning: false,
       approvalWarningMessage: null,
     );
@@ -149,34 +159,59 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   /// رفع صورة الملف الشخصي
   Future<void> uploadProfilePicture(File imageFile) async {
     try {
-      // تعيين حالة التحميل
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-        successMessage: null,
-      );
-
+      state = state.copyWith(isUploadingProfilePicture: true);
+      
+      // حفظ URL الصورة القديمة
+      final oldImageUrl = state.currentProfile?.profilePictureUrl;
+      debugPrint('📸 ProfileProvider: Starting upload, old image URL: $oldImageUrl');
+      
       // رفع الصورة
-      final imageUrl = await ProfileService.uploadProfilePicture(imageFile);
-
-      if (imageUrl != null) {
-        // تحديث الملف الشخصي بالصورة الجديدة
-        updateField('profilePictureUrl', imageUrl);
-
-        // تعيين رسالة النجاح
+      final response = await _profileService.uploadProfilePicture(imageFile);
+      
+      if (response['success'] == true) {
+        final newImageUrl = response['data']?['url'] as String?;
+        debugPrint('📸 ProfileProvider: Upload successful, new image URL: $newImageUrl');
+        
+        // مسح الـ cache للصور القديمة والجديدة قبل التحديث
+        await ImageCacheService.clearProfilePictureCache(oldImageUrl, newImageUrl);
+        
+        // تحديث الملف الشخصي فوراً بالصورة الجديدة
+        if (state.currentProfile != null && newImageUrl != null) {
+          final updatedProfile = state.currentProfile!.copyWith(
+            profilePictureUrl: newImageUrl,
+          );
+          state = state.copyWith(currentProfile: updatedProfile);
+          debugPrint('📸 ProfileProvider: Profile updated with new image URL');
+        }
+        
+        // إعادة تحميل بيانات الملف الشخصي للتأكد من التحديث
+        await loadCurrentProfile(forceRefresh: true);
+        
+        // مسح الـ cache مرة أخرى بعد إعادة التحميل
+        final finalImageUrl = state.currentProfile?.profilePictureUrl;
+        if (finalImageUrl != null) {
+          await ImageCacheService.evictImage(finalImageUrl);
+          debugPrint('📸 ProfileProvider: Cache cleared for final image URL: $finalImageUrl');
+        }
+        
         state = state.copyWith(
-          isLoading: false,
+          isUploadingProfilePicture: false,
           successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
         );
+        
+        debugPrint('✅ ProfileProvider: Profile picture upload completed successfully');
       } else {
-        throw Exception('فشل في رفع الصورة');
+        state = state.copyWith(
+          isUploadingProfilePicture: false,
+          errorMessage: response['message'] ?? 'فشل في رفع الصورة',
+        );
+        debugPrint('❌ ProfileProvider: Upload failed: ${response['message']}');
       }
     } catch (e) {
-      debugPrint('❌ [PROFILE_PROVIDER] خطأ في رفع صورة الملف الشخصي: $e');
-      
+      debugPrint('❌ ProfileProvider: Error uploading profile picture: $e');
       state = state.copyWith(
-        isLoading: false,
-        error: 'فشل في رفع صورة الملف الشخصي: ${e.toString()}',
+        isUploadingProfilePicture: false,
+        errorMessage: 'فشل في رفع صورة الملف الشخصي: $e',
       );
     }
   }

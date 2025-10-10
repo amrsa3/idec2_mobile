@@ -176,9 +176,7 @@ Map<String, dynamic> _$$ProfileUpdateRequestImplToJson(
       'full_name_ar': instance.fullNameAr,
       'full_name_en': instance.fullNameEn,
       'email': instance.email,
-      'birth_date': instance.birthDate != null 
-          ? '${instance.birthDate!.year.toString().padLeft(4, '0')}-${instance.birthDate!.month.toString().padLeft(2, '0')}-${instance.birthDate!.day.toString().padLeft(2, '0')}'
-          : null,
+      'birth_date': instance.birthDate?.toIso8601String(),
       'governorate_id': instance.governorateId,
       'qualification_id': instance.qualificationId,
       'graduation_year': instance.graduationYear,

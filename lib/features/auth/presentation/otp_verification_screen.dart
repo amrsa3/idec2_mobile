@@ -27,8 +27,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
-  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   Timer? _timer;
   int _remainingTime = 60;
   bool _canResend = false;
@@ -76,7 +76,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   bool get _isOtpComplete {
-    return _otpCode.length == 6;
+    return _otpCode.length == 4;
   }
 
   Future<void> _verifyOtp() async {
@@ -121,20 +121,56 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   void _onOtpChanged(String value, int index) {
+    // Handle paste operation
+    if (value.length > 1) {
+      _handlePastedOtp(value, index);
+      return;
+    }
+    
     if (value.isNotEmpty) {
-      if (index < 5) {
+      // Move to next field
+      if (index < 3) {
         _focusNodes[index + 1].requestFocus();
       } else {
         _focusNodes[index].unfocus();
+        // Auto-verify when complete
         if (_isOtpComplete) {
-          _verifyOtp();
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _verifyOtp();
+          });
         }
+      }
+    } else {
+      // Handle backspace - move to previous field
+      if (index > 0) {
+        _focusNodes[index - 1].requestFocus();
       }
     }
   }
 
+  void _handlePastedOtp(String pastedText, int startIndex) {
+    // Extract only digits from pasted text
+    final digits = pastedText.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Fill the fields starting from the current index
+    for (int i = 0; i < digits.length && (startIndex + i) < 4; i++) {
+      _controllers[startIndex + i].text = digits[i];
+    }
+    
+    // Focus on the next empty field or last field
+    final nextIndex = (startIndex + digits.length).clamp(0, 3);
+    _focusNodes[nextIndex].requestFocus();
+    
+    // Auto-verify if complete
+    if (_isOtpComplete) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _verifyOtp();
+      });
+    }
+  }
+
   void _onOtpBackspace(int index) {
-    if (index > 0) {
+    if (_controllers[index].text.isEmpty && index > 0) {
       _controllers[index - 1].clear();
       _focusNodes[index - 1].requestFocus();
     }
@@ -195,7 +231,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               
               // Title
               Text(
-                l10n.verifyEmail,
+                l10n.verifyPhone,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
@@ -231,19 +267,32 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               // OTP Input Fields
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(6, (index) {
+                children: List.generate(4, (index) {
                   return SizedBox(
-                    width: 45,
-                    height: 55,
-                    child: TextFormField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: 1,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppColors.textPrimary,
+                    width: 60,
+                    height: 65,
+                    child: RawKeyboardListener(
+                      focusNode: FocusNode(),
+                      onKey: (RawKeyEvent event) {
+                        if (event is RawKeyDownEvent) {
+                          if (event.logicalKey == LogicalKeyboardKey.backspace) {
+                            if (_controllers[index].text.isEmpty && index > 0) {
+                              _controllers[index - 1].clear();
+                              _focusNodes[index - 1].requestFocus();
+                            }
+                          }
+                        }
+                      },
+                      child: TextFormField(
+                        controller: _controllers[index],
+                        focusNode: _focusNodes[index],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 1,
+                      style: const TextStyle(
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
                       decoration: InputDecoration(
                         counterText: '',
@@ -278,13 +327,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       onFieldSubmitted: (_) {
                         if (_isOtpComplete) {
                           _verifyOtp();
+                        } else if (index < 3) {
+                          _focusNodes[index + 1].requestFocus();
                         }
                       },
                       onEditingComplete: () {
-                        if (_controllers[index].text.isEmpty && index > 0) {
-                          _onOtpBackspace(index);
+                        // Handle when user finishes editing a field
+                        if (_isOtpComplete) {
+                          _verifyOtp();
                         }
                       },
+                      ),
                     ),
                   );
                 }),

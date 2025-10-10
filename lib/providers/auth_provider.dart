@@ -14,7 +14,8 @@ class AuthState {
   final bool isLoading;
   final String? error;
   final bool isEmailVerified;
-  final bool isPhoneVerified;
+  final bool phoneVerified;
+  final bool isRegistering; // New field to track registration process
 
   const AuthState({
     this.user,
@@ -22,7 +23,8 @@ class AuthState {
     this.isLoading = false,
     this.error,
     this.isEmailVerified = false,
-    this.isPhoneVerified = false,
+    this.phoneVerified = false,
+    this.isRegistering = false, // Default to false
   });
 
   AuthState copyWith({
@@ -31,7 +33,8 @@ class AuthState {
     bool? isLoading,
     String? error,
     bool? isEmailVerified,
-    bool? isPhoneVerified,
+    bool? phoneVerified,
+    bool? isRegistering,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -39,7 +42,8 @@ class AuthState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
-      isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
+      isRegistering: isRegistering ?? this.isRegistering,
     );
   }
 
@@ -52,7 +56,8 @@ class AuthState {
         other.isLoading == isLoading &&
         other.error == error &&
         other.isEmailVerified == isEmailVerified &&
-        other.isPhoneVerified == isPhoneVerified;
+        other.phoneVerified == phoneVerified &&
+        other.isRegistering == isRegistering;
   }
 
   @override
@@ -62,7 +67,8 @@ class AuthState {
         isLoading,
         error,
         isEmailVerified,
-        isPhoneVerified,
+        phoneVerified,
+        isRegistering,
       );
 }
 
@@ -97,7 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             isAuthenticated: true,
             isLoading: false,
             isEmailVerified: currentUser.isEmailVerified,
-            isPhoneVerified: currentUser.isPhoneVerified,
+            phoneVerified: currentUser.phoneVerified,
           );
           
           print('🔍 [AUTH_DEBUG] _checkAuthStatus - user authenticated from saved data (offline mode)');
@@ -109,7 +115,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
             state = state.copyWith(
               user: profile,
               isEmailVerified: profile.isEmailVerified,
-              isPhoneVerified: profile.isPhoneVerified,
+              phoneVerified: profile.phoneVerified,
             );
             
             // Update saved user data with latest profile
@@ -130,7 +136,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
                 state = state.copyWith(
                   user: refreshResult.user,
                   isEmailVerified: refreshResult.user!.isEmailVerified,
-                  isPhoneVerified: refreshResult.user!.isPhoneVerified,
+                  phoneVerified: refreshResult.user!.phoneVerified,
                 );
                 
                 // Update saved user data
@@ -176,14 +182,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final loginRequest = LoginRequest(phone: phoneNumber, password: password);
       final result = await _authService.login(loginRequest);
       
-      debugPrint('AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken.isNotEmpty}');
+      debugPrint('AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken?.isNotEmpty == true}');
       
       // Check if login was successful - be more flexible with success criteria
       if ((result.success || result.user != null) && 
-          (result.accessToken.isNotEmpty || result.token?.isNotEmpty == true)) {
+          (result.accessToken?.isNotEmpty == true || result.token?.isNotEmpty == true)) {
         
         // Use accessToken or fallback to token field
-        final token = result.accessToken.isNotEmpty ? result.accessToken : result.token!;
+        final token = (result.accessToken?.isNotEmpty == true) ? result.accessToken! : result.token!;
         
         await _saveAuthData(token, result.user!);
         state = state.copyWith(
@@ -191,7 +197,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isAuthenticated: true,
           isLoading: false,
           isEmailVerified: result.user!.isEmailVerified,
-          isPhoneVerified: result.user!.isPhoneVerified,
+          phoneVerified: result.user!.phoneVerified,
         );
         
         debugPrint('AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
@@ -226,7 +232,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String phoneNumber,
     String password,
   ) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, error: null, isRegistering: true);
 
     try {
       final registerRequest = RegisterRequest(
@@ -241,21 +247,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       if (result.success) {
         // Registration successful, but don't authenticate until phone is verified
-        // Store user data temporarily but don't mark as authenticated
-        print('Registration successful in AuthProvider, user: ${result.user?.firstName} ${result.user?.lastName}');
+        // For registration, we don't get user data immediately, just success confirmation
+        print('Registration successful in AuthProvider');
         state = state.copyWith(
           isLoading: false,
-          user: result.user,
+          user: null, // No user data until verification
           isAuthenticated: false, // Keep false until phone verification
-          isEmailVerified: result.user?.isEmailVerified ?? false,
-          isPhoneVerified: false, // Always false after registration
+          isEmailVerified: false,
+          phoneVerified: false, // Always false after registration
+          isRegistering: true, // Keep true until OTP verification
           error: null,
         );
-        print('AuthProvider state updated: isAuthenticated=${state.isAuthenticated}');
+        print('AuthProvider state updated: isAuthenticated=${state.isAuthenticated}, isRegistering=${state.isRegistering}');
         return true;
       } else {
         state = state.copyWith(
           isLoading: false,
+          isRegistering: false,
           error: result.message ?? 'فشل في التسجيل',
         );
         return false;
@@ -263,6 +271,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
+        isRegistering: false,
         error: 'فشل في التسجيل: $e',
       );
       return false;
@@ -276,14 +285,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final result = await _authService.register(request);
       
-      if (result.success && result.user != null) {
-        await _saveAuthData(result.accessToken, result.user!);
+      // For registration, we don't expect user data or access tokens
+      // Registration is successful if we get a success response with a message
+      if (result.success) {
         state = state.copyWith(
           isLoading: false,
-          user: result.user,
-          isAuthenticated: true,
-          isEmailVerified: result.user!.isEmailVerified,
-          isPhoneVerified: result.user!.isPhoneVerified,
+          error: null,
         );
         return true;
       } else {
@@ -322,12 +329,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await _authService.verifyOtp(phoneNumber, otp);
       
       if (result.success && result.user != null) {
-        await _saveAuthData(result.token!, result.user!);
+        // Use accessToken or fallback to token field
+        final token = result.accessToken ?? result.token ?? '';
+        if (token.isEmpty) {
+          throw Exception('No access token received from server');
+        }
+        
+        await _saveAuthData(token, result.user!);
         state = state.copyWith(
           user: result.user,
           isAuthenticated: true,
           isLoading: false,
-          isPhoneVerified: true,
+          phoneVerified: true,
+          isRegistering: false, // Reset registration state after successful verification
         );
         return true;
       } else {

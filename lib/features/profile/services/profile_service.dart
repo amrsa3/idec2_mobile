@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/dio_service.dart';
+import '../../../services/auth_service.dart';
 import '../../../models/models.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -504,6 +505,16 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
+      // Get current user ID from AuthService
+      final authService = AuthService.instance;
+      final currentUser = await authService.getCurrentUser();
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('❌ ProfileService: No current user found');
+        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+      }
+      final userId = currentUser.id;
+      debugPrint('👤 ProfileService: Current user ID: $userId');
+
       // Determine the correct content type based on file extension
       String contentType = 'image/jpeg';
       final fileName = imageFile.path.toLowerCase();
@@ -519,15 +530,15 @@ class LocalProfileService {
 
       debugPrint('📸 ProfileService: Detected content type: $contentType');
 
-      // Create form data with correct content type
+      // Create form data with correct content type and user ID
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
           imageFile.path,
           filename: 'profile_picture.jpg',
           contentType: MediaType.parse(contentType),
         ),
-        'entityType': 'profile',
-        'entityId': 'user_profile',
+        'entityType': 'user_profile',
+        'entityId': userId,
         'fileCategory': 'profile_picture',
         'accessLevel': 'private',
       });
@@ -560,7 +571,7 @@ class LocalProfileService {
         String errorMessage = 'فشل في رفع الصورة';
         final errorData = response.data;
         if (errorData != null && errorData['message'] != null) {
-          errorMessage = errorData['message'];
+          errorMessage = errorData['message'].toString();
         }
         
         throw Exception(errorMessage);
@@ -570,25 +581,56 @@ class LocalProfileService {
       
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
+        debugPrint('❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
+        
         if (e.response?.statusCode == 400) {
           final errorData = e.response?.data;
-          if (errorData != null && errorData['message'] != null) {
-            throw Exception(errorData['message']);
-          } else {
-            throw Exception('نوع الملف غير مدعوم أو البيانات غير صحيحة');
+          String errorMessage = 'نوع الملف غير مدعوم أو البيانات غير صحيحة';
+          
+          // Try to extract error message from different response formats
+          if (errorData != null) {
+            if (errorData is Map<String, dynamic>) {
+              if (errorData['message'] != null) {
+                errorMessage = errorData['message'].toString();
+              } else if (errorData['error'] != null) {
+                errorMessage = errorData['error'].toString();
+              }
+            } else if (errorData is String) {
+              errorMessage = errorData;
+            }
           }
+          
+          debugPrint('❌ ProfileService: Extracted error message: $errorMessage');
+          throw Exception(errorMessage);
         } else if (e.response?.statusCode == 401) {
           throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
         } else if (e.response?.statusCode == 413) {
           throw Exception('حجم الملف كبير جداً');
         } else if (e.response?.statusCode == 500) {
           throw Exception('خطأ في الخادم - يرجى المحاولة لاحقاً');
+        } else {
+          // For any other HTTP error codes
+          final errorData = e.response?.data;
+          String errorMessage = 'فشل في رفع الصورة';
+          
+          if (errorData != null) {
+            if (errorData is Map<String, dynamic> && errorData['message'] != null) {
+              errorMessage = errorData['message'].toString();
+            } else if (errorData is String) {
+              errorMessage = errorData;
+            }
+          }
+          
+          throw Exception('$errorMessage (كود الخطأ: ${e.response?.statusCode})');
         }
       }
       
       if (e.toString().contains('خطأ في المصادقة')) {
         rethrow;
       }
+      
+      // For any other type of exception
+      debugPrint('❌ ProfileService: Non-DioException error: $e');
       throw Exception('فشل في رفع صورة الملف الشخصي: $e');
     }
   }
@@ -707,7 +749,7 @@ class LocalProfileService {
           'workplace': '', // Default value since it's not in the response
           'verification_status': 'unverified', // Default value
           'completion_percentage': 0.0, // Default value
-          'profile_picture_url': null, // Default value
+          'profile_picture_url': profileData['profilePhotoUrl']?.toString(),
           'documents': [], // Default value
           'required_documents': [], // Default value
           'created_at': profileData['createdAt']?.toString(),
@@ -964,7 +1006,7 @@ class LocalProfileService {
           // Handle error response - don't try to parse as ProfileUpdateResponse
           String errorMessage = 'Update failed';
           if (errorData is Map<String, dynamic>) {
-            errorMessage = errorData['message'] ?? errorData['error'] ?? 'Update failed';
+            errorMessage = errorData['message']?.toString() ?? errorData['error']?.toString() ?? 'Update failed';
           } else if (errorData is String) {
             errorMessage = errorData;
           }

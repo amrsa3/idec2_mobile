@@ -172,7 +172,9 @@ class DioService {
   }
 
   Future<String?> getAccessToken() async {
-    return await _storage.read(key: 'access_token');
+    final token = await _storage.read(key: 'access_token');
+    debugPrint('🔑 DioService.getAccessToken: Token ${token != null && token.isNotEmpty ? "found" : "not found"}');
+    return token;
   }
 
   Future<String?> getRefreshToken() async {

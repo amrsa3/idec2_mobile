@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/image_picker_service.dart';
-import '../../providers/profile_provider.dart';
+import '../../features/profile/providers/profile_provider.dart';
 import '../../shared/widgets/loading_indicator.dart';
 
 /// Widget لعرض وتحديث الصورة الشخصية

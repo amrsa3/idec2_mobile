@@ -123,7 +123,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (success) {
       // Registration successful - navigate to OTP verification
       print('Registration successful, navigating to OTP verification with phone: $fullPhoneNumber');
-      context.go('${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
+      // Use push instead of go to avoid GoRouter redirects
+      context.push('${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
     } else {
       // Registration failed - show error message
       final authState = ref.read(authProvider);

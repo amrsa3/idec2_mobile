@@ -9,6 +9,7 @@ import '../../../models/verification_request_model.dart';
 import '../../../shared/services/notification_service.dart';
 import '../../../services/image_cache_service.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/profile_rules_provider.dart';
 import '../services/profile_service.dart';
 
 /// Profile state
@@ -16,7 +17,7 @@ class ProfileState {
   final ProfileDataResponse? profileData;
   final ProfileCompletionStatus? completionStatus;
   final ProfileModel? currentProfile;
-  final VerificationRulesResponse? verificationRules;
+  final ProfileRulesState? profileRules;
   final List<QualificationModel>? qualifications;
   final List<GovernorateModel>? governorates;
   final List<DocumentUploadModel> documents;
@@ -36,7 +37,7 @@ class ProfileState {
     this.profileData,
     this.completionStatus,
     this.currentProfile,
-    this.verificationRules,
+    this.profileRules,
     this.qualifications,
     this.governorates,
     this.documents = const [],
@@ -57,7 +58,7 @@ class ProfileState {
     ProfileDataResponse? profileData,
     ProfileCompletionStatus? completionStatus,
     ProfileModel? currentProfile,
-    VerificationRulesResponse? verificationRules,
+    ProfileRulesState? profileRules,
     List<QualificationModel>? qualifications,
     List<GovernorateModel>? governorates,
     List<DocumentUploadModel>? documents,
@@ -77,7 +78,7 @@ class ProfileState {
       profileData: profileData ?? this.profileData,
       completionStatus: completionStatus ?? this.completionStatus,
       currentProfile: currentProfile ?? this.currentProfile,
-      verificationRules: verificationRules ?? this.verificationRules,
+      profileRules: profileRules ?? this.profileRules,
       qualifications: qualifications ?? this.qualifications,
       governorates: governorates ?? this.governorates,
       documents: documents ?? this.documents,
@@ -427,27 +428,31 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     state = state.copyWith(successMessage: null);
   }
 
-  /// Load verification rules
+  /// Load profile rules using ProfileRulesProvider
   Future<void> loadVerificationRules() async {
     try {
       state = state.copyWith(isLoadingRules: true, error: null);
       
-      debugPrint('📋 ProfileProvider: Loading verification rules');
+      debugPrint('📋 ProfileProvider: Loading profile rules');
       
-      final verificationRules = await LocalProfileService.getVerificationRules();
+      // استخدام ProfileRulesProvider الجديد
+      final profileRulesNotifier = ref.read(profileRulesProvider.notifier);
+      await profileRulesNotifier.loadRules(forceRefresh: true);
+      
+      final profileRulesState = ref.read(profileRulesProvider);
       
       state = state.copyWith(
-        verificationRules: verificationRules,
+        profileRules: profileRulesState,
         isLoadingRules: false,
       );
       
-      debugPrint('✅ ProfileProvider: Verification rules loaded successfully');
+      debugPrint('✅ ProfileProvider: Profile rules loaded successfully');
     } catch (e) {
       state = state.copyWith(
         isLoadingRules: false,
         error: 'فشل في جلب قواعد التوثيق: $e',
       );
-      debugPrint('❌ ProfileProvider: Error loading verification rules: $e');
+      debugPrint('❌ ProfileProvider: Error loading profile rules: $e');
     }
   }
 
@@ -1028,9 +1033,9 @@ final currentProfileProvider = Provider<ProfileModel?>((ref) {
   return ref.watch(profileProvider).currentProfile;
 });
 
-/// Verification rules provider
-final verificationRulesProvider = Provider<VerificationRulesResponse?>((ref) {
-  return ref.watch(profileProvider).verificationRules;
+/// Profile rules provider (updated to use ProfileRulesState)
+final verificationRulesProvider = Provider<ProfileRulesState?>((ref) {
+  return ref.watch(profileProvider).profileRules;
 });
 
 /// Qualifications provider

@@ -10,6 +10,8 @@ import '../../../../models/user_profile_extended.dart';
 import '../../../../models/verification_model.dart';
 import '../../../../models/profile_model.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/profile_rules_provider.dart';
+import '../../services/profile_rules_service.dart';
 import '../widgets/document_uploader.dart';
 import '../widgets/zoomable_profile_image.dart';
 
@@ -38,8 +40,9 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
   }
 
   void _loadVerificationRules() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(profileProvider.notifier).loadVerificationRules();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // تحميل قواعد الملف الشخصي الديناميكية
+      await ref.read(profileRulesProvider.notifier).loadProfileRules();
     });
   }
 
@@ -74,8 +77,10 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
       return const Center(child: CircularProgressIndicator());
     }
 
-    final verificationRules = state.verificationRules;
-    if (verificationRules == null) {
+    final profileRulesState = ref.watch(profileRulesProvider);
+    
+    // التحقق من توفر قواعد الملف الشخصي الجديدة
+    if (profileRulesState.profileRules == null) {
       return const Center(
         child: Text(
           'لم يتم تحميل قواعد التوثيق',
@@ -84,7 +89,8 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
       );
     }
 
-    final requiredDocuments = _getRequiredDocuments(verificationRules.requiredDocuments);
+    // استخدام النظام الجديد لتحديد الوثائق المطلوبة
+    final requiredDocuments = _getRequiredDocumentsFromProfileRules(profileRulesState.profileRules!);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -120,6 +126,9 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
   }
 
   Widget _buildInfoCard() {
+    final profileRulesState = ref.watch(profileRulesProvider);
+    String infoText = _getInfoText(profileRulesState);
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -151,10 +160,7 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
           const SizedBox(height: 12),
           
           Text(
-            '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
-            '• تأكد من وضوح الوثائق وجودة الصورة\n'
-            '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
-            '• الصيغ المدعومة: PDF, JPG, PNG',
+            infoText,
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
               height: 1.5,
@@ -163,6 +169,37 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
         ],
       ),
     );
+  }
+
+  String _getInfoText(ProfileRulesState profileRulesState) {
+    final verificationStatus = widget.profile.verificationStatus ?? VerificationStatus.notSubmitted;
+    
+    if (profileRulesState.profileRules != null) {
+      final rules = profileRulesState.profileRules!;
+      final canEdit = rules.canEditVerifiedProfile(verificationStatus);
+      final requiredPercentage = rules.getRequiredCompletionPercentage(verificationStatus);
+      
+      String baseInfo = '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
+                       '• تأكد من وضوح الوثائق وجودة الصورة\n'
+                       '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
+                       '• الصيغ المدعومة: PDF, JPG, PNG\n';
+      
+      if (verificationStatus == VerificationStatus.verified && !canEdit) {
+        baseInfo += '• تم توثيق الملف الشخصي - لا يمكن تعديل الوثائق';
+      } else if (verificationStatus == VerificationStatus.underReview) {
+        baseInfo += '• الملف الشخصي قيد المراجعة - قد تكون بعض التعديلات محدودة';
+      } else if (requiredPercentage > 0) {
+        baseInfo += '• مطلوب إكمال $requiredPercentage% من البيانات للتوثيق';
+      }
+      
+      return baseInfo;
+    }
+    
+    // النص الافتراضي
+    return '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
+           '• تأكد من وضوح الوثائق وجودة الصورة\n'
+           '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
+           '• الصيغ المدعومة: PDF, JPG, PNG';
   }
 
   Widget _buildSectionTitle(String title) {
@@ -486,8 +523,32 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
   }
 
   // Helper methods
+  List<String> _getRequiredDocumentsFromProfileRules(ProfileRulesNotifier profileRules) {
+    // استخدام النظام الجديد لتحديد الوثائق المطلوبة
+    final requiredDocs = profileRules.getRequiredDocumentsForVerification(
+      widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+    );
+    return requiredDocs;
+  }
+
+  @deprecated
   List<String> _getRequiredDocuments(List<RequiredDocumentModel> rules) {
-    // TODO: Extract required documents from rules
+    final profileRulesState = ref.read(profileRulesProvider);
+    
+    // استخدام قواعد الملف الشخصي الديناميكية إذا كانت متاحة
+    if (profileRulesState.profileRules != null) {
+      final requiredDocs = profileRulesState.profileRules!.getRequiredDocumentsForVerification(
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
+      return requiredDocs;
+    }
+    
+    // العودة للقواعد التقليدية كنسخة احتياطية
+    if (rules.isNotEmpty) {
+      return rules.map((rule) => rule.documentType).toList();
+    }
+    
+    // القيم الافتراضية
     return ['qualification', 'identity'];
   }
 
@@ -548,6 +609,19 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
 
   // Action methods
   void _selectDocument(String documentType) async {
+    // فحص القواعد قبل السماح برفع الوثيقة
+    final profileRulesState = ref.read(profileRulesProvider);
+    if (profileRulesState.profileRules != null) {
+      final canEdit = profileRulesState.profileRules!.canEditVerifiedProfile(
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
+      
+      if (!canEdit && widget.profile.verificationStatus == VerificationStatus.verified) {
+        _showEditNotAllowedDialog('لا يمكن تعديل الوثائق للملفات الموثقة');
+        return;
+      }
+    }
+    
     try {
       // TODO: Implement file picker
       ScaffoldMessenger.of(context).showSnackBar(
@@ -564,6 +638,19 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
   }
 
   void _removeDocument(String documentType) {
+    // فحص القواعد قبل السماح بحذف الوثيقة
+    final profileRulesState = ref.read(profileRulesProvider);
+    if (profileRulesState.profileRules != null) {
+      final canEdit = profileRulesState.profileRules!.canEditVerifiedProfile(
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
+      
+      if (!canEdit && widget.profile.verificationStatus == VerificationStatus.verified) {
+        _showEditNotAllowedDialog('لا يمكن حذف الوثائق للملفات الموثقة');
+        return;
+      }
+    }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -640,5 +727,21 @@ class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScr
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showEditNotAllowedDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تعديل غير مسموح'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('موافق'),
+          ),
+        ],
+      ),
+    );
   }
 }

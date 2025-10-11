@@ -171,6 +171,7 @@ class ProfileUpdateResponse with _$ProfileUpdateResponse {
     required String message,
     ProfileCompletionStatus? completionStatus,
     Map<String, dynamic>? errors,
+    String? reviewRequestId,
   }) = _ProfileUpdateResponse;
 
   factory ProfileUpdateResponse.fromJson(Map<String, dynamic> json) =>

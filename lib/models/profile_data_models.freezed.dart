@@ -2640,6 +2640,7 @@ mixin _$ProfileUpdateResponse {
   ProfileCompletionStatus? get completionStatus =>
       throw _privateConstructorUsedError;
   Map<String, dynamic>? get errors => throw _privateConstructorUsedError;
+  String? get reviewRequestId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2657,7 +2658,8 @@ abstract class $ProfileUpdateResponseCopyWith<$Res> {
       {bool success,
       String message,
       ProfileCompletionStatus? completionStatus,
-      Map<String, dynamic>? errors});
+      Map<String, dynamic>? errors,
+      String? reviewRequestId});
 
   $ProfileCompletionStatusCopyWith<$Res>? get completionStatus;
 }
@@ -2680,6 +2682,7 @@ class _$ProfileUpdateResponseCopyWithImpl<$Res,
     Object? message = null,
     Object? completionStatus = freezed,
     Object? errors = freezed,
+    Object? reviewRequestId = freezed,
   }) {
     return _then(_value.copyWith(
       success: null == success
@@ -2698,6 +2701,10 @@ class _$ProfileUpdateResponseCopyWithImpl<$Res,
           ? _value.errors
           : errors // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      reviewRequestId: freezed == reviewRequestId
+          ? _value.reviewRequestId
+          : reviewRequestId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -2728,7 +2735,8 @@ abstract class _$$ProfileUpdateResponseImplCopyWith<$Res>
       {bool success,
       String message,
       ProfileCompletionStatus? completionStatus,
-      Map<String, dynamic>? errors});
+      Map<String, dynamic>? errors,
+      String? reviewRequestId});
 
   @override
   $ProfileCompletionStatusCopyWith<$Res>? get completionStatus;
@@ -2750,6 +2758,7 @@ class __$$ProfileUpdateResponseImplCopyWithImpl<$Res>
     Object? message = null,
     Object? completionStatus = freezed,
     Object? errors = freezed,
+    Object? reviewRequestId = freezed,
   }) {
     return _then(_$ProfileUpdateResponseImpl(
       success: null == success
@@ -2768,6 +2777,10 @@ class __$$ProfileUpdateResponseImplCopyWithImpl<$Res>
           ? _value._errors
           : errors // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      reviewRequestId: freezed == reviewRequestId
+          ? _value.reviewRequestId
+          : reviewRequestId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -2779,7 +2792,8 @@ class _$ProfileUpdateResponseImpl implements _ProfileUpdateResponse {
       {required this.success,
       required this.message,
       this.completionStatus,
-      final Map<String, dynamic>? errors})
+      final Map<String, dynamic>? errors,
+      this.reviewRequestId})
       : _errors = errors;
 
   factory _$ProfileUpdateResponseImpl.fromJson(Map<String, dynamic> json) =>
@@ -2802,8 +2816,11 @@ class _$ProfileUpdateResponseImpl implements _ProfileUpdateResponse {
   }
 
   @override
+  final String? reviewRequestId;
+
+  @override
   String toString() {
-    return 'ProfileUpdateResponse(success: $success, message: $message, completionStatus: $completionStatus, errors: $errors)';
+    return 'ProfileUpdateResponse(success: $success, message: $message, completionStatus: $completionStatus, errors: $errors, reviewRequestId: $reviewRequestId)';
   }
 
   @override
@@ -2815,13 +2832,20 @@ class _$ProfileUpdateResponseImpl implements _ProfileUpdateResponse {
             (identical(other.message, message) || other.message == message) &&
             (identical(other.completionStatus, completionStatus) ||
                 other.completionStatus == completionStatus) &&
-            const DeepCollectionEquality().equals(other._errors, _errors));
+            const DeepCollectionEquality().equals(other._errors, _errors) &&
+            (identical(other.reviewRequestId, reviewRequestId) ||
+                other.reviewRequestId == reviewRequestId));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, success, message,
-      completionStatus, const DeepCollectionEquality().hash(_errors));
+  int get hashCode => Object.hash(
+      runtimeType,
+      success,
+      message,
+      completionStatus,
+      const DeepCollectionEquality().hash(_errors),
+      reviewRequestId);
 
   @JsonKey(ignore: true)
   @override
@@ -2843,7 +2867,8 @@ abstract class _ProfileUpdateResponse implements ProfileUpdateResponse {
       {required final bool success,
       required final String message,
       final ProfileCompletionStatus? completionStatus,
-      final Map<String, dynamic>? errors}) = _$ProfileUpdateResponseImpl;
+      final Map<String, dynamic>? errors,
+      final String? reviewRequestId}) = _$ProfileUpdateResponseImpl;
 
   factory _ProfileUpdateResponse.fromJson(Map<String, dynamic> json) =
       _$ProfileUpdateResponseImpl.fromJson;
@@ -2856,6 +2881,8 @@ abstract class _ProfileUpdateResponse implements ProfileUpdateResponse {
   ProfileCompletionStatus? get completionStatus;
   @override
   Map<String, dynamic>? get errors;
+  @override
+  String? get reviewRequestId;
   @override
   @JsonKey(ignore: true)
   _$$ProfileUpdateResponseImplCopyWith<_$ProfileUpdateResponseImpl>

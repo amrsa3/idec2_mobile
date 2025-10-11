@@ -56,7 +56,7 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
       debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب القواعد: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل في جلب قواعد التعديل: $e',
+        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
       );
     }
   }
@@ -64,29 +64,52 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   /// جلب القواعد الخاصة بحقل معين
   List<ProfileRuleModel> getRulesForField(
       String fieldName, ProfileStatus status) {
-    return state.rules
+    final matchingRules = state.rules
         .where((rule) =>
             rule.fieldName == fieldName &&
             rule.targetStatus == status &&
             rule.isActive)
         .toList();
+        
+    debugPrint('🔍 [PROFILE_RULES] البحث عن قواعد للحقل: $fieldName والحالة: $status');
+    debugPrint('📋 [PROFILE_RULES] إجمالي القواعد المتاحة: ${state.rules.length}');
+    debugPrint('📋 [PROFILE_RULES] القواعد المطابقة: ${matchingRules.length}');
+    
+    if (matchingRules.isNotEmpty) {
+      for (var rule in matchingRules) {
+        debugPrint('   - قاعدة: ${rule.id}, يسمح بالتعديل: ${rule.allowEdit}, يتطلب وثيقة: ${rule.requiresDocument}');
+      }
+    }
+    
+    return matchingRules;
   }
 
   /// التحقق من إمكانية تعديل حقل
   bool canEditField(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
 
+    debugPrint('🔍 [PROFILE_RULES] فحص إمكانية تعديل الحقل: $fieldName للحالة: $currentStatus');
+    debugPrint('📋 [PROFILE_RULES] عدد القواعد المطبقة: ${rules.length}');
+
     if (rules.isEmpty) {
+      debugPrint('✅ [PROFILE_RULES] لا توجد قواعد للحقل $fieldName - مسموح بالتعديل');
       return true; // لا توجد قواعد = مسموح بالتعديل
     }
 
-    return rules.every((rule) => rule.allowEdit);
+    final canEdit = rules.every((rule) => rule.allowEdit);
+    debugPrint('📋 [PROFILE_RULES] نتيجة فحص التعديل للحقل $fieldName: $canEdit');
+    
+    return canEdit;
   }
 
   /// التحقق من حاجة الحقل لوثيقة
   bool fieldRequiresDocument(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
-    return rules.any((rule) => rule.requiresDocument);
+    final requiresDoc = rules.any((rule) => rule.requiresDocument);
+    
+    debugPrint('📋 [PROFILE_RULES] فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
+    
+    return requiresDoc;
   }
 
   /// التحقق من حاجة التعديل لموافقة
@@ -184,6 +207,47 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   Future<void> refresh() async {
     _rulesService.clearCache();
     await loadRules(forceRefresh: true);
+  }
+
+  /// التحقق من إمكانية تعديل الملف الموثق
+  bool canEditVerifiedProfile() {
+    // التحقق من وجود قواعد تسمح بتعديل الملفات الموثقة
+    final verifiedRules = state.rules
+        .where((rule) => 
+            rule.targetStatus == ProfileStatus.verified && 
+            rule.allowEdit && 
+            rule.isActive)
+        .toList();
+    
+    return verifiedRules.isNotEmpty;
+  }
+
+  /// الحصول على نسبة الاكتمال المطلوبة للتوثيق
+  double getRequiredCompletionPercentage() {
+    // القيمة الافتراضية 80%
+    return 80.0;
+  }
+
+  /// الحصول على الحقول المطلوبة للتوثيق
+  List<String> getRequiredFieldsForVerification() {
+    // الحقول الأساسية المطلوبة للتوثيق
+    return [
+      'fullNameAr',
+      'fullNameEn',
+      'email',
+      'birthDate',
+      'governorateId',
+      'qualificationId',
+    ];
+  }
+
+  /// الحصول على الوثائق المطلوبة للتوثيق
+  List<String> getRequiredDocumentsForVerification() {
+    // الوثائق الأساسية المطلوبة للتوثيق
+    return [
+      'identity',
+      'qualification',
+    ];
   }
 }
 

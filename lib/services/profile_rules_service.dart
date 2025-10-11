@@ -47,8 +47,8 @@ class ProfileRulesService {
     } catch (e) {
       debugPrint('❌ [PROFILE_RULES] خطأ في جلب القواعد: $e');
 
-      // إرجاع قواعد افتراضية في حالة الخطأ
-      return _getDefaultRules();
+      // لا نستخدم قواعد افتراضية - التعديل يتطلب اتصال بالخادم
+      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
     }
   }
 
@@ -380,78 +380,7 @@ class ProfileRulesService {
     debugPrint('🗑️ [PROFILE_RULES] تم مسح الـ cache');
   }
 
-  /// قواعد افتراضية في حالة فشل جلب القواعد من الخادم
-  List<ProfileRuleModel> _getDefaultRules() {
-    final now = DateTime.now();
 
-    return [
-      // قواعد للمستخدمين الموثقين
-      ProfileRuleModel(
-        id: 'default_1',
-        fieldName: 'fullNameAr',
-        fieldDisplayName: 'الاسم العربي',
-        targetStatus: ProfileStatus.verified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.conditionalByChangeLimit,
-        changeLimit: 3,
-        requiresDocument: false,
-        createdAt: now,
-      ),
-      ProfileRuleModel(
-        id: 'default_2',
-        fieldName: 'fullNameEn',
-        fieldDisplayName: 'الاسم الإنجليزي',
-        targetStatus: ProfileStatus.verified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.conditionalByChangeLimit,
-        changeLimit: 3,
-        requiresDocument: false,
-        createdAt: now,
-      ),
-      ProfileRuleModel(
-        id: 'default_3',
-        fieldName: 'qualificationId',
-        fieldDisplayName: 'المؤهل',
-        targetStatus: ProfileStatus.verified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.alwaysRequired,
-        requiresDocument: true,
-        createdAt: now,
-      ),
-      ProfileRuleModel(
-        id: 'default_4',
-        fieldName: 'governorateId',
-        fieldDisplayName: 'المحافظة',
-        targetStatus: ProfileStatus.verified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.noApprovalRequired,
-        requiresDocument: false,
-        createdAt: now,
-      ),
-
-      // قواعد للمستخدمين غير الموثقين (كل شيء مسموح)
-      ProfileRuleModel(
-        id: 'default_5',
-        fieldName: 'fullNameAr',
-        fieldDisplayName: 'الاسم العربي',
-        targetStatus: ProfileStatus.unverified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.noApprovalRequired,
-        requiresDocument: false,
-        createdAt: now,
-      ),
-      ProfileRuleModel(
-        id: 'default_6',
-        fieldName: 'qualificationId',
-        fieldDisplayName: 'المؤهل',
-        targetStatus: ProfileStatus.unverified,
-        allowEdit: true,
-        approvalPolicy: ApprovalPolicy.noApprovalRequired,
-        requiresDocument: true,
-        createdAt: now,
-      ),
-    ];
-  }
 
   /// جلب أسماء الحقول المتاحة
   Future<List<String>> getAvailableFieldNames() async {

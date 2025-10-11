@@ -9,6 +9,9 @@ import '../../../services/storage_service.dart';
 import '../../../services/dio_service.dart';
 import '../../../services/auth_service.dart';
 import '../../../models/models.dart';
+import '../../../providers/profile_rules_provider.dart';
+import '../../../services/profile_rules_service.dart';
+import '../../../models/profile_rule_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -512,39 +515,76 @@ class LocalProfileService {
     }
   }
 
-  /// Get verification rules
+  /// Get profile rules using ProfileRulesService (updated to use new system)
+  @Deprecated('Use ProfileRulesService.getActiveRules() instead')
   static Future<VerificationRulesResponse?> getVerificationRules() async {
     try {
-      debugPrint('📋 ProfileService: Fetching verification rules');
+      debugPrint('📋 ProfileService: Fetching profile rules using new system');
 
-      // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
-      if (token == null || token.isEmpty) {
-        debugPrint('❌ ProfileService: No authentication token found');
-        return null;
-      }
+      // استخدام ProfileRulesService الجديد
+      final profileRulesService = ProfileRulesService();
+      final rules = await profileRulesService.getActiveRules();
 
-      final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/v1/verification/rules',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-
-      debugPrint('📋 ProfileService: Verification rules response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        debugPrint('📋 ProfileService: Verification rules received successfully');
+      if (rules.isNotEmpty) {
+        debugPrint('📋 ProfileService: Profile rules received successfully (${rules.length} rules)');
         
-        return VerificationRulesResponse.fromJson(data);
+        // إنشاء VerificationRulesResponse للتوافق مع النظام القديم
+        // هذا مؤقت حتى يتم تحديث جميع الملفات
+        return VerificationRulesResponse(
+          requiredDocuments: _extractRequiredDocuments(rules),
+          requiredFields: _extractRequiredFields(rules),
+          rules: _extractRulesText(rules),
+        );
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch verification rules: ${response.statusCode}');
+        debugPrint('❌ ProfileService: No profile rules found');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error fetching verification rules: $e');
+      debugPrint('❌ ProfileService: Error fetching profile rules: $e');
       return null;
+    }
+  }
+
+  /// Extract required documents from profile rules
+  static List<RequiredDocumentModel> _extractRequiredDocuments(List<ProfileRuleModel> rules) {
+    final requiredDocs = <RequiredDocumentModel>[];
+    
+    for (final rule in rules) {
+      if (rule.requiresDocument && rule.isActive) {
+        requiredDocs.add(RequiredDocumentModel(
+          id: rule.id,
+          documentType: DocumentType.other, // Default type
+          title: (rule.fieldDisplayName?.isNotEmpty == true) ? rule.fieldDisplayName! : rule.fieldName,
+          description: rule.fieldDescription ?? '',
+          isRequired: rule.requiresDocument,
+        ));
+      }
+    }
+    
+    return requiredDocs;
+  }
+
+  /// Extract allowed fields from profile rules
+  static List<String> _extractAllowedFields(List<ProfileRuleModel> rules) {
+    return rules
+        .where((rule) => rule.allowEdit && rule.isActive)
+        .map((rule) => rule.fieldName)
+        .toList();
+  }
+
+  /// Get profile rules using new ProfileRulesService (recommended)
+  static Future<List<ProfileRuleModel>> getProfileRules({bool forceRefresh = false}) async {
+    try {
+      debugPrint('📋 ProfileService: Fetching profile rules using ProfileRulesService');
+      
+      final profileRulesService = ProfileRulesService();
+      final rules = await profileRulesService.getActiveRules(forceRefresh: forceRefresh);
+      
+      debugPrint('✅ ProfileService: Profile rules fetched successfully (${rules.length} rules)');
+      return rules;
+    } catch (e) {
+      debugPrint('❌ ProfileService: Error fetching profile rules: $e');
+      return [];
     }
   }
 
@@ -968,13 +1008,27 @@ class LocalProfileService {
       debugPrint('💾 ProfileService: Update response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        // Server returns UserProfile object, not ProfileUpdateResponse
-        // So we create a success response manually
-        debugPrint('✅ ProfileService: Profile data updated successfully');
-        return const ProfileUpdateResponse(
-          success: true,
-          message: 'تم تحديث بيانات الملف الشخصي بنجاح',
-        );
+        debugPrint('💾 ProfileService: Update response data: ${response.data}');
+        
+        // Check if response contains reviewRequestId (indicating review request was created)
+        if (response.data is Map<String, dynamic> && 
+            response.data.containsKey('reviewRequestId')) {
+          final responseData = response.data as Map<String, dynamic>;
+          debugPrint('📋 ProfileService: Review request created with ID: ${responseData['reviewRequestId']}');
+          
+          return ProfileUpdateResponse(
+            success: true,
+            message: responseData['message'] ?? 'تم إرسال طلب المراجعة بنجاح',
+            reviewRequestId: responseData['reviewRequestId'],
+          );
+        } else {
+          // Normal profile update (no review required)
+          debugPrint('✅ ProfileService: Profile data updated successfully');
+          return const ProfileUpdateResponse(
+            success: true,
+            message: 'تم تحديث بيانات الملف الشخصي بنجاح',
+          );
+        }
       } else {
         return ProfileUpdateResponse(
           success: false,
@@ -1062,5 +1116,31 @@ class LocalProfileService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// استخراج الحقول المطلوبة من قواعد البروفايل
+  static List<String> _extractRequiredFields(List<ProfileRuleModel> rules) {
+    final requiredFields = <String>[];
+    
+    for (final rule in rules) {
+      if (rule.requiresDocument && rule.fieldName.isNotEmpty) {
+        requiredFields.add(rule.fieldName);
+      }
+    }
+    
+    return requiredFields;
+  }
+
+  /// استخراج نصوص القواعد من قواعد البروفايل
+  static List<String> _extractRulesText(List<ProfileRuleModel> rules) {
+    final rulesText = <String>[];
+    
+    for (final rule in rules) {
+      if (rule.fieldDescription != null && rule.fieldDescription!.isNotEmpty) {
+        rulesText.add(rule.fieldDescription!);
+      }
+    }
+    
+    return rulesText;
   }
 }

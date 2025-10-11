@@ -15,6 +15,7 @@ import '../../../../models/profile_model.dart';
 import '../../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../../models/profile_data_models.dart';
 import '../../providers/profile_provider.dart';
+import '../../../../providers/profile_rules_provider.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verification_status_badge.dart';
 import '../widgets/verification_notification_banner.dart';
@@ -36,18 +37,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   @override
   void initState() {
     super.initState();
-    // تحميل بيانات الملف الشخصي عند فتح الشاشة
+    // تحميل بيانات الملف الشخصي وقواعد التعديل عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Check if user is authenticated before loading profile
       final authState = ref.read(authProvider);
       if (authState.isAuthenticated && !authState.sessionExpired) {
         ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+        // تحميل قواعد الملف الشخصي
+        ref.read(profileRulesProvider.notifier).loadRules();
       } else {
         // Wait a bit for auth state to stabilize, then try again
         Future.delayed(const Duration(milliseconds: 500), () {
           final updatedAuthState = ref.read(authProvider);
           if (updatedAuthState.isAuthenticated && !updatedAuthState.sessionExpired) {
             ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+            // تحميل قواعد الملف الشخصي
+            ref.read(profileRulesProvider.notifier).loadRules();
           }
         });
       }
@@ -524,16 +529,18 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الشخصية',
       icon: Icons.person_outline,
       children: [
-        _buildDataRow('الاسم العربي', profile.fullNameAr),
-        _buildDataRow('الاسم الإنجليزي', profile.fullNameEn),
-        _buildDataRow('البريد الإلكتروني', profile.email),
-        _buildDataRow(
+        _buildDataRowWithRules('الاسم العربي', profile.fullNameAr, 'arabicName', profile),
+        _buildDataRowWithRules('الاسم الإنجليزي', profile.fullNameEn, 'englishName', profile),
+        _buildDataRowWithRules('البريد الإلكتروني', profile.email, 'email', profile),
+        _buildDataRowWithRules(
           'تاريخ الميلاد',
           profile.birthDate != null
               ? DateFormat('yyyy/MM/dd').format(profile.birthDate!)
               : null,
+          'birthDate',
+          profile,
         ),
-        _buildDataRow('المحافظة', _getGovernorateDisplayName(profile.governorateId, ref)),
+        _buildDataRowWithRules('المحافظة', _getGovernorateDisplayName(profile.governorateId, ref), 'governorate', profile),
       ],
     );
   }
@@ -543,10 +550,10 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الأكاديمية',
       icon: Icons.school_outlined,
       children: [
-        _buildDataRow('المؤهل العلمي', _getQualificationDisplayName(profile.qualificationId, ref)),
-        _buildDataRow('سنة التخرج', profile.graduationYear?.toString()),
-        _buildDataRow('الجامعة', profile.university),
-        _buildDataRow('مكان العمل', profile.workplace),
+        _buildDataRowWithRules('المؤهل العلمي', _getQualificationDisplayName(profile.qualificationId, ref), 'qualification', profile),
+        _buildDataRowWithRules('سنة التخرج', profile.graduationYear?.toString(), 'graduationYear', profile),
+        _buildDataRowWithRules('الجامعة', profile.university, 'university', profile),
+        _buildDataRowWithRules('مكان العمل', profile.workplace, 'workplace', profile),
       ],
     );
   }
@@ -630,12 +637,106 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
+  // دالة محسنة لعرض الحقول مع المؤشرات البصرية حسب القواعد
+  Widget _buildDataRowWithRules(String label, String? value, String fieldName, ProfileModel profile) {
+    final rulesNotifier = ref.read(profileRulesProvider.notifier);
+    final profileStatus = _convertVerificationStatusToProfileStatus(profile.verificationStatus);
+    final isEditable = rulesNotifier.canEditField(fieldName, profileStatus);
+    final requiresDocument = rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
+    final isRequired = rulesNotifier.getRequiredFieldsForVerification().contains(fieldName);
+    
+    // تحديد لون الخلفية حسب حالة الحقل
+    Color? backgroundColor;
+    IconData? statusIcon;
+    Color? iconColor;
+    String? tooltip;
+    
+    if (!isEditable) {
+      backgroundColor = AppColors.textSecondary.withOpacity(0.1);
+      statusIcon = Icons.lock_outline;
+      iconColor = AppColors.textSecondary;
+      tooltip = 'هذا الحقل مقفل ولا يمكن تعديله';
+    } else if (isRequired && (value == null || value.trim().isEmpty)) {
+      backgroundColor = AppColors.error.withOpacity(0.1);
+      statusIcon = Icons.error_outline;
+      iconColor = AppColors.error;
+      tooltip = 'هذا الحقل مطلوب للتوثيق';
+    } else if (requiresDocument) {
+      final hasDocument = profile.documents.any((doc) => 
+        doc.documentType.toString().toLowerCase().contains(fieldName.toLowerCase()));
+      if (hasDocument) {
+        backgroundColor = AppColors.success.withOpacity(0.1);
+        statusIcon = Icons.check_circle_outline;
+        iconColor = AppColors.success;
+        tooltip = 'تم رفع الوثيقة المطلوبة';
+      } else {
+        backgroundColor = AppColors.warning.withOpacity(0.1);
+        statusIcon = Icons.upload_file_outlined;
+        iconColor = AppColors.warning;
+        tooltip = 'يتطلب رفع وثيقة';
+      }
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: backgroundColor != null 
+          ? Border.all(color: iconColor?.withOpacity(0.3) ?? Colors.transparent)
+          : null,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (statusIcon != null)
+                  Tooltip(
+                    message: tooltip ?? '',
+                    child: Icon(
+                      statusIcon,
+                      size: 16,
+                      color: iconColor,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(width: 8),
+          
+          Expanded(
+            child: Text(
+              value ?? 'غير محدد',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+                fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 
   Widget _buildActionButtons(ProfileModel profile) {
-    final verificationRules = ref.read(profileProvider).verificationRules;
-    final canEdit = _canEditProfile(profile, verificationRules);
-    final canSubmitForVerification = _canSubmitForVerification(profile, verificationRules);
+    final canEdit = _canEditProfile(profile, null);
+    final canSubmitForVerification = _canSubmitForVerification(profile, null);
     
     return Column(
       children: [
@@ -670,32 +771,124 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
   // Helper methods
   bool _canEditProfile(ProfileModel profile, dynamic verificationRules) {
-    // السماح بالتعديل دائماً للملفات غير الموثقة
-    if (profile.verificationStatus == VerificationStatus.unverified) return true;
+    // استخدام ProfileRulesProvider للتحقق من إمكانية التعديل
+    final rulesNotifier = ref.read(profileRulesProvider.notifier);
     
-    // منع التعديل للملفات قيد المراجعة
-    if (profile.verificationStatus == VerificationStatus.underReview) return false;
-    
-    // السماح بالتعديل المحدود للملفات الموثقة والمرفوضة
-    return true;
+    // التحقق من القواعد العامة للتعديل حسب حالة التوثيق
+    switch (profile.verificationStatus) {
+      case VerificationStatus.unverified:
+        // السماح بالتعديل للملفات غير الموثقة
+        return true;
+        
+      case VerificationStatus.underReview:
+        // منع التعديل للملفات قيد المراجعة
+        return false;
+        
+      case VerificationStatus.verified:
+        // التحقق من القواعد للملفات الموثقة
+        // يمكن تعديل بعض الحقول حسب القواعد المحددة
+        return rulesNotifier.canEditVerifiedProfile();
+        
+      case VerificationStatus.rejected:
+        // السماح بالتعديل للملفات المرفوضة لإعادة التقديم
+        return true;
+        
+      default:
+        return false;
+    }
+  }
+
+  // تحويل VerificationStatus إلى ProfileStatus
+  ProfileStatus _convertVerificationStatusToProfileStatus(VerificationStatus status) {
+    switch (status) {
+      case VerificationStatus.unverified:
+        return ProfileStatus.unverified;
+      case VerificationStatus.underReview:
+        return ProfileStatus.pendingVerification;
+      case VerificationStatus.verified:
+        return ProfileStatus.verified;
+      case VerificationStatus.rejected:
+        return ProfileStatus.rejected;
+    }
   }
   
   bool _canSubmitForVerification(ProfileModel profile, dynamic verificationRules) {
-    // التحقق من نسبة الاكتمال
-    if (profile.completionPercentage < 80) return false;
+    // استخدام ProfileRulesProvider للتحقق من متطلبات التوثيق
+    final rulesNotifier = ref.read(profileRulesProvider.notifier);
     
-    // التحقق من الوثائق المطلوبة
-    final requiredDocuments = ['identity', 'qualification'];
+    // التحقق من حالة التوثيق الحالية
+    if (profile.verificationStatus == VerificationStatus.verified) {
+      return false; // الملف موثق بالفعل
+    }
     
-    // التحقق من وجود جميع الوثائق المطلوبة
-    for (final fieldName in requiredDocuments) {
-      final hasDocument = profile.documents.any((doc) => doc.documentType.toString().contains(fieldName));
+    if (profile.verificationStatus == VerificationStatus.underReview) {
+      return false; // الملف قيد المراجعة
+    }
+    
+    // التحقق من نسبة الاكتمال المطلوبة حسب القواعد
+    final requiredCompletionPercentage = rulesNotifier.getRequiredCompletionPercentage();
+    if (profile.completionPercentage < requiredCompletionPercentage) {
+      return false;
+    }
+    
+    // التحقق من الحقول المطلوبة حسب القواعد
+    final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
+    for (final fieldName in requiredFields) {
+      final fieldValue = _getFieldValue(profile, fieldName);
+      if (fieldValue == null || fieldValue.toString().trim().isEmpty) {
+        return false;
+      }
+    }
+    
+    // التحقق من الوثائق المطلوبة حسب القواعد
+    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    for (final documentType in requiredDocuments) {
+      final hasDocument = profile.documents.any((doc) => 
+        doc.documentType.toString().toLowerCase().contains(documentType.toLowerCase()));
       if (!hasDocument) {
         return false;
       }
     }
     
     return true;
+  }
+
+  // دالة مساعدة للحصول على قيمة الحقل
+  dynamic _getFieldValue(ProfileModel profile, String fieldName) {
+    switch (fieldName.toLowerCase()) {
+      case 'fullnamear':
+      case 'full_name_ar':
+      case 'arabicname':
+      case 'arabic_name':
+        return profile.fullNameAr;
+      case 'fullnameen':
+      case 'full_name_en':
+      case 'englishname':
+      case 'english_name':
+        return profile.fullNameEn;
+      case 'email':
+        return profile.email;
+      case 'birthdate':
+      case 'birth_date':
+        return profile.birthDate;
+      case 'governorate':
+      case 'governorateid':
+      case 'governorate_id':
+        return profile.governorateId;
+      case 'qualification':
+      case 'qualificationid':
+      case 'qualification_id':
+        return profile.qualificationId;
+      case 'graduationyear':
+      case 'graduation_year':
+        return profile.graduationYear;
+      case 'university':
+        return profile.university;
+      case 'workplace':
+        return profile.workplace;
+      default:
+        return null;
+    }
   }
 
   String _getGovernorateDisplayName(String? governorateId, WidgetRef ref) {
@@ -734,6 +927,60 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
   // Navigation methods
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
+    final rulesNotifier = ref.read(profileRulesProvider.notifier);
+    
+    // التحقق من إمكانية التعديل حسب القواعد
+    if (!_canEditProfile(profile, null)) {
+      String message = 'لا يمكن تعديل الملف الشخصي في الوقت الحالي';
+      String reason = '';
+      
+      switch (profile.verificationStatus) {
+        case VerificationStatus.underReview:
+          reason = 'الملف الشخصي قيد المراجعة من قبل الإدارة';
+          break;
+        case VerificationStatus.verified:
+          if (!rulesNotifier.canEditVerifiedProfile()) {
+            reason = 'الملف الشخصي موثق ولا يسمح بالتعديل حسب القواعد المحددة';
+          }
+          break;
+        default:
+          reason = 'حالة الملف الشخصي لا تسمح بالتعديل';
+      }
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.lock_outline, color: AppColors.warning),
+              SizedBox(width: 8),
+              Text('تعديل غير مسموح'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 8),
+              Text(
+                reason,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
+    // الانتقال إلى شاشة التعديل
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -825,13 +1072,81 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
 
   void _submitForVerification(BuildContext context, WidgetRef ref, ProfileModel profile) {
+    final rulesNotifier = ref.read(profileRulesProvider.notifier);
+    
+    // التحقق من المتطلبات قبل عرض الحوار
+    final missingRequirements = _getMissingVerificationRequirements(profile, rulesNotifier);
+    
+    if (missingRequirements.isNotEmpty) {
+      // عرض رسالة بالمتطلبات المفقودة
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('متطلبات التوثيق غير مكتملة'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('يرجى إكمال المتطلبات التالية قبل طلب التوثيق:'),
+              const SizedBox(height: 12),
+              ...missingRequirements.map((requirement) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.error, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(requirement)),
+                  ],
+                ),
+              )),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('حسناً'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _navigateToEditProfile(context, profile);
+              },
+              child: const Text('تعديل الملف الشخصي'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
+    // عرض حوار التأكيد مع تفاصيل المراجعة
+    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('طلب توثيق الحساب'),
-        content: const Text(
-          'هل أنت متأكد من أنك تريد إرسال طلب توثيق الحساب؟\n\n'
-          'سيتم مراجعة بياناتك والوثائق المرفقة من قبل الإدارة.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('هل أنت متأكد من أنك تريد إرسال طلب توثيق الحساب؟'),
+            const SizedBox(height: 16),
+            const Text('سيتم مراجعة:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (requiredFields.isNotEmpty) ...[
+              Text('• ${requiredFields.length} حقل مطلوب'),
+            ],
+            if (requiredDocuments.isNotEmpty) ...[
+              Text('• ${requiredDocuments.length} وثيقة مطلوبة'),
+            ],
+            const SizedBox(height: 8),
+            const Text(
+              'ملاحظة: قد تستغرق عملية المراجعة من 1-3 أيام عمل.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -843,10 +1158,96 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               Navigator.pop(context);
               ref.read(profileProvider.notifier).submitForVerification();
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
             child: const Text('إرسال الطلب'),
           ),
         ],
       ),
     );
+  }
+  
+  // دالة للحصول على المتطلبات المفقودة للتوثيق
+  List<String> _getMissingVerificationRequirements(ProfileModel profile, dynamic rulesNotifier) {
+    final missingRequirements = <String>[];
+    
+    // التحقق من نسبة الاكتمال
+    final requiredCompletionPercentage = rulesNotifier.getRequiredCompletionPercentage();
+    if (profile.completionPercentage < requiredCompletionPercentage) {
+      missingRequirements.add('إكمال الملف الشخصي ($requiredCompletionPercentage% مطلوب)');
+    }
+    
+    // التحقق من الحقول المطلوبة
+    final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
+    for (final fieldName in requiredFields) {
+      final fieldValue = _getFieldValue(profile, fieldName);
+      if (fieldValue == null || fieldValue.toString().trim().isEmpty) {
+        missingRequirements.add('إكمال حقل: ${_getFieldDisplayName(fieldName)}');
+      }
+    }
+    
+    // التحقق من الوثائق المطلوبة
+    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    for (final documentType in requiredDocuments) {
+      final hasDocument = profile.documents.any((doc) => 
+        doc.documentType.toString().toLowerCase().contains(documentType.toLowerCase()));
+      if (!hasDocument) {
+        missingRequirements.add('رفع وثيقة: ${_getDocumentDisplayName(documentType)}');
+      }
+    }
+    
+    return missingRequirements;
+  }
+  
+  // دالة للحصول على اسم الحقل للعرض
+  String _getFieldDisplayName(String fieldName) {
+    switch (fieldName.toLowerCase()) {
+      case 'arabicname':
+      case 'arabic_name':
+        return 'الاسم العربي';
+      case 'englishname':
+      case 'english_name':
+        return 'الاسم الإنجليزي';
+      case 'email':
+        return 'البريد الإلكتروني';
+      case 'birthdate':
+      case 'birth_date':
+        return 'تاريخ الميلاد';
+      case 'governorate':
+      case 'governorateid':
+        return 'المحافظة';
+      case 'qualification':
+      case 'qualificationid':
+        return 'المؤهل العلمي';
+      case 'graduationyear':
+      case 'graduation_year':
+        return 'سنة التخرج';
+      case 'university':
+        return 'الجامعة';
+      case 'workplace':
+        return 'مكان العمل';
+      case 'phonenumber':
+      case 'phone_number':
+        return 'رقم الهاتف';
+      default:
+        return fieldName;
+    }
+  }
+  
+  // دالة للحصول على اسم الوثيقة للعرض
+  String _getDocumentDisplayName(String documentType) {
+    switch (documentType.toLowerCase()) {
+      case 'identity':
+        return 'وثيقة الهوية';
+      case 'qualification':
+        return 'وثيقة المؤهل العلمي';
+      case 'passport':
+        return 'جواز السفر';
+      case 'certificate':
+        return 'الشهادة';
+      default:
+        return documentType;
+    }
   }
 }

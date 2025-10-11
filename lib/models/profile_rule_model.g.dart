@@ -68,9 +68,9 @@ const _$ProfileStatusEnumMap = {
 };
 
 const _$ApprovalPolicyEnumMap = {
-  ApprovalPolicy.noApprovalRequired: 'NO_APPROVAL_REQUIRED',
-  ApprovalPolicy.alwaysRequired: 'ALWAYS_REQUIRED',
-  ApprovalPolicy.conditionalByChangeLimit: 'CONDITIONAL_BY_CHANGE_LIMIT',
+  ApprovalPolicy.noApprovalRequired: 'NOT_REQUIRED',
+  ApprovalPolicy.alwaysRequired: 'REQUIRED',
+  ApprovalPolicy.conditionalByChangeLimit: 'CONDITIONAL',
 };
 
 const _$RuleCategoryEnumMap = {

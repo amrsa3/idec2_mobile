@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
+import '../services/profile_rules_service.dart';
 import 'api_service.dart';
 import 'dio_service.dart';
 
@@ -13,12 +14,24 @@ class VerificationService {
     _apiService = ApiService(DioService.instance.dio);
   }
 
-  // Get verification rules
+  // Get verification rules (deprecated - use ProfileRulesProvider instead)
+  @deprecated
   Future<VerificationRulesModel> getVerificationRules() async {
     try {
       return await _apiService.getVerificationRules();
     } catch (e) {
       debugPrint('Error getting verification rules: $e');
+      rethrow;
+    }
+  }
+
+  // Get profile rules using the new system
+  Future<List<ProfileRuleModel>> getProfileRules() async {
+    try {
+      final service = ProfileRulesService();
+      return await service.getActiveRules();
+    } catch (e) {
+      debugPrint('Error getting profile rules: $e');
       rethrow;
     }
   }

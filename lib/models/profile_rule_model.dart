@@ -5,13 +5,13 @@ part 'profile_rule_model.g.dart';
 
 /// سياسات الموافقة على التعديلات
 enum ApprovalPolicy {
-  @JsonValue('NO_APPROVAL_REQUIRED')
+  @JsonValue('NOT_REQUIRED')
   noApprovalRequired, // لا تحتاج موافقة
 
-  @JsonValue('ALWAYS_REQUIRED')
+  @JsonValue('REQUIRED')
   alwaysRequired, // تحتاج موافقة دائماً
 
-  @JsonValue('CONDITIONAL_BY_CHANGE_LIMIT')
+  @JsonValue('CONDITIONAL')
   conditionalByChangeLimit, // تحتاج موافقة حسب حجم التغيير
 }
 

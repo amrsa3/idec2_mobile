@@ -270,6 +270,7 @@ _$ProfileUpdateResponseImpl _$$ProfileUpdateResponseImplFromJson(
           : ProfileCompletionStatus.fromJson(
               json['completionStatus'] as Map<String, dynamic>),
       errors: json['errors'] as Map<String, dynamic>?,
+      reviewRequestId: json['reviewRequestId'] as String?,
     );
 
 Map<String, dynamic> _$$ProfileUpdateResponseImplToJson(
@@ -279,4 +280,5 @@ Map<String, dynamic> _$$ProfileUpdateResponseImplToJson(
       'message': instance.message,
       'completionStatus': instance.completionStatus,
       'errors': instance.errors,
+      'reviewRequestId': instance.reviewRequestId,
     };

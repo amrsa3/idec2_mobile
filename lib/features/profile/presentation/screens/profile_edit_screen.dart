@@ -53,6 +53,92 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   // قائمة الملفات المختارة للرفع
   List<SelectedDocument> _selectedDocuments = [];
 
+  // متغير لسنة التخرج المختارة
+  int? _selectedGraduationYear;
+
+  // دالة لتوليد قائمة السنوات
+  List<DropdownMenuItem<int>> _getGraduationYearItems() {
+    final currentYear = DateTime.now().year;
+    final startYear = 1950;
+    final endYear = currentYear + 5;
+    
+    List<DropdownMenuItem<int>> items = [];
+    
+    for (int year = endYear; year >= startYear; year--) {
+      items.add(
+        DropdownMenuItem<int>(
+          value: year,
+          child: Text(year.toString()),
+        ),
+      );
+    }
+    
+    return items;
+  }
+
+  /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
+  bool _hasDocumentRequiringChanges() {
+    try {
+      // قائمة الحقول التي قد تتطلب وثائق
+      final fieldsToCheck = [
+        'fullNameAr',
+        'fullNameEn', 
+        'email',
+        'birthDate',
+        'governorateId',
+        'qualificationId',
+        'graduationYear',
+        'university',
+        'workplace'
+      ];
+
+      for (final fieldName in fieldsToCheck) {
+        // التحقق من وجود تغيير في الحقل
+        bool hasChange = false;
+        
+        switch (fieldName) {
+          case 'fullNameAr':
+            hasChange = _fullNameArController.text.trim() != (widget.profile.fullNameAr ?? '');
+            break;
+          case 'fullNameEn':
+            hasChange = _fullNameEnController.text.trim() != (widget.profile.fullNameEn ?? '');
+            break;
+          case 'email':
+            hasChange = _emailController.text.trim() != (widget.profile.email ?? '');
+            break;
+          case 'birthDate':
+            hasChange = _selectedBirthDate != widget.profile.birthDate;
+            break;
+          case 'governorateId':
+            hasChange = _selectedGovernorateId != widget.profile.governorateId;
+            break;
+          case 'qualificationId':
+            hasChange = _selectedQualificationId != widget.profile.qualificationId;
+            break;
+          case 'graduationYear':
+            hasChange = _selectedGraduationYear != widget.profile.graduationYear;
+            break;
+          case 'university':
+            hasChange = _universityController.text.trim() != (widget.profile.university ?? '');
+            break;
+          case 'workplace':
+            hasChange = _workplaceController.text.trim() != (widget.profile.workplace ?? '');
+            break;
+        }
+
+        // إذا كان هناك تغيير وهذا الحقل يتطلب وثيقة
+        if (hasChange && _requiresDocument(fieldName)) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('❌ خطأ في التحقق من التغييرات التي تتطلب وثائق: $e');
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +187,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _selectedBirthDate = widget.profile.birthDate;
     _selectedGovernorateId = widget.profile.governorateId;
     _selectedQualificationId = widget.profile.qualificationId;
+    _selectedGraduationYear = widget.profile.graduationYear;
   }
 
   void _loadProfileRules() {
@@ -167,21 +254,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('تعديل الملف الشخصي'),
-        actions: [
-          if (!_isSaving)
-            TextButton(
-              onPressed: _canSave(profileState) ? _saveProfile : null,
-              child: Text(
-                'حفظ',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: _canSave(profileState)
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
       ),
       body: _buildBody(profileState),
     );
@@ -353,70 +425,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.success.withOpacity(0.3)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.verified_user,
-                  color: AppColors.success,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'حساب موثق ✓',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.success,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'تخضع التعديلات لقواعد خاصة وقد تتطلب موافقة إدارية',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
+              color: AppColors.success.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: AppColors.info,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'الحقول المقفلة 🔒 غير قابلة للتعديل، والحقول التي تحتاج وثائق 📎 تتطلب رفع مستندات',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.info,
-                    ),
-                  ),
-                ),
-              ],
+            child: Icon(
+              Icons.verified_user,
+              color: AppColors.success,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'حساب موثق ✓',
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.success,
             ),
           ),
         ],
@@ -600,10 +628,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
         const SizedBox(height: 16),
 
-        // زر إرفاق وثيقة
-        _buildDocumentUploadSection(),
-
-        const SizedBox(height: 16),
+        // زر إرفاق وثيقة (يظهر فقط عند وجود تغييرات تتطلب وثائق)
+        if (_hasDocumentRequiringChanges()) ...[
+          _buildDocumentUploadSection(),
+          const SizedBox(height: 16),
+        ],
 
         // سنة التخرج (اختياري)
         Consumer(
@@ -621,13 +650,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             )));
             print('DEBUG: graduationYear field enabled: $isEditable');
             
-            return CustomTextField(
-              controller: _graduationYearController,
+            return CustomDropdown<int>(
               label: 'سنة التخرج',
-              keyboardType: TextInputType.number,
+              value: _selectedGraduationYear,
+              items: _getGraduationYearItems(),
               isRequired: false,
               enabled: isEditable,
-              validator: (value) => _validateField('graduationYear', value),
+              onChanged: (value) => setState(() => _selectedGraduationYear = value),
+              validator: (value) => null, // No validation for optional field
               errorText: _fieldErrors['graduationYear'],
               suffixIcon: _buildDocumentIcon('graduationYear'),
             );
@@ -736,13 +766,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             },
           ),
 
-          const SizedBox(height: 8),
-          Text(
-            'يرجى إرفاق الوثائق المطلوبة للتوثيق (سيتم رفعها عند حفظ التغييرات)',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
+
         ],
       ),
     );
@@ -996,8 +1020,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         birthDate: _selectedBirthDate,
         governorateId: _selectedGovernorateId,
         qualificationId: _selectedQualificationId,
-        graduationYear:
-            int.tryParse(_graduationYearController.text.trim()) ?? 0,
+        graduationYear: _selectedGraduationYear,
         university: _universityController.text.trim().isEmpty
             ? ''
             : _universityController.text.trim(),
@@ -1203,8 +1226,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           ),
         ),
 
-        // رسالة تنبيه للحقول المطلوبة
-        if (!_canRequestVerification()) _buildRequiredFieldsAlert(),
+        // رسالة تنبيه للحقول المطلوبة (فقط للحسابات غير الموثقة)
+        if (!widget.profile.isVerified && !_canRequestVerification()) _buildRequiredFieldsAlert(),
       ],
     );
   }
@@ -1375,12 +1398,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       }
 
       // التحقق من التغييرات في سنة التخرج
-      final newGradYear =
-          int.tryParse(_graduationYearController.text.trim()) ?? 0;
-      if (newGradYear != (currentProfile.graduationYear ?? 0)) {
-        proposedChanges['graduationYear'] = newGradYear.toString();
-        currentValues['graduationYear'] =
-            (currentProfile.graduationYear ?? 0).toString();
+      if (_selectedGraduationYear != currentProfile.graduationYear) {
+        proposedChanges['graduationYear'] = _selectedGraduationYear?.toString() ?? '';
+        currentValues['graduationYear'] = currentProfile.graduationYear?.toString() ?? '';
       }
 
       // التحقق من التغييرات في الجامعة
@@ -1472,6 +1492,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final requiresApproval = result.requiresApproval;
       final requiresDocuments = result.requiresDocument;
 
+
+
       // التحقق من وجود وثائق إذا كانت مطلوبة
       if (requiresDocuments && _selectedDocuments.isEmpty) {
         // منع الحفظ إذا كانت الوثائق مطلوبة ولم يتم رفعها
@@ -1482,14 +1504,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               children: [
                 Icon(Icons.warning, color: AppColors.warning),
                 SizedBox(width: 8),
-                Text('وثائق مطلوبة'),
+                Text('تحذير'),
               ],
             ),
             content: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('لا يمكن حفظ هذا التعديل بدون رفع الوثائق المطلوبة.'),
+                Text('لا يمكن حفظ هذا التعديل بدون رفع الوثائق الداعمة.'),
                 SizedBox(height: 12),
                 Row(
                   children: [
@@ -1516,7 +1538,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         return;
       }
 
-      if (hasWarnings || requiresApproval || requiresDocuments) {
+      if (requiresApproval || requiresDocuments) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -1532,67 +1554,163 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (requiresApproval) ...[
-                  const Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings,
-                          color: AppColors.warning, size: 20),
-                      SizedBox(width: 8),
-                      Text('تتطلب موافقة إدارية',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.upload_file,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'مراجعة إدارية',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'سيتم رفع هذه التعديلات للإدارة للمراجعة..',
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'ستتلقى إشعاراً عند اكتمال المراجعة',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                      'ستحتاج هذه التعديلات إلى موافقة من الإدارة قبل تطبيقها.'),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
                 if (requiresDocuments) ...[
                   const Row(
                     children: [
-                      Icon(Icons.attach_file,
-                          color: AppColors.success, size: 20),
+                      Icon(Icons.attach_file, color: AppColors.success, size: 20),
                       SizedBox(width: 8),
-                      Text('وثائق مرفقة ✓',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('وثائق مرفقة ✓', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text('تم رفع ${_selectedDocuments.length} وثيقة داعمة'),
                   const SizedBox(height: 12),
                 ],
-                if (hasWarnings) ...[
-                  const Row(
-                    children: [
-                      Icon(Icons.warning, color: AppColors.warning, size: 20),
-                      SizedBox(width: 8),
-                      Text('تحذيرات',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ...result.warnings.map((warning) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Text('• $warning'),
-                      )),
-                  const SizedBox(height: 12),
-                ],
+
+
                 const Text('هل تريد المتابعة؟',
                     style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                // أزرار مخصصة
+                Column(
+                  children: [
+                    // زر طلب توثيق الحساب
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _proceedWithSave();
+                        },
+                        icon: const Icon(
+                          Icons.verified_user,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        label: const Text(
+                          'طلب توثيق الحساب',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // زر الإلغاء
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(
+                            color: AppColors.primary,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'إلغاء',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _proceedWithSave();
-                },
-                child: const Text('متابعة'),
-              ),
-            ],
+            actionsPadding: EdgeInsets.zero,
           ),
         );
       } else {

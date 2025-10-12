@@ -18,7 +18,7 @@ _$ProfileModelImpl _$$ProfileModelImplFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['birth_date'] as String),
       governorateId: json['governorate_id'] as String?,
       qualificationId: json['qualification_id'] as String?,
-      graduationYear: (json['graduation_year'] as num?)?.toInt() ?? 0,
+      graduationYear: (json['graduation_year'] as num?)?.toInt(),
       university: json['university'] as String? ?? '',
       workplace: json['workplace'] as String? ?? '',
       verificationStatus:

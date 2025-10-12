@@ -1,6 +1,6 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'profile_model.freezed.dart';
 part 'profile_model.g.dart';
@@ -10,7 +10,7 @@ enum VerificationStatus {
   @JsonValue('UNVERIFIED')
   unverified, // غير موثق
   @JsonValue('PENDING_VERIFICATION')
-  underReview, // تحت المراجعة
+  underReview, // قيد المراجعة
   @JsonValue('VERIFIED')
   verified, // موثق
   @JsonValue('REJECTED')
@@ -46,34 +46,40 @@ class ProfileModel with _$ProfileModel {
   const factory ProfileModel({
     required String id,
     required String userId,
-    
+
     // البيانات الشخصية
     @JsonKey(name: 'full_name_ar') @Default('') String fullNameAr,
     @JsonKey(name: 'full_name_en') @Default('') String fullNameEn,
     @Default('') String email,
     @JsonKey(name: 'birth_date') DateTime? birthDate,
     @JsonKey(name: 'governorate_id') String? governorateId,
-    
+
     // البيانات الأكاديمية
     @JsonKey(name: 'qualification_id') String? qualificationId,
-    @JsonKey(name: 'graduation_year') @Default(0) int graduationYear,
+    @JsonKey(name: 'graduation_year') int? graduationYear,
     @Default('') String university,
     @Default('') String workplace,
-    
+
     // حالة التوثيق
-    @JsonKey(name: 'status') @Default(VerificationStatus.unverified) VerificationStatus verificationStatus,
-    @JsonKey(name: 'completion_percentage') @Default(0.0) double completionPercentage,
+    @JsonKey(name: 'status')
+    @Default(VerificationStatus.unverified)
+    VerificationStatus verificationStatus,
+    @JsonKey(name: 'completion_percentage')
+    @Default(0.0)
+    double completionPercentage,
     @JsonKey(name: 'rejection_reason') String? rejectionReason,
-    
+
     // صورة الملف الشخصي
     @JsonKey(name: 'profile_picture_url') String? profilePictureUrl,
-    
+
     // الوثائق المرفوعة
     @Default([]) List<DocumentModel> documents,
-    
+
     // قواعد التوثيق المطلوبة
-    @JsonKey(name: 'required_documents') @Default([]) List<RequiredDocumentModel> requiredDocuments,
-    
+    @JsonKey(name: 'required_documents')
+    @Default([])
+    List<RequiredDocumentModel> requiredDocuments,
+
     // تواريخ
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
@@ -88,19 +94,19 @@ class ProfileModel with _$ProfileModel {
 extension ProfileModelExtension on ProfileModel {
   // Getter for name (combines Arabic and English names)
   String get name => fullNameAr.isNotEmpty ? fullNameAr : fullNameEn;
-  
+
   // Getter for governorate (returns governorate ID)
   String? get governorate => governorateId;
-  
+
   // Getter for qualification (returns qualification ID)
   String? get qualification => qualificationId;
-  
+
   // Getter for profilePicture (returns profile picture URL)
   String? get profilePicture => profilePictureUrl;
-  
+
   // Getter for isVerified (checks if verification status is verified)
   bool get isVerified => verificationStatus == VerificationStatus.verified;
-  
+
   // Getter for verificationPercentage (returns completion percentage)
   double get verificationPercentage => completionPercentage;
 }
@@ -134,7 +140,9 @@ class RequiredDocumentModel with _$RequiredDocumentModel {
     required String description,
     @JsonKey(name: 'is_required') @Default(true) bool isRequired,
     @JsonKey(name: 'max_file_size') @Default(5242880) int maxFileSize, // 5MB
-    @JsonKey(name: 'allowed_formats') @Default(['pdf', 'jpg', 'jpeg', 'png']) List<String> allowedFormats,
+    @JsonKey(name: 'allowed_formats')
+    @Default(['pdf', 'jpg', 'jpeg', 'png'])
+    List<String> allowedFormats,
   }) = _RequiredDocumentModel;
 
   factory RequiredDocumentModel.fromJson(Map<String, dynamic> json) =>
@@ -159,8 +167,6 @@ class ProfileUpdateRequest with _$ProfileUpdateRequest {
       _$ProfileUpdateRequestFromJson(json);
 }
 
-
-
 @freezed
 class VerificationRulesResponse with _$VerificationRulesResponse {
   const factory VerificationRulesResponse({
@@ -180,7 +186,7 @@ extension VerificationStatusExtension on VerificationStatus {
       case VerificationStatus.unverified:
         return 'غير موثق';
       case VerificationStatus.underReview:
-        return 'تحت المراجعة';
+        return 'قيد المراجعة';
       case VerificationStatus.verified:
         return 'موثق';
       case VerificationStatus.rejected:

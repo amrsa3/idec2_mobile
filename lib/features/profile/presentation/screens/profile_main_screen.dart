@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,7 @@ import '../../../../core/errors/app_error.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/error_widgets.dart';
+import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../../../models/user_profile_extended.dart';
 import '../../../../models/profile_rule_model.dart';
 import '../../../../models/profile_model.dart';
@@ -19,7 +21,7 @@ import '../../../../providers/profile_rules_provider.dart';
 import '../widgets/profile_avatar.dart';
 import '../widgets/verification_status_badge.dart';
 import '../widgets/verification_notification_banner.dart';
-import '../../../../shared/widgets/profile_picture_widget.dart';
+
 import 'profile_edit_screen.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -34,6 +36,10 @@ class ProfileMainScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
+  // متغير لتتبع حالة ظهور إشعار التوثيق
+  bool _showVerificationNotification = true;
+  Timer? _verificationNotificationTimer;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +63,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _verificationNotificationTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -117,16 +129,25 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // صورة المستخدم
-                ProfilePictureWidget(
-                  imageUrl: profile?.profilePictureUrl,
-                  size: 60,
-                  fallbackText: user?.fullNameAr?.isNotEmpty == true 
-                      ? user!.fullNameAr![0].toUpperCase()
-                      : user?.fullNameEn?.isNotEmpty == true
-                          ? user!.fullNameEn![0].toUpperCase()
-                          : '?',
-                  showEditIcon: false, // لا نريد إظهار أيقونة التعديل في القائمة الجانبية
-                ),
+                GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (profile != null) {
+                        _showProfileImageOptions(context, profile);
+                      }
+                    },
+                    child: ProfileImageWidget(
+                      imageUrl: user?.profilePictureUrl,
+                      size: 60,
+                      fallbackText: user?.fullNameAr?.isNotEmpty == true 
+                        ? user!.fullNameAr![0].toUpperCase() 
+                        : (user?.fullNameEn?.isNotEmpty == true 
+                            ? user!.fullNameEn![0].toUpperCase() 
+                            : 'U'),
+                      showEditIcon: false,
+                      isEditable: false,
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 // اسم المستخدم
                 Text(
@@ -139,17 +160,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                // البريد الإلكتروني
-                if (user?.email != null)
-                  Text(
-                    user!.email!,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
               ],
             ),
           ),
@@ -381,12 +391,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               Icons.pending_outlined,
             ),
           
-          if (profile.verificationStatus == VerificationStatus.verified)
-            _buildNotificationBanner(
-              'تم توثيق حسابك بنجاح! يمكنك الآن الاشتراك في المؤتمرات والفعاليات',
-              AppColors.success,
-              Icons.check_circle_outline,
-            ),
+          if (profile.verificationStatus == VerificationStatus.verified && _showVerificationNotification)
+            _buildVerificationSuccessNotification(),
 
           const SizedBox(height: 16),
 
@@ -431,14 +437,20 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           Row(
             children: [
               // صورة الملف الشخصي
-              ProfilePictureWidget(
+              ProfileImageWidget(
                 imageUrl: profile.profilePictureUrl,
                 size: 80,
-                fallbackText: profile.fullNameAr?.isNotEmpty == true 
-                    ? profile.fullNameAr![0].toUpperCase()
-                    : profile.fullNameEn?.isNotEmpty == true
-                        ? profile.fullNameEn![0].toUpperCase()
-                        : '?',
+                fallbackText: profile.fullNameAr.isNotEmpty 
+                    ? profile.fullNameAr[0].toUpperCase() 
+                    : (profile.fullNameEn.isNotEmpty 
+                        ? profile.fullNameEn[0].toUpperCase() 
+                        : 'U'),
+                showEditIcon: true,
+                isEditable: true,
+                onImageChanged: () {
+                  // إعادة تحميل البيانات بعد تغيير الصورة
+                  ref.refresh(profileProvider);
+                },
               ),
               
               const SizedBox(width: 16),
@@ -961,6 +973,40 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     // TODO: Implement profile picture removal
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('سيتم تنفيذ هذه الميزة قريباً')),
+    );
+  }
+
+  // دالة لبدء Timer إخفاء إشعار التوثيق
+  void _startVerificationNotificationTimer() {
+    _verificationNotificationTimer?.cancel();
+    _verificationNotificationTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _showVerificationNotification = false;
+        });
+      }
+    });
+  }
+
+  // دالة لإخفاء إشعار التوثيق يدوياً
+  void _hideVerificationNotification() {
+    _verificationNotificationTimer?.cancel();
+    setState(() {
+      _showVerificationNotification = false;
+    });
+  }
+
+  // دالة لبناء إشعار نجاح التوثيق مع بدء Timer
+  Widget _buildVerificationSuccessNotification() {
+    // بدء Timer عند عرض الإشعار
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startVerificationNotificationTimer();
+    });
+    
+    return _buildNotificationBanner(
+      'تم توثيق حسابك بنجاح! يمكنك الآن الاشتراك في المؤتمر والفعاليات',
+      AppColors.success,
+      Icons.check_circle_outline,
     );
   }
 

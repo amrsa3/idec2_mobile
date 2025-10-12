@@ -6,8 +6,6 @@ import 'dio_service.dart';
 
 /// خدمة لتحميل الصور مع المصادقة
 class AuthenticatedImageService {
-  static final Dio _dio = Dio();
-
   /// تحميل الصورة مع رؤوس المصادقة
   static Future<Uint8List?> loadImageWithAuth(String imageUrl) async {
     try {
@@ -17,11 +15,11 @@ class AuthenticatedImageService {
       final token = await DioService.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ AuthenticatedImageService: No authentication token found');
-        return null;
+        throw Exception('No authentication token available');
       }
 
-      // إرسال طلب تحميل الصورة مع رؤوس المصادقة
-      final response = await _dio.get(
+      // استخدام DioService.instance.dio للاستفادة من interceptors
+      final response = await DioService.instance.dio.get(
         imageUrl,
         options: Options(
           headers: {
@@ -36,11 +34,20 @@ class AuthenticatedImageService {
         return Uint8List.fromList(response.data);
       } else {
         debugPrint('❌ AuthenticatedImageService: Failed to load image: ${response.statusCode}');
-        return null;
+        throw Exception('Failed to load image: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      debugPrint('❌ AuthenticatedImageService: DioException loading image: ${e.response?.statusCode} - ${e.message}');
+      
+      // إذا كان خطأ 401، فهذا يعني مشكلة في المصادقة
+      if (e.response?.statusCode == 401) {
+        throw Exception('Authentication failed');
+      }
+      
+      throw Exception('Failed to load image: ${e.message}');
     } catch (e) {
       debugPrint('❌ AuthenticatedImageService: Error loading image: $e');
-      return null;
+      throw Exception('Failed to load image: $e');
     }
   }
 

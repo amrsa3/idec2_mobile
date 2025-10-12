@@ -241,9 +241,17 @@ class LocalProfileService {
         debugPrint('👤 ProfileService: Profile received successfully');
         debugPrint('📊 ProfileService: Response data: $data');
         
+        // التحقق من وجود بيانات الملف الشخصي
+        final profileData = data['profile'];
+        if (profileData == null) {
+          debugPrint('❌ ProfileService: No profile data found in response');
+          throw Exception('لم يتم العثور على بيانات الملف الشخصي');
+        }
+        
+        debugPrint('📊 ProfileService: Profile data: $profileData');
+        
         // Transform the response to match ProfileModel structure
-        // /api/v1/profiles/me returns user data with profile object
-        final profileData = data['profile'] ?? {};
+        // الخادم يرجع البيانات في profile object
         final transformedData = {
           'id': profileData['id']?.toString() ?? '',
           'userId': profileData['userId']?.toString() ?? data['id']?.toString() ?? '',
@@ -266,18 +274,53 @@ class LocalProfileService {
           'verified_at': null, // Not available from this endpoint
         };
         
-        final profile = ProfileModel.fromJson(transformedData);
+        debugPrint('📊 ProfileService: Transformed data: $transformedData');
         
-        // Cache the profile data
-        await _cacheProfile(profile);
-        
-        return profile;
+        try {
+          final profile = ProfileModel.fromJson(transformedData);
+          
+          debugPrint('✅ ProfileService: ProfileModel created successfully');
+          debugPrint('🖼️ ProfileService: Profile picture URL: ${profile.profilePictureUrl}');
+          
+          // Cache the profile data
+          await _cacheProfile(profile);
+          
+          return profile;
+        } catch (jsonError) {
+          debugPrint('❌ ProfileService: Error creating ProfileModel from JSON: $jsonError');
+          debugPrint('📊 ProfileService: Problematic data: $transformedData');
+          throw Exception('خطأ في تحويل بيانات الملف الشخصي: $jsonError');
+        }
       } else {
         debugPrint('❌ ProfileService: Failed to fetch profile: ${response.statusCode}');
         throw Exception('فشل في جلب بيانات الملف الشخصي');
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching profile: $e');
+      
+      // طباعة تفاصيل إضافية للخطأ
+      if (e is DioException) {
+        debugPrint('📊 ProfileService: DioException details:');
+        debugPrint('  - Status Code: ${e.response?.statusCode}');
+        debugPrint('  - Response Data: ${e.response?.data}');
+        debugPrint('  - Request Path: ${e.requestOptions.path}');
+        debugPrint('  - Headers: ${e.requestOptions.headers}');
+        
+        // معالجة أخطاء محددة
+        if (e.response?.statusCode == 404) {
+          debugPrint('❌ ProfileService: Profile not found (404)');
+          throw Exception('لم يتم العثور على الملف الشخصي');
+        } else if (e.response?.statusCode == 401) {
+          debugPrint('❌ ProfileService: Unauthorized (401)');
+          throw Exception('غير مصرح بالوصول - يرجى تسجيل الدخول مرة أخرى');
+        } else if (e.response?.statusCode == 403) {
+          debugPrint('❌ ProfileService: Forbidden (403)');
+          throw Exception('ممنوع الوصول إلى هذا المورد');
+        }
+      } else {
+        debugPrint('📊 ProfileService: Non-DioException error: ${e.runtimeType}');
+        debugPrint('📊 ProfileService: Error message: ${e.toString()}');
+      }
       
       // Try to return cached data as fallback
       final cachedProfile = await _getCachedProfile();
@@ -295,7 +338,7 @@ class LocalProfileService {
     try {
       debugPrint('🔄 ProfileService: Updating profile');
 
-      // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+      // استخدام DioService للصصول على الرمز المميز بدلاً من StorageService
       final token = await DioService.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
@@ -734,6 +777,100 @@ class LocalProfileService {
     }
   }
 
+  /// Remove profile picture
+  static Future<bool> removeProfilePicture() async {
+    try {
+      debugPrint('🗑️ ProfileService: Removing profile picture');
+
+      // استخدام DioService للحصول على الرمز المميز
+      final token = await DioService.instance.getAccessToken();
+      debugPrint('🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
+      
+      if (token == null || token.isEmpty) {
+        debugPrint('❌ ProfileService: No authentication token found');
+        throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
+      }
+
+      // Get current user ID from AuthService
+      final authService = AuthService.instance;
+      final currentUser = await authService.getCurrentUser();
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('❌ ProfileService: No current user found');
+        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+      }
+      final userId = currentUser.id;
+      debugPrint('👤 ProfileService: Current user ID: $userId');
+
+      // Use the correct endpoint to remove profile picture
+      final response = await _dio.delete(
+        '${ApiConstants.baseUrl}/api/v1/users/$userId/profile-picture',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      debugPrint('🗑️ ProfileService: Profile picture removal response: ${response.statusCode}');
+      debugPrint('🗑️ ProfileService: Response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        debugPrint('✅ ProfileService: Profile picture removed successfully');
+        return true;
+      } else {
+        debugPrint('❌ ProfileService: Failed to remove profile picture: ${response.statusCode}');
+        debugPrint('❌ ProfileService: Error response: ${response.data}');
+        
+        // Extract error message from response if available
+        String errorMessage = 'فشل في حذف الصورة';
+        final errorData = response.data;
+        if (errorData != null && errorData['message'] != null) {
+          errorMessage = errorData['message'].toString();
+        }
+        
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ ProfileService: Error removing profile picture: $e');
+      
+      // Re-throw DioException with more specific error handling
+      if (e is DioException) {
+        debugPrint('❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
+        
+        if (e.response?.statusCode == 401) {
+          throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
+        } else if (e.response?.statusCode == 404) {
+          throw Exception('لا توجد صورة للحذف');
+        } else if (e.response?.statusCode == 500) {
+          throw Exception('خطأ في الخادم - يرجى المحاولة لاحقاً');
+        } else {
+          // For any other HTTP error codes
+          final errorData = e.response?.data;
+          String errorMessage = 'فشل في حذف الصورة';
+          
+          if (errorData != null) {
+            if (errorData is Map<String, dynamic> && errorData['message'] != null) {
+              errorMessage = errorData['message'].toString();
+            } else if (errorData is String) {
+              errorMessage = errorData;
+            }
+          }
+          
+          throw Exception('$errorMessage (كود الخطأ: ${e.response?.statusCode})');
+        }
+      }
+      
+      if (e.toString().contains('خطأ في المصادقة')) {
+        rethrow;
+      }
+      
+      // For any other type of exception
+      debugPrint('❌ ProfileService: Non-DioException error: $e');
+      throw Exception('فشل في حذف صورة الملف الشخصي: $e');
+    }
+  }
+
   /// Submit verification request
   static Future<VerificationRequestResponse?> submitVerificationRequest(
     SubmitVerificationRequest request,
@@ -1142,5 +1279,67 @@ class LocalProfileService {
     }
     
     return rulesText;
+  }
+
+  /// حساب نسبة إكمال الملف الشخصي حسب النسب المحددة
+  /// النسب المطلوبة:
+  /// - الاسم العربي: 20%
+  /// - الاسم الإنجليزي: 20%
+  /// - البريد الإلكتروني: 5%
+  /// - تاريخ الميلاد: 10%
+  /// - المحافظة: 10%
+  /// - المؤهل: 20%
+  /// - سنة التخرج: 5%
+  /// - الجامعة: 5%
+  /// - مكان العمل: 5%
+  static double calculateCompletionPercentage(ProfileModel profile) {
+    double completionPercentage = 0.0;
+
+    // الاسم العربي - 20%
+    if (profile.fullNameAr.isNotEmpty) {
+      completionPercentage += 20.0;
+    }
+
+    // الاسم الإنجليزي - 20%
+    if (profile.fullNameEn.isNotEmpty) {
+      completionPercentage += 20.0;
+    }
+
+    // البريد الإلكتروني - 5%
+    if (profile.email.isNotEmpty) {
+      completionPercentage += 5.0;
+    }
+
+    // تاريخ الميلاد - 10%
+    if (profile.birthDate != null) {
+      completionPercentage += 10.0;
+    }
+
+    // المحافظة - 10%
+    if (profile.governorateId != null && profile.governorateId!.isNotEmpty) {
+      completionPercentage += 10.0;
+    }
+
+    // المؤهل - 20%
+    if (profile.qualificationId != null && profile.qualificationId!.isNotEmpty) {
+      completionPercentage += 20.0;
+    }
+
+    // سنة التخرج - 5%
+    if (profile.graduationYear != null && profile.graduationYear! > 0) {
+      completionPercentage += 5.0;
+    }
+
+    // الجامعة - 5%
+    if (profile.university.isNotEmpty) {
+      completionPercentage += 5.0;
+    }
+
+    // مكان العمل - 5%
+    if (profile.workplace.isNotEmpty) {
+      completionPercentage += 5.0;
+    }
+
+    return completionPercentage;
   }
 }

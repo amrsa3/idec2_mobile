@@ -35,7 +35,7 @@ mixin _$ProfileModel {
   @JsonKey(name: 'qualification_id')
   String? get qualificationId => throw _privateConstructorUsedError;
   @JsonKey(name: 'graduation_year')
-  int get graduationYear => throw _privateConstructorUsedError;
+  int? get graduationYear => throw _privateConstructorUsedError;
   String get university => throw _privateConstructorUsedError;
   String get workplace => throw _privateConstructorUsedError; // حالة التوثيق
   @JsonKey(name: 'status')
@@ -82,7 +82,7 @@ abstract class $ProfileModelCopyWith<$Res> {
       @JsonKey(name: 'birth_date') DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
-      @JsonKey(name: 'graduation_year') int graduationYear,
+      @JsonKey(name: 'graduation_year') int? graduationYear,
       String university,
       String workplace,
       @JsonKey(name: 'status') VerificationStatus verificationStatus,
@@ -118,7 +118,7 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
     Object? birthDate = freezed,
     Object? governorateId = freezed,
     Object? qualificationId = freezed,
-    Object? graduationYear = null,
+    Object? graduationYear = freezed,
     Object? university = null,
     Object? workplace = null,
     Object? verificationStatus = null,
@@ -164,10 +164,10 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
           ? _value.qualificationId
           : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
-      graduationYear: null == graduationYear
+      graduationYear: freezed == graduationYear
           ? _value.graduationYear
           : graduationYear // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       university: null == university
           ? _value.university
           : university // ignore: cast_nullable_to_non_nullable
@@ -233,7 +233,7 @@ abstract class _$$ProfileModelImplCopyWith<$Res>
       @JsonKey(name: 'birth_date') DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
-      @JsonKey(name: 'graduation_year') int graduationYear,
+      @JsonKey(name: 'graduation_year') int? graduationYear,
       String university,
       String workplace,
       @JsonKey(name: 'status') VerificationStatus verificationStatus,
@@ -267,7 +267,7 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
     Object? birthDate = freezed,
     Object? governorateId = freezed,
     Object? qualificationId = freezed,
-    Object? graduationYear = null,
+    Object? graduationYear = freezed,
     Object? university = null,
     Object? workplace = null,
     Object? verificationStatus = null,
@@ -313,10 +313,10 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
           ? _value.qualificationId
           : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
-      graduationYear: null == graduationYear
+      graduationYear: freezed == graduationYear
           ? _value.graduationYear
           : graduationYear // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       university: null == university
           ? _value.university
           : university // ignore: cast_nullable_to_non_nullable
@@ -377,7 +377,7 @@ class _$ProfileModelImpl with DiagnosticableTreeMixin implements _ProfileModel {
       @JsonKey(name: 'birth_date') this.birthDate,
       @JsonKey(name: 'governorate_id') this.governorateId,
       @JsonKey(name: 'qualification_id') this.qualificationId,
-      @JsonKey(name: 'graduation_year') this.graduationYear = 0,
+      @JsonKey(name: 'graduation_year') this.graduationYear,
       this.university = '',
       this.workplace = '',
       @JsonKey(name: 'status')
@@ -423,7 +423,7 @@ class _$ProfileModelImpl with DiagnosticableTreeMixin implements _ProfileModel {
   final String? qualificationId;
   @override
   @JsonKey(name: 'graduation_year')
-  final int graduationYear;
+  final int? graduationYear;
   @override
   @JsonKey()
   final String university;
@@ -604,7 +604,7 @@ abstract class _ProfileModel implements ProfileModel {
       @JsonKey(name: 'birth_date') final DateTime? birthDate,
       @JsonKey(name: 'governorate_id') final String? governorateId,
       @JsonKey(name: 'qualification_id') final String? qualificationId,
-      @JsonKey(name: 'graduation_year') final int graduationYear,
+      @JsonKey(name: 'graduation_year') final int? graduationYear,
       final String university,
       final String workplace,
       @JsonKey(name: 'status') final VerificationStatus verificationStatus,
@@ -645,7 +645,7 @@ abstract class _ProfileModel implements ProfileModel {
   String? get qualificationId;
   @override
   @JsonKey(name: 'graduation_year')
-  int get graduationYear;
+  int? get graduationYear;
   @override
   String get university;
   @override

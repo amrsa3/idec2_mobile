@@ -598,8 +598,26 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       debugPrint('🖼️ ProfileProvider: Profile loaded with profilePictureUrl: ${currentProfile?.profilePictureUrl}');
       debugPrint('🖼️ ProfileProvider: Profile loaded - full profile data: $currentProfile');
       
+      // حساب نسبة الإكمال الجديدة وتحديث الملف الشخصي
+      ProfileModel? updatedProfile = currentProfile;
+      if (currentProfile != null) {
+        try {
+          final newCompletionPercentage = LocalProfileService.calculateCompletionPercentage(currentProfile);
+          debugPrint('📊 ProfileProvider: Calculated completion percentage: $newCompletionPercentage%');
+          
+          // تحديث الملف الشخصي بنسبة الإكمال الجديدة
+          updatedProfile = currentProfile.copyWith(
+            completionPercentage: newCompletionPercentage,
+          );
+        } catch (e) {
+          debugPrint('❌ ProfileProvider: Error calculating completion percentage: $e');
+          // في حالة الخطأ، استخدم الملف الشخصي كما هو
+          updatedProfile = currentProfile;
+        }
+      }
+      
       state = state.copyWith(
-        currentProfile: currentProfile,
+        currentProfile: updatedProfile,
         isLoading: false,
       );
       
@@ -672,6 +690,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       
       debugPrint('📸 ProfileProvider: Uploading profile picture');
       
+      // حفظ URL الصورة القديمة قبل الرفع
+      final oldImageUrl = state.currentProfile?.profilePictureUrl;
+      debugPrint('🖼️ ProfileProvider: Old image URL: $oldImageUrl');
+      
       final response = await LocalProfileService.uploadProfilePicture(imageFile);
       
       // If we reach here, upload was successful (no exception thrown)
@@ -682,6 +704,21 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       if (response != null && response.url != null) {
         newImageUrl = response.url;
         debugPrint('🖼️ ProfileProvider: New image URL from upload response: $newImageUrl');
+        
+        // مسح الـ cache للصور القديمة والجديدة فوراً
+        try {
+          if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+            await ImageCacheService.evictImage(oldImageUrl);
+            debugPrint('🗑️ ProfileProvider: Cleared cache for old image: $oldImageUrl');
+          }
+          
+          if (newImageUrl != null) {
+            await ImageCacheService.evictImage(newImageUrl);
+            debugPrint('🗑️ ProfileProvider: Cleared cache for new image: $newImageUrl');
+          }
+        } catch (e) {
+          debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
+        }
         
         // Update the current profile immediately with the new image URL
         if (state.currentProfile != null) {
@@ -697,27 +734,24 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           
           debugPrint('🔄 ProfileProvider: Profile updated immediately with new image URL');
         }
-      }
-      
-      // Reload profile data to ensure consistency and wait for it
-      await loadCurrentProfile(forceRefresh: true);
-      debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
-      
-      // Clear any cached images to force reload
-      try {
-        // Clear image cache for both old and new URLs
-        final oldImageUrl = state.currentProfile?.profilePictureUrl;
-        if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
-          await ImageCacheService.evictImage(oldImageUrl);
-          debugPrint('🗑️ ProfileProvider: Cleared cache for old image: $oldImageUrl');
-        }
         
-        if (newImageUrl != null && newImageUrl != oldImageUrl) {
-          await ImageCacheService.evictImage(newImageUrl);
-          debugPrint('🗑️ ProfileProvider: Cleared cache for new image: $newImageUrl');
+        // انتظار قصير للتأكد من تحديث الخادم
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Reload profile data to ensure consistency
+        await loadCurrentProfile(forceRefresh: true);
+        debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
+        
+        // مسح الـ cache مرة أخرى بعد إعادة التحميل للتأكد
+        try {
+          final finalImageUrl = state.currentProfile?.profilePictureUrl;
+          if (finalImageUrl != null && finalImageUrl.isNotEmpty) {
+            await ImageCacheService.evictImage(finalImageUrl);
+            debugPrint('🗑️ ProfileProvider: Final cache clear for image: $finalImageUrl');
+          }
+        } catch (e) {
+          debugPrint('⚠️ ProfileProvider: Error in final cache clear: $e');
         }
-      } catch (e) {
-        debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
       }
       
       debugPrint('✅ ProfileProvider: Profile picture uploaded successfully');
@@ -745,6 +779,86 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       );
       
       debugPrint('❌ ProfileProvider: Error uploading profile picture: $errorMessage');
+      
+      NotificationService.showError(errorMessage);
+      
+      return false;
+    }
+  }
+
+  /// Remove profile picture
+  Future<bool> removeProfilePicture() async {
+    try {
+      state = state.copyWith(isUploadingProfilePicture: true, error: null, successMessage: null);
+      
+      debugPrint('🗑️ ProfileProvider: Removing profile picture');
+      
+      // حفظ URL الصورة القديمة قبل الحذف
+      final oldImageUrl = state.currentProfile?.profilePictureUrl;
+      debugPrint('🖼️ ProfileProvider: Old image URL to remove: $oldImageUrl');
+      
+      final response = await LocalProfileService.removeProfilePicture();
+      
+      // If we reach here, removal was successful (no exception thrown)
+      debugPrint('✅ ProfileProvider: Profile picture removal response received: $response');
+      
+      // مسح الـ cache للصورة القديمة فوراً
+      try {
+        if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+          await ImageCacheService.evictImage(oldImageUrl);
+          debugPrint('🗑️ ProfileProvider: Cleared cache for removed image: $oldImageUrl');
+        }
+      } catch (e) {
+        debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
+      }
+      
+      // Update the current profile immediately by removing the image URL
+      if (state.currentProfile != null) {
+        final updatedProfile = state.currentProfile!.copyWith(
+          profilePictureUrl: null,
+        );
+        
+        state = state.copyWith(
+          currentProfile: updatedProfile,
+          isUploadingProfilePicture: false,
+          successMessage: 'تم حذف صورة الملف الشخصي بنجاح',
+        );
+        
+        debugPrint('🔄 ProfileProvider: Profile updated immediately with removed image');
+      }
+      
+      // انتظار قصير للتأكد من تحديث الخادم
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Reload profile data to ensure consistency
+      await loadCurrentProfile(forceRefresh: true);
+      debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
+      
+      debugPrint('✅ ProfileProvider: Profile picture removed successfully');
+      
+      NotificationService.showSuccess('تم حذف صورة الملف الشخصي بنجاح');
+      
+      return true;
+    } catch (e) {
+      debugPrint('❌ ProfileProvider: Exception caught during profile picture removal: $e');
+      debugPrint('❌ ProfileProvider: Exception type: ${e.runtimeType}');
+      
+      String errorMessage = 'فشل في حذف صورة الملف الشخصي';
+      
+      // Extract the actual error message from the exception
+      String exceptionMessage = e.toString();
+      if (exceptionMessage.contains('Exception:')) {
+        errorMessage = exceptionMessage.replaceFirst('Exception:', '').trim();
+      } else if (exceptionMessage.contains('DioException')) {
+        errorMessage = 'خطأ في الاتصال بالخادم';
+      }
+      
+      state = state.copyWith(
+        isUploadingProfilePicture: false,
+        error: errorMessage,
+      );
+      
+      debugPrint('❌ ProfileProvider: Error removing profile picture: $errorMessage');
       
       NotificationService.showError(errorMessage);
       

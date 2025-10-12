@@ -105,10 +105,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   void _loadProfileRules() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🔍 [PROFILE_EDIT] جلب قواعد الملف الشخصي...');
+      debugPrint('🔍 [PROFILE_EDIT] جلب قواعد الملف الشخصي للمستخدم الحالي...');
 
-      // جلب القواعد مع إجبار التحديث لضمان الحصول على أحدث القواعد
-      ref.read(profileRulesProvider.notifier).loadRules(forceRefresh: true);
+      // جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
+      ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser(forceRefresh: true);
 
       // طباعة حالة الملف الشخصي الحالية للتأكد من صحة التطبيق
       final profileState = ref.read(profileProvider);
@@ -229,54 +229,75 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'تاريخ الميلاد',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () async {
-            final date = await showDatePicker(
-              context: context,
-              initialDate: _selectedBirthDate ?? DateTime.now(),
-              firstDate: DateTime(1950),
-              lastDate: DateTime.now(),
-            );
-            if (date != null) {
-              setState(() => _selectedBirthDate = date);
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedBirthDate != null
-                        ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
-                        : 'اختر تاريخ الميلاد',
-                    style: TextStyle(
-                      color: _selectedBirthDate != null
-                          ? Colors.black
-                          : Colors.grey,
-                    ),
+    return Consumer(
+      builder: (context, ref, child) {
+        final profileState = ref.watch(profileProvider);
+        final currentProfile = profileState.currentProfile;
+        
+        if (currentProfile == null) return const SizedBox.shrink();
+        
+        final profileStatus = _convertVerificationStatusToProfileStatus(
+             currentProfile.verificationStatus);
+         final isEditable = ref.watch(canEditFieldProvider((
+           fieldName: 'birthDate',
+           status: profileStatus,
+         )));
+         print('DEBUG: birthDate field enabled: $isEditable');
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'تاريخ الميلاد',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
                   ),
-                ),
-                const Icon(Icons.calendar_today),
-              ],
             ),
-          ),
-        ),
-      ],
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: isEditable ? () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedBirthDate ?? DateTime.now(),
+                  firstDate: DateTime(1950),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null) {
+                  setState(() => _selectedBirthDate = date);
+                }
+              } : null,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: isEditable ? Colors.grey : Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                  color: isEditable ? null : Colors.grey.shade100,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedBirthDate != null
+                            ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
+                            : 'اختر تاريخ الميلاد',
+                        style: TextStyle(
+                          color: _selectedBirthDate != null
+                              ? (isEditable ? Colors.black : Colors.grey.shade600)
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.calendar_today,
+                      color: isEditable ? null : Colors.grey.shade400,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -409,41 +430,95 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       icon: Icons.person_outline,
       children: [
         // الاسم العربي
-        CustomTextField(
-          controller: _fullNameArController,
-          label: 'الاسم العربي',
-          isRequired: true,
-          enabled: _isFieldEditable('fullNameAr'),
-          validator: (value) => _validateField('fullNameAr', value),
-          errorText: _fieldErrors['fullNameAr'],
-          suffixIcon: _buildDocumentIcon('fullNameAr'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final canEdit = ref.watch(canEditFieldProvider((
+              fieldName: 'fullNameAr',
+              status: profileStatus,
+            )));
+            
+            debugPrint('🔍 [CONSUMER] فحص تعديل fullNameAr: $canEdit للحالة: $profileStatus');
+            
+            return CustomTextField(
+              controller: _fullNameArController,
+              label: 'الاسم العربي',
+              isRequired: true,
+              enabled: canEdit,
+              validator: (value) => _validateField('fullNameAr', value),
+              errorText: _fieldErrors['fullNameAr'],
+              suffixIcon: _buildDocumentIcon('fullNameAr'),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
 
         // الاسم الإنجليزي
-        CustomTextField(
-          controller: _fullNameEnController,
-          label: 'الاسم الإنجليزي',
-          isRequired: true,
-          enabled: _isFieldEditable('fullNameEn'),
-          validator: (value) => _validateField('fullNameEn', value),
-          errorText: _fieldErrors['fullNameEn'],
-          suffixIcon: _buildDocumentIcon('fullNameEn'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final canEdit = ref.watch(canEditFieldProvider((
+              fieldName: 'fullNameEn',
+              status: profileStatus,
+            )));
+            
+            debugPrint('🔍 [CONSUMER] فحص تعديل fullNameEn: $canEdit للحالة: $profileStatus');
+            
+            return CustomTextField(
+              controller: _fullNameEnController,
+              label: 'الاسم الإنجليزي',
+              isRequired: true,
+              enabled: canEdit,
+              validator: (value) => _validateField('fullNameEn', value),
+              errorText: _fieldErrors['fullNameEn'],
+              suffixIcon: _buildDocumentIcon('fullNameEn'),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
 
         // البريد الإلكتروني
-        CustomTextField(
-          controller: _emailController,
-          label: 'البريد الإلكتروني',
-          keyboardType: TextInputType.emailAddress,
-          suffixIcon: Icon(
-            Icons.email_outlined,
-            color: AppColors.textSecondary,
-            size: 20,
-          ),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final isEditable = ref.watch(canEditFieldProvider((
+              fieldName: 'email',
+              status: profileStatus,
+            )));
+            print('DEBUG: email field enabled: $isEditable');
+            
+            return CustomTextField(
+              controller: _emailController,
+              label: 'البريد الإلكتروني',
+              keyboardType: TextInputType.emailAddress,
+              enabled: isEditable,
+              suffixIcon: Icon(
+                Icons.email_outlined,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
@@ -454,16 +529,33 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         const SizedBox(height: 16),
 
         // المحافظة
-        CustomDropdown<String>(
-          label: 'المحافظة',
-          value: _selectedGovernorateId,
-          items: _getGovernorateItems(state),
-          isRequired: true,
-          enabled: _isFieldEditable('governorateId'),
-          onChanged: (value) => setState(() => _selectedGovernorateId = value),
-          validator: (value) => _validateField('governorateId', value),
-          errorText: _fieldErrors['governorateId'],
-          suffixIcon: _buildDocumentIcon('governorateId'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final isEditable = ref.watch(canEditFieldProvider((
+              fieldName: 'governorateId',
+              status: profileStatus,
+            )));
+            print('DEBUG: governorateId field enabled: $isEditable');
+            
+            return CustomDropdown<String>(
+              label: 'المحافظة',
+              value: _selectedGovernorateId,
+              items: _getGovernorateItems(state),
+              isRequired: true,
+              enabled: isEditable,
+              onChanged: (value) => setState(() => _selectedGovernorateId = value),
+              validator: (value) => _validateField('governorateId', value),
+              errorText: _fieldErrors['governorateId'],
+              suffixIcon: _buildDocumentIcon('governorateId'),
+            );
+          },
         ),
       ],
     );
@@ -475,17 +567,35 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       icon: Icons.school_outlined,
       children: [
         // المؤهل العلمي
-        CustomDropdown<String>(
-          label: 'المؤهل العلمي',
-          value: _selectedQualificationId,
-          items: _getQualificationItems(state),
-          isRequired: true,
-          enabled: _isFieldEditable('qualificationId'),
-          onChanged: (value) =>
-              setState(() => _selectedQualificationId = value),
-          validator: (value) => _validateField('qualificationId', value),
-          errorText: _fieldErrors['qualificationId'],
-          suffixIcon: _buildDocumentIcon('qualificationId'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final canEdit = ref.watch(canEditFieldProvider((
+              fieldName: 'qualificationId',
+              status: profileStatus,
+            )));
+            
+            debugPrint('🔍 [CONSUMER] فحص تعديل qualificationId: $canEdit للحالة: $profileStatus');
+            
+            return CustomDropdown<String>(
+              label: 'المؤهل العلمي',
+              value: _selectedQualificationId,
+              items: _getQualificationItems(state),
+              isRequired: true,
+              enabled: canEdit,
+              onChanged: (value) =>
+                  setState(() => _selectedQualificationId = value),
+              validator: (value) => _validateField('qualificationId', value),
+              errorText: _fieldErrors['qualificationId'],
+              suffixIcon: _buildDocumentIcon('qualificationId'),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
@@ -496,40 +606,91 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         const SizedBox(height: 16),
 
         // سنة التخرج (اختياري)
-        CustomTextField(
-          controller: _graduationYearController,
-          label: 'سنة التخرج',
-          keyboardType: TextInputType.number,
-          isRequired: false,
-          enabled: _isFieldEditable('graduationYear'),
-          validator: (value) => _validateField('graduationYear', value),
-          errorText: _fieldErrors['graduationYear'],
-          suffixIcon: _buildDocumentIcon('graduationYear'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final isEditable = ref.watch(canEditFieldProvider((
+              fieldName: 'graduationYear',
+              status: profileStatus,
+            )));
+            print('DEBUG: graduationYear field enabled: $isEditable');
+            
+            return CustomTextField(
+              controller: _graduationYearController,
+              label: 'سنة التخرج',
+              keyboardType: TextInputType.number,
+              isRequired: false,
+              enabled: isEditable,
+              validator: (value) => _validateField('graduationYear', value),
+              errorText: _fieldErrors['graduationYear'],
+              suffixIcon: _buildDocumentIcon('graduationYear'),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
 
         // الجامعة (اختياري)
-        CustomTextField(
-          controller: _universityController,
-          label: 'الجامعة',
-          isRequired: false,
-          enabled: _isFieldEditable('university'),
-          validator: (value) => null, // No validation for optional field
-          errorText: _fieldErrors['university'],
-          suffixIcon: _buildDocumentIcon('university'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final isEditable = ref.watch(canEditFieldProvider((
+              fieldName: 'university',
+              status: profileStatus,
+            )));
+            print('DEBUG: university field enabled: $isEditable');
+            
+            return CustomTextField(
+              controller: _universityController,
+              label: 'الجامعة',
+              isRequired: false,
+              enabled: isEditable,
+              validator: (value) => null, // No validation for optional field
+              errorText: _fieldErrors['university'],
+              suffixIcon: _buildDocumentIcon('university'),
+            );
+          },
         ),
 
         const SizedBox(height: 16),
 
         // مكان العمل
-        CustomTextField(
-          controller: _workplaceController,
-          label: 'مكان العمل',
-          enabled: _isFieldEditable('workplace'),
-          validator: (value) => _validateField('workplace', value),
-          errorText: _fieldErrors['workplace'],
-          suffixIcon: _buildDocumentIcon('workplace'),
+        Consumer(
+          builder: (context, ref, child) {
+            final profileState = ref.watch(profileProvider);
+            final currentProfile = profileState.currentProfile;
+            
+            if (currentProfile == null) return const SizedBox.shrink();
+            
+            final profileStatus = _convertVerificationStatusToProfileStatus(
+                currentProfile.verificationStatus);
+            final isEditable = ref.watch(canEditFieldProvider((
+              fieldName: 'workplace',
+              status: profileStatus,
+            )));
+            print('DEBUG: workplace field enabled: $isEditable');
+            
+            return CustomTextField(
+              controller: _workplaceController,
+              label: 'مكان العمل',
+              enabled: isEditable,
+              validator: (value) => _validateField('workplace', value),
+              errorText: _fieldErrors['workplace'],
+              suffixIcon: _buildDocumentIcon('workplace'),
+            );
+          },
         ),
       ],
     );
@@ -1118,13 +1279,39 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final profileState = ref.read(profileProvider);
       final currentProfile = profileState.currentProfile;
 
-      if (currentProfile == null) return true;
+      if (currentProfile == null) {
+        debugPrint('⚠️ [FIELD_EDIT] لا يوجد ملف شخصي حالي للحقل $fieldName');
+        return true;
+      }
 
       // استخدام ProfileRulesProvider للتحقق من إمكانية التعديل
-      final rulesNotifier = ref.read(profileRulesProvider.notifier);
+      final rulesState = ref.read(profileRulesProvider);
       final profileStatus = _convertVerificationStatusToProfileStatus(
           currentProfile.verificationStatus);
-      return rulesNotifier.canEditField(fieldName, profileStatus);
+      
+      debugPrint('🔍 [FIELD_EDIT] فحص الحقل: $fieldName');
+      debugPrint('📋 [FIELD_EDIT] حالة الملف الشخصي: $profileStatus');
+      debugPrint('📋 [FIELD_EDIT] حالة التوثيق: ${currentProfile.verificationStatus}');
+      debugPrint('📋 [FIELD_EDIT] عدد القواعد المحملة: ${rulesState.rules.length}');
+      debugPrint('📋 [FIELD_EDIT] حالة تحميل القواعد: ${rulesState.isLoading}');
+      
+      // التحقق من أن القواعد محملة
+      if (rulesState.isLoading) {
+        debugPrint('⏳ [FIELD_EDIT] القواعد لا تزال قيد التحميل - السماح بالتعديل مؤقتاً');
+        return true;
+      }
+      
+      if (rulesState.error != null) {
+        debugPrint('❌ [FIELD_EDIT] خطأ في تحميل القواعد: ${rulesState.error}');
+        return true;
+      }
+      
+      // استخدام الـ notifier للتحقق من إمكانية التعديل
+      final rulesNotifier = ref.read(profileRulesProvider.notifier);
+      final canEdit = rulesNotifier.canEditField(fieldName, profileStatus);
+      debugPrint('✅ [FIELD_EDIT] هل يمكن تعديل $fieldName؟ $canEdit');
+      
+      return canEdit;
     } catch (e) {
       debugPrint('❌ خطأ في التحقق من إمكانية تعديل الحقل $fieldName: $e');
       return true; // السماح بالتعديل في حالة الخطأ

@@ -216,10 +216,10 @@ Map<String, dynamic> _$$ProfileCompletionStatusImplToJson(
     };
 
 const _$VerificationStatusEnumMap = {
-  VerificationStatus.unverified: 'unverified',
-  VerificationStatus.underReview: 'under_review',
-  VerificationStatus.verified: 'verified',
-  VerificationStatus.rejected: 'rejected',
+  VerificationStatus.unverified: 'UNVERIFIED',
+  VerificationStatus.underReview: 'PENDING_VERIFICATION',
+  VerificationStatus.verified: 'VERIFIED',
+  VerificationStatus.rejected: 'REJECTED',
 };
 
 _$ProfileDataResponseImpl _$$ProfileDataResponseImplFromJson(

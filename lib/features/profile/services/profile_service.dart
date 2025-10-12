@@ -246,7 +246,7 @@ class LocalProfileService {
         final profileData = data['profile'] ?? {};
         final transformedData = {
           'id': profileData['id']?.toString() ?? '',
-          'userId': data['id']?.toString() ?? '',
+          'userId': profileData['userId']?.toString() ?? data['id']?.toString() ?? '',
           'full_name_ar': profileData['fullNameAr']?.toString() ?? '',
           'full_name_en': profileData['fullNameEn']?.toString() ?? '',
           'email': data['email']?.toString() ?? '',
@@ -256,7 +256,7 @@ class LocalProfileService {
           'graduation_year': profileData['graduationYear'] ?? 0,
           'university': profileData['university']?.toString() ?? '',
           'workplace': profileData['profileData']?['workplace']?.toString() ?? '',
-          'verification_status': profileData['status']?.toString() ?? 'unverified',
+          'status': profileData['status']?.toString() ?? 'UNVERIFIED',
           'completion_percentage': 0.0, // Will be calculated
           'profile_picture_url': profileData['profilePhotoUrl']?.toString(),
           'documents': [], // Will be loaded separately

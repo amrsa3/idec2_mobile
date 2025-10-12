@@ -437,7 +437,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       
       // استخدام ProfileRulesProvider الجديد
       final profileRulesNotifier = ref.read(profileRulesProvider.notifier);
-      await profileRulesNotifier.loadRules(forceRefresh: true);
+      await profileRulesNotifier.loadRulesForCurrentUser(forceRefresh: true);
       
       final profileRulesState = ref.read(profileRulesProvider);
       

@@ -38,6 +38,7 @@ mixin _$ProfileModel {
   int get graduationYear => throw _privateConstructorUsedError;
   String get university => throw _privateConstructorUsedError;
   String get workplace => throw _privateConstructorUsedError; // حالة التوثيق
+  @JsonKey(name: 'status')
   VerificationStatus get verificationStatus =>
       throw _privateConstructorUsedError;
   @JsonKey(name: 'completion_percentage')
@@ -84,7 +85,7 @@ abstract class $ProfileModelCopyWith<$Res> {
       @JsonKey(name: 'graduation_year') int graduationYear,
       String university,
       String workplace,
-      VerificationStatus verificationStatus,
+      @JsonKey(name: 'status') VerificationStatus verificationStatus,
       @JsonKey(name: 'completion_percentage') double completionPercentage,
       @JsonKey(name: 'rejection_reason') String? rejectionReason,
       @JsonKey(name: 'profile_picture_url') String? profilePictureUrl,
@@ -235,7 +236,7 @@ abstract class _$$ProfileModelImplCopyWith<$Res>
       @JsonKey(name: 'graduation_year') int graduationYear,
       String university,
       String workplace,
-      VerificationStatus verificationStatus,
+      @JsonKey(name: 'status') VerificationStatus verificationStatus,
       @JsonKey(name: 'completion_percentage') double completionPercentage,
       @JsonKey(name: 'rejection_reason') String? rejectionReason,
       @JsonKey(name: 'profile_picture_url') String? profilePictureUrl,
@@ -379,6 +380,7 @@ class _$ProfileModelImpl with DiagnosticableTreeMixin implements _ProfileModel {
       @JsonKey(name: 'graduation_year') this.graduationYear = 0,
       this.university = '',
       this.workplace = '',
+      @JsonKey(name: 'status')
       this.verificationStatus = VerificationStatus.unverified,
       @JsonKey(name: 'completion_percentage') this.completionPercentage = 0.0,
       @JsonKey(name: 'rejection_reason') this.rejectionReason,
@@ -430,7 +432,7 @@ class _$ProfileModelImpl with DiagnosticableTreeMixin implements _ProfileModel {
   final String workplace;
 // حالة التوثيق
   @override
-  @JsonKey()
+  @JsonKey(name: 'status')
   final VerificationStatus verificationStatus;
   @override
   @JsonKey(name: 'completion_percentage')
@@ -605,7 +607,7 @@ abstract class _ProfileModel implements ProfileModel {
       @JsonKey(name: 'graduation_year') final int graduationYear,
       final String university,
       final String workplace,
-      final VerificationStatus verificationStatus,
+      @JsonKey(name: 'status') final VerificationStatus verificationStatus,
       @JsonKey(name: 'completion_percentage') final double completionPercentage,
       @JsonKey(name: 'rejection_reason') final String? rejectionReason,
       @JsonKey(name: 'profile_picture_url') final String? profilePictureUrl,
@@ -649,6 +651,7 @@ abstract class _ProfileModel implements ProfileModel {
   @override
   String get workplace;
   @override // حالة التوثيق
+  @JsonKey(name: 'status')
   VerificationStatus get verificationStatus;
   @override
   @JsonKey(name: 'completion_percentage')

@@ -142,4 +142,18 @@ extension ProfileStatusExtension on ProfileStatus {
         return 'مرفوض';
     }
   }
+
+  /// تحويل ProfileStatus إلى القيمة الصحيحة للـ API
+  String get apiValue {
+    switch (this) {
+      case ProfileStatus.unverified:
+        return 'UNVERIFIED';
+      case ProfileStatus.pendingVerification:
+        return 'PENDING_VERIFICATION';
+      case ProfileStatus.verified:
+        return 'VERIFIED';
+      case ProfileStatus.rejected:
+        return 'REJECTED';
+    }
+  }
 }

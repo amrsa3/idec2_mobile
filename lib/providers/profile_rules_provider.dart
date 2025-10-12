@@ -39,13 +39,79 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
 
   ProfileRulesNotifier(this._rulesService) : super(const ProfileRulesState());
 
-  /// جلب القواعد
+  /// جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
+  Future<void> loadRulesForCurrentUser({bool forceRefresh = false}) async {
+    try {
+      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد المستخدم الحالي (forceRefresh: $forceRefresh)');
+      state = state.copyWith(isLoading: true, error: null);
+
+      final result = await _rulesService.getRulesForCurrentUser(forceRefresh: forceRefresh);
+
+      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${result.rules.length} قاعدة للمستخدم (الحالة: ${result.userStatus.name})');
+      
+      // طباعة تفاصيل القواعد المحملة
+      for (var rule in result.rules) {
+        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+      }
+
+      state = state.copyWith(
+        rules: result.rules,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد المستخدم الحالي: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+      );
+    }
+  }
+
+  /// جلب القواعد حسب حالة معينة (للاستخدام الإداري)
+  Future<void> loadRulesForStatus(ProfileStatus status, {bool forceRefresh = false}) async {
+    try {
+      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد الحالة ${status.name} (forceRefresh: $forceRefresh)');
+      state = state.copyWith(isLoading: true, error: null);
+
+      final rules = await _rulesService.getRulesForStatus(status, forceRefresh: forceRefresh);
+
+      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة للحالة ${status.name}');
+      
+      // طباعة تفاصيل القواعد المحملة
+      for (var rule in rules) {
+        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+      }
+
+      state = state.copyWith(
+        rules: rules,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد الحالة ${status.name}: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+      );
+    }
+  }
+
+  /// جلب جميع القواعد (للتوافق مع الكود القديم)
   Future<void> loadRules({bool forceRefresh = false}) async {
     try {
+      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل جميع القواعد (forceRefresh: $forceRefresh)');
       state = state.copyWith(isLoading: true, error: null);
 
       final rules =
           await _rulesService.getActiveRules(forceRefresh: forceRefresh);
+
+      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة بنجاح');
+      
+      // طباعة تفاصيل القواعد المحملة
+      for (var rule in rules) {
+        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+      }
 
       state = state.copyWith(
         rules: rules,
@@ -206,7 +272,7 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   /// مسح الـ cache وإعادة التحميل
   Future<void> refresh() async {
     _rulesService.clearCache();
-    await loadRules(forceRefresh: true);
+    await loadRulesForCurrentUser(forceRefresh: true);
   }
 
   /// التحقق من إمكانية تعديل الملف الموثق

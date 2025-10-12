@@ -44,7 +44,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       if (authState.isAuthenticated && !authState.sessionExpired) {
         ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
         // تحميل قواعد الملف الشخصي
-        ref.read(profileRulesProvider.notifier).loadRules();
+        ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
       } else {
         // Wait a bit for auth state to stabilize, then try again
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -52,7 +52,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           if (updatedAuthState.isAuthenticated && !updatedAuthState.sessionExpired) {
             ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
             // تحميل قواعد الملف الشخصي
-            ref.read(profileRulesProvider.notifier).loadRules();
+            ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
           }
         });
       }
@@ -735,7 +735,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
 
   Widget _buildActionButtons(ProfileModel profile) {
-    final canEdit = _canEditProfile(profile, null);
     final canSubmitForVerification = _canSubmitForVerification(profile, null);
     
     return Column(
@@ -743,7 +742,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: canEdit ? () => _navigateToEditProfile(context, profile) : null,
+            onPressed: () => _navigateToEditProfile(context, profile),
             icon: const Icon(Icons.edit),
             label: const Text('تعديل البيانات'),
           ),
@@ -770,33 +769,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   // Helper methods
-  bool _canEditProfile(ProfileModel profile, dynamic verificationRules) {
-    // استخدام ProfileRulesProvider للتحقق من إمكانية التعديل
-    final rulesNotifier = ref.read(profileRulesProvider.notifier);
-    
-    // التحقق من القواعد العامة للتعديل حسب حالة التوثيق
-    switch (profile.verificationStatus) {
-      case VerificationStatus.unverified:
-        // السماح بالتعديل للملفات غير الموثقة
-        return true;
-        
-      case VerificationStatus.underReview:
-        // منع التعديل للملفات قيد المراجعة
-        return false;
-        
-      case VerificationStatus.verified:
-        // التحقق من القواعد للملفات الموثقة
-        // يمكن تعديل بعض الحقول حسب القواعد المحددة
-        return rulesNotifier.canEditVerifiedProfile();
-        
-      case VerificationStatus.rejected:
-        // السماح بالتعديل للملفات المرفوضة لإعادة التقديم
-        return true;
-        
-      default:
-        return false;
-    }
-  }
 
   // تحويل VerificationStatus إلى ProfileStatus
   ProfileStatus _convertVerificationStatusToProfileStatus(VerificationStatus status) {
@@ -927,60 +899,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
   // Navigation methods
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
-    final rulesNotifier = ref.read(profileRulesProvider.notifier);
-    
-    // التحقق من إمكانية التعديل حسب القواعد
-    if (!_canEditProfile(profile, null)) {
-      String message = 'لا يمكن تعديل الملف الشخصي في الوقت الحالي';
-      String reason = '';
-      
-      switch (profile.verificationStatus) {
-        case VerificationStatus.underReview:
-          reason = 'الملف الشخصي قيد المراجعة من قبل الإدارة';
-          break;
-        case VerificationStatus.verified:
-          if (!rulesNotifier.canEditVerifiedProfile()) {
-            reason = 'الملف الشخصي موثق ولا يسمح بالتعديل حسب القواعد المحددة';
-          }
-          break;
-        default:
-          reason = 'حالة الملف الشخصي لا تسمح بالتعديل';
-      }
-      
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.lock_outline, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تعديل غير مسموح'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(message),
-              const SizedBox(height: 8),
-              Text(
-                reason,
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('حسناً'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-    
-    // الانتقال إلى شاشة التعديل
+    // الانتقال إلى شاشة التعديل مباشرة بدون أي شروط
     Navigator.push(
       context,
       MaterialPageRoute(

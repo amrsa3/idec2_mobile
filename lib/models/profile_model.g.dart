@@ -21,9 +21,9 @@ _$ProfileModelImpl _$$ProfileModelImplFromJson(Map<String, dynamic> json) =>
       graduationYear: (json['graduation_year'] as num?)?.toInt() ?? 0,
       university: json['university'] as String? ?? '',
       workplace: json['workplace'] as String? ?? '',
-      verificationStatus: $enumDecodeNullable(
-              _$VerificationStatusEnumMap, json['verificationStatus']) ??
-          VerificationStatus.unverified,
+      verificationStatus:
+          $enumDecodeNullable(_$VerificationStatusEnumMap, json['status']) ??
+              VerificationStatus.unverified,
       completionPercentage:
           (json['completion_percentage'] as num?)?.toDouble() ?? 0.0,
       rejectionReason: json['rejection_reason'] as String?,
@@ -61,8 +61,7 @@ Map<String, dynamic> _$$ProfileModelImplToJson(_$ProfileModelImpl instance) =>
       'graduation_year': instance.graduationYear,
       'university': instance.university,
       'workplace': instance.workplace,
-      'verificationStatus':
-          _$VerificationStatusEnumMap[instance.verificationStatus]!,
+      'status': _$VerificationStatusEnumMap[instance.verificationStatus]!,
       'completion_percentage': instance.completionPercentage,
       'rejection_reason': instance.rejectionReason,
       'profile_picture_url': instance.profilePictureUrl,
@@ -74,10 +73,10 @@ Map<String, dynamic> _$$ProfileModelImplToJson(_$ProfileModelImpl instance) =>
     };
 
 const _$VerificationStatusEnumMap = {
-  VerificationStatus.unverified: 'unverified',
-  VerificationStatus.underReview: 'under_review',
-  VerificationStatus.verified: 'verified',
-  VerificationStatus.rejected: 'rejected',
+  VerificationStatus.unverified: 'UNVERIFIED',
+  VerificationStatus.underReview: 'PENDING_VERIFICATION',
+  VerificationStatus.verified: 'VERIFIED',
+  VerificationStatus.rejected: 'REJECTED',
 };
 
 _$DocumentModelImpl _$$DocumentModelImplFromJson(Map<String, dynamic> json) =>

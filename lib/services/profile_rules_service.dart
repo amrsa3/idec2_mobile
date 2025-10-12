@@ -3,6 +3,17 @@ import 'package:flutter/foundation.dart';
 import '../models/profile_rule_model.dart';
 import '../services/dio_service.dart';
 
+/// نتيجة جلب قواعد المستخدم
+class ProfileRulesResult {
+  final List<ProfileRuleModel> rules;
+  final ProfileStatus userStatus;
+
+  const ProfileRulesResult({
+    required this.rules,
+    required this.userStatus,
+  });
+}
+
 /// خدمة قواعد تعديل الملف الشخصي
 class ProfileRulesService {
   static final ProfileRulesService _instance = ProfileRulesService._internal();
@@ -12,8 +23,114 @@ class ProfileRulesService {
   // Cache للقواعد
   List<ProfileRuleModel>? _cachedRules;
   DateTime? _cacheExpiry;
+  
+  // Cache للقواعد حسب الحالة
+  final Map<String, Map<String, dynamic>> _statusCaches = {};
 
-  /// جلب جميع القواعد النشطة
+  /// جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
+  Future<ProfileRulesResult> getRulesForCurrentUser({bool forceRefresh = false}) async {
+    try {
+      const cacheKey = 'current_user_rules';
+      
+      // التحقق من الـ cache
+      if (!forceRefresh && _statusCaches.containsKey(cacheKey)) {
+        final cachedData = _statusCaches[cacheKey]!;
+        if (cachedData['expiry'].isAfter(DateTime.now())) {
+          debugPrint('✅ [PROFILE_RULES] استخدام قواعد المستخدم الحالي من الـ cache');
+          return ProfileRulesResult(
+            rules: cachedData['rules'] as List<ProfileRuleModel>,
+            userStatus: cachedData['userStatus'] as ProfileStatus,
+          );
+        }
+      }
+
+      debugPrint('🔍 [PROFILE_RULES] جلب قواعد المستخدم الحالي من الخادم...');
+
+      final dio = DioService.instance.dio;
+      final response = await dio.get('/api/v1/profile-rules');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        final List<dynamic> data = responseData['data'] ?? [];
+        final String userStatusString = responseData['userStatus'] ?? 'UNVERIFIED';
+
+        final rules = data.map((json) => ProfileRuleModel.fromJson(json)).toList();
+        final userStatus = ProfileStatus.values.firstWhere(
+          (status) => status.apiValue == userStatusString,
+          orElse: () => ProfileStatus.unverified,
+        );
+
+        // حفظ في الـ cache
+        _statusCaches[cacheKey] = {
+          'rules': rules,
+          'userStatus': userStatus,
+          'expiry': DateTime.now().add(const Duration(minutes: 5)),
+        };
+
+        debugPrint('✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للمستخدم (الحالة: ${userStatus.name})');
+        
+        return ProfileRulesResult(
+          rules: rules,
+          userStatus: userStatus,
+        );
+      } else {
+        throw Exception('فشل في جلب القواعد: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ [PROFILE_RULES] خطأ في جلب قواعد المستخدم الحالي: $e');
+      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+    }
+  }
+
+  /// جلب القواعد الخاصة بحالة معينة (للاستخدام الإداري)
+  Future<List<ProfileRuleModel>> getRulesForStatus(
+    ProfileStatus status, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final cacheKey = 'status_${status.name}';
+      
+      // التحقق من الـ cache للحالة المحددة
+      if (!forceRefresh && _statusCaches.containsKey(cacheKey)) {
+        final cachedData = _statusCaches[cacheKey]!;
+        if (cachedData['expiry'].isAfter(DateTime.now())) {
+          debugPrint('✅ [PROFILE_RULES] استخدام قواعد الحالة ${status.name} من الـ cache');
+          return cachedData['rules'] as List<ProfileRuleModel>;
+        }
+      }
+
+      debugPrint('🔍 [PROFILE_RULES] جلب قواعد الحالة ${status.name} من الخادم...');
+
+      final dio = DioService.instance.dio;
+      final response = await dio.get('/api/v1/profile-rules/all', queryParameters: {
+        'status': status.apiValue,
+      });
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data is List
+            ? response.data
+            : (response.data['data'] ?? []);
+
+        final rules = data.map((json) => ProfileRuleModel.fromJson(json)).toList();
+
+        // حفظ في الـ cache للحالة المحددة
+        _statusCaches[cacheKey] = {
+          'rules': rules,
+          'expiry': DateTime.now().add(const Duration(minutes: 5)),
+        };
+
+        debugPrint('✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للحالة ${status.name}');
+        return rules;
+      } else {
+        throw Exception('فشل في جلب القواعد: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ [PROFILE_RULES] خطأ في جلب قواعد الحالة ${status.name}: $e');
+      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+    }
+  }
+
+  /// جلب جميع القواعد النشطة (للتوافق مع الكود القديم)
   Future<List<ProfileRuleModel>> getActiveRules(
       {bool forceRefresh = false}) async {
     try {
@@ -23,7 +140,7 @@ class ProfileRulesService {
         return _cachedRules!;
       }
 
-      debugPrint('🔍 [PROFILE_RULES] جلب القواعد من الخادم...');
+      debugPrint('🔍 [PROFILE_RULES] جلب جميع القواعد من الخادم...');
 
       final dio = DioService.instance.dio;
       final response = await dio.get('/api/v1/profile-rules');
@@ -57,12 +174,9 @@ class ProfileRulesService {
     String fieldName,
     ProfileStatus status,
   ) async {
-    final allRules = await getActiveRules();
-    return allRules
-        .where((rule) =>
-            rule.fieldName == fieldName &&
-            rule.targetStatus == status &&
-            rule.isActive)
+    final statusRules = await getRulesForStatus(status);
+    return statusRules
+        .where((rule) => rule.fieldName == fieldName && rule.isActive)
         .toList();
   }
 

@@ -7,13 +7,13 @@ part 'profile_model.g.dart';
 
 // حالات التوثيق
 enum VerificationStatus {
-  @JsonValue('unverified')
+  @JsonValue('UNVERIFIED')
   unverified, // غير موثق
-  @JsonValue('under_review')
+  @JsonValue('PENDING_VERIFICATION')
   underReview, // تحت المراجعة
-  @JsonValue('verified')
+  @JsonValue('VERIFIED')
   verified, // موثق
-  @JsonValue('rejected')
+  @JsonValue('REJECTED')
   rejected, // مرفوض
 }
 
@@ -61,7 +61,7 @@ class ProfileModel with _$ProfileModel {
     @Default('') String workplace,
     
     // حالة التوثيق
-    @Default(VerificationStatus.unverified) VerificationStatus verificationStatus,
+    @JsonKey(name: 'status') @Default(VerificationStatus.unverified) VerificationStatus verificationStatus,
     @JsonKey(name: 'completion_percentage') @Default(0.0) double completionPercentage,
     @JsonKey(name: 'rejection_reason') String? rejectionReason,
     

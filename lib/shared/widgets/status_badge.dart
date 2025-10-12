@@ -29,7 +29,7 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getStatusConfig();
-    
+
     return Container(
       padding: padding ?? _getPadding(),
       decoration: BoxDecoration(
@@ -209,7 +209,7 @@ class ProfileStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getProfileStatusConfig(status);
-    
+
     return StatusBadge(
       text: config.text,
       type: config.type,
@@ -228,9 +228,9 @@ class ProfileStatusBadge extends StatelessWidget {
           icon: Icons.verified_user,
         );
       case 'pending':
-      case 'تحت المراجعة':
+      case 'قيد المراجعة':
         return ProfileStatusConfig(
-          text: 'تحت المراجعة',
+          text: 'قيد المراجعة',
           type: StatusType.pending,
           icon: Icons.schedule,
         );
@@ -267,7 +267,7 @@ class DocumentStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getDocumentStatusConfig(status);
-    
+
     return StatusBadge(
       text: config.text,
       type: config.type,
@@ -334,10 +334,9 @@ class CompletionBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getCompletionConfig(percentage);
-    final text = showPercentage 
-        ? '${percentage.toInt()}% ${config.text}'
-        : config.text;
-    
+    final text =
+        showPercentage ? '${percentage.toInt()}% ${config.text}' : config.text;
+
     return StatusBadge(
       text: text,
       type: config.type,
@@ -389,7 +388,7 @@ class PriorityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getPriorityConfig(priority);
-    
+
     return StatusBadge(
       text: config.text,
       type: config.type,

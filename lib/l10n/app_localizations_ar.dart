@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -588,7 +589,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pleaseVerifyAccount => 'يرجى توثيق حسابك';
 
   @override
-  String get accountUnderReview => 'تحت المراجعة';
+  String get accountUnderReview => 'قيد المراجعة';
 
   @override
   String get tapToCompleteProfile => 'اضغط لإكمال ملفك الشخصي';
@@ -604,7 +605,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get maintenanceMode => 'وضع الصيانة';
 
   @override
-  String get maintenanceMessage => 'التطبيق تحت الصيانة، يرجى المحاولة لاحقاً';
+  String get maintenanceMessage => 'التطبيق قيد الصيانة، يرجى المحاولة لاحقاً';
 
   @override
   String get estimatedTime => 'الوقت المقدر';

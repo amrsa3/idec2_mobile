@@ -206,7 +206,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       debugPrint('AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken?.isNotEmpty == true}');
       
       // Check if login was successful - be more flexible with success criteria
-      if ((result.success || result.user != null) && 
+      if (result.success && result.user != null && 
           (result.accessToken?.isNotEmpty == true || result.token?.isNotEmpty == true)) {
         
         // Use accessToken or fallback to token field

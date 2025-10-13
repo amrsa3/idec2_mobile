@@ -1176,28 +1176,6 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
           ),
         ),
         const SizedBox(height: 12),
-        // Advanced Monitoring Button - زر المراقبة المتقدمة
-        SizedBox(
-          width: double.infinity,
-          child: CustomButton(
-            text: 'مراقبة متقدمة 📊',
-            onPressed: () => context.go(AppRoutes.connectionStatus),
-            icon: Icons.analytics,
-            backgroundColor: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Server Settings Button
-        SizedBox(
-          width: double.infinity,
-          child: CustomButton(
-            text: 'إعدادات الخادم ⚙️',
-            onPressed: _navigateToServerConfig,
-            icon: Icons.settings,
-            backgroundColor: AppColors.secondary,
-          ),
-        ),
-        const SizedBox(height: 12),
         // Error Report Button
         SizedBox(
           width: double.infinity,

@@ -59,12 +59,12 @@ class ServerSettingsService {
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
-    host: 'localhost',
+    host: 'idec-ye.com',
     port: 3000,
   );
   
   static const ServerSettings localServer = ServerSettings(
-    host: 'localhost',
+    host: '192.168.0.165',
     port: 3000,
   );
 
@@ -78,8 +78,8 @@ class ServerSettingsService {
     final port = await _storageService.getInt(_serverPortKey);
     
     return ServerSettings(
-      host: host ?? mainServer.host,
-      port: port ?? mainServer.port,
+      host: host ?? 'idec-ye.com',
+      port: port ?? 3000,
     );
   }
 

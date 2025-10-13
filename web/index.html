@@ -44,6 +44,18 @@
   <!-- Disable Google Fonts completely -->
   <script src="disable_google_fonts.js"></script>
   
+  <!-- CORS Handler for Flutter Web -->
+  <script src="cors_handler.js"></script>
+  
+  <!-- CORS and Security Headers for Flutter Web -->
+  <meta http-equiv="Access-Control-Allow-Origin" content="*">
+  <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD">
+  <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type, Authorization, Accept, Origin, X-Requested-With">
+  
+  <!-- Preconnect to API server -->
+  <link rel="preconnect" href="https://idec-ye.com">
+  <link rel="dns-prefetch" href="https://idec-ye.com">
+  
   <!-- Local fonts for Arabic and English text - No external dependencies -->
   <!-- Using system fonts for better performance and offline support -->
   

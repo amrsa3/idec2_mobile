@@ -39,246 +39,121 @@ class AuthService {
     );
   }
 
-  // Login with improved error handling
+  // Simplified login method
   Future<AuthResponse> login(LoginRequest request) async {
     try {
       debugPrint('🔍 [AUTH_DEBUG] Starting login for phone: ${request.phone}');
       
-      // Instead of calling _apiService.login directly, make raw Dio call to handle response manually
       final dio = DioService.instance.dio;
       final response = await dio.post(
         '/api/v1/auth/login',
         data: request.toJson(),
       );
       
-      debugPrint('🔍 [AUTH_DEBUG] Raw response received successfully');
-      debugPrint('🔍 [AUTH_DEBUG] Response status: ${response.statusCode}');
-      debugPrint('🔍 [AUTH_DEBUG] Response data type: ${response.data.runtimeType}');
-      debugPrint('🔍 [AUTH_DEBUG] Response data: ${response.data}');
+      debugPrint('🔍 [AUTH_DEBUG] Login response received');
+      debugPrint('🔍 [AUTH_DEBUG] Status: ${response.statusCode}');
+      debugPrint('🔍 [AUTH_DEBUG] Data: ${response.data}');
       
-      if (response.data == null) {
-        throw Exception('Response data is null');
-      }
-      
-      if (response.data is! Map<String, dynamic>) {
-        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
-      }
-      
-      final responseData = response.data as Map<String, dynamic>;
-      debugPrint('🔍 [AUTH_DEBUG] Response data keys: ${responseData.keys.toList()}');
-      
-      // Use AuthResponse.fromJsonSafe to parse the response
-      debugPrint('🔍 [AUTH_DEBUG] Attempting to parse AuthResponse with fromJsonSafe...');
-      final authResponse = AuthResponse.fromJsonSafe(responseData);
-      debugPrint('🔍 [AUTH_DEBUG] AuthResponse parsed successfully with fromJsonSafe');
-      
-      // Check if login was successful
-      if (authResponse.success || (authResponse.user != null && (authResponse.accessToken?.isNotEmpty == true || authResponse.token?.isNotEmpty == true))) {
-        debugPrint('🔍 [AUTH_DEBUG] Login appears successful, processing response...');
+      // Check for successful response
+      if (response.statusCode == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
         
-        // Extract tokens - handle both formats from server
-        String accessToken = authResponse.accessToken ?? '';
-        String refreshToken = authResponse.refreshToken ?? '';
-        
-        debugPrint('🔍 [AUTH_DEBUG] Initial tokens - accessToken: ${accessToken.isNotEmpty ? "present" : "empty"}, refreshToken: ${refreshToken.isNotEmpty ? "present" : "empty"}');
-        
-        // If accessToken is empty, try to get from token field
-        if (accessToken.isEmpty && authResponse.token?.isNotEmpty == true) {
-          accessToken = authResponse.token!;
-          debugPrint('🔍 [AUTH_DEBUG] Using token field as accessToken');
-        }
-        
-        debugPrint('🔍 [AUTH_DEBUG] Final accessToken: ${accessToken.isNotEmpty ? "present" : "empty"}');
-        debugPrint('🔍 [AUTH_DEBUG] User data: ${authResponse.user != null ? "present" : "null"}');
-        
-        // Store tokens using DioService to ensure consistency
-        await DioService.instance.setTokens(accessToken, refreshToken);
-        
-        // Store user data
-        if (authResponse.user != null) {
-          await _storageService.setString('user_data', jsonEncode(authResponse.user!.toJson()));
-          debugPrint('🔍 [AUTH_DEBUG] User data stored successfully');
-        }
-        
-        debugPrint('🔍 [AUTH_DEBUG] Login successful for user: ${authResponse.user?.fullNameAr}');
-        debugPrint('🔍 [AUTH_DEBUG] Access token stored: ${accessToken.isNotEmpty}');
-        
-        // Return a successful response with proper token
-        return AuthResponse(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          user: authResponse.user,
-          success: true,
-          message: authResponse.message,
-          token: accessToken,
-        );
-      } else {
-        debugPrint('🔍 [AUTH_DEBUG] Login failed: ${authResponse.message}');
-        return _createErrorResponse(authResponse.message ?? 'Login failed');
-      }
-    } on DioException catch (e) {
-      debugPrint('🔍 [AUTH_DEBUG] DioException caught: ${e.response?.statusCode} - ${e.message}');
-      
-      // Handle successful response that comes as DioException due to parsing issues
-      if (e.response?.statusCode == 200 && e.response?.data != null) {
-        try {
-          debugPrint('🔍 [AUTH_DEBUG] Processing 200 response from DioException...');
-          final data = e.response!.data as Map<String, dynamic>;
-          debugPrint('🔍 [AUTH_DEBUG] Raw response data type: ${data.runtimeType}');
-          debugPrint('🔍 [AUTH_DEBUG] Raw response data keys: ${data.keys.toList()}');
-          debugPrint('🔍 [AUTH_DEBUG] Raw response data: $data');
+        // Validate response structure
+        if (responseData.containsKey('user') && 
+            (responseData.containsKey('tokens') || responseData.containsKey('access_token'))) {
           
-          // Check user data structure
-          if (data['user'] != null) {
-            debugPrint('🔍 [AUTH_DEBUG] User data found in response');
-            final userData = data['user'] as Map<String, dynamic>;
-            debugPrint('🔍 [AUTH_DEBUG] User data type: ${userData.runtimeType}');
-            debugPrint('🔍 [AUTH_DEBUG] User data keys: ${userData.keys.toList()}');
-            debugPrint('🔍 [AUTH_DEBUG] User data values:');
-            userData.forEach((key, value) {
-              debugPrint('🔍 [AUTH_DEBUG]   $key: $value (${value.runtimeType})');
-            });
-            
-            // Try to create UserModel with detailed error handling
-            UserModel? user;
-            try {
-              debugPrint('🔍 [AUTH_DEBUG] Attempting to create UserModel from JSON with fromJsonSafe...');
-              user = UserModel.fromJsonSafe(userData);
-              debugPrint('🔍 [AUTH_DEBUG] UserModel created successfully with fromJsonSafe: ${user.id}');
-            } catch (userError) {
-              debugPrint('🔍 [AUTH_DEBUG] ERROR creating UserModel with fromJsonSafe: $userError');
-              debugPrint('🔍 [AUTH_DEBUG] UserModel error type: ${userError.runtimeType}');
-              rethrow;
+          // Extract user data
+          final userData = responseData['user'] as Map<String, dynamic>;
+          UserModel? user;
+          try {
+            user = UserModel.fromJsonSafe(userData);
+            debugPrint('🔍 [AUTH_DEBUG] User parsed successfully: ${user.phone}');
+          } catch (userParseError) {
+            debugPrint('🔍 [AUTH_DEBUG] Error parsing user data: $userParseError');
+            return _createErrorResponse('خطأ في تحليل بيانات المستخدم من الخادم');
+          }
+          
+          // Extract tokens
+          String accessToken = '';
+          String refreshToken = '';
+          
+          // Get access token from either location
+          if (responseData.containsKey('access_token')) {
+            accessToken = responseData['access_token'].toString();
+          }
+          
+          if (responseData.containsKey('tokens')) {
+            final tokensData = responseData['tokens'] as Map<String, dynamic>;
+            if (accessToken.isEmpty && tokensData.containsKey('accessToken')) {
+              accessToken = tokensData['accessToken'].toString();
             }
-            
-            // Check tokens data structure
-            final tokens = data['tokens'] as Map<String, dynamic>?;
-            if (tokens != null) {
-              debugPrint('🔍 [AUTH_DEBUG] Tokens data found in response');
-              debugPrint('🔍 [AUTH_DEBUG] Tokens data keys: ${tokens.keys.toList()}');
-              tokens.forEach((key, value) {
-                debugPrint('🔍 [AUTH_DEBUG]   $key: $value (${value.runtimeType})');
-              });
+            if (tokensData.containsKey('refreshToken')) {
+              refreshToken = tokensData['refreshToken'].toString();
             }
+          }
+          
+          if (accessToken.isNotEmpty && user != null) {
+            // Store tokens and user data
+            await DioService.instance.setTokens(accessToken, refreshToken);
+            await _storageService.setString('user_data', jsonEncode(user.toJson()));
             
-            // Safely extract access token from multiple possible locations
-            String accessToken = '';
-            if (data['access_token'] != null) {
-              accessToken = data['access_token'].toString();
-              debugPrint('🔍 [AUTH_DEBUG] AccessToken from access_token field: $accessToken');
-            } else if (tokens != null && tokens['accessToken'] != null) {
-              accessToken = tokens['accessToken'].toString();
-              debugPrint('🔍 [AUTH_DEBUG] AccessToken from tokens.accessToken: $accessToken');
-            }
+            debugPrint('🔍 [AUTH_DEBUG] Login successful for user: ${user.phone} (${user.fullNameAr.isNotEmpty ? user.fullNameAr : 'No name'})');
             
-            // Safely extract refresh token
-            String refreshToken = '';
-            if (tokens != null && tokens['refreshToken'] != null) {
-              refreshToken = tokens['refreshToken'].toString();
-              debugPrint('🔍 [AUTH_DEBUG] RefreshToken from tokens.refreshToken: $refreshToken');
-            }
-            
-            debugPrint('🔍 [AUTH_DEBUG] Final extracted tokens - accessToken: ${accessToken.isNotEmpty ? "present" : "empty"}, refreshToken: ${refreshToken.isNotEmpty ? "present" : "empty"}');
-            
-            if (user != null && accessToken.isNotEmpty) {
-              // Store tokens using DioService to ensure consistency
-              await DioService.instance.setTokens(accessToken, refreshToken);
-              
-              // Store user data
-              await _storageService.setString('user_data', jsonEncode(user.toJson()));
-              
-              debugPrint('🔍 [AUTH_DEBUG] Login successful (from DioException) for user: ${user.fullNameAr}');
-              
-              return AuthResponse(
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                user: user,
-                success: true,
-                message: 'Login successful',
-                token: accessToken,
-              );
-            } else {
-              debugPrint('🔍 [AUTH_DEBUG] Missing required data - user: ${user != null ? "present" : "null"}, accessToken: ${accessToken.isNotEmpty ? "present" : "empty"}');
-            }
+            return AuthResponse(
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+              user: user,
+              success: true,
+              message: 'تم تسجيل الدخول بنجاح',
+              token: accessToken,
+            );
           } else {
-            debugPrint('🔍 [AUTH_DEBUG] No user data found in response');
+            debugPrint('🔍 [AUTH_DEBUG] Login failed: Missing access token or user data');
+            return _createErrorResponse('خطأ في استجابة الخادم - بيانات المستخدم غير مكتملة');
           }
-        } catch (parseError) {
-          debugPrint('🔍 [AUTH_DEBUG] Error parsing successful login response: $parseError');
-          debugPrint('🔍 [AUTH_DEBUG] Parse error type: ${parseError.runtimeType}');
-          debugPrint('🔍 [AUTH_DEBUG] Parse error stack trace: ${StackTrace.current}');
         }
       }
       
-      // Extract error message from server response with better handling for Arabic text
-      String errorMessage = 'فشل في تسجيل الدخول';
+      // If we reach here, something went wrong
+      return _createErrorResponse('استجابة غير صحيحة من الخادم');
       
-      if (e.response?.data != null) {
-        debugPrint('🔍 [AUTH_DEBUG] Error response data: ${e.response?.data}');
-        debugPrint('🔍 [AUTH_DEBUG] Error response type: ${e.response?.data.runtimeType}');
-        
-        // Try to extract error message from different possible locations
-        if (e.response?.data is Map<String, dynamic>) {
-          final responseData = e.response?.data as Map<String, dynamic>;
-          
-          // Check for 'message' field first (most common)
-          if (responseData.containsKey('message') && responseData['message'] != null) {
-            errorMessage = responseData['message'].toString();
-            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "message" field: $errorMessage');
-          }
-          // Check for 'error' field
-          else if (responseData.containsKey('error') && responseData['error'] != null) {
-            if (responseData['error'] is Map<String, dynamic>) {
-              final errorData = responseData['error'] as Map<String, dynamic>;
-              errorMessage = errorData['message']?.toString() ?? errorData.toString();
-            } else {
-              errorMessage = responseData['error'].toString();
-            }
-            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "error" field: $errorMessage');
-          }
-          // Check for validation errors (422 status)
-          else if (responseData.containsKey('errors') && responseData['errors'] != null) {
-            final errors = responseData['errors'] as Map<String, dynamic>?;
-            if (errors != null && errors.isNotEmpty) {
-              // Get first error message
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                errorMessage = firstError.first.toString();
-              } else {
-                errorMessage = firstError.toString();
-              }
-            }
-            debugPrint('🔍 [AUTH_DEBUG] Extracted error message from "errors" field: $errorMessage');
-          }
-        } else if (e.response?.data is String) {
-          errorMessage = e.response?.data as String;
-          debugPrint('🔍 [AUTH_DEBUG] Extracted error message from string response: $errorMessage');
-        }
-      }
+    } on DioException catch (e) {
+      debugPrint('🔍 [AUTH_DEBUG] DioException: ${e.response?.statusCode} - ${e.message}');
       
-      // Handle specific status codes with fallback to extracted message
+      // Handle specific error status codes
       if (e.response?.statusCode == 401) {
-        // Use extracted message if available, otherwise use default
-        if (errorMessage == 'فشل في تسجيل الدخول') {
-          errorMessage = 'رقم الهاتف أو كلمة المرور غير صحيحة، أو أن رقم الهاتف غير مفعل';
-        }
+        return _createErrorResponse('رقم الهاتف أو كلمة المرور غير صحيحة');
       } else if (e.response?.statusCode == 422) {
-        // For validation errors, we already extracted the message above
-        if (errorMessage == 'فشل في تسجيل الدخول') {
-          errorMessage = 'خطأ في البيانات المدخلة';
-        }
+        return _createErrorResponse('خطأ في البيانات المدخلة');
       } else if (e.response?.statusCode == 400) {
-        if (errorMessage == 'فشل في تسجيل الدخول') {
-          errorMessage = 'طلب غير صحيح';
-        }
+        return _createErrorResponse('طلب غير صحيح');
+      } else if (e.response?.statusCode == 500) {
+        return _createErrorResponse('خطأ في الخادم');
+      } else {
+        // Network or connection error
+        return _createErrorResponse('خطأ في الاتصال بالإنترنت - يرجى التحقق من الاتصال');
       }
-      
-      debugPrint('🔍 [AUTH_DEBUG] Final error message to return: $errorMessage');
-      return _createErrorResponse(errorMessage);
     } catch (e) {
       debugPrint('🔍 [AUTH_DEBUG] General error: $e');
-      debugPrint('🔍 [AUTH_DEBUG] General error type: ${e.runtimeType}');
-      return _createErrorResponse('Network error: $e');
+      
+      // Determine error type for better user feedback
+      String errorMessage = 'خطأ في الاتصال بالإنترنت - يرجى التحقق من الاتصال';
+      
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('NetworkException') ||
+          e.toString().contains('Connection refused')) {
+        errorMessage = 'لا يمكن الاتصال بالخادم - تحقق من الاتصال بالإنترنت';
+      } else if (e.toString().contains('TimeoutException')) {
+        errorMessage = 'انتهت مهلة الاتصال - حاول مرة أخرى';
+      } else if (e.toString().contains('FormatException') || 
+                 e.toString().contains('JsonUnsupportedObjectError')) {
+        errorMessage = 'خطأ في تحليل البيانات من الخادم';
+      } else if (e.toString().contains('CORS') || 
+                 e.toString().contains('Cross-Origin')) {
+        errorMessage = 'خطأ في إعدادات الأمان - اتصل بالدعم الفني';
+      }
+      
+      return _createErrorResponse(errorMessage);
     }
   }
 

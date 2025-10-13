@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // إضافة هذا للفحص kIsWeb
 
 import '../core/constants/app_constants.dart';
 import '../core/constants/api_constants.dart';
@@ -100,16 +101,22 @@ class AdvancedConnectivityService {
     int? signalStrength;
 
     try {
-      // Get network interfaces
-      final interfaces = await NetworkInterface.list();
-      if (interfaces.isNotEmpty) {
-        ipAddress = interfaces.first.addresses.first.address;
-      }
+      // Get network interfaces - only for non-web platforms
+      if (!kIsWeb) {
+        final interfaces = await NetworkInterface.list();
+        if (interfaces.isNotEmpty) {
+          ipAddress = interfaces.first.addresses.first.address;
+        }
 
-      // For WiFi connections, try to get additional info
-      if (connectivityResult == ConnectivityResult.wifi) {
-        networkName = await _getWifiName();
-        signalStrength = await _getWifiSignalStrength();
+        // For WiFi connections, try to get additional info
+        if (connectivityResult == ConnectivityResult.wifi) {
+          networkName = await _getWifiName();
+          signalStrength = await _getWifiSignalStrength();
+        }
+      } else {
+        // For web, we can't get detailed network info
+        ipAddress = 'Web Platform';
+        networkName = 'Browser Network';
       }
     } catch (e) {
       // Handle errors silently
@@ -173,9 +180,10 @@ class AdvancedConnectivityService {
 
   /// Run all connection tests
   Future<List<ConnectionTestResult>> _runAllTests() async {
-    // تقليل عدد الاختبارات - فقط اختبار الاتصال الأساسي والخادم
+    // اختبارات الاتصال المحسنة للويب
     final tests = <Future<ConnectionTestResult>>[
       _testInternetConnectivity(),
+      _testHTTPConnectivity(), // اختبار HTTP مع خوادم موثوقة
       _testAPIEndpoints(), // فقط اختبار health endpoint
     ];
 
@@ -187,59 +195,173 @@ class AdvancedConnectivityService {
       
       // تأخير بين الاختبارات لتقليل الحمولة
       if (tests.indexOf(test) < tests.length - 1) {
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(const Duration(milliseconds: 500));
       }
     }
     
     return results;
   }
 
-  /// Test basic internet connectivity
+  /// Test internet connection using HTTP requests instead of DNS lookup for web
   Future<ConnectionTestResult> _testInternetConnectivity() async {
     const testName = 'Internet Connectivity';
     final timestamp = DateTime.now();
     final stopwatch = Stopwatch()..start();
 
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(_timeout);
-      
-      stopwatch.stop();
-      
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        return ConnectionTestResult(
-          testName: testName,
-          status: TestStatus.success,
-          result: 'Internet connection available',
-          duration: stopwatch.elapsed,
-          timestamp: timestamp,
-        );
-      } else {
-        return ConnectionTestResult(
-          testName: testName,
-          status: TestStatus.failed,
-          error: 'No internet connection',
-          duration: stopwatch.elapsed,
-          timestamp: timestamp,
-        );
+    if (kIsWeb) {
+      // For web platform, use HTTP requests instead of DNS lookup
+      final testUrls = [
+        'https://www.google.com/generate_204', // Google connectivity check
+        'https://httpbin.org/status/200', // HTTP testing service
+        'https://www.microsoft.com/favicon.ico', // Microsoft favicon
+      ];
+
+      for (final url in testUrls) {
+        try {
+          final response = await _dio.get(
+            url,
+            options: Options(
+              sendTimeout: const Duration(seconds: 5),
+              receiveTimeout: const Duration(seconds: 5),
+              validateStatus: (status) => status != null && status >= 200 && status < 400,
+            ),
+          );
+          
+          if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 400) {
+            stopwatch.stop();
+            return ConnectionTestResult(
+              testName: testName,
+              status: TestStatus.success,
+              result: 'Internet connection available (Web Platform)',
+              duration: stopwatch.elapsed,
+              timestamp: timestamp,
+            );
+          }
+        } catch (e) {
+          // Continue to next URL if this one fails
+          continue;
+        }
       }
-    } catch (e) {
+
+      // If all URLs failed
       stopwatch.stop();
       return ConnectionTestResult(
         testName: testName,
         status: TestStatus.failed,
-        error: e.toString(),
+        error: 'No internet connection - all test URLs unreachable (Web Platform)',
+        duration: stopwatch.elapsed,
+        timestamp: timestamp,
+      );
+    } else {
+      // For mobile platforms, use DNS lookup
+      final testServers = [
+        'google.com',
+        'microsoft.com',
+        '8.8.8.8', // Google DNS
+        '1.1.1.1', // Cloudflare DNS
+      ];
+
+      for (final server in testServers) {
+        try {
+          final result = await InternetAddress.lookup(server)
+              .timeout(const Duration(seconds: 5));
+          
+          if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+            stopwatch.stop();
+            return ConnectionTestResult(
+              testName: testName,
+              status: TestStatus.success,
+              result: 'Internet connection available via $server',
+              duration: stopwatch.elapsed,
+              timestamp: timestamp,
+            );
+          }
+        } catch (e) {
+          // Continue to next server if this one fails
+          continue;
+        }
+      }
+
+      // If all servers failed
+      stopwatch.stop();
+      return ConnectionTestResult(
+        testName: testName,
+        status: TestStatus.failed,
+        error: 'No internet connection - all test servers unreachable',
         duration: stopwatch.elapsed,
         timestamp: timestamp,
       );
     }
   }
 
-  /// Test DNS resolution
+  /// Test HTTP connectivity using reliable external servers
+  Future<ConnectionTestResult> _testHTTPConnectivity() async {
+    const testName = 'HTTP Connectivity';
+    final timestamp = DateTime.now();
+    final stopwatch = Stopwatch()..start();
+
+    // قائمة بخوادم HTTP موثوقة للاختبار
+    final testUrls = [
+      'https://www.google.com/generate_204', // Google connectivity check
+      'https://www.microsoft.com/favicon.ico', // Microsoft favicon
+      'https://httpbin.org/status/200', // HTTP testing service
+    ];
+
+    for (final url in testUrls) {
+      try {
+        final response = await _dio.get(
+          url,
+          options: Options(
+            sendTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+            validateStatus: (status) => status != null && status >= 200 && status < 400,
+          ),
+        );
+        
+        if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 400) {
+          stopwatch.stop();
+          return ConnectionTestResult(
+            testName: testName,
+            status: TestStatus.success,
+            result: 'HTTP connectivity confirmed via $url (${response.statusCode})',
+            duration: stopwatch.elapsed,
+            timestamp: timestamp,
+          );
+        }
+      } catch (e) {
+        // Continue to next URL if this one fails
+        continue;
+      }
+    }
+
+    // If all URLs failed
+    stopwatch.stop();
+    return ConnectionTestResult(
+      testName: testName,
+      status: TestStatus.failed,
+      error: 'HTTP connectivity failed - all test URLs unreachable',
+      duration: stopwatch.elapsed,
+      timestamp: timestamp,
+    );
+  }
+
+  /// Test DNS resolution - Web-compatible version
   Future<ConnectionTestResult> _testDNSResolution() async {
     const testName = 'DNS Resolution';
     final timestamp = DateTime.now();
     final stopwatch = Stopwatch()..start();
+
+    if (kIsWeb) {
+      // For web platform, skip DNS resolution test as it's not supported
+      stopwatch.stop();
+      return ConnectionTestResult(
+        testName: testName,
+        status: TestStatus.success,
+        result: 'DNS resolution skipped (Web Platform)',
+        duration: stopwatch.elapsed,
+        timestamp: timestamp,
+      );
+    }
 
     try {
       final uri = Uri.parse(ApiConstants.baseUrl);

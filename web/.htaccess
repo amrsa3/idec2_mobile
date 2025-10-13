@@ -17,8 +17,16 @@ RewriteRule ^.*$ /index.html [L]
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     
-    # Content Security Policy - No Google Fonts
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https:;"
+    # CORS Headers for Flutter Web
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, Accept, Origin, X-Requested-With, Cache-Control, Pragma, Expires, Last-Modified, If-Modified-Since, X-CSRF-Token"
+    Header always set Access-Control-Expose-Headers "Content-Type, Content-Disposition, Cache-Control, Content-Length, Date, ETag, Last-Modified, Authorization, X-Total-Count"
+    Header always set Access-Control-Allow-Credentials "true"
+    Header always set Access-Control-Max-Age "86400"
+    
+    # Content Security Policy - Updated for Flutter Web
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https: http: ws: wss:;"
 </IfModule>
 
 # Compression

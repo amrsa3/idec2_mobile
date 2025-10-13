@@ -1,11 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../core/constants/app_constants.dart';
+import 'package:http/http.dart' as http;
+
 import '../core/constants/api_constants.dart';
-import '../core/utils/storage_helper.dart';
 import '../core/theme/app_colors.dart';
+import '../core/utils/storage_helper.dart';
 import '../models/notification_model.dart' hide NotificationResponse;
 
 /// خدمة الإشعارات المركزية
@@ -13,48 +14,49 @@ import '../models/notification_model.dart' hide NotificationResponse;
 class NotificationService {
   static String get _baseUrl => ApiConstants.baseUrl;
   static const String _notificationsEndpoint = '/api/notifications';
-  
+
   // مفتاح الـ GlobalKey للـ ScaffoldMessenger
-  static final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = 
+  static final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
-  
+
   // مثيل الإشعارات المحلية
-  static final FlutterLocalNotificationsPlugin _localNotifications = 
+  static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  
+
   /// الحصول على مفتاح ScaffoldMessenger
-  static GlobalKey<ScaffoldMessengerState> get scaffoldMessengerKey => 
+  static GlobalKey<ScaffoldMessengerState> get scaffoldMessengerKey =>
       _scaffoldMessengerKey;
-  
+
   /// تهيئة خدمة الإشعارات
   static Future<void> initialize() async {
     // تهيئة الإشعارات المحلية
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
-    
+
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-    
+
     debugPrint('✅ [NOTIFICATION] تم تهيئة خدمة الإشعارات');
   }
-  
+
   /// معالج النقر على الإشعار
   static void _onNotificationTapped(NotificationResponse response) {
     debugPrint('🔔 [NOTIFICATION] تم النقر على الإشعار: ${response.payload}');
     // يمكن إضافة منطق التنقل هنا
   }
-  
+
   /// عرض رسالة نجاح
   static Future<void> showSuccess({
     required String title,
@@ -68,10 +70,10 @@ class NotificationService {
       icon: Icons.check_circle,
       duration: duration,
     );
-    
+
     debugPrint('✅ [NOTIFICATION] رسالة نجاح: $title - $message');
   }
-  
+
   /// عرض رسالة خطأ
   static Future<void> showError({
     required String title,
@@ -85,10 +87,10 @@ class NotificationService {
       icon: Icons.error,
       duration: duration,
     );
-    
+
     debugPrint('❌ [NOTIFICATION] رسالة خطأ: $title - $message');
   }
-  
+
   /// عرض رسالة تحذير
   static Future<void> showWarning({
     required String title,
@@ -102,10 +104,10 @@ class NotificationService {
       icon: Icons.warning,
       duration: duration,
     );
-    
+
     debugPrint('⚠️ [NOTIFICATION] رسالة تحذير: $title - $message');
   }
-  
+
   /// عرض رسالة معلومات
   static Future<void> showInfo({
     required String title,
@@ -119,10 +121,10 @@ class NotificationService {
       icon: Icons.info,
       duration: duration,
     );
-    
+
     debugPrint('ℹ️ [NOTIFICATION] رسالة معلومات: $title - $message');
   }
-  
+
   /// عرض SnackBar مخصص
   static void _showSnackBar({
     required String title,
@@ -136,10 +138,10 @@ class NotificationService {
       debugPrint('❌ [NOTIFICATION] ScaffoldMessenger غير متاح');
       return;
     }
-    
+
     // إخفاء أي SnackBar موجود
     scaffoldMessenger.hideCurrentSnackBar();
-    
+
     final snackBar = SnackBar(
       content: Row(
         children: [
@@ -192,10 +194,10 @@ class NotificationService {
         },
       ),
     );
-    
+
     scaffoldMessenger.showSnackBar(snackBar);
   }
-  
+
   /// عرض إشعار محلي (Push Notification)
   static Future<void> showLocalNotification({
     required String title,
@@ -210,18 +212,18 @@ class NotificationService {
       priority: Priority.high,
       showWhen: true,
     );
-    
+
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
-    
+
     const notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
-    
+
     await _localNotifications.show(
       DateTime.now().millisecondsSinceEpoch.remainder(100000),
       title,
@@ -229,10 +231,10 @@ class NotificationService {
       notificationDetails,
       payload: payload,
     );
-    
+
     debugPrint('🔔 [NOTIFICATION] إشعار محلي: $title - $body');
   }
-  
+
   /// إرسال إشعار للخادم
   static Future<bool> sendNotification({
     required String title,
@@ -243,7 +245,7 @@ class NotificationService {
   }) async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl$_notificationsEndpoint/send'),
         headers: {
@@ -259,12 +261,13 @@ class NotificationService {
           'timestamp': DateTime.now().toIso8601String(),
         }),
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('✅ [NOTIFICATION] تم إرسال الإشعار بنجاح: $title');
         return true;
       } else {
-        debugPrint('❌ [NOTIFICATION] فشل إرسال الإشعار: ${response.statusCode}');
+        debugPrint(
+            '❌ [NOTIFICATION] فشل إرسال الإشعار: ${response.statusCode}');
         return false;
       }
     } catch (e) {
@@ -272,7 +275,7 @@ class NotificationService {
       return false;
     }
   }
-  
+
   /// جلب الإشعارات من الخادم
   static Future<List<NotificationModel>> getNotifications({
     int page = 1,
@@ -282,17 +285,17 @@ class NotificationService {
   }) async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       final queryParams = <String, String>{
         'page': page.toString(),
         'limit': limit.toString(),
         if (type != null) 'type': type,
         if (isRead != null) 'isRead': isRead.toString(),
       };
-      
+
       final uri = Uri.parse('$_baseUrl$_notificationsEndpoint')
           .replace(queryParameters: queryParams);
-      
+
       final response = await http.get(
         uri,
         headers: {
@@ -300,17 +303,18 @@ class NotificationService {
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final notifications = (data['notifications'] as List)
             .map((json) => NotificationModel.fromJson(json))
             .toList();
-        
+
         debugPrint('✅ [NOTIFICATION] تم جلب ${notifications.length} إشعار');
         return notifications;
       } else {
-        debugPrint('❌ [NOTIFICATION] فشل جلب الإشعارات: ${response.statusCode}');
+        debugPrint(
+            '❌ [NOTIFICATION] فشل جلب الإشعارات: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -318,12 +322,12 @@ class NotificationService {
       return [];
     }
   }
-  
+
   /// تحديد إشعار كمقروء
   static Future<bool> markAsRead(String notificationId) async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       final response = await http.patch(
         Uri.parse('$_baseUrl$_notificationsEndpoint/$notificationId/read'),
         headers: {
@@ -331,12 +335,13 @@ class NotificationService {
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
-      
+
       if (response.statusCode == 200) {
         debugPrint('✅ [NOTIFICATION] تم تحديد الإشعار كمقروء: $notificationId');
         return true;
       } else {
-        debugPrint('❌ [NOTIFICATION] فشل تحديد الإشعار كمقروء: ${response.statusCode}');
+        debugPrint(
+            '❌ [NOTIFICATION] فشل تحديد الإشعار كمقروء: ${response.statusCode}');
         return false;
       }
     } catch (e) {
@@ -344,12 +349,12 @@ class NotificationService {
       return false;
     }
   }
-  
+
   /// تحديد جميع الإشعارات كمقروءة
   static Future<bool> markAllAsRead() async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       final response = await http.patch(
         Uri.parse('$_baseUrl$_notificationsEndpoint/read-all'),
         headers: {
@@ -357,12 +362,13 @@ class NotificationService {
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
-      
+
       if (response.statusCode == 200) {
         debugPrint('✅ [NOTIFICATION] تم تحديد جميع الإشعارات كمقروءة');
         return true;
       } else {
-        debugPrint('❌ [NOTIFICATION] فشل تحديد جميع الإشعارات كمقروءة: ${response.statusCode}');
+        debugPrint(
+            '❌ [NOTIFICATION] فشل تحديد جميع الإشعارات كمقروءة: ${response.statusCode}');
         return false;
       }
     } catch (e) {
@@ -370,12 +376,12 @@ class NotificationService {
       return false;
     }
   }
-  
+
   /// حذف إشعار
   static Future<bool> deleteNotification(String notificationId) async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       final response = await http.delete(
         Uri.parse('$_baseUrl$_notificationsEndpoint/$notificationId'),
         headers: {
@@ -383,7 +389,7 @@ class NotificationService {
           if (token != null) 'Authorization': 'Bearer $token',
         },
       );
-      
+
       if (response.statusCode == 200) {
         debugPrint('✅ [NOTIFICATION] تم حذف الإشعار: $notificationId');
         return true;
@@ -396,7 +402,7 @@ class NotificationService {
       return false;
     }
   }
-  
+
   /// إرسال إشعار نجاح للخادم
   static Future<void> sendSuccessNotification({
     required String title,
@@ -410,7 +416,7 @@ class NotificationService {
       data: data,
     );
   }
-  
+
   /// إرسال إشعار خطأ للخادم
   static Future<void> sendErrorNotification({
     required String title,
@@ -424,7 +430,7 @@ class NotificationService {
       data: data,
     );
   }
-  
+
   /// إرسال إشعار تحذير للخادم
   static Future<void> sendWarningNotification({
     required String title,
@@ -438,7 +444,7 @@ class NotificationService {
       data: data,
     );
   }
-  
+
   /// إرسال إشعار معلومات للخادم
   static Future<void> sendInfoNotification({
     required String title,
@@ -452,7 +458,7 @@ class NotificationService {
       data: data,
     );
   }
-  
+
   /// إرسال إشعار توثيق للحسابات غير الموثقة
   static Future<void> showVerificationReminder({
     required String userId,
@@ -468,7 +474,7 @@ class NotificationService {
       },
     );
   }
-  
+
   /// إرسال إشعار تحديث حالة التوثيق
   static Future<void> notifyVerificationStatusUpdate({
     required String userId,
@@ -478,21 +484,24 @@ class NotificationService {
     String title;
     String message;
     String type;
-    
+
     switch (status) {
       case 'verified':
         title = 'تم توثيق حسابك';
-        message = 'تهانينا! تم توثيق حسابك بنجاح. يمكنك الآن التسجيل في جميع الفعاليات';
+        message =
+            'تهانينا! تم توثيق حسابك بنجاح. يمكنك الآن التسجيل في جميع الفعاليات';
         type = 'success';
         break;
       case 'rejected':
         title = 'تم رفض طلب التوثيق';
-        message = rejectionReason ?? 'تم رفض طلب التوثيق. يرجى مراجعة الوثائق المرفوعة وإعادة المحاولة';
+        message = rejectionReason ??
+            'تم رفض طلب التوثيق. يرجى مراجعة الوثائق المرفوعة وإعادة المحاولة';
         type = 'error';
         break;
       case 'pending':
         title = 'طلب التوثيق قيد المراجعة';
-        message = 'تم استلام طلب التوثيق وهو قيد المراجعة. سيتم إشعارك بالنتيجة قريباً';
+        message =
+            'تم استلام طلب التوثيق وهو قيد المراجعة. سيتم إشعارك بالنتيجة قريباً';
         type = 'info';
         break;
       default:
@@ -500,7 +509,7 @@ class NotificationService {
         message = 'تم تحديث حالة التوثيق الخاصة بك';
         type = 'info';
     }
-    
+
     await sendNotification(
       title: title,
       message: message,
@@ -540,7 +549,7 @@ class NotificationService {
   }) async {
     try {
       final token = await StorageHelper.getToken();
-      
+
       if (token == null) {
         await showError(
           title: 'خطأ في المصادقة',
@@ -606,7 +615,7 @@ extension NotificationModelUI on NotificationModel {
         return AppColors.primary;
     }
   }
-  
+
   /// أيقونة الإشعار حسب النوع
   IconData get icon {
     switch (type) {

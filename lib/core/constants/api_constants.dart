@@ -2,10 +2,13 @@ import '../services/server_settings_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default URLs with port explicitly included
-  static const String defaultBaseUrl = 'http://idec-ye.com:3000';
-  static const String devUrl = 'http://idec-ye.com:3000';
-  static const String prodUrl = 'http://idec-ye.com:3000';
+  // Default URLs with port explicitly included - using IP to avoid DNS issues
+  static const String defaultBaseUrl = 'http://84.247.128.128:3000';
+  static const String devUrl = 'http://84.247.128.128:3000';
+  static const String prodUrl = 'http://84.247.128.128:3000';
+  
+  // Fallback domain URL (in case IP doesn't work)
+  static const String domainUrl = 'http://idec-ye.com:3000';
   
   // Current base URL - will be updated dynamically
   static String _baseUrl = defaultBaseUrl;

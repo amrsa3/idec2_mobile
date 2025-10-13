@@ -1,7 +1,8 @@
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -55,8 +56,9 @@ class DocumentUploadWidget extends StatefulWidget {
 class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
   final ImagePicker _imagePicker = ImagePicker();
 
-  bool get hasFile => widget.selectedFile != null || widget.existingFileUrl != null;
-  
+  bool get hasFile =>
+      widget.selectedFile != null || widget.existingFileUrl != null;
+
   String get fileName {
     if (widget.selectedFile != null) {
       return widget.selectedFile!.path.split('/').last;
@@ -73,9 +75,7 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
           _buildLabel(),
           const SizedBox(height: 8),
         ],
-        
         _buildUploadArea(),
-        
         if (widget.helperText != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -85,7 +85,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
             ),
           ),
         ],
-        
         if (widget.errorText != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -137,12 +136,12 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: widget.enabled 
+          color: widget.enabled
               ? AppColors.primary.withOpacity(0.05)
               : AppColors.grey.withOpacity(0.1),
           border: Border.all(
-            color: widget.errorText != null 
-                ? AppColors.error 
+            color: widget.errorText != null
+                ? AppColors.error
                 : AppColors.primary.withOpacity(0.3),
             width: 2,
             style: BorderStyle.solid,
@@ -154,17 +153,13 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
             Icon(
               Icons.cloud_upload_outlined,
               size: 48,
-              color: widget.enabled 
-                  ? AppColors.primary 
-                  : AppColors.grey,
+              color: widget.enabled ? AppColors.primary : AppColors.grey,
             ),
             const SizedBox(height: 12),
             Text(
               widget.hint ?? 'اضغط لرفع الملف',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: widget.enabled 
-                    ? AppColors.primary 
-                    : AppColors.grey,
+                color: widget.enabled ? AppColors.primary : AppColors.grey,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -232,9 +227,9 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
   Widget _buildFileIcon() {
     IconData iconData;
     Color iconColor = AppColors.success;
-    
+
     final extension = fileName.split('.').last.toLowerCase();
-    
+
     switch (extension) {
       case 'pdf':
         iconData = Icons.picture_as_pdf;
@@ -254,7 +249,7 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
       default:
         iconData = Icons.insert_drive_file;
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -281,7 +276,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
             color: AppColors.primary,
             tooltip: 'عرض الملف',
           ),
-        
         if (widget.enabled)
           IconButton(
             onPressed: _showUploadOptions,
@@ -290,7 +284,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
             color: AppColors.warning,
             tooltip: 'تغيير الملف',
           ),
-        
         if (widget.enabled)
           IconButton(
             onPressed: _removeFile,
@@ -304,13 +297,15 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
   }
 
   String _buildAllowedFormatsText() {
-    final formats = widget.allowedExtensions.map((e) => e.toUpperCase()).join(', ');
+    final formats =
+        widget.allowedExtensions.map((e) => e.toUpperCase()).join(', ');
     return 'الصيغ المدعومة: $formats\nالحد الأقصى: ${widget.maxFileSizeInMB} ميجابايت';
   }
 
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes بايت';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} كيلوبايت';
+    if (bytes < 1024 * 1024)
+      return '${(bytes / 1024).toStringAsFixed(1)} كيلوبايت';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ميجابايت';
   }
 
@@ -335,7 +330,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
                 ),
               ),
               const SizedBox(height: 20),
-              
               Text(
                 'اختر مصدر الملف',
                 style: AppTextStyles.headlineSmall.copyWith(
@@ -343,7 +337,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
                 ),
               ),
               const SizedBox(height: 20),
-              
               if (widget.allowImages) ...[
                 _buildOptionTile(
                   icon: Icons.camera_alt,
@@ -354,7 +347,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
                     _pickImageFromCamera();
                   },
                 ),
-                
                 _buildOptionTile(
                   icon: Icons.photo_library,
                   title: 'معرض الصور',
@@ -365,7 +357,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
                   },
                 ),
               ],
-              
               if (widget.allowDocuments)
                 _buildOptionTile(
                   icon: Icons.folder,
@@ -376,7 +367,6 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
                     _pickDocument();
                   },
                 ),
-              
               const SizedBox(height: 10),
             ],
           ),
@@ -431,7 +421,7 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         final file = File(image.path);
         if (_validateFile(file)) {
@@ -451,7 +441,7 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         final file = File(image.path);
         if (_validateFile(file)) {
@@ -470,14 +460,25 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         allowedExtensions: widget.allowedExtensions,
         allowMultiple: false,
       );
-      
+
       if (result != null && result.files.isNotEmpty) {
         final platformFile = result.files.single;
-        
-        // في بيئة الويب، path غير متاح ويجب استخدام bytes
+
+        // في بيئة الويب، استخدم البيانات المرسلة مباشرة
         if (kIsWeb) {
-          _showErrorSnackBar('رفع الملفات غير مدعوم في بيئة الويب حالياً');
-          return;
+          if (platformFile.bytes != null) {
+            // في الويب، يمكن استخدام PlatformFile مباشرة
+            debugPrint(
+                '🌐 Web: Using PlatformFile with bytes for document upload');
+            // يمكن إضافة منطق رفع الملفات هنا في المستقبل
+            final file = File('web_file_${platformFile.name}');
+            if (_validateFile(file)) {
+              widget.onFileSelected?.call(file);
+            }
+          } else {
+            debugPrint('❌ Web: No bytes available for document upload');
+            _showErrorSnackBar('لم يتم توفير بيانات الملف');
+          }
         } else {
           // في البيئات الأخرى (Android/iOS)، استخدم path
           if (platformFile.path != null) {
@@ -497,17 +498,18 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
     // Check file size
     final fileSizeInMB = file.lengthSync() / (1024 * 1024);
     if (fileSizeInMB > widget.maxFileSizeInMB) {
-      _showErrorSnackBar('حجم الملف كبير جداً. الحد الأقصى ${widget.maxFileSizeInMB} ميجابايت');
+      _showErrorSnackBar(
+          'حجم الملف كبير جداً. الحد الأقصى ${widget.maxFileSizeInMB} ميجابايت');
       return false;
     }
-    
+
     // Check file extension
     final extension = file.path.split('.').last.toLowerCase();
     if (!widget.allowedExtensions.contains(extension)) {
       _showErrorSnackBar('صيغة الملف غير مدعومة');
       return false;
     }
-    
+
     return true;
   }
 
@@ -559,11 +561,11 @@ class CompactDocumentUpload extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: hasFile 
+        color: hasFile
             ? AppColors.success.withOpacity(0.05)
             : AppColors.grey.withOpacity(0.05),
         border: Border.all(
-          color: hasFile 
+          color: hasFile
               ? AppColors.success.withOpacity(0.3)
               : AppColors.grey.withOpacity(0.3),
           width: 1,
@@ -578,7 +580,6 @@ class CompactDocumentUpload extends StatelessWidget {
             size: 20,
           ),
           const SizedBox(width: 8),
-          
           Expanded(
             child: RichText(
               text: TextSpan(
@@ -599,7 +600,6 @@ class CompactDocumentUpload extends StatelessWidget {
               ),
             ),
           ),
-          
           if (hasFile && onView != null)
             IconButton(
               onPressed: onView,
@@ -612,7 +612,6 @@ class CompactDocumentUpload extends StatelessWidget {
                 minHeight: 24,
               ),
             ),
-          
           if (enabled)
             IconButton(
               onPressed: onUpload,
@@ -625,7 +624,6 @@ class CompactDocumentUpload extends StatelessWidget {
                 minHeight: 24,
               ),
             ),
-          
           if (hasFile && enabled && onRemove != null)
             IconButton(
               onPressed: onRemove,

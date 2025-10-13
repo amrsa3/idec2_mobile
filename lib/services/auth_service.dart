@@ -388,36 +388,16 @@ class AuthService {
     }
   }
 
-  // Request OTP with improved error handling and dynamic channel selection
-  Future<ApiResponse> requestOtp(String phoneNumber, {String? channel, String purpose = 'registration'}) async {
+  // Request OTP - simplified version without channel selection
+  Future<ApiResponse> requestOtp(String phoneNumber, {String purpose = 'registration'}) async {
     try {
       debugPrint('🔍 [OTP_REQUEST] Requesting OTP for phone: $phoneNumber, purpose: $purpose');
       
-      // Get available channels and select appropriate one
-      String selectedChannel = channel ?? 'SMS';
-      
-      if (channel == null) {
-        try {
-          final defaultChannel = await _registrationSettingsService.getDefaultOtpChannel();
-          if (defaultChannel != null) {
-            selectedChannel = defaultChannel.toUpperCase();
-            debugPrint('🔍 [OTP_REQUEST] Using default OTP channel: $selectedChannel');
-          }
-        } catch (e) {
-          debugPrint('🔍 [OTP_REQUEST] Failed to get default channel, using SMS: $e');
-        }
-      } else {
-        selectedChannel = channel.toUpperCase();
-      }
-      
-      debugPrint('🔍 [OTP_REQUEST] Sending OTP via channel: $selectedChannel');
-      
-      // Direct API call for OTP request with correct field names
+      // Direct API call for OTP request - server will use default channel
       final dio = DioService.instance.dio;
       final requestData = {
         'phone': phoneNumber,
         'purpose': purpose,
-        'preferredChannel': selectedChannel,
       };
       
       debugPrint('🔍 [OTP_REQUEST] Request data: $requestData');
@@ -428,7 +408,7 @@ class AuthService {
       );
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('🔍 [OTP_REQUEST] OTP request successful via $selectedChannel');
+        debugPrint('🔍 [OTP_REQUEST] OTP request successful');
         return ApiResponse(
           success: true,
           message: response.data['message'] ?? 'OTP sent successfully',
@@ -584,12 +564,12 @@ class AuthService {
   }
 
   // Resend OTP
-  Future<ApiResponse> resendOtp(String phoneNumber, {String channel = 'SMS'}) async {
+  Future<ApiResponse> resendOtp(String phoneNumber) async {
     try {
-      debugPrint('🔍 [RESEND_OTP] Resending OTP for phone: $phoneNumber via $channel');
+      debugPrint('🔍 [RESEND_OTP] Resending OTP for phone: $phoneNumber');
       
       // Use the same requestOtp method with proper parameters
-      return await requestOtp(phoneNumber, channel: channel, purpose: 'registration');
+      return await requestOtp(phoneNumber, purpose: 'registration');
     } catch (e) {
       debugPrint('🔍 [RESEND_OTP] Resend OTP error: $e');
       return ApiResponse(
@@ -841,14 +821,13 @@ class AuthService {
     }
   }
 
-  // Request password reset OTP
-  Future<PasswordResetResponse> requestPasswordReset(String phone, {String? preferredChannel}) async {
+  // Request password reset OTP - simplified version
+  Future<PasswordResetResponse> requestPasswordReset(String phone) async {
     try {
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] ===== بدء طلب إعادة تعيين كلمة المرور =====');
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Phone number received: "$phone"');
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Phone number length: ${phone.length}');
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Phone number starts with +: ${phone.startsWith('+')}');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Preferred channel: $preferredChannel');
       
       // Clean and validate phone number
       String cleanPhone = phone.trim();
@@ -859,24 +838,20 @@ class AuthService {
       
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Cleaned phone number: "$cleanPhone"');
       
-      final request = RequestPasswordResetRequest(
-        phone: cleanPhone,
-        preferredChannel: preferredChannel,
-      );
+      final requestData = {
+        'phone': cleanPhone,
+      };
       
-      final requestJson = request.toJson();
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request JSON: $requestJson');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request JSON keys: ${requestJson.keys.toList()}');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request JSON values: ${requestJson.values.toList()}');
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request data: $requestData');
       
       // Make direct Dio call to handle response manually
       final dio = DioService.instance.dio;
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Making POST request to: /api/v1/auth/request-password-reset-otp');
+      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Making POST request to: /api/v1/auth/request-password-reset');
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request headers: ${dio.options.headers}');
       
       final response = await dio.post(
-        '/api/v1/auth/request-password-reset-otp',
-        data: requestJson,
+        '/api/v1/auth/request-password-reset',
+        data: requestData,
       );
       
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] ===== استجابة ناجحة =====');
@@ -954,63 +929,7 @@ class AuthService {
     }
   }
 
-  // Confirm password reset OTP sending after channel selection
-  Future<PasswordResetResponse> confirmPasswordResetOtp({
-    required String phoneNumber,
-    required String selectedChannel,
-    required String purpose,
-  }) async {
-    try {
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Confirming password reset OTP for phone: $phoneNumber');
-      
-      final requestData = {
-        'phoneNumber': phoneNumber,
-        'selectedChannel': selectedChannel,
-        'purpose': purpose,
-      };
-      
-      // Make direct Dio call to handle response manually
-      final dio = DioService.instance.dio;
-      final response = await dio.post(
-        '/api/v1/auth/confirm-password-reset-otp',
-        data: requestData,
-      );
-      
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Raw response received successfully');
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response status: ${response.statusCode}');
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response data: ${response.data}');
-      
-      if (response.data == null) {
-        throw Exception('Response data is null');
-      }
-      
-      if (response.data is! Map<String, dynamic>) {
-        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
-      }
-      
-      final responseData = response.data as Map<String, dynamic>;
-      final passwordResetResponse = PasswordResetResponse.fromJson(responseData);
-      
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Password reset OTP confirmation successful');
-      return passwordResetResponse;
-      
-    } on DioException catch (e) {
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] DioException occurred: ${e.message}');
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response status: ${e.response?.statusCode}');
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response data: ${e.response?.data}');
-      
-      if (e.response?.data != null && e.response?.data is Map<String, dynamic>) {
-        final errorData = e.response!.data as Map<String, dynamic>;
-        final errorMessage = errorData['message'] ?? 'حدث خطأ أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور';
-        throw Exception(errorMessage);
-      }
-      
-      throw Exception('حدث خطأ في الشبكة أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور');
-    } catch (e) {
-      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] General exception: $e');
-      throw Exception('حدث خطأ غير متوقع أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور');
-    }
-  }
+
 
   // Reset password with OTP
   Future<PasswordResetResponse> resetPassword(String phone, String otp, String newPassword) async {

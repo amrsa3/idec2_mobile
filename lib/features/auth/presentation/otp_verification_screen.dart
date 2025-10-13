@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -14,11 +13,12 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_otp_input.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String phone;
   final bool isLogin;
-  
+
   const OtpVerificationScreen({
     super.key,
     required this.phone,
@@ -26,7 +26,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  ConsumerState<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
@@ -41,28 +42,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     super.initState();
     print('OtpVerificationScreen initialized with phone: ${widget.phone}');
     _startTimer();
-    
-    // Request OTP automatically when screen loads (for registration flow)
-    if (!widget.isLogin) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _requestInitialOtp();
-      });
-    }
-  }
 
-  Future<void> _requestInitialOtp() async {
-    try {
-      print('Requesting initial OTP for registration: ${widget.phone}');
-      final success = await ref.read(authProvider.notifier).resendOtp(widget.phone);
-      
-      if (success) {
-        print('Initial OTP sent successfully');
-      } else {
-        print('Failed to send initial OTP');
-      }
-    } catch (e) {
-      print('Error sending initial OTP: $e');
-    }
+    // OTP is automatically sent by the backend during registration
+    // No need to request it again when screen loads
+    print('OTP should already be sent by backend during registration');
   }
 
   @override
@@ -75,7 +58,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     _remainingTime = 60;
     _canResend = false;
     _timer?.cancel();
-    
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingTime > 0) {
         setState(() {
@@ -98,11 +81,24 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (!_isOtpComplete) return;
 
     final success = await ref.read(authProvider.notifier).verifyOtp(
-      widget.phone,
-      _otpValue,
-    );
+          widget.phone,
+          _otpValue,
+        );
 
     if (success && mounted) {
+      // Load profile data after successful OTP verification
+      try {
+        debugPrint(
+            '🔄 OTP Verification: Loading profile data after successful verification');
+        // Load profile data to ensure it's available when user navigates to profile
+        ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
+        debugPrint('✅ OTP Verification: Profile data loading initiated');
+      } catch (profileError) {
+        debugPrint(
+            '⚠️ OTP Verification: Error loading profile data: $profileError');
+        // Don't prevent navigation if profile loading fails
+      }
+
       context.go(AppRoutes.main);
     } else {
       setState(() {
@@ -114,12 +110,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _resendOtp() async {
     if (!_canResend) return;
 
-    final success = await ref.read(authProvider.notifier).resendOtp(widget.phone);
-    
+    final success =
+        await ref.read(authProvider.notifier).resendOtp(widget.phone);
+
     if (success) {
       _startTimer();
       _clearOtp();
-      
+
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,14 +136,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authProvider);
     final isRTL = ref.watch(isRTLProvider);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -167,7 +162,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              
+
               // Logo section
               Center(
                 child: Container(
@@ -191,46 +186,46 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Title
               Text(
                 l10n.verifyPhone,
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Subtitle
               Text(
-                widget.isLogin 
-                  ? 'يجب التحقق من رقم الهاتف لتسجيل الدخول'
-                  : l10n.verificationCodeSent,
+                widget.isLogin
+                    ? 'يجب التحقق من رقم الهاتف لتسجيل الدخول'
+                    : l10n.verificationCodeSent,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                      color: AppColors.textSecondary,
+                    ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 4),
-              
+
               // Phone
               Text(
                 widget.phone,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 48),
-              
+
               // OTP Input Fields
               CustomOtpInput(
                 length: 4,
@@ -246,9 +241,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   _verifyOtp();
                 },
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Error message
               if (authState.error != null)
                 Container(
@@ -279,16 +274,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ],
                   ),
                 ),
-              
+
               // Verify button
               CustomButton(
                 text: l10n.verify,
-                onPressed: (_isOtpComplete && !authState.isLoading) ? _verifyOtp : null,
+                onPressed: (_isOtpComplete && !authState.isLoading)
+                    ? _verifyOtp
+                    : null,
                 isLoading: authState.isLoading,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Resend section
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -320,9 +317,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Clear button
               Center(
                 child: TextButton.icon(

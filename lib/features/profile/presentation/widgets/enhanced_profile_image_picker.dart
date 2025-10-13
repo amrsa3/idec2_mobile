@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
-import 'dart:typed_data';
-import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -37,16 +39,17 @@ class EnhancedProfileImagePicker extends StatefulWidget {
   });
 
   @override
-  State<EnhancedProfileImagePicker> createState() => _EnhancedProfileImagePickerState();
+  State<EnhancedProfileImagePicker> createState() =>
+      _EnhancedProfileImagePickerState();
 }
 
 class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
     with TickerProviderStateMixin {
   File? _selectedImage;
   bool _isProcessing = false;
-  
+
   final ImagePicker _picker = ImagePicker();
-  
+
   late AnimationController _scaleController;
   late AnimationController _rotationController;
   late Animation<double> _scaleAnimation;
@@ -67,7 +70,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
     );
@@ -86,9 +89,9 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
   Future<void> _showImageSourceDialog() async {
     await _scaleController.forward();
     await _scaleController.reverse();
-    
+
     if (!mounted) return;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -115,7 +118,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Title
                   Text(
                     'اختر مصدر الصورة',
@@ -133,7 +136,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Options
                   Row(
                     children: [
@@ -156,16 +159,17 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
                       ),
                     ],
                   ),
-                  
+
                   // Delete option
-                  if (widget.showDeleteOption && (widget.imageUrl != null || _selectedImage != null)) ...[
+                  if (widget.showDeleteOption &&
+                      (widget.imageUrl != null || _selectedImage != null)) ...[
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: _buildDeleteOption(),
                     ),
                   ],
-                  
+
                   const SizedBox(height: 16),
                 ],
               ),
@@ -268,11 +272,24 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
 
   Future<void> _pickImage(ImageSource source) async {
     Navigator.of(context).pop(); // Close the bottom sheet
-    
+
     try {
       setState(() {
         _isProcessing = true;
       });
+
+      // طلب الأذونات المطلوبة
+      bool hasPermission = await _requestPermissions(source);
+      if (!hasPermission) {
+        setState(() {
+          _isProcessing = false;
+        });
+        if (mounted) {
+          _showErrorSnackBar(
+              'يجب منح الأذونات للوصول إلى ${source == ImageSource.camera ? 'الكاميرا' : 'المعرض'}');
+        }
+        return;
+      }
 
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
@@ -283,38 +300,44 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
 
       if (pickedFile != null) {
         final File imageFile = File(pickedFile.path);
-        
+
         // Check file size
         final fileSizeInBytes = await imageFile.length();
         final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-        
+
         if (fileSizeInMB > widget.maxSizeInMB) {
           if (mounted) {
-            _showErrorSnackBar('حجم الصورة كبير جداً. الحد الأقصى ${widget.maxSizeInMB} ميجابايت');
+            _showErrorSnackBar(
+                'حجم الصورة كبير جداً. الحد الأقصى ${widget.maxSizeInMB} ميجابايت');
           }
           return;
         }
 
         File processedImage = imageFile;
-        
-        // Crop image if enabled
-        if (widget.enableCropping) {
+
+        // Crop image if enabled and not on web
+        if (widget.enableCropping && !kIsWeb) {
           processedImage = await _cropImage(processedImage) ?? processedImage;
+        } else if (kIsWeb) {
+          debugPrint('🌐 Web: Skipping image cropping');
         }
-        
-        // Compress image if enabled
-        if (widget.enableCompression) {
-          processedImage = await _compressImage(processedImage) ?? processedImage;
+
+        // Compress image if enabled and not on web
+        if (widget.enableCompression && !kIsWeb) {
+          processedImage =
+              await _compressImage(processedImage) ?? processedImage;
+        } else if (kIsWeb) {
+          debugPrint('🌐 Web: Skipping image compression');
         }
-        
+
         setState(() {
           _selectedImage = processedImage;
           _isProcessing = false;
         });
-        
+
         // Trigger callback
         widget.onImageSelected(processedImage);
-        
+
         // Show success message
         if (mounted) {
           _showSuccessSnackBar('تم اختيار الصورة بنجاح');
@@ -324,7 +347,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
       setState(() {
         _isProcessing = false;
       });
-      
+
       if (mounted) {
         _showErrorSnackBar('حدث خطأ أثناء اختيار الصورة: $e');
       }
@@ -353,7 +376,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
           ),
         ],
       );
-      
+
       return croppedFile != null ? File(croppedFile.path) : null;
     } catch (e) {
       debugPrint('Error cropping image: $e');
@@ -364,8 +387,9 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
   Future<File?> _compressImage(File imageFile) async {
     try {
       final dir = await getTemporaryDirectory();
-      final targetPath = '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
+      final targetPath =
+          '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
       final compressedFile = await FlutterImageCompress.compressAndGetFile(
         imageFile.absolute.path,
         targetPath,
@@ -374,7 +398,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
         minHeight: 800,
         format: CompressFormat.jpeg,
       );
-      
+
       return compressedFile != null ? File(compressedFile.path) : null;
     } catch (e) {
       debugPrint('Error compressing image: $e');
@@ -382,17 +406,46 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
     }
   }
 
+  /// طلب الأذونات المطلوبة
+  Future<bool> _requestPermissions(ImageSource source) async {
+    try {
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        return status.isGranted;
+      } else {
+        // للمعرض، نحتاج للتحقق من إصدار Android
+        PermissionStatus permission;
+        if (Platform.isAndroid) {
+          // للأندرويد 13+ نستخدم photos، وللإصدارات الأقدم نستخدم storage
+          final androidInfo = await Permission.photos.status;
+          if (androidInfo == PermissionStatus.permanentlyDenied) {
+            permission = await Permission.storage.request();
+          } else {
+            permission = await Permission.photos.request();
+          }
+        } else {
+          // لـ iOS
+          permission = await Permission.photos.request();
+        }
+        return permission.isGranted;
+      }
+    } catch (e) {
+      debugPrint('❌ Error requesting permissions: $e');
+      return false;
+    }
+  }
+
   void _deleteImage() {
     Navigator.of(context).pop(); // Close the bottom sheet
-    
+
     setState(() {
       _selectedImage = null;
     });
-    
+
     if (widget.onImageDeleted != null && widget.imageUrl != null) {
       widget.onImageDeleted!(widget.imageUrl!);
     }
-    
+
     _showSuccessSnackBar('تم حذف الصورة');
   }
 
@@ -434,7 +487,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
     if (_isProcessing) {
       return _buildProcessingWidget();
     }
-    
+
     if (_selectedImage != null) {
       return _buildSelectedImageWidget();
     } else if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
@@ -529,12 +582,16 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
           ],
         ),
         child: CachedNetworkImage(
-          imageUrl: widget.imageUrl!,
+          imageUrl: _getFullImageUrl(widget.imageUrl!),
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
           placeholder: (context, url) => _buildPlaceholder(),
-          errorWidget: (context, url, error) => _buildDefaultAvatar(),
+          errorWidget: (context, url, error) {
+            debugPrint('❌ Error loading image: $error');
+            debugPrint('❌ Image URL: ${_getFullImageUrl(widget.imageUrl!)}');
+            return _buildDefaultAvatar();
+          },
         ),
       ),
     );
@@ -622,7 +679,9 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
                   ],
                 ),
                 child: Icon(
-                  _isProcessing ? Icons.hourglass_empty_rounded : Icons.camera_alt_rounded,
+                  _isProcessing
+                      ? Icons.hourglass_empty_rounded
+                      : Icons.camera_alt_rounded,
                   color: Colors.white,
                   size: widget.size * 0.15,
                 ),
@@ -632,6 +691,14 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
         ),
       ),
     );
+  }
+
+  /// Get full image URL
+  String _getFullImageUrl(String imageUrl) {
+    if (!imageUrl.startsWith('http')) {
+      return '${ApiConstants.baseUrl}$imageUrl';
+    }
+    return imageUrl;
   }
 
   @override

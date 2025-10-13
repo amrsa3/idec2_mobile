@@ -1,14 +1,16 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../core/constants/app_constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../services/session_manager.dart';
 import '../services/dio_service.dart';
+import '../services/session_manager.dart';
 
 // Auth state class
 class AuthState {
@@ -111,13 +113,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = await _authService.getAccessToken();
       final currentUser = await _authService.getCurrentUser();
 
-      print('🔍 [AUTH_DEBUG] _checkAuthStatus - token: ${token != null ? 'exists' : 'null'}');
-      print('🔍 [AUTH_DEBUG] _checkAuthStatus - currentUser: ${currentUser != null ? 'exists' : 'null'}');
+      print(
+          '🔍 [AUTH_DEBUG] _checkAuthStatus - token: ${token != null ? 'exists' : 'null'}');
+      print(
+          '🔍 [AUTH_DEBUG] _checkAuthStatus - currentUser: ${currentUser != null ? 'exists' : 'null'}');
 
       if (token != null && currentUser != null) {
         try {
-          print('🔍 [AUTH_DEBUG] _checkAuthStatus - user found: ${currentUser.id}');
-          
+          print(
+              '🔍 [AUTH_DEBUG] _checkAuthStatus - user found: ${currentUser.id}');
+
           // First, set authenticated state with saved data (offline mode support)
           state = state.copyWith(
             user: currentUser,
@@ -126,9 +131,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
             isEmailVerified: currentUser.isEmailVerified,
             phoneVerified: currentUser.phoneVerified,
           );
-          
-          print('🔍 [AUTH_DEBUG] _checkAuthStatus - user authenticated from saved data (offline mode)');
-          
+
+          print(
+              '🔍 [AUTH_DEBUG] _checkAuthStatus - user authenticated from saved data (offline mode)');
+
           // Try to verify token with server (online mode) - but don't fail if offline
           try {
             final profile = await _authService.getUserProfile();
@@ -138,51 +144,61 @@ class AuthNotifier extends StateNotifier<AuthState> {
               isEmailVerified: profile.isEmailVerified,
               phoneVerified: profile.phoneVerified,
             );
-            
+
             // Update saved user data with latest profile
             await _saveUserData(profile);
-            
-            print('🔍 [AUTH_DEBUG] _checkAuthStatus - profile updated from server (online mode)');
+
+            print(
+                '🔍 [AUTH_DEBUG] _checkAuthStatus - profile updated from server (online mode)');
             return;
           } catch (e) {
-            print('🔍 [AUTH_DEBUG] _checkAuthStatus - server verification failed (offline mode): $e');
-            
+            print(
+                '🔍 [AUTH_DEBUG] _checkAuthStatus - server verification failed (offline mode): $e');
+
             // Try to refresh token if it's expired (only if we have internet)
             try {
-              print('🔍 [AUTH_DEBUG] _checkAuthStatus - attempting token refresh');
+              print(
+                  '🔍 [AUTH_DEBUG] _checkAuthStatus - attempting token refresh');
               final refreshResult = await _authService.refreshToken();
-              
+
               if (refreshResult.success && refreshResult.user != null) {
                 // Token refreshed successfully
                 try {
                   state = state.copyWith(
                     user: refreshResult.user,
-                    isEmailVerified: refreshResult.user?.isEmailVerified ?? false,
+                    isEmailVerified:
+                        refreshResult.user?.isEmailVerified ?? false,
                     phoneVerified: refreshResult.user?.phoneVerified ?? false,
                   );
-                  
+
                   // Update saved user data
                   await _saveUserData(refreshResult.user!);
-                  
-                  print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refreshed successfully');
+
+                  print(
+                      '🔍 [AUTH_DEBUG] _checkAuthStatus - token refreshed successfully');
                   return;
                 } catch (saveError) {
-                  print('🔍 [AUTH_DEBUG] _checkAuthStatus - error saving refreshed user data: $saveError');
+                  print(
+                      '🔍 [AUTH_DEBUG] _checkAuthStatus - error saving refreshed user data: $saveError');
                   // Continue with offline data if save fails
                 }
               } else {
-                print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refresh failed, continuing with offline data');
+                print(
+                    '🔍 [AUTH_DEBUG] _checkAuthStatus - token refresh failed, continuing with offline data');
               }
             } catch (refreshError) {
-              print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refresh error, continuing with offline data: $refreshError');
+              print(
+                  '🔍 [AUTH_DEBUG] _checkAuthStatus - token refresh error, continuing with offline data: $refreshError');
             }
-            
+
             // Continue with saved data even if server verification failed (offline mode)
-            print('🔍 [AUTH_DEBUG] _checkAuthStatus - continuing with offline data');
+            print(
+                '🔍 [AUTH_DEBUG] _checkAuthStatus - continuing with offline data');
             return;
           }
         } catch (e) {
-          print('🔍 [AUTH_DEBUG] _checkAuthStatus - error parsing saved data: $e');
+          print(
+              '🔍 [AUTH_DEBUG] _checkAuthStatus - error parsing saved data: $e');
           // Clear invalid data
           await _clearAuthData();
         }
@@ -207,16 +223,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final loginRequest = LoginRequest(phone: phoneNumber, password: password);
       final result = await _authService.login(loginRequest);
-      
-      debugPrint('AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken?.isNotEmpty == true}');
-      
+
+      debugPrint(
+          'AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken?.isNotEmpty == true}');
+
       // Check if login was successful - be more flexible with success criteria
-      if (result.success && result.user != null && 
-          (result.accessToken?.isNotEmpty == true || result.token?.isNotEmpty == true)) {
-        
+      if (result.success &&
+          result.user != null &&
+          (result.accessToken?.isNotEmpty == true ||
+              result.token?.isNotEmpty == true)) {
         // Use accessToken or fallback to token field
-        final token = (result.accessToken?.isNotEmpty == true) ? result.accessToken! : result.token!;
-        
+        final token = (result.accessToken?.isNotEmpty == true)
+            ? result.accessToken!
+            : result.token!;
+
         // Only save user data, token is already saved by AuthService in DioService
         try {
           await _saveUserData(result.user!);
@@ -227,8 +247,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
             isEmailVerified: result.user?.isEmailVerified ?? false,
             phoneVerified: result.user?.phoneVerified ?? false,
           );
-          
-          debugPrint('AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
+
+          debugPrint(
+              'AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
           return true;
         } catch (saveError) {
           debugPrint('AuthProvider: Error saving user data - $saveError');
@@ -241,32 +262,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         // Check if the error is related to unverified phone number
         final errorMessage = result.message ?? '';
-        if (errorMessage.contains('غير مفعل') || errorMessage.contains('unverified') || 
+        if (errorMessage.contains('غير مفعل') ||
+            errorMessage.contains('unverified') ||
             errorMessage.contains('التحقق من رقم الهاتف')) {
-          
           // Check user status to confirm if user exists but is unverified
           try {
-            final statusResult = await _authService.checkUserStatus(phoneNumber);
+            final statusResult =
+                await _authService.checkUserStatus(phoneNumber);
             if (statusResult.success && statusResult.data != null) {
               final statusData = statusResult.data as Map<String, dynamic>;
               final exists = statusData['exists'] as bool? ?? false;
               final verified = statusData['verified'] as bool? ?? false;
-              
+
               if (exists && !verified) {
                 // User exists but phone is not verified - redirect to verification
                 state = state.copyWith(
                   isLoading: false,
-                  error: 'phone_not_verified', // Special error code for UI handling
+                  error:
+                      'phone_not_verified', // Special error code for UI handling
                   unverifiedPhone: phoneNumber,
                 );
                 return false;
               }
             }
           } catch (statusError) {
-            debugPrint('AuthProvider: Error checking user status - $statusError');
+            debugPrint(
+                'AuthProvider: Error checking user status - $statusError');
           }
         }
-        
+
         debugPrint('AuthProvider: Login failed - ${result.message}');
         state = state.copyWith(
           isLoading: false,
@@ -306,9 +330,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
         confirmPassword: password,
       );
-      
+
       final result = await _authService.register(registerRequest);
-      
+
       if (result.success) {
         // Registration successful, but don't authenticate until phone is verified
         // For registration, we don't get user data immediately, just success confirmation
@@ -322,7 +346,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isRegistering: true, // Keep true until OTP verification
           error: null,
         );
-        print('AuthProvider state updated: isAuthenticated=${state.isAuthenticated}, isRegistering=${state.isRegistering}');
+        print(
+            'AuthProvider state updated: isAuthenticated=${state.isAuthenticated}, isRegistering=${state.isRegistering}');
         return true;
       } else {
         state = state.copyWith(
@@ -348,7 +373,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final result = await _authService.register(request);
-      
+
       // For registration, we don't expect user data or access tokens
       // Registration is successful if we get a success response with a message
       if (result.success) {
@@ -391,14 +416,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final result = await _authService.verifyOtp(phoneNumber, otp);
-      
+
       if (result.success && result.user != null) {
         // Use accessToken or fallback to token field
         final token = result.accessToken ?? result.token ?? '';
         if (token.isEmpty) {
           throw Exception('No access token received from server');
         }
-        
+
         // Only save user data, token is already saved by AuthService in DioService
         try {
           await _saveUserData(result.user!);
@@ -407,11 +432,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
             isAuthenticated: true,
             isLoading: false,
             phoneVerified: true,
-            isRegistering: false, // Reset registration state after successful verification
+            isRegistering:
+                false, // Reset registration state after successful verification
           );
+
+          // Load profile data automatically after successful OTP verification
+          try {
+            debugPrint(
+                '🔄 AuthProvider: Loading profile data after OTP verification');
+            // Import ProfileProvider and load profile data
+            // Note: This will be handled by the UI layer in profile screens
+            debugPrint('✅ AuthProvider: Profile data loading initiated');
+          } catch (profileError) {
+            debugPrint(
+                '⚠️ AuthProvider: Error loading profile data: $profileError');
+            // Don't fail the OTP verification if profile loading fails
+          }
+
           return true;
         } catch (saveError) {
-          debugPrint('AuthProvider: Error saving user data in verifyOtp - $saveError');
+          debugPrint(
+              'AuthProvider: Error saving user data in verifyOtp - $saveError');
           state = state.copyWith(
             isLoading: false,
             error: 'خطأ في حفظ بيانات المستخدم',
@@ -435,9 +476,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Send OTP
-  Future<bool> sendOtp(String phoneNumber, String channel) async {
+  Future<bool> sendOtp(String phoneNumber) async {
     try {
-      final result = await _authService.resendOtp(phoneNumber, channel: channel);
+      final result = await _authService.resendOtp(phoneNumber);
       if (!result.success) {
         state = state.copyWith(error: result.message);
       }
@@ -476,18 +517,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Clear all authentication data
     await _clearAuthData();
-    
+
     // Reset state to initial state
     state = const AuthState();
-    
-    print('🔍 [AUTH_DEBUG] logout - authentication data cleared, user logged out');
+
+    print(
+        '🔍 [AUTH_DEBUG] logout - authentication data cleared, user logged out');
   }
 
   // Listen to session expiration events
   void _listenToSessionExpiration() {
-    _sessionSubscription = SessionManager.instance.sessionExpiredStream.listen((event) {
+    _sessionSubscription =
+        SessionManager.instance.sessionExpiredStream.listen((event) {
       print('🔍 [AUTH_DEBUG] Session expired: ${event.reason}');
-      
+
       // Update state to indicate session expiration
       state = state.copyWith(
         sessionExpired: true,
@@ -495,23 +538,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: false,
         error: event.reason,
       );
-      
+
       // Clear authentication data
       _clearAuthData();
-      
+
       print('🔍 [AUTH_DEBUG] Session expiration handled, user logged out');
     });
   }
 
   // Clear session expiration state and refresh authentication status
   void clearSessionExpiration() {
-    print('🔍 [AUTH_DEBUG] clearSessionExpiration - clearing session expiration state');
+    print(
+        '🔍 [AUTH_DEBUG] clearSessionExpiration - clearing session expiration state');
     state = state.copyWith(
       sessionExpired: false,
       sessionExpiredReason: null,
       error: null,
     );
-    
+
     // Re-check authentication status to ensure consistency
     _checkAuthStatus();
   }
@@ -540,7 +584,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final result = await _authService.updateUserProfile(updatedUser.profile!);
-      
+
       await _saveUserData(result);
       state = state.copyWith(
         user: result,
@@ -568,14 +612,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _saveUserData(UserModel user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Safe JSON conversion with error handling
       Map<String, dynamic> userJson;
       try {
         userJson = user.toJson();
         debugPrint('🔍 [AUTH_DEBUG] _saveUserData - user.toJson() successful');
       } catch (toJsonError) {
-        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - toJson() failed: $toJsonError');
+        debugPrint(
+            '🔍 [AUTH_DEBUG] _saveUserData - toJson() failed: $toJsonError');
         // Create safe minimal representation
         userJson = {
           'id': user.id,
@@ -595,9 +640,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'profilePicture': user.profilePicture,
           'profile': null, // Skip profile to avoid nested issues
         };
-        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - created safe JSON representation');
+        debugPrint(
+            '🔍 [AUTH_DEBUG] _saveUserData - created safe JSON representation');
       }
-      
+
       final jsonString = jsonEncode(userJson);
       await prefs.setString(AppConstants.userKey, jsonString);
       print('🔍 [AUTH_DEBUG] _saveUserData - user saved: ${user.id}');
@@ -610,20 +656,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.userKey);
-    
+
     // Clear tokens from DioService (FlutterSecureStorage)
     await DioService.instance.clearTokens();
-    
+
     print('🔍 [AUTH_DEBUG] _clearAuthData - all authentication data cleared');
   }
 
   // Request OTP for registration verification
-  Future<bool> requestOtp(String phoneNumber, {String? channel}) async {
+  Future<bool> requestOtp(String phoneNumber) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      
-      final response = await _authService.requestOtp(phoneNumber, channel: channel);
-      
+
+      final response = await _authService.requestOtp(phoneNumber);
+
       if (response.success) {
         state = state.copyWith(
           isLoading: false,
@@ -647,47 +693,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Request password reset OTP
-  Future<PasswordResetResponse?> requestPasswordReset(String phone, {String? preferredChannel}) async {
+  Future<PasswordResetResponse?> requestPasswordReset(String phone) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      
-      final response = await _authService.requestPasswordReset(phone, preferredChannel: preferredChannel);
-      
-      state = state.copyWith(
-        isLoading: false,
-        error: null,
-      );
-      
-      return response;
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString().replaceFirst('Exception: ', ''),
-      );
-      return null;
-    }
-  }
 
-  // Confirm password reset OTP sending after channel selection
-  Future<PasswordResetResponse?> confirmPasswordResetOtp({
-    required String phoneNumber,
-    required String selectedChannel,
-    required String purpose,
-  }) async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-      
-      final response = await _authService.confirmPasswordResetOtp(
-        phoneNumber: phoneNumber,
-        selectedChannel: selectedChannel,
-        purpose: purpose,
-      );
-      
+      final response = await _authService.requestPasswordReset(phone);
+
       state = state.copyWith(
         isLoading: false,
         error: null,
       );
-      
+
       return response;
     } catch (e) {
       state = state.copyWith(
@@ -699,12 +715,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Reset password with OTP
-  Future<void> resetPassword(String phone, String otp, String newPassword) async {
+  Future<void> resetPassword(
+      String phone, String otp, String newPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      
-      final response = await _authService.resetPassword(phone, otp, newPassword);
-      
+
+      final response =
+          await _authService.resetPassword(phone, otp, newPassword);
+
       if (response.success) {
         state = state.copyWith(
           isLoading: false,
@@ -723,7 +741,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     }
   }
-
 }
 
 // Provider instance

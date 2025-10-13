@@ -1,29 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../models/registration_settings_model.dart';
 import '../services/registration_settings_service.dart';
 import '../core/errors/app_error.dart';
 import '../core/errors/error_handler.dart';
 
-/// State class for registration management
-class RegistrationState {
-  final RegistrationSettingsModel? settings;
-  final RegistrationStatusResponse? status;
-  final List<OtpChannelModel> availableChannels;
-  final OtpChannelModel? selectedChannel;
-  final bool isLoading;
-  final AppError? error;
-  final DateTime? lastUpdated;
+part 'registration_provider.freezed.dart';
 
-  const RegistrationState({
-    this.settings,
-    this.status,
-    this.availableChannels = const [],
-    this.selectedChannel,
-    this.isLoading = false,
-    this.error,
-    this.lastUpdated,
-  });
+@freezed
+class RegistrationState with _$RegistrationState {
+  const RegistrationState._();
+  
+  const factory RegistrationState({
+    RegistrationSettingsModel? settings,
+    RegistrationStatusResponse? status,
+    @Default(false) bool isLoading,
+    AppError? error,
+    DateTime? lastUpdated,
+  }) = _RegistrationState;
 
   /// Check if registration is allowed
   bool get canRegister => status?.canRegister ?? false;
@@ -33,26 +28,6 @@ class RegistrationState {
 
   /// Check if there's an error
   bool get hasError => error != null;
-
-  /// Get enabled channels
-  List<OtpChannelModel> get enabledChannels {
-    return availableChannels.where((channel) => channel.enabled).toList();
-  }
-
-  /// Check if multiple channels are available
-  bool get hasMultipleChannels => enabledChannels.length > 1;
-
-  /// Get default channel
-  OtpChannelModel? get defaultChannel {
-    if (enabledChannels.isEmpty) return null;
-    
-    final defaultChannel = enabledChannels.firstWhere(
-      (channel) => channel.isDefault,
-      orElse: () => enabledChannels.first,
-    );
-    
-    return defaultChannel;
-  }
 
   /// Copy with new values
   RegistrationState copyWith({
@@ -232,23 +207,10 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
 
   /// Request OTP with selected channel
   Future<bool> requestOtp(String phoneNumber) async {
-    if (state.selectedChannel == null) {
-      state = state.copyWith(
-        error: const ValidationError(
-          message: 'No OTP channel selected',
-          code: 'NO_CHANNEL_SELECTED',
-        ),
-      );
-      return false;
-    }
-
     try {
       state = state.copyWith(clearError: true);
       
-      final response = await _registrationSettingsService.requestOtpWithChannel(
-        phoneNumber,
-        state.selectedChannel!.id,
-      );
+      final response = await _registrationSettingsService.requestOtp(phoneNumber);
       
       return response.success;
     } catch (e, stackTrace) {
@@ -258,26 +220,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     }
   }
 
-  /// Get channel selection for user
-  Future<OtpChannelSelection> getChannelSelection(String phoneNumber) async {
-    try {
-      return await _registrationSettingsService.selectOtpChannel(
-        phoneNumber,
-        state.enabledChannels,
-      );
-    } catch (e, stackTrace) {
-      final error = ErrorHandler.instance.handleError(e, stackTrace);
-      state = state.copyWith(error: error);
-      
-      // Return default selection
-      return const OtpChannelSelection(
-        channelId: 'sms',
-        displayName: 'SMS',
-        isSelected: true,
-        isAvailable: true,
-      );
-    }
-  }
+
 }
 
 /// Registration provider
@@ -302,25 +245,7 @@ final registrationStatusProvider = Provider<RegistrationStatusResponse?>((ref) {
   return ref.watch(registrationProvider).status;
 });
 
-/// Provider for available OTP channels
-final otpChannelsProvider = Provider<List<OtpChannelModel>>((ref) {
-  return ref.watch(registrationProvider).availableChannels;
-});
 
-/// Provider for enabled OTP channels
-final enabledOtpChannelsProvider = Provider<List<OtpChannelModel>>((ref) {
-  return ref.watch(registrationProvider).enabledChannels;
-});
-
-/// Provider for selected OTP channel
-final selectedOtpChannelProvider = Provider<OtpChannelModel?>((ref) {
-  return ref.watch(registrationProvider).selectedChannel;
-});
-
-/// Provider for checking if multiple channels are available
-final hasMultipleChannelsProvider = Provider<bool>((ref) {
-  return ref.watch(registrationProvider).hasMultipleChannels;
-});
 
 /// Extension for easy registration management
 extension RegistrationExtension on WidgetRef {
@@ -334,16 +259,6 @@ extension RegistrationExtension on WidgetRef {
     await read(registrationProvider.notifier).refresh();
   }
 
-  /// Select OTP channel
-  void selectOtpChannel(OtpChannelModel channel) {
-    read(registrationProvider.notifier).selectChannel(channel);
-  }
-
-  /// Clear selected OTP channel
-  void clearOtpChannel() {
-    read(registrationProvider.notifier).clearSelectedChannel();
-  }
-
   /// Check if registration is allowed
   Future<bool> isRegistrationAllowed() async {
     return await read(registrationProvider.notifier).checkRegistrationAllowed();
@@ -352,11 +267,6 @@ extension RegistrationExtension on WidgetRef {
   /// Request OTP
   Future<bool> requestOtp(String phoneNumber) async {
     return await read(registrationProvider.notifier).requestOtp(phoneNumber);
-  }
-
-  /// Get channel selection
-  Future<OtpChannelSelection> getChannelSelection(String phoneNumber) async {
-    return await read(registrationProvider.notifier).getChannelSelection(phoneNumber);
   }
 
   /// Clear registration error

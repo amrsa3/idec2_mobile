@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/registration_settings_model.dart';
-import '../../core/theme/app_colors.dart';
 import 'custom_button.dart';
 
 /// Widget for selecting OTP channel when multiple channels are available
@@ -31,14 +32,16 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
   @override
   void initState() {
     super.initState();
-    _selectedChannel = widget.selectedChannel ?? 
-        (widget.availableChannels.isNotEmpty ? widget.availableChannels.first : null);
+    _selectedChannel = widget.selectedChannel ??
+        (widget.availableChannels.isNotEmpty
+            ? widget.availableChannels.first
+            : null);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    
+
     if (widget.availableChannels.isEmpty) {
       return _buildEmptyState(context, l10n);
     }
@@ -83,7 +86,7 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
 
   Widget _buildSingleChannel(BuildContext context, AppLocalizations l10n) {
     final channel = widget.availableChannels.first;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -102,15 +105,15 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'OTP will be sent via ${channel.friendlyName}',
+                  'OTP will be sent via ${channel.displayName}',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
-                if (widget.showDescription && channel.description != null) ...[
+                if (widget.showDescription) ...[
                   const SizedBox(height: 4),
                   Text(
-                    channel.description!,
+                    'Channel: ${channel.name}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -119,8 +122,8 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
                   Text(
                     'to ${widget.phoneNumber}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ],
               ],
@@ -142,19 +145,19 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
         Text(
           'Choose how to receive your verification code:',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 16),
         ...widget.availableChannels.map((channel) => _buildChannelOption(
-          context,
-          channel,
-          _selectedChannel?.id == channel.id,
-        )),
+              context,
+              channel,
+              _selectedChannel?.id == channel.id,
+            )),
         const SizedBox(height: 16),
         CustomButton(
           text: l10n.continueButton,
-          onPressed: _selectedChannel != null 
+          onPressed: _selectedChannel != null
               ? () => widget.onChannelSelected(_selectedChannel!)
               : null,
           type: ButtonType.primary,
@@ -181,12 +184,12 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected 
+            color: isSelected
                 ? AppColors.primary.withOpacity(0.1)
                 : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected 
+              color: isSelected
                   ? AppColors.primary
                   : Theme.of(context).dividerColor,
               width: isSelected ? 2 : 1,
@@ -201,16 +204,16 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      channel.friendlyName,
+                      channel.displayName,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? AppColors.primary : null,
-                      ),
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? AppColors.primary : null,
+                          ),
                     ),
-                    if (widget.showDescription && channel.description != null) ...[
+                    if (widget.showDescription) ...[
                       const SizedBox(height: 4),
                       Text(
-                        channel.description!,
+                        'Channel: ${channel.name}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -219,8 +222,8 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
                       Text(
                         'Send to ${widget.phoneNumber}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                     ],
                   ],
@@ -374,8 +377,8 @@ class OtpChannelSelectionBottomSheet extends StatelessWidget {
                 child: Text(
                   'Select Verification Method',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
               IconButton(

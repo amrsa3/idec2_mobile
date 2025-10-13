@@ -255,7 +255,6 @@ class AuthResponse with _$AuthResponse {
 class OtpRequest with _$OtpRequest {
   const factory OtpRequest({
     required String phone,
-    required String channel, // 'sms' or 'whatsapp'
   }) = _OtpRequest;
 
   factory OtpRequest.fromJson(Map<String, dynamic> json) =>
@@ -329,11 +328,7 @@ class PasswordResetResponse with _$PasswordResetResponse {
   const factory PasswordResetResponse({
     @Default(true) bool success,
     String? message,
-    List<String>? availableChannels,
-    String? selectedChannel,
     String? phoneNumber,
-    @Default(false) bool requiresChannelSelection,
-    String? purpose,
   }) = _PasswordResetResponse;
 
   factory PasswordResetResponse.fromJson(Map<String, dynamic> json) =>

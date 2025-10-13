@@ -195,13 +195,11 @@ Map<String, dynamic> _$$AuthResponseImplToJson(_$AuthResponseImpl instance) =>
 _$OtpRequestImpl _$$OtpRequestImplFromJson(Map<String, dynamic> json) =>
     _$OtpRequestImpl(
       phone: json['phone'] as String,
-      channel: json['channel'] as String,
     );
 
 Map<String, dynamic> _$$OtpRequestImplToJson(_$OtpRequestImpl instance) =>
     <String, dynamic>{
       'phone': instance.phone,
-      'channel': instance.channel,
     };
 
 _$OtpVerifyRequestImpl _$$OtpVerifyRequestImplFromJson(
@@ -298,14 +296,7 @@ _$PasswordResetResponseImpl _$$PasswordResetResponseImplFromJson(
     _$PasswordResetResponseImpl(
       success: json['success'] as bool? ?? true,
       message: json['message'] as String?,
-      availableChannels: (json['availableChannels'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      selectedChannel: json['selectedChannel'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
-      requiresChannelSelection:
-          json['requiresChannelSelection'] as bool? ?? false,
-      purpose: json['purpose'] as String?,
     );
 
 Map<String, dynamic> _$$PasswordResetResponseImplToJson(
@@ -313,9 +304,5 @@ Map<String, dynamic> _$$PasswordResetResponseImplToJson(
     <String, dynamic>{
       'success': instance.success,
       'message': instance.message,
-      'availableChannels': instance.availableChannels,
-      'selectedChannel': instance.selectedChannel,
       'phoneNumber': instance.phoneNumber,
-      'requiresChannelSelection': instance.requiresChannelSelection,
-      'purpose': instance.purpose,
     };

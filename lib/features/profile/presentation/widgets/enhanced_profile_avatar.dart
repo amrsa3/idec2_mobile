@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
+
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/widgets/authenticated_image_widget.dart';
 
 /// Enhanced profile avatar widget with editing capabilities
-class EnhancedProfileAvatar extends StatelessWidget {
+class EnhancedProfileAvatar extends StatefulWidget {
   final String? imageUrl;
   final File? imageFile;
   final double size;
@@ -64,7 +66,7 @@ class EnhancedProfileAvatar extends StatelessWidget {
               child: _buildAvatarContent(),
             ),
           ),
-          
+
           // Loading overlay
           if (isLoading)
             Positioned.fill(
@@ -81,7 +83,7 @@ class EnhancedProfileAvatar extends StatelessWidget {
                 ),
               ),
             ),
-          
+
           // Edit icon
           if (showEditIcon && !isLoading)
             Positioned(
@@ -127,20 +129,25 @@ class EnhancedProfileAvatar extends StatelessWidget {
         fit: BoxFit.cover,
       );
     }
-    
+
     if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl!,
+      // Ensure the URL is complete
+      String fullImageUrl = imageUrl!;
+      if (!fullImageUrl.startsWith('http')) {
+        // Add base URL if it's a relative path
+        fullImageUrl = '${ApiConstants.baseUrl}$imageUrl';
+      }
+
+      return AuthenticatedImageWidget(
+        imageUrl: fullImageUrl,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        placeholder: (context, url) => _buildShimmerPlaceholder(),
-        errorWidget: (context, url, error) => _buildInitials(),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 100),
+        placeholder: _buildShimmerPlaceholder(),
+        errorWidget: _buildInitials(),
       );
     }
-    
+
     return _buildInitials();
   }
 
@@ -162,7 +169,7 @@ class EnhancedProfileAvatar extends StatelessWidget {
   Widget _buildInitials() {
     final displayInitials = initials ?? 'U';
     final fontSize = size * 0.35;
-    
+
     return Container(
       width: size,
       height: size,
@@ -172,7 +179,7 @@ class EnhancedProfileAvatar extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.primary,
-            AppColors.primary.withOpacity(0.8),
+            AppColors.primary.withValues(alpha: 0.8),
           ],
         ),
         shape: BoxShape.circle,
@@ -224,9 +231,9 @@ class ProfileImagePicker extends StatelessWidget {
           isLoading: isLoading,
           onTap: () => _showImagePickerOptions(context),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Action buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,15 +243,12 @@ class ProfileImagePicker extends StatelessWidget {
               label: 'كاميرا',
               onPressed: isLoading ? null : onCameraPressed,
             ),
-            
             const SizedBox(width: 16),
-            
             _buildActionButton(
               icon: Icons.photo_library,
               label: 'معرض',
               onPressed: isLoading ? null : onGalleryPressed,
             ),
-            
             if (currentImageUrl != null || selectedImageFile != null) ...[
               const SizedBox(width: 16),
               _buildActionButton(
@@ -272,12 +276,12 @@ class ProfileImagePicker extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: isDestructive 
+            color: isDestructive
                 ? AppColors.error.withOpacity(0.1)
                 : AppColors.primary.withOpacity(0.1),
             shape: BoxShape.circle,
             border: Border.all(
-              color: isDestructive 
+              color: isDestructive
                   ? AppColors.error.withOpacity(0.3)
                   : AppColors.primary.withOpacity(0.3),
             ),
@@ -291,9 +295,7 @@ class ProfileImagePicker extends StatelessWidget {
             ),
           ),
         ),
-        
         const SizedBox(height: 4),
-        
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
@@ -324,18 +326,18 @@ class ProfileImagePicker extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             Text(
               'تغيير صورة الملف الشخصي',
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Options
             ListTile(
               leading: Container(
@@ -357,7 +359,7 @@ class ProfileImagePicker extends StatelessWidget {
                 onCameraPressed?.call();
               },
             ),
-            
+
             ListTile(
               leading: Container(
                 width: 40,
@@ -378,7 +380,7 @@ class ProfileImagePicker extends StatelessWidget {
                 onGalleryPressed?.call();
               },
             ),
-            
+
             if (currentImageUrl != null || selectedImageFile != null)
               ListTile(
                 leading: Container(
@@ -400,7 +402,7 @@ class ProfileImagePicker extends StatelessWidget {
                   onRemovePressed?.call();
                 },
               ),
-            
+
             const SizedBox(height: 20),
           ],
         ),

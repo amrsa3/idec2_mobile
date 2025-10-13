@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../features/main/presentation/main_screen.dart';
 import '../../../l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -106,7 +107,8 @@ class HomeScreen extends ConsumerWidget {
                     subtitle: l10n.viewSchedule,
                     color: Colors.blue,
                     onTap: () {
-                      // TODO: Navigate to schedule
+                      // التنقل إلى تبويب الجدول الزمني (الفهرس 1)
+                      ref.read(bottomNavIndexProvider.notifier).state = 1;
                     },
                   ),
                   _buildQuickActionCard(
@@ -116,7 +118,8 @@ class HomeScreen extends ConsumerWidget {
                     subtitle: l10n.viewSpeakers,
                     color: Colors.green,
                     onTap: () {
-                      // TODO: Navigate to speakers
+                      // التنقل إلى تبويب المتحدثون (الفهرس 2)
+                      ref.read(bottomNavIndexProvider.notifier).state = 2;
                     },
                   ),
                   _buildQuickActionCard(
@@ -126,7 +129,8 @@ class HomeScreen extends ConsumerWidget {
                     subtitle: l10n.viewExhibition,
                     color: Colors.orange,
                     onTap: () {
-                      // TODO: Navigate to exhibition
+                      // التنقل إلى تبويب المعرض (الفهرس 3)
+                      ref.read(bottomNavIndexProvider.notifier).state = 3;
                     },
                   ),
                   _buildQuickActionCard(

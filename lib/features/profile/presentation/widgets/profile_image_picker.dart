@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -118,8 +121,23 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   Future<void> _pickImage(ImageSource source) async {
     Navigator.of(context).pop(); // Close the bottom sheet
-    
+
     try {
+      // طلب الأذونات المطلوبة
+      bool hasPermission = await _requestPermissions(source);
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'يجب منح الأذونات للوصول إلى ${source == ImageSource.camera ? 'الكاميرا' : 'المعرض'}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
         maxWidth: 800,
@@ -159,11 +177,13 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     } else if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
       return ClipOval(
         child: Image.network(
-          widget.imageUrl!,
+          _getFullImageUrl(widget.imageUrl!),
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
+            debugPrint('❌ Error loading image: $error');
+            debugPrint('❌ Image URL: ${_getFullImageUrl(widget.imageUrl!)}');
             return _buildDefaultAvatar();
           },
           loadingBuilder: (context, child, loadingProgress) {
@@ -250,5 +270,42 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
         ],
       ),
     );
+  }
+
+  /// طلب الأذونات المطلوبة
+  Future<bool> _requestPermissions(ImageSource source) async {
+    try {
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        return status.isGranted;
+      } else {
+        // للمعرض، نحتاج للتحقق من إصدار Android
+        PermissionStatus permission;
+        if (Platform.isAndroid) {
+          // للأندرويد 13+ نستخدم photos، وللإصدارات الأقدم نستخدم storage
+          final androidInfo = await Permission.photos.status;
+          if (androidInfo == PermissionStatus.permanentlyDenied) {
+            permission = await Permission.storage.request();
+          } else {
+            permission = await Permission.photos.request();
+          }
+        } else {
+          // لـ iOS
+          permission = await Permission.photos.request();
+        }
+        return permission.isGranted;
+      }
+    } catch (e) {
+      debugPrint('❌ Error requesting permissions: $e');
+      return false;
+    }
+  }
+
+  /// Get full image URL
+  String _getFullImageUrl(String imageUrl) {
+    if (!imageUrl.startsWith('http')) {
+      return '${ApiConstants.baseUrl}$imageUrl';
+    }
+    return imageUrl;
   }
 }

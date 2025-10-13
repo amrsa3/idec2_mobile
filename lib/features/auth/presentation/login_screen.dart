@@ -89,7 +89,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               try {
                 await ref.read(authProvider.notifier).sendOtp(
                   authState.unverifiedPhone!,
-                  'sms',
                 );
                 
                 // Navigate to OTP verification screen using GoRouter

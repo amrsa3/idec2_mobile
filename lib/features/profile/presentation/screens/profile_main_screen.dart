@@ -1,31 +1,26 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/errors/app_error.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/loading_indicator.dart';
-import '../../../../shared/widgets/error_widgets.dart';
-import '../../../../shared/widgets/profile_image_widget.dart';
-import '../../../../models/user_profile_extended.dart';
-import '../../../../models/profile_rule_model.dart';
-import '../../../../models/profile_model.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../../models/profile_data_models.dart';
-import '../../providers/profile_provider.dart';
-import '../../../../providers/profile_rules_provider.dart';
-import '../widgets/profile_avatar.dart';
-import '../widgets/verification_status_badge.dart';
-import '../widgets/verification_notification_banner.dart';
-
-import 'profile_edit_screen.dart';
+import '../../../../models/profile_model.dart';
+import '../../../../models/profile_rule_model.dart';
 import '../../../../providers/auth_provider.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../core/router/app_router.dart';
+import '../../../../providers/profile_rules_provider.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../shared/widgets/profile_image_widget.dart';
+import '../../providers/profile_provider.dart';
+import '../widgets/verification_status_badge.dart';
+import 'profile_edit_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
@@ -53,35 +48,43 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   Future<void> _loadProfileData({int retryCount = 0}) async {
     const maxRetries = 3;
     const retryDelay = Duration(milliseconds: 1000);
-    
+
     try {
       // Check if user is authenticated before loading profile
       final authState = ref.read(authProvider);
-      debugPrint('ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
-      
-      if (authState.isAuthenticated && !authState.sessionExpired && !authState.isLoading) {
-        debugPrint('ProfileMainScreen: Loading profile data (attempt ${retryCount + 1})');
+      debugPrint(
+          'ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
+
+      if (authState.isAuthenticated &&
+          !authState.sessionExpired &&
+          !authState.isLoading) {
+        debugPrint(
+            'ProfileMainScreen: Loading profile data (attempt ${retryCount + 1})');
         // تحميل بيانات الملف الشخصي مع البيانات المرجعية (المحافظات والمؤهلات)
         ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
       } else if (authState.isLoading && retryCount < maxRetries) {
         // Auth is still loading, wait and retry
-        debugPrint('ProfileMainScreen: Auth still loading, waiting and retrying...');
+        debugPrint(
+            'ProfileMainScreen: Auth still loading, waiting and retrying...');
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
       } else if (!authState.isAuthenticated && retryCount < maxRetries) {
         // Not authenticated yet, wait and retry
-        debugPrint('ProfileMainScreen: Not authenticated yet, waiting and retrying...');
+        debugPrint(
+            'ProfileMainScreen: Not authenticated yet, waiting and retrying...');
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
       } else {
-        debugPrint('ProfileMainScreen: Failed to load profile after $maxRetries attempts');
+        debugPrint(
+            'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
         // Show error message or redirect to login
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('فشل في تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.'),
+              content: const Text(
+                  'فشل في تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.'),
               backgroundColor: AppColors.error,
               action: SnackBarAction(
                 label: 'إعادة المحاولة',
@@ -95,7 +98,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     } catch (e) {
       debugPrint('ProfileMainScreen: Error loading profile data: $e');
       if (retryCount < maxRetries) {
-        debugPrint('ProfileMainScreen: Retrying due to error (attempt ${retryCount + 1})');
+        debugPrint(
+            'ProfileMainScreen: Retrying due to error (attempt ${retryCount + 1})');
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
       }
@@ -143,7 +147,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   // إنشاء القائمة الجانبية
-  Widget _buildSideDrawer(BuildContext context, AppLocalizations l10n, ProfileModel? profile) {
+  Widget _buildSideDrawer(
+      BuildContext context, AppLocalizations l10n, ProfileModel? profile) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
 
@@ -167,24 +172,24 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               children: [
                 // صورة المستخدم
                 GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      if (profile != null) {
-                        _showProfileImageOptions(context, profile);
-                      }
-                    },
-                    child: ProfileImageWidget(
-                      imageUrl: user?.profilePictureUrl,
-                      size: 60,
-                      fallbackText: user?.fullNameAr?.isNotEmpty == true 
-                        ? user!.fullNameAr![0].toUpperCase() 
-                        : (user?.fullNameEn?.isNotEmpty == true 
-                            ? user!.fullNameEn![0].toUpperCase() 
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (profile != null) {
+                      _showProfileImageOptions(context, profile);
+                    }
+                  },
+                  child: ProfileImageWidget(
+                    imageUrl: user?.profilePictureUrl,
+                    size: 60,
+                    fallbackText: user?.fullNameAr?.isNotEmpty == true
+                        ? user!.fullNameAr![0].toUpperCase()
+                        : (user?.fullNameEn?.isNotEmpty == true
+                            ? user!.fullNameEn![0].toUpperCase()
                             : 'U'),
-                      showEditIcon: false,
-                      isEditable: false,
-                    ),
+                    showEditIcon: false,
+                    isEditable: false,
                   ),
+                ),
                 const SizedBox(height: 12),
                 // اسم المستخدم
                 Text(
@@ -200,7 +205,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ],
             ),
           ),
-          
+
           // عناصر القائمة
           Expanded(
             child: ListView(
@@ -215,48 +220,53 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     // نحن بالفعل في صفحة الملف الشخصي
                   },
                 ),
-                
+
                 // تعديل الملف الشخصي
                 if (profile != null)
                   ListTile(
-                    leading: Icon(Icons.edit_outlined, color: AppColors.primary),
+                    leading:
+                        Icon(Icons.edit_outlined, color: AppColors.primary),
                     title: const Text('تعديل البيانات'),
                     onTap: () {
                       Navigator.pop(context);
                       _navigateToEditProfile(context, profile);
                     },
                   ),
-                
+
                 const Divider(),
-                
+
                 // الإعدادات
                 ListTile(
-                  leading: Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+                  leading: Icon(Icons.settings_outlined,
+                      color: AppColors.textSecondary),
                   title: const Text('الإعدادات'),
                   onTap: () {
                     Navigator.pop(context);
                     // TODO: إضافة صفحة الإعدادات
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('سيتم إضافة صفحة الإعدادات قريباً')),
+                      const SnackBar(
+                          content: Text('سيتم إضافة صفحة الإعدادات قريباً')),
                     );
                   },
                 ),
-                
+
                 // المساعدة
                 ListTile(
-                  leading: Icon(Icons.help_outline, color: AppColors.textSecondary),
+                  leading:
+                      Icon(Icons.help_outline, color: AppColors.textSecondary),
                   title: const Text('المساعدة'),
                   onTap: () {
                     Navigator.pop(context);
                     // TODO: إضافة صفحة المساعدة
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('سيتم إضافة صفحة المساعدة قريباً')),
+                      const SnackBar(
+                          content: Text('سيتم إضافة صفحة المساعدة قريباً')),
                     );
                   },
                 ),
-                
+
                 const Divider(),
-                
+
                 // تسجيل الخروج
                 ListTile(
                   leading: Icon(Icons.logout, color: AppColors.error),
@@ -269,7 +279,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ],
             ),
           ),
-          
+
           // معلومات التطبيق في أسفل القائمة
           Container(
             padding: const EdgeInsets.all(16),
@@ -336,7 +346,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       // إغلاق مؤشر التحميل
       if (mounted) {
         Navigator.of(context).pop();
-        
+
         // الانتقال إلى صفحة تسجيل الدخول
         context.go(AppRoutes.login);
       }
@@ -344,7 +354,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       // إغلاق مؤشر التحميل في حالة الخطأ
       if (mounted) {
         Navigator.of(context).pop();
-        
+
         // عرض رسالة خطأ
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -392,17 +402,21 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                     ),
                   ),
                   const SizedBox(width: 16),
                   OutlinedButton.icon(
-                    onPressed: () => ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true),
+                    onPressed: () => ref
+                        .read(profileProvider.notifier)
+                        .loadCurrentProfile(forceRefresh: true),
                     icon: const Icon(Icons.cloud_download),
                     label: const Text('إعادة تحميل'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                     ),
                   ),
                 ],
@@ -442,7 +456,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               ),
             ],
@@ -457,28 +472,30 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // بانر الإشعارات
-          if (profile.verificationStatus == VerificationStatus.rejected && profile.rejectionReason != null)
+          if (profile.verificationStatus == VerificationStatus.rejected &&
+              profile.rejectionReason != null)
             _buildNotificationBanner(
               'رُفض طلب التوثيق: ${profile.rejectionReason!}',
               AppColors.error,
               Icons.error_outline,
             ),
-          
+
           if (profile.verificationStatus == VerificationStatus.underReview)
             _buildNotificationBanner(
               'طلب التوثيق قيد المراجعة من قبل الإدارة',
               AppColors.warning,
               Icons.pending_outlined,
             ),
-          
-          if (profile.verificationStatus == VerificationStatus.verified && _showVerificationNotification)
+
+          if (profile.verificationStatus == VerificationStatus.verified &&
+              _showVerificationNotification)
             _buildVerificationSuccessNotification(),
 
           const SizedBox(height: 16),
 
           // معلومات الملف الشخصي الأساسية
           _buildProfileHeader(profile),
-          
+
           const SizedBox(height: 24),
 
           // البيانات الشخصية
@@ -488,7 +505,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
           // البيانات الأكاديمية
           _buildAcademicDataSection(profile),
-          
+
           const SizedBox(height: 24),
 
           // أزرار الإجراءات
@@ -520,10 +537,10 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ProfileImageWidget(
                 imageUrl: profile.profilePictureUrl,
                 size: 80,
-                fallbackText: profile.fullNameAr.isNotEmpty 
-                    ? profile.fullNameAr[0].toUpperCase() 
-                    : (profile.fullNameEn.isNotEmpty 
-                        ? profile.fullNameEn[0].toUpperCase() 
+                fallbackText: profile.fullNameAr.isNotEmpty
+                    ? profile.fullNameAr[0].toUpperCase()
+                    : (profile.fullNameEn.isNotEmpty
+                        ? profile.fullNameEn[0].toUpperCase()
                         : 'U'),
                 showEditIcon: true,
                 isEditable: true,
@@ -532,9 +549,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                   ref.refresh(profileProvider);
                 },
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,9 +563,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 4),
-                    
+
                     // البريد الإلكتروني
                     if (profile.email != null)
                       Text(
@@ -557,9 +574,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // حالة التوثيق
                     VerificationStatusBadge(status: profile.verificationStatus),
                   ],
@@ -567,9 +584,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // شريط التقدم
           _buildCompletionProgress(profile),
         ],
@@ -579,7 +596,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
   Widget _buildCompletionProgress(ProfileModel profile) {
     final percentage = profile.completionPercentage;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -601,9 +618,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             ),
           ],
         ),
-        
         const SizedBox(height: 8),
-        
         LinearProgressIndicator(
           value: percentage / 100,
           backgroundColor: Colors.grey.withOpacity(0.2),
@@ -621,9 +636,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الشخصية',
       icon: Icons.person_outline,
       children: [
-        _buildDataRowWithRules('الاسم العربي', profile.fullNameAr, 'fullNameAr', profile),
-        _buildDataRowWithRules('الاسم الإنجليزي', profile.fullNameEn, 'fullNameEn', profile),
-        _buildDataRowWithRules('البريد الإلكتروني', profile.email, 'email', profile),
+        _buildDataRowWithRules(
+            'الاسم العربي', profile.fullNameAr, 'fullNameAr', profile),
+        _buildDataRowWithRules(
+            'الاسم الإنجليزي', profile.fullNameEn, 'fullNameEn', profile),
+        _buildDataRowWithRules(
+            'البريد الإلكتروني', profile.email, 'email', profile),
         _buildDataRowWithRules(
           'تاريخ الميلاد',
           profile.birthDate != null
@@ -632,7 +650,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           'birthDate',
           profile,
         ),
-        _buildDataRowWithRules('المحافظة', _getGovernorateDisplayName(profile.governorateId, ref), 'governorateId', profile),
+        _buildDataRowWithRules(
+            'المحافظة',
+            _getGovernorateDisplayName(profile.governorateId, ref),
+            'governorateId',
+            profile),
       ],
     );
   }
@@ -642,15 +664,20 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الأكاديمية',
       icon: Icons.school_outlined,
       children: [
-        _buildDataRowWithRules('المؤهل العلمي', _getQualificationDisplayName(profile.qualificationId, ref), 'qualificationId', profile),
-        _buildDataRowWithRules('سنة التخرج', profile.graduationYear?.toString(), 'graduationYear', profile),
-        _buildDataRowWithRules('الجامعة', profile.university, 'university', profile),
-        _buildDataRowWithRules('مكان العمل', profile.workplace, 'workplace', profile),
+        _buildDataRowWithRules(
+            'المؤهل العلمي',
+            _getQualificationDisplayName(profile.qualificationId, ref),
+            'qualificationId',
+            profile),
+        _buildDataRowWithRules('سنة التخرج', profile.graduationYear?.toString(),
+            'graduationYear', profile),
+        _buildDataRowWithRules(
+            'الجامعة', profile.university, 'university', profile),
+        _buildDataRowWithRules(
+            'مكان العمل', profile.workplace, 'workplace', profile),
       ],
     );
   }
-
-
 
   Widget _buildSection({
     required String title,
@@ -689,9 +716,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
           ...children,
         ],
       ),
@@ -714,12 +739,13 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ),
             ),
           ),
-          
           Expanded(
             child: Text(
               value ?? 'غير محدد',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+                color: value != null
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -730,19 +756,23 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   // دالة محسنة لعرض الحقول مع المؤشرات البصرية حسب القواعد
-  Widget _buildDataRowWithRules(String label, String? value, String fieldName, ProfileModel profile) {
+  Widget _buildDataRowWithRules(
+      String label, String? value, String fieldName, ProfileModel profile) {
     final rulesNotifier = ref.read(profileRulesProvider.notifier);
-    final profileStatus = _convertVerificationStatusToProfileStatus(profile.verificationStatus);
+    final profileStatus =
+        _convertVerificationStatusToProfileStatus(profile.verificationStatus);
     final isEditable = rulesNotifier.canEditField(fieldName, profileStatus);
-    final requiresDocument = rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
-    final isRequired = rulesNotifier.getRequiredFieldsForVerification().contains(fieldName);
-    
+    final requiresDocument =
+        rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
+    final isRequired =
+        rulesNotifier.getRequiredFieldsForVerification().contains(fieldName);
+
     // تحديد لون الخلفية حسب حالة الحقل
     Color? backgroundColor;
     IconData? statusIcon;
     Color? iconColor;
     String? tooltip;
-    
+
     if (!isEditable) {
       backgroundColor = AppColors.textSecondary.withOpacity(0.1);
       statusIcon = Icons.lock_outline;
@@ -754,8 +784,10 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       iconColor = AppColors.error;
       tooltip = 'هذا الحقل مطلوب للتوثيق';
     } else if (requiresDocument) {
-      final hasDocument = profile.documents.any((doc) => 
-        doc.documentType.toString().toLowerCase().contains(fieldName.toLowerCase()));
+      final hasDocument = profile.documents.any((doc) => doc.documentType
+          .toString()
+          .toLowerCase()
+          .contains(fieldName.toLowerCase()));
       if (hasDocument) {
         backgroundColor = AppColors.success.withOpacity(0.1);
         statusIcon = Icons.check_circle_outline;
@@ -768,16 +800,17 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         tooltip = 'يتطلب رفع وثيقة';
       }
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: backgroundColor != null 
-          ? Border.all(color: iconColor?.withOpacity(0.3) ?? Colors.transparent)
-          : null,
+        border: backgroundColor != null
+            ? Border.all(
+                color: iconColor?.withOpacity(0.3) ?? Colors.transparent)
+            : null,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -807,14 +840,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               ],
             ),
           ),
-          
           const SizedBox(width: 8),
-          
           Expanded(
             child: Text(
               value ?? 'غير محدد',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+                color: value != null
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -824,11 +857,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-
-
   Widget _buildActionButtons(ProfileModel profile) {
-    final canSubmitForVerification = _canSubmitForVerification(profile, null);
-    
     return Column(
       children: [
         SizedBox(
@@ -839,23 +868,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             label: const Text('تعديل البيانات'),
           ),
         ),
-        
-        const SizedBox(height: 12),
-        
-        if (profile.verificationStatus != VerificationStatus.verified && profile.verificationStatus != VerificationStatus.underReview)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: canSubmitForVerification
-                  ? () => _submitForVerification(context, ref, profile)
-                  : null,
-              icon: const Icon(Icons.verified_user),
-              label: const Text('طلب توثيق الحساب'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -863,7 +875,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   // Helper methods
 
   // تحويل VerificationStatus إلى ProfileStatus
-  ProfileStatus _convertVerificationStatusToProfileStatus(VerificationStatus status) {
+  ProfileStatus _convertVerificationStatusToProfileStatus(
+      VerificationStatus status) {
     switch (status) {
       case VerificationStatus.unverified:
         return ProfileStatus.unverified;
@@ -875,26 +888,28 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         return ProfileStatus.rejected;
     }
   }
-  
-  bool _canSubmitForVerification(ProfileModel profile, dynamic verificationRules) {
+
+  bool _canSubmitForVerification(
+      ProfileModel profile, dynamic verificationRules) {
     // استخدام ProfileRulesProvider للتحقق من متطلبات التوثيق
     final rulesNotifier = ref.read(profileRulesProvider.notifier);
-    
+
     // التحقق من حالة التوثيق الحالية
     if (profile.verificationStatus == VerificationStatus.verified) {
       return false; // الملف موثق بالفعل
     }
-    
+
     if (profile.verificationStatus == VerificationStatus.underReview) {
       return false; // الملف قيد المراجعة
     }
-    
+
     // التحقق من نسبة الاكتمال المطلوبة حسب القواعد
-    final requiredCompletionPercentage = rulesNotifier.getRequiredCompletionPercentage();
+    final requiredCompletionPercentage =
+        rulesNotifier.getRequiredCompletionPercentage();
     if (profile.completionPercentage < requiredCompletionPercentage) {
       return false;
     }
-    
+
     // التحقق من الحقول المطلوبة حسب القواعد
     final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
     for (final fieldName in requiredFields) {
@@ -903,17 +918,20 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         return false;
       }
     }
-    
+
     // التحقق من الوثائق المطلوبة حسب القواعد
-    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    final requiredDocuments =
+        rulesNotifier.getRequiredDocumentsForVerification();
     for (final documentType in requiredDocuments) {
-      final hasDocument = profile.documents.any((doc) => 
-        doc.documentType.toString().toLowerCase().contains(documentType.toLowerCase()));
+      final hasDocument = profile.documents.any((doc) => doc.documentType
+          .toString()
+          .toLowerCase()
+          .contains(documentType.toLowerCase()));
       if (!hasDocument) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -960,7 +978,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     if (governorates != null && governorateId != null) {
       final governorate = governorates.firstWhere(
         (g) => g.id == governorateId,
-        orElse: () => GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
+        orElse: () =>
+            GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
       );
       return governorate.nameAr;
     }
@@ -987,8 +1006,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     return 'غير محدد';
   }
 
-
-
   // Navigation methods
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
     // الانتقال إلى شاشة التعديل مع callback لتحديث البيانات عند العودة
@@ -999,7 +1016,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       ),
     ).then((_) {
       // تحديث البيانات والقواعد عند العودة من صفحة التعديل
-      debugPrint('ProfileMainScreen: Returned from edit screen, refreshing data...');
+      debugPrint(
+          'ProfileMainScreen: Returned from edit screen, refreshing data...');
       _loadProfileData();
       // تحديث قواعد التعديل أيضاً
       ref.read(profileRulesProvider.notifier).loadRules();
@@ -1007,8 +1025,6 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       ref.refresh(profileProvider);
     });
   }
-
-
 
   // Action methods
   void _showProfileImageOptions(BuildContext context, ProfileModel profile) {
@@ -1090,7 +1106,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startVerificationNotificationTimer();
     });
-    
+
     return _buildNotificationBanner(
       'تم توثيق حسابك بنجاح! يمكنك الآن الاشتراك في المؤتمر والفعاليات',
       AppColors.success,
@@ -1122,14 +1138,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     );
   }
 
-
-
-  void _submitForVerification(BuildContext context, WidgetRef ref, ProfileModel profile) {
+  void _submitForVerification(
+      BuildContext context, WidgetRef ref, ProfileModel profile) {
     final rulesNotifier = ref.read(profileRulesProvider.notifier);
-    
+
     // التحقق من المتطلبات قبل عرض الحوار
-    final missingRequirements = _getMissingVerificationRequirements(profile, rulesNotifier);
-    
+    final missingRequirements =
+        _getMissingVerificationRequirements(profile, rulesNotifier);
+
     if (missingRequirements.isNotEmpty) {
       // عرض رسالة بالمتطلبات المفقودة
       showDialog(
@@ -1143,15 +1159,16 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               const Text('يرجى إكمال المتطلبات التالية قبل طلب التوثيق:'),
               const SizedBox(height: 12),
               ...missingRequirements.map((requirement) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.error, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(requirement)),
-                  ],
-                ),
-              )),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline,
+                            color: AppColors.error, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(requirement)),
+                      ],
+                    ),
+                  )),
             ],
           ),
           actions: [
@@ -1171,11 +1188,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       );
       return;
     }
-    
+
     // عرض حوار التأكيد مع تفاصيل المراجعة
-    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    final requiredDocuments =
+        rulesNotifier.getRequiredDocumentsForVerification();
     final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1186,7 +1204,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           children: [
             const Text('هل أنت متأكد من أنك تريد إرسال طلب توثيق الحساب؟'),
             const SizedBox(height: 16),
-            const Text('سيتم مراجعة:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('سيتم مراجعة:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (requiredFields.isNotEmpty) ...[
               Text('• ${requiredFields.length} حقل مطلوب'),
@@ -1220,39 +1239,47 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       ),
     );
   }
-  
+
   // دالة للحصول على المتطلبات المفقودة للتوثيق
-  List<String> _getMissingVerificationRequirements(ProfileModel profile, dynamic rulesNotifier) {
+  List<String> _getMissingVerificationRequirements(
+      ProfileModel profile, dynamic rulesNotifier) {
     final missingRequirements = <String>[];
-    
+
     // التحقق من نسبة الاكتمال
-    final requiredCompletionPercentage = rulesNotifier.getRequiredCompletionPercentage();
+    final requiredCompletionPercentage =
+        rulesNotifier.getRequiredCompletionPercentage();
     if (profile.completionPercentage < requiredCompletionPercentage) {
-      missingRequirements.add('إكمال الملف الشخصي ($requiredCompletionPercentage% مطلوب)');
+      missingRequirements
+          .add('إكمال الملف الشخصي ($requiredCompletionPercentage% مطلوب)');
     }
-    
+
     // التحقق من الحقول المطلوبة
     final requiredFields = rulesNotifier.getRequiredFieldsForVerification();
     for (final fieldName in requiredFields) {
       final fieldValue = _getFieldValue(profile, fieldName);
       if (fieldValue == null || fieldValue.toString().trim().isEmpty) {
-        missingRequirements.add('إكمال حقل: ${_getFieldDisplayName(fieldName)}');
+        missingRequirements
+            .add('إكمال حقل: ${_getFieldDisplayName(fieldName)}');
       }
     }
-    
+
     // التحقق من الوثائق المطلوبة
-    final requiredDocuments = rulesNotifier.getRequiredDocumentsForVerification();
+    final requiredDocuments =
+        rulesNotifier.getRequiredDocumentsForVerification();
     for (final documentType in requiredDocuments) {
-      final hasDocument = profile.documents.any((doc) => 
-        doc.documentType.toString().toLowerCase().contains(documentType.toLowerCase()));
+      final hasDocument = profile.documents.any((doc) => doc.documentType
+          .toString()
+          .toLowerCase()
+          .contains(documentType.toLowerCase()));
       if (!hasDocument) {
-        missingRequirements.add('رفع وثيقة: ${_getDocumentDisplayName(documentType)}');
+        missingRequirements
+            .add('رفع وثيقة: ${_getDocumentDisplayName(documentType)}');
       }
     }
-    
+
     return missingRequirements;
   }
-  
+
   // دالة للحصول على اسم الحقل للعرض
   String _getFieldDisplayName(String fieldName) {
     switch (fieldName.toLowerCase()) {
@@ -1287,7 +1314,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         return fieldName;
     }
   }
-  
+
   // دالة للحصول على اسم الوثيقة للعرض
   String _getDocumentDisplayName(String documentType) {
     switch (documentType.toLowerCase()) {

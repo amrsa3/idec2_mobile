@@ -57,10 +57,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         return;
       }
 
-      if (response.requiresChannelSelection && response.availableChannels != null) {
-        // Show channel selection dialog
-        await _showChannelSelectionDialog(fullPhoneNumber, response.availableChannels!);
-      } else if (response.success) {
+      if (response.success) {
         await NotificationService.showSuccess(
           title: 'إرسال رمز إعادة التعيين',
           message: response.message ?? 'تم إرسال رمز إعادة تعيين كلمة المرور إلى رقم هاتفك',
@@ -84,81 +81,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
-  Future<void> _showChannelSelectionDialog(String phoneNumber, List<String> availableChannels) async {
-    String? selectedChannel = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('اختر قناة الإرسال'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('يرجى اختيار القناة المفضلة لإرسال كود إعادة تعيين كلمة المرور:'),
-              const SizedBox(height: 16),
-              ...availableChannels.map((channel) {
-                String displayName = channel == 'SMS' ? 'رسالة نصية' : 'واتساب';
-                IconData icon = channel == 'SMS' ? Icons.sms : Icons.chat;
-                
-                return ListTile(
-                  leading: Icon(icon),
-                  title: Text(displayName),
-                  onTap: () {
-                    Navigator.of(context).pop(channel);
-                  },
-                );
-              }).toList(),
-            ],
-          ),
-        );
-      },
-    );
 
-    if (selectedChannel != null) {
-      await _confirmPasswordResetOtp(phoneNumber, selectedChannel);
-    }
-  }
-
-  Future<void> _confirmPasswordResetOtp(String phoneNumber, String selectedChannel) async {
-    try {
-      final response = await ref.read(authProvider.notifier).confirmPasswordResetOtp(
-        phoneNumber: phoneNumber,
-        selectedChannel: selectedChannel,
-        purpose: 'password_reset',
-      );
-
-      final authState = ref.read(authProvider);
-      if (authState.error != null) {
-        await NotificationService.showError(
-          title: 'خطأ',
-          message: authState.error!,
-        );
-        return;
-      }
-
-      if (response != null && response.success) {
-        await NotificationService.showSuccess(
-          title: 'إرسال رمز إعادة التعيين',
-          message: response.message ?? 'تم إرسال رمز إعادة تعيين كلمة المرور بنجاح',
-        );
-
-        if (mounted) {
-          // Navigate to reset password OTP screen
-          context.push('${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(phoneNumber)}');
-        }
-      } else {
-        await NotificationService.showError(
-          title: 'خطأ',
-          message: response?.message ?? 'فشل في إرسال رمز إعادة التعيين',
-        );
-      }
-    } catch (e) {
-      await NotificationService.showError(
-        title: 'خطأ',
-        message: 'فشل في إرسال رمز إعادة التعيين. يرجى المحاولة مرة أخرى.',
-      );
-    }
-  }
 
   String? _validatePhone(String? value) {
     if (value == null || value.isEmpty) {

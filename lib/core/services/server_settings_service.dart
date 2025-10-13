@@ -81,12 +81,18 @@ class ServerSettingsService {
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
-    host: 'idec-ye.com',
+    host: '84.247.128.128', // Use IP of idec-ye.com to avoid DNS issues
     port: 3000,
   );
   
   static const ServerSettings localServer = ServerSettings(
     host: '192.168.0.165',
+    port: 3000,
+  );
+  
+  // Fallback domain server (in case IP doesn't work)
+  static const ServerSettings domainServer = ServerSettings(
+    host: 'idec-ye.com',
     port: 3000,
   );
 

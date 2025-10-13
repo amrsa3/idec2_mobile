@@ -1,21 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:http_parser/http_parser.dart';
-
-import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/api_constants.dart';
-import '../../../services/storage_service.dart';
-import '../../../services/dio_service.dart';
-import '../../../services/auth_service.dart';
-import '../../../models/models.dart';
-import '../../../providers/profile_rules_provider.dart';
-import '../../../services/profile_rules_service.dart';
-import '../../../models/profile_rule_model.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+
+import '../../../core/constants/api_constants.dart';
+import '../../../models/models.dart';
+import '../../../services/auth_service.dart';
+import '../../../services/dio_service.dart';
+import '../../../services/profile_rules_service.dart';
+import '../../../services/storage_service.dart';
 
 class LocalProfileService {
   static final Dio _dio = Dio();
@@ -28,13 +26,13 @@ class LocalProfileService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = prefs.getInt(_cacheTimestampKey);
-      
+
       if (timestamp == null) return false;
-      
+
       final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
       final now = DateTime.now();
       final difference = now.difference(cacheTime).inHours;
-      
+
       return difference < _cacheValidityHours;
     } catch (e) {
       debugPrint('Error checking cache validity: $e');
@@ -47,13 +45,13 @@ class LocalProfileService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = prefs.getInt(_cacheTimestampKey);
-      
+
       if (timestamp == null) return false;
-      
+
       final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
       final now = DateTime.now();
       final difference = now.difference(cacheTime).inMinutes;
-      
+
       return difference < 5; // Only use cache if less than 5 minutes old
     } catch (e) {
       debugPrint('Error checking recent cache: $e');
@@ -66,7 +64,7 @@ class LocalProfileService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString(_cacheKey);
-      
+
       if (cachedData != null) {
         final profileJson = json.decode(cachedData);
         return ProfileModel.fromJson(profileJson);
@@ -83,7 +81,8 @@ class LocalProfileService {
       final prefs = await SharedPreferences.getInstance();
       final profileJson = json.encode(profile.toJson());
       await prefs.setString(_cacheKey, profileJson);
-      await prefs.setInt(_cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+          _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
       debugPrint('✅ Profile cached successfully');
     } catch (e) {
       debugPrint('Error caching profile: $e');
@@ -121,15 +120,17 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📋 ProfileService: Profile data response status: ${response.statusCode}');
+      debugPrint(
+          '📋 ProfileService: Profile data response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = response.data;
         debugPrint('📋 ProfileService: Profile data received successfully');
-        
+
         return ProfileDataResponse.fromJson(data);
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch profile data: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch profile data: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -157,15 +158,18 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📊 ProfileService: Completion status response: ${response.statusCode}');
+      debugPrint(
+          '📊 ProfileService: Completion status response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = response.data;
-        debugPrint('📊 ProfileService: Completion status received successfully');
-        
+        debugPrint(
+            '📊 ProfileService: Completion status received successfully');
+
         return ProfileCompletionStatus.fromJson(data);
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch completion status: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch completion status: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -177,19 +181,19 @@ class LocalProfileService {
   /// Get current user profile with caching and offline support
   /// [forceRefresh] - Force fetch from server even if cache is valid
   /// [useRecentCache] - Use cache if it's very recent (less than 5 minutes)
-  static Future<ProfileModel?> getProfile({
-    bool forceRefresh = false, 
-    bool useRecentCache = true
-  }) async {
+  static Future<ProfileModel?> getProfile(
+      {bool forceRefresh = false, bool useRecentCache = true}) async {
     try {
-      debugPrint('👤 ProfileService: Fetching user profile (forceRefresh: $forceRefresh)');
+      debugPrint(
+          '👤 ProfileService: Fetching user profile (forceRefresh: $forceRefresh)');
 
       // Check connectivity
       final isConnected = await _isConnected();
-      
+
       // If not connected, try to return cached data
       if (!isConnected) {
-        debugPrint('📱 ProfileService: No internet connection, trying cached data');
+        debugPrint(
+            '📱 ProfileService: No internet connection, trying cached data');
         final cachedProfile = await _getCachedProfile();
         if (cachedProfile != null) {
           debugPrint('✅ ProfileService: Returning cached profile data');
@@ -206,11 +210,12 @@ class LocalProfileService {
         if (useRecentCache && await _isRecentCache()) {
           final cachedProfile = await _getCachedProfile();
           if (cachedProfile != null) {
-            debugPrint('✅ ProfileService: Returning recent cached profile data');
+            debugPrint(
+                '✅ ProfileService: Returning recent cached profile data');
             return cachedProfile;
           }
         }
-        
+
         // Use regular cache if valid
         if (await _isCacheValid()) {
           final cachedProfile = await _getCachedProfile();
@@ -235,22 +240,22 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('👤 ProfileService: Profile response status: ${response.statusCode}');
+      debugPrint(
+          '👤 ProfileService: Profile response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = response.data;
         debugPrint('👤 ProfileService: Profile received successfully');
-        debugPrint('📊 ProfileService: Response data: $data');
-        
+
         // التحقق من وجود بيانات الملف الشخصي
         // الخادم يرسل البيانات مباشرة وليس داخل كائن profile
         if (data == null || data['profile_id'] == null) {
           debugPrint('❌ ProfileService: No profile data found in response');
           throw Exception('لم يتم العثور على بيانات الملف الشخصي');
         }
-        
+
         debugPrint('📊 ProfileService: Profile data: $data');
-        
+
         // Transform the response to match ProfileModel structure
         // الخادم يرجع البيانات مباشرة مع snake_case field names
         final transformedData = {
@@ -274,31 +279,34 @@ class LocalProfileService {
           'updated_at': data['profile_updated_at']?.toString(),
           'verified_at': null, // Not available from this endpoint
         };
-        
+
         debugPrint('📊 ProfileService: Transformed data: $transformedData');
-        
+
         try {
           final profile = ProfileModel.fromJson(transformedData);
-          
+
           debugPrint('✅ ProfileService: ProfileModel created successfully');
-          debugPrint('🖼️ ProfileService: Profile picture URL: ${profile.profilePictureUrl}');
-          
+          debugPrint(
+              '🖼️ ProfileService: Profile picture URL: ${profile.profilePictureUrl}');
+
           // Cache the profile data
           await _cacheProfile(profile);
-          
+
           return profile;
         } catch (jsonError) {
-          debugPrint('❌ ProfileService: Error creating ProfileModel from JSON: $jsonError');
+          debugPrint(
+              '❌ ProfileService: Error creating ProfileModel from JSON: $jsonError');
           debugPrint('📊 ProfileService: Problematic data: $transformedData');
           throw Exception('خطأ في تحويل بيانات الملف الشخصي: $jsonError');
         }
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch profile: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch profile: ${response.statusCode}');
         throw Exception('فشل في جلب بيانات الملف الشخصي');
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching profile: $e');
-      
+
       // طباعة تفاصيل إضافية للخطأ
       if (e is DioException) {
         debugPrint('📊 ProfileService: DioException details:');
@@ -306,7 +314,7 @@ class LocalProfileService {
         debugPrint('  - Response Data: ${e.response?.data}');
         debugPrint('  - Request Path: ${e.requestOptions.path}');
         debugPrint('  - Headers: ${e.requestOptions.headers}');
-        
+
         // معالجة أخطاء محددة
         if (e.response?.statusCode == 404) {
           debugPrint('❌ ProfileService: Profile not found (404)');
@@ -319,17 +327,18 @@ class LocalProfileService {
           throw Exception('ممنوع الوصول إلى هذا المورد');
         }
       } else {
-        debugPrint('📊 ProfileService: Non-DioException error: ${e.runtimeType}');
+        debugPrint(
+            '📊 ProfileService: Non-DioException error: ${e.runtimeType}');
         debugPrint('📊 ProfileService: Error message: ${e.toString()}');
       }
-      
+
       // Try to return cached data as fallback
       final cachedProfile = await _getCachedProfile();
       if (cachedProfile != null) {
         debugPrint('⚠️ ProfileService: Returning cached profile due to error');
         return cachedProfile;
       }
-      
+
       rethrow;
     }
   }
@@ -357,7 +366,8 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('💾 ProfileService: Update response status: ${response.statusCode}');
+      debugPrint(
+          '💾 ProfileService: Update response status: ${response.statusCode}');
       debugPrint('💾 ProfileService: Update response data: ${response.data}');
 
       if (response.statusCode == 200) {
@@ -365,7 +375,8 @@ class LocalProfileService {
         final data = response.data;
         return ProfileModel.fromJson(data);
       } else {
-        debugPrint('❌ ProfileService: Update failed with status: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Update failed with status: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -407,15 +418,17 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📄 ProfileService: Document upload response: ${response.statusCode}');
+      debugPrint(
+          '📄 ProfileService: Document upload response: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         debugPrint('📄 ProfileService: Document uploaded successfully');
-        
+
         return DocumentUploadModel.fromJson(data);
       } else {
-        debugPrint('❌ ProfileService: Failed to upload document: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to upload document: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -443,30 +456,33 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📄 ProfileService: Documents response status: ${response.statusCode}');
+      debugPrint(
+          '📄 ProfileService: Documents response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = response.data;
         debugPrint('📄 ProfileService: Documents received successfully');
-        
+
         final List<dynamic> documentsJson = data['documents'] ?? [];
         return documentsJson
             .map((json) => DocumentUploadModel.fromJson(json))
             .toList();
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
         return [];
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching documents: $e');
-      
+
       // إذا كان الخطأ 401 (Unauthorized) أو 404 (Not Found)، فهذا يعني أن المستخدم ليس لديه ملف شخصي كامل
       // في هذه الحالة، نعيد قائمة فارغة بدلاً من إيقاف تحميل الصفحة
       if (e.toString().contains('401') || e.toString().contains('404')) {
-        debugPrint('📄 ProfileService: User has no complete profile yet, returning empty documents list');
+        debugPrint(
+            '📄 ProfileService: User has no complete profile yet, returning empty documents list');
         return [];
       }
-      
+
       return [];
     }
   }
@@ -516,7 +532,8 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('✅ ProfileService: Submit verification response: ${response.statusCode}');
+      debugPrint(
+          '✅ ProfileService: Submit verification response: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('❌ ProfileService: Error submitting for verification: $e');
@@ -543,15 +560,18 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📜 ProfileService: Verification history response: ${response.statusCode}');
+      debugPrint(
+          '📜 ProfileService: Verification history response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = response.data;
-        debugPrint('📜 ProfileService: Verification history received successfully');
-        
+        debugPrint(
+            '📜 ProfileService: Verification history received successfully');
+
         return List<Map<String, dynamic>>.from(data['history'] ?? []);
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch verification history: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch verification history: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -571,8 +591,9 @@ class LocalProfileService {
       final rules = await profileRulesService.getActiveRules();
 
       if (rules.isNotEmpty) {
-        debugPrint('📋 ProfileService: Profile rules received successfully (${rules.length} rules)');
-        
+        debugPrint(
+            '📋 ProfileService: Profile rules received successfully (${rules.length} rules)');
+
         // إنشاء VerificationRulesResponse للتوافق مع النظام القديم
         // هذا مؤقت حتى يتم تحديث جميع الملفات
         return VerificationRulesResponse(
@@ -591,21 +612,24 @@ class LocalProfileService {
   }
 
   /// Extract required documents from profile rules
-  static List<RequiredDocumentModel> _extractRequiredDocuments(List<ProfileRuleModel> rules) {
+  static List<RequiredDocumentModel> _extractRequiredDocuments(
+      List<ProfileRuleModel> rules) {
     final requiredDocs = <RequiredDocumentModel>[];
-    
+
     for (final rule in rules) {
       if (rule.requiresDocument && rule.isActive) {
         requiredDocs.add(RequiredDocumentModel(
           id: rule.id,
           documentType: DocumentType.other, // Default type
-          title: (rule.fieldDisplayName?.isNotEmpty == true) ? rule.fieldDisplayName! : rule.fieldName,
+          title: (rule.fieldDisplayName?.isNotEmpty == true)
+              ? rule.fieldDisplayName!
+              : rule.fieldName,
           description: rule.fieldDescription ?? '',
           isRequired: rule.requiresDocument,
         ));
       }
     }
-    
+
     return requiredDocs;
   }
 
@@ -618,14 +642,18 @@ class LocalProfileService {
   }
 
   /// Get profile rules using new ProfileRulesService (recommended)
-  static Future<List<ProfileRuleModel>> getProfileRules({bool forceRefresh = false}) async {
+  static Future<List<ProfileRuleModel>> getProfileRules(
+      {bool forceRefresh = false}) async {
     try {
-      debugPrint('📋 ProfileService: Fetching profile rules using ProfileRulesService');
-      
+      debugPrint(
+          '📋 ProfileService: Fetching profile rules using ProfileRulesService');
+
       final profileRulesService = ProfileRulesService();
-      final rules = await profileRulesService.getActiveRules(forceRefresh: forceRefresh);
-      
-      debugPrint('✅ ProfileService: Profile rules fetched successfully (${rules.length} rules)');
+      final rules =
+          await profileRulesService.getActiveRules(forceRefresh: forceRefresh);
+
+      debugPrint(
+          '✅ ProfileService: Profile rules fetched successfully (${rules.length} rules)');
       return rules;
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching profile rules: $e');
@@ -633,17 +661,17 @@ class LocalProfileService {
     }
   }
 
-
-
-  /// Upload profile picture
-  static Future<FileUploadResponse?> uploadProfilePicture(File imageFile) async {
+  /// Upload profile picture (for mobile platforms)
+  static Future<Map<String, dynamic>?> uploadProfilePicture(
+      File imageFile) async {
     try {
       debugPrint('📸 ProfileService: Uploading profile picture');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await DioService.instance.getAccessToken();
-      debugPrint('🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
-      
+      debugPrint(
+          '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
+
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
@@ -675,21 +703,31 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Detected content type: $contentType');
 
       // Create form data with correct content type and user ID
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
+      MultipartFile multipartFile;
+      if (kIsWeb) {
+        // في بيئة الويب، نحتاج لقراءة البيانات من XFile
+        // هذا يتطلب تمرير XFile بدلاً من File
+        debugPrint(
+            '🌐 Web: Profile picture upload - need XFile for web platform');
+        throw Exception('رفع صورة الملف الشخصي في الويب يتطلب استخدام XFile');
+      } else {
+        // في بيئة الموبايل، استخدم File
+        multipartFile = await MultipartFile.fromFile(
           imageFile.path,
           filename: 'profile_picture.jpg',
           contentType: MediaType.parse(contentType),
-        ),
-        'entityType': 'user_profile',
-        'entityId': userId,
-        'fileCategory': 'profile_picture',
-        'accessLevel': 'private',
+        );
+      }
+
+      final formData = FormData.fromMap({
+        'file': multipartFile,
+        'category': 'profile_picture',
+        'description': 'صورة الملف الشخصي',
       });
 
       // Use the correct endpoint that matches the backend
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
         data: formData,
         options: Options(
           headers: {
@@ -699,38 +737,48 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📸 ProfileService: Profile picture upload response: ${response.statusCode}');
+      debugPrint(
+          '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
       debugPrint('📸 ProfileService: Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         debugPrint('📸 ProfileService: Profile picture uploaded successfully');
-        
-        return FileUploadResponse.fromJson(data);
+
+        // Extract file data from the response
+        final fileData = data['file'];
+        if (fileData != null) {
+          return fileData;
+        } else {
+          // Fallback if file data is not in expected format
+          return data;
+        }
       } else {
-        debugPrint('❌ ProfileService: Failed to upload profile picture: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to upload profile picture: ${response.statusCode}');
         debugPrint('❌ ProfileService: Error response: ${response.data}');
-        
+
         // Extract error message from response if available
         String errorMessage = 'فشل في رفع الصورة';
         final errorData = response.data;
         if (errorData != null && errorData['message'] != null) {
           errorMessage = errorData['message'].toString();
         }
-        
+
         throw Exception(errorMessage);
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error uploading profile picture: $e');
-      
+
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
-        debugPrint('❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
-        
+        debugPrint(
+            '❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
+
         if (e.response?.statusCode == 400) {
           final errorData = e.response?.data;
           String errorMessage = 'نوع الملف غير مدعوم أو البيانات غير صحيحة';
-          
+
           // Try to extract error message from different response formats
           if (errorData != null) {
             if (errorData is Map<String, dynamic>) {
@@ -743,8 +791,9 @@ class LocalProfileService {
               errorMessage = errorData;
             }
           }
-          
-          debugPrint('❌ ProfileService: Extracted error message: $errorMessage');
+
+          debugPrint(
+              '❌ ProfileService: Extracted error message: $errorMessage');
           throw Exception(errorMessage);
         } else if (e.response?.statusCode == 401) {
           throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
@@ -756,23 +805,178 @@ class LocalProfileService {
           // For any other HTTP error codes
           final errorData = e.response?.data;
           String errorMessage = 'فشل في رفع الصورة';
-          
+
           if (errorData != null) {
-            if (errorData is Map<String, dynamic> && errorData['message'] != null) {
+            if (errorData is Map<String, dynamic> &&
+                errorData['message'] != null) {
               errorMessage = errorData['message'].toString();
             } else if (errorData is String) {
               errorMessage = errorData;
             }
           }
-          
-          throw Exception('$errorMessage (كود الخطأ: ${e.response?.statusCode})');
+
+          throw Exception(
+              '$errorMessage (كود الخطأ: ${e.response?.statusCode})');
         }
       }
-      
+
       if (e.toString().contains('خطأ في المصادقة')) {
         rethrow;
       }
-      
+
+      // For any other type of exception
+      debugPrint('❌ ProfileService: Non-DioException error: $e');
+      throw Exception('فشل في رفع صورة الملف الشخصي: $e');
+    }
+  }
+
+  /// Upload profile picture (for web platforms using XFile)
+  static Future<Map<String, dynamic>?> uploadProfilePictureWeb(
+      XFile imageFile) async {
+    try {
+      debugPrint('📸 ProfileService: Uploading profile picture (Web)');
+
+      // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+      final token = await DioService.instance.getAccessToken();
+      debugPrint(
+          '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
+
+      if (token == null || token.isEmpty) {
+        debugPrint('❌ ProfileService: No authentication token found');
+        throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
+      }
+
+      // Get current user ID from AuthService
+      final authService = AuthService.instance;
+      final currentUser = await authService.getCurrentUser();
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('❌ ProfileService: No current user found');
+        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+      }
+      final userId = currentUser.id;
+      debugPrint('👤 ProfileService: Current user ID: $userId');
+
+      // Determine the correct content type based on file extension
+      String contentType = 'image/jpeg';
+      final fileName = imageFile.name.toLowerCase();
+      if (fileName.endsWith('.png')) {
+        contentType = 'image/png';
+      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        contentType = 'image/jpeg';
+      } else if (fileName.endsWith('.gif')) {
+        contentType = 'image/gif';
+      } else if (fileName.endsWith('.webp')) {
+        contentType = 'image/webp';
+      }
+
+      debugPrint('📸 ProfileService: Detected content type: $contentType');
+
+      // Create form data for web platform
+      final multipartFile = MultipartFile.fromBytes(
+        await imageFile.readAsBytes(),
+        filename: imageFile.name,
+        contentType: MediaType.parse(contentType),
+      );
+
+      final formData = FormData.fromMap({
+        'file': multipartFile,
+        'category': 'profile_picture',
+        'description': 'صورة الملف الشخصي',
+      });
+
+      // Use the correct endpoint that matches the backend
+      final response = await _dio.post(
+        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      debugPrint(
+          '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
+      debugPrint('📸 ProfileService: Response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        debugPrint('📸 ProfileService: Profile picture uploaded successfully');
+
+        // Extract file data from the response
+        final fileData = data['file'];
+        if (fileData != null) {
+          return fileData;
+        } else {
+          // Fallback if file data is not in expected format
+          return data;
+        }
+      } else {
+        debugPrint(
+            '❌ ProfileService: Failed to upload profile picture: ${response.statusCode}');
+        debugPrint('❌ ProfileService: Error response: ${response.data}');
+
+        // Extract error message from response if available
+        String errorMessage = 'فشل في رفع الصورة';
+        if (response.data != null && response.data is Map<String, dynamic>) {
+          final errorData = response.data as Map<String, dynamic>;
+          if (errorData['message'] != null) {
+            errorMessage = errorData['message'].toString();
+          }
+        }
+
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('❌ ProfileService: Error uploading profile picture: $e');
+
+      // Re-throw DioException with more specific error handling
+      if (e is DioException) {
+        debugPrint(
+            '❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
+
+        if (e.response?.statusCode == 400) {
+          final errorData = e.response?.data;
+          String errorMessage = 'نوع الملف غير مدعوم أو البيانات غير صحيحة';
+
+          // Try to extract error message from different response formats
+          if (errorData != null) {
+            if (errorData is Map<String, dynamic> &&
+                errorData['message'] != null) {
+              errorMessage = errorData['message'].toString();
+            } else if (errorData is String) {
+              errorMessage = errorData;
+            }
+          }
+
+          debugPrint(
+              '❌ ProfileService: Extracted error message: $errorMessage');
+          throw Exception(errorMessage);
+        } else if (e.response?.statusCode == 401) {
+          throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
+        } else {
+          final errorData = e.response?.data;
+          String errorMessage = 'فشل في رفع الصورة';
+
+          if (errorData != null) {
+            if (errorData is Map<String, dynamic> &&
+                errorData['message'] != null) {
+              errorMessage = errorData['message'].toString();
+            } else if (errorData is String) {
+              errorMessage = errorData;
+            }
+          }
+
+          throw Exception(
+              '$errorMessage (كود الخطأ: ${e.response?.statusCode})');
+        }
+      }
+
+      if (e.toString().contains('خطأ في المصادقة')) {
+        rethrow;
+      }
+
       // For any other type of exception
       debugPrint('❌ ProfileService: Non-DioException error: $e');
       throw Exception('فشل في رفع صورة الملف الشخصي: $e');
@@ -786,8 +990,9 @@ class LocalProfileService {
 
       // استخدام DioService للحصول على الرمز المميز
       final token = await DioService.instance.getAccessToken();
-      debugPrint('🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
-      
+      debugPrint(
+          '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
+
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
@@ -814,32 +1019,35 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('🗑️ ProfileService: Profile picture removal response: ${response.statusCode}');
+      debugPrint(
+          '🗑️ ProfileService: Profile picture removal response: ${response.statusCode}');
       debugPrint('🗑️ ProfileService: Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         debugPrint('✅ ProfileService: Profile picture removed successfully');
         return true;
       } else {
-        debugPrint('❌ ProfileService: Failed to remove profile picture: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to remove profile picture: ${response.statusCode}');
         debugPrint('❌ ProfileService: Error response: ${response.data}');
-        
+
         // Extract error message from response if available
         String errorMessage = 'فشل في حذف الصورة';
         final errorData = response.data;
         if (errorData != null && errorData['message'] != null) {
           errorMessage = errorData['message'].toString();
         }
-        
+
         throw Exception(errorMessage);
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error removing profile picture: $e');
-      
+
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
-        debugPrint('❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
-        
+        debugPrint(
+            '❌ ProfileService: DioException details - Status: ${e.response?.statusCode}, Data: ${e.response?.data}');
+
         if (e.response?.statusCode == 401) {
           throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
         } else if (e.response?.statusCode == 404) {
@@ -850,23 +1058,25 @@ class LocalProfileService {
           // For any other HTTP error codes
           final errorData = e.response?.data;
           String errorMessage = 'فشل في حذف الصورة';
-          
+
           if (errorData != null) {
-            if (errorData is Map<String, dynamic> && errorData['message'] != null) {
+            if (errorData is Map<String, dynamic> &&
+                errorData['message'] != null) {
               errorMessage = errorData['message'].toString();
             } else if (errorData is String) {
               errorMessage = errorData;
             }
           }
-          
-          throw Exception('$errorMessage (كود الخطأ: ${e.response?.statusCode})');
+
+          throw Exception(
+              '$errorMessage (كود الخطأ: ${e.response?.statusCode})');
         }
       }
-      
+
       if (e.toString().contains('خطأ في المصادقة')) {
         rethrow;
       }
-      
+
       // For any other type of exception
       debugPrint('❌ ProfileService: Non-DioException error: $e');
       throw Exception('فشل في حذف صورة الملف الشخصي: $e');
@@ -899,15 +1109,18 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('✅ ProfileService: Verification request response: ${response.statusCode}');
+      debugPrint(
+          '✅ ProfileService: Verification request response: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('✅ ProfileService: Verification request submitted successfully');
-        
+        debugPrint(
+            '✅ ProfileService: Verification request submitted successfully');
+
         return VerificationRequestResponse.fromJson(data);
       } else {
-        debugPrint('❌ ProfileService: Failed to submit verification request: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to submit verification request: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -918,15 +1131,10 @@ class LocalProfileService {
 
   /// Alias for getProfile() for backward compatibility
   /// Use getProfile() instead - this method will be deprecated
-  static Future<ProfileModel?> getCurrentProfile({bool forceRefresh = false}) async {
+  static Future<ProfileModel?> getCurrentProfile(
+      {bool forceRefresh = false}) async {
     return getProfile(forceRefresh: forceRefresh, useRecentCache: true);
   }
-
-
-
-
-
-
 
   /// Update profile picture URL in user profile
   static Future<void> _updateProfilePictureUrl(String imageUrl) async {
@@ -954,31 +1162,35 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('🎓 ProfileService: Qualifications response status: ${response.statusCode}');
+      debugPrint(
+          '🎓 ProfileService: Qualifications response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseData = response.data;
         debugPrint('🎓 ProfileService: Qualifications received successfully');
         debugPrint('🎓 ProfileService: Qualifications response: $responseData');
-        
+
         // Handle the API response format {success: true, data: [...]}
-        if (responseData is Map<String, dynamic> && responseData['data'] != null) {
+        if (responseData is Map<String, dynamic> &&
+            responseData['data'] != null) {
           final data = responseData['data'];
           if (data is List) {
-            debugPrint('🎓 ProfileService: Returning ${data.length} qualifications');
+            debugPrint(
+                '🎓 ProfileService: Returning ${data.length} qualifications');
             return List<dynamic>.from(data);
           }
         }
-        
+
         // Fallback for direct array response
         if (responseData is List) {
           return List<dynamic>.from(responseData);
         }
-        
+
         debugPrint('❌ ProfileService: Unexpected qualifications data format');
         return [];
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch qualifications: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch qualifications: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -999,31 +1211,35 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('🏛️ ProfileService: Governorates response status: ${response.statusCode}');
+      debugPrint(
+          '🏛️ ProfileService: Governorates response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final responseData = response.data;
         debugPrint('🏛️ ProfileService: Governorates received successfully');
         debugPrint('🏛️ ProfileService: Governorates response: $responseData');
-        
+
         // Handle the API response format {success: true, data: [...]}
-        if (responseData is Map<String, dynamic> && responseData['data'] != null) {
+        if (responseData is Map<String, dynamic> &&
+            responseData['data'] != null) {
           final data = responseData['data'];
           if (data is List) {
-            debugPrint('🏛️ ProfileService: Returning ${data.length} governorates');
+            debugPrint(
+                '🏛️ ProfileService: Returning ${data.length} governorates');
             return List<dynamic>.from(data);
           }
         }
-        
+
         // Fallback for direct array response
         if (responseData is List) {
           return List<dynamic>.from(responseData);
         }
-        
+
         debugPrint('❌ ProfileService: Unexpected governorates data format');
         return [];
       } else {
-        debugPrint('❌ ProfileService: Failed to fetch governorates: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to fetch governorates: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -1040,7 +1256,8 @@ class LocalProfileService {
     Uint8List? fileBytes, // إضافة البيانات للويب
   }) async {
     try {
-      debugPrint('📄 ProfileService: Uploading document file for field: $fieldName');
+      debugPrint(
+          '📄 ProfileService: Uploading document file for field: $fieldName');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await DioService.instance.getAccessToken();
@@ -1052,13 +1269,13 @@ class LocalProfileService {
       // Create form data
       MultipartFile multipartFile;
       String fileName;
-      
+
       if (kIsWeb) {
         // في بيئة الويب، استخدم البيانات المرسلة مباشرة
-        fileName = file.path.isNotEmpty 
-            ? file.path 
+        fileName = file.path.isNotEmpty
+            ? file.path
             : 'document_${DateTime.now().millisecondsSinceEpoch}';
-        
+
         if (fileBytes != null) {
           // استخدام البيانات المرسلة مباشرة
           multipartFile = MultipartFile.fromBytes(
@@ -1077,7 +1294,7 @@ class LocalProfileService {
           filename: fileName,
         );
       }
-      
+
       final formData = FormData.fromMap({
         'file': multipartFile,
         'category': fieldName, // استخدام category بدلاً من document_type
@@ -1095,13 +1312,16 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('📄 ProfileService: Upload response status: ${response.statusCode}');
+      debugPrint(
+          '📄 ProfileService: Upload response status: ${response.statusCode}');
 
-      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300) {
         final data = response.data;
         debugPrint('📄 ProfileService: Document uploaded successfully');
         debugPrint('📄 ProfileService: Response data: $data');
-        
+
         // فحص البيانات قبل المعالجة
         if (data != null && data is Map<String, dynamic>) {
           try {
@@ -1113,11 +1333,14 @@ class LocalProfileService {
               return DocumentUploadModel.fromJson(data);
             }
           } catch (e) {
-            debugPrint('⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
-            debugPrint('⚠️ ProfileService: Response data structure: ${data.keys.toList()}');
-            
+            debugPrint(
+                '⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
+            debugPrint(
+                '⚠️ ProfileService: Response data structure: ${data.keys.toList()}');
+
             // بما أن الرفع نجح، نرجع نموذج بسيط يشير للنجاح
-            debugPrint('✅ ProfileService: Upload succeeded but could not parse response, treating as success');
+            debugPrint(
+                '✅ ProfileService: Upload succeeded but could not parse response, treating as success');
             // إنشاء نموذج بسيط للنجاح
             return DocumentUploadModel(
               id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -1130,12 +1353,14 @@ class LocalProfileService {
             );
           }
         } else {
-          debugPrint('⚠️ ProfileService: Response data is null or invalid format');
+          debugPrint(
+              '⚠️ ProfileService: Response data is null or invalid format');
           debugPrint('⚠️ ProfileService: Data type: ${data.runtimeType}');
           return null;
         }
       } else {
-        debugPrint('❌ ProfileService: Failed to upload document: ${response.statusCode}');
+        debugPrint(
+            '❌ ProfileService: Failed to upload document: ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -1145,7 +1370,8 @@ class LocalProfileService {
   }
 
   /// Update profile data
-  static Future<ProfileUpdateResponse> updateProfileData(ProfileUpdateRequest request) async {
+  static Future<ProfileUpdateResponse> updateProfileData(
+      ProfileUpdateRequest request) async {
     try {
       debugPrint('💾 ProfileService: Updating profile data');
       debugPrint('💾 Request data: ${request.toJson()}');
@@ -1172,18 +1398,20 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint('💾 ProfileService: Update response status: ${response.statusCode}');
+      debugPrint(
+          '💾 ProfileService: Update response status: ${response.statusCode}');
       debugPrint('💾 ProfileService: Update response data: ${response.data}');
 
       if (response.statusCode == 200) {
         debugPrint('💾 ProfileService: Update response data: ${response.data}');
-        
+
         // Check if response contains reviewRequestId (indicating review request was created)
-        if (response.data is Map<String, dynamic> && 
+        if (response.data is Map<String, dynamic> &&
             response.data.containsKey('reviewRequestId')) {
           final responseData = response.data as Map<String, dynamic>;
-          debugPrint('📋 ProfileService: Review request created with ID: ${responseData['reviewRequestId']}');
-          
+          debugPrint(
+              '📋 ProfileService: Review request created with ID: ${responseData['reviewRequestId']}');
+
           return ProfileUpdateResponse(
             success: true,
             message: responseData['message'] ?? 'تم إرسال طلب المراجعة بنجاح',
@@ -1205,18 +1433,20 @@ class LocalProfileService {
       }
     } catch (e) {
       debugPrint('❌ ProfileService: Error updating profile data: $e');
-      
+
       if (e is DioException) {
         if (e.response?.data != null) {
           final errorData = e.response!.data;
           // Handle error response - don't try to parse as ProfileUpdateResponse
           String errorMessage = 'Update failed';
           if (errorData is Map<String, dynamic>) {
-            errorMessage = errorData['message']?.toString() ?? errorData['error']?.toString() ?? 'Update failed';
+            errorMessage = errorData['message']?.toString() ??
+                errorData['error']?.toString() ??
+                'Update failed';
           } else if (errorData is String) {
             errorMessage = errorData;
           }
-          
+
           return ProfileUpdateResponse(
             success: false,
             message: errorMessage,
@@ -1254,12 +1484,12 @@ class LocalProfileService {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = prefs.getInt(_cacheTimestampKey);
       final hasCache = prefs.containsKey(_cacheKey);
-      
+
       if (timestamp != null) {
         final cacheTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
         final now = DateTime.now();
         final ageHours = now.difference(cacheTime).inHours;
-        
+
         return {
           'hasCache': hasCache,
           'cacheTime': cacheTime.toIso8601String(),
@@ -1267,7 +1497,7 @@ class LocalProfileService {
           'isValid': ageHours < _cacheValidityHours,
         };
       }
-      
+
       return {
         'hasCache': hasCache,
         'cacheTime': null,
@@ -1289,26 +1519,26 @@ class LocalProfileService {
   /// استخراج الحقول المطلوبة من قواعد البروفايل
   static List<String> _extractRequiredFields(List<ProfileRuleModel> rules) {
     final requiredFields = <String>[];
-    
+
     for (final rule in rules) {
       if (rule.requiresDocument && rule.fieldName.isNotEmpty) {
         requiredFields.add(rule.fieldName);
       }
     }
-    
+
     return requiredFields;
   }
 
   /// استخراج نصوص القواعد من قواعد البروفايل
   static List<String> _extractRulesText(List<ProfileRuleModel> rules) {
     final rulesText = <String>[];
-    
+
     for (final rule in rules) {
       if (rule.fieldDescription != null && rule.fieldDescription!.isNotEmpty) {
         rulesText.add(rule.fieldDescription!);
       }
     }
-    
+
     return rulesText;
   }
 
@@ -1352,7 +1582,8 @@ class LocalProfileService {
     }
 
     // المؤهل - 20%
-    if (profile.qualificationId != null && profile.qualificationId!.isNotEmpty) {
+    if (profile.qualificationId != null &&
+        profile.qualificationId!.isNotEmpty) {
       completionPercentage += 20.0;
     }
 

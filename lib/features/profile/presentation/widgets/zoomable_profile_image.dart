@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
+import '../../../../core/constants/api_constants.dart';
+import '../../../../shared/widgets/authenticated_image_widget.dart';
+
 /// Widget لعرض صورة الملف الشخصي مع إمكانية التكبير
-class ZoomableProfileImage extends StatelessWidget {
+class ZoomableProfileImage extends StatefulWidget {
   final String imageUrl;
   final String? heroTag;
   final Color? backgroundColor;
@@ -16,9 +19,14 @@ class ZoomableProfileImage extends StatelessWidget {
   });
 
   @override
+  State<ZoomableProfileImage> createState() => _ZoomableProfileImageState();
+}
+
+class _ZoomableProfileImageState extends State<ZoomableProfileImage> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor ?? Colors.black,
+      backgroundColor: widget.backgroundColor ?? Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -34,20 +42,20 @@ class ZoomableProfileImage extends StatelessWidget {
         ],
       ),
       body: PhotoView(
-        imageProvider: CachedNetworkImageProvider(imageUrl),
-        heroAttributes: heroTag != null 
-          ? PhotoViewHeroAttributes(tag: heroTag!)
-          : null,
+        imageProvider: CachedNetworkImageProvider(widget.imageUrl),
+        heroAttributes: widget.heroTag != null
+            ? PhotoViewHeroAttributes(tag: widget.heroTag!)
+            : null,
         minScale: PhotoViewComputedScale.contained,
         maxScale: PhotoViewComputedScale.covered * 3.0,
         backgroundDecoration: BoxDecoration(
-          color: backgroundColor ?? Colors.black,
+          color: widget.backgroundColor ?? Colors.black,
         ),
         loadingBuilder: (context, event) => Center(
           child: CircularProgressIndicator(
-            value: event == null 
-              ? null 
-              : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+            value: event == null
+                ? null
+                : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
             color: Colors.white,
           ),
         ),
@@ -76,7 +84,7 @@ class ZoomableProfileImage extends StatelessWidget {
   }
 
   /// تحميل الصورة إلى الجهاز
-  void _downloadImage(BuildContext context) {
+  static void _downloadImage(BuildContext context) {
     // يمكن إضافة منطق تحميل الصورة هنا
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -88,7 +96,7 @@ class ZoomableProfileImage extends StatelessWidget {
 
   /// عرض الصورة في نافذة منبثقة
   static void show(
-    BuildContext context, 
+    BuildContext context,
     String imageUrl, {
     String? heroTag,
     Color? backgroundColor,
@@ -115,7 +123,7 @@ class ZoomableProfileImage extends StatelessWidget {
 }
 
 /// Widget للصورة الشخصية القابلة للنقر والتكبير
-class TappableProfileAvatar extends StatelessWidget {
+class TappableProfileAvatar extends StatefulWidget {
   final String? imageUrl;
   final double size;
   final String? initials;
@@ -134,17 +142,24 @@ class TappableProfileAvatar extends StatelessWidget {
   });
 
   @override
+  State<TappableProfileAvatar> createState() => _TappableProfileAvatarState();
+}
+
+class _TappableProfileAvatarState extends State<TappableProfileAvatar> {
+  @override
   Widget build(BuildContext context) {
-    final heroTag = 'profile_avatar_${imageUrl ?? initials}';
-    
+    final heroTag = 'profile_avatar_${widget.imageUrl ?? widget.initials}';
+
     return GestureDetector(
       onTap: () {
-        if (onTap != null) {
-          onTap!();
-        } else if (enableZoom && imageUrl != null && imageUrl!.isNotEmpty) {
-          ZoomableProfileImage.show(
-            context, 
-            imageUrl!,
+        if (widget.onTap != null) {
+          widget.onTap!();
+        } else if (widget.enableZoom &&
+            widget.imageUrl != null &&
+            widget.imageUrl!.isNotEmpty) {
+          _ZoomableProfileImageState.show(
+            context,
+            widget.imageUrl!,
             heroTag: heroTag,
           );
         }
@@ -152,8 +167,8 @@ class TappableProfileAvatar extends StatelessWidget {
       child: Hero(
         tag: heroTag,
         child: Container(
-          width: size,
-          height: size,
+          width: widget.size,
+          height: widget.size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -173,17 +188,23 @@ class TappableProfileAvatar extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl!,
+    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
+      // Ensure the URL is complete
+      String fullImageUrl = widget.imageUrl!;
+      if (!fullImageUrl.startsWith('http')) {
+        fullImageUrl = '${ApiConstants.baseUrl}${widget.imageUrl}';
+      }
+
+      return AuthenticatedImageWidget(
+        imageUrl: fullImageUrl,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
+        placeholder: Container(
           color: Colors.grey[300],
           child: const Center(
             child: CircularProgressIndicator(),
           ),
         ),
-        errorWidget: (context, url, error) => _buildInitialsWidget(),
+        errorWidget: _buildInitialsWidget(),
       );
     } else {
       return _buildInitialsWidget();
@@ -197,17 +218,17 @@ class TappableProfileAvatar extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            backgroundColor ?? Colors.blue,
-            (backgroundColor ?? Colors.blue).withValues(alpha: 0.8),
+            widget.backgroundColor ?? Colors.blue,
+            (widget.backgroundColor ?? Colors.blue).withValues(alpha: 0.8),
           ],
         ),
       ),
       child: Center(
         child: Text(
-          initials ?? '؟',
+          widget.initials ?? '؟',
           style: TextStyle(
             color: Colors.white,
-            fontSize: size * 0.4,
+            fontSize: widget.size * 0.4,
             fontWeight: FontWeight.bold,
           ),
         ),

@@ -154,17 +154,10 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
             rule.isActive)
         .toList();
 
-    debugPrint(
-        '🔍 [PROFILE_RULES] البحث عن قواعد للحقل: $fieldName والحالة: $status');
-    debugPrint(
-        '📋 [PROFILE_RULES] إجمالي القواعد المتاحة: ${state.rules.length}');
-    debugPrint('📋 [PROFILE_RULES] القواعد المطابقة: ${matchingRules.length}');
-
-    if (matchingRules.isNotEmpty) {
-      for (var rule in matchingRules) {
-        debugPrint(
-            '   - قاعدة: ${rule.id}, يسمح بالتعديل: ${rule.allowEdit}, يتطلب وثيقة: ${rule.requiresDocument}');
-      }
+    // تقليل التسجيلات - طباعة مرة واحدة فقط عند الحاجة
+    if (kDebugMode && matchingRules.isNotEmpty) {
+      debugPrint(
+          '🔍 [PROFILE_RULES] البحث عن قواعد للحقل: $fieldName والحالة: $status - ${matchingRules.length} قاعدة');
     }
 
     return matchingRules;
@@ -174,32 +167,17 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   bool canEditField(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
 
-    debugPrint(
-        '🔍 [PROFILE_RULES] فحص إمكانية تعديل الحقل: $fieldName للحالة: $currentStatus');
-    debugPrint('📋 [PROFILE_RULES] عدد القواعد المطبقة: ${rules.length}');
-
     if (rules.isEmpty) {
-      debugPrint(
-          '✅ [PROFILE_RULES] لا توجد قواعد للحقل $fieldName - مسموح بالتعديل');
       return true; // لا توجد قواعد = مسموح بالتعديل
     }
 
-    final canEdit = rules.every((rule) => rule.allowEdit);
-    debugPrint(
-        '📋 [PROFILE_RULES] نتيجة فحص التعديل للحقل $fieldName: $canEdit');
-
-    return canEdit;
+    return rules.every((rule) => rule.allowEdit);
   }
 
   /// التحقق من حاجة الحقل لوثيقة
   bool fieldRequiresDocument(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
-    final requiresDoc = rules.any((rule) => rule.requiresDocument);
-
-    debugPrint(
-        '📋 [PROFILE_RULES] فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
-
-    return requiresDoc;
+    return rules.any((rule) => rule.requiresDocument);
   }
 
   /// التحقق من حاجة التعديل لموافقة

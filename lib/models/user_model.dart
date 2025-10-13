@@ -103,8 +103,8 @@ typedef User = UserModel;
 @freezed
 class UserProfileModel with _$UserProfileModel {
   const factory UserProfileModel({
-    required String id,
-    required String userId,
+    @Default('') String id,
+    @Default('') String userId,
     String? title,
     String? specialization,
     String? workPlace,
@@ -134,7 +134,7 @@ class UserProfileModel with _$UserProfileModel {
     String? languagePreference,
     bool? marketingConsent,
     bool? dataProcessingConsent,
-    required DateTime createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) = _UserProfileModel;
 

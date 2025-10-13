@@ -1,183 +1,167 @@
 import '../services/server_settings_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default Base URLs (fallback values)
+  // Default URLs with port explicitly included
   static const String defaultBaseUrl = 'http://idec-ye.com:3000';
-  static const String devUrl = 'http://10.0.2.2:3000'; // For Android emulator
-  static const String prodUrl = 'http://192.168.0.165:3000'; // Production URL
+  static const String devUrl = 'http://idec-ye.com:3000';
+  static const String prodUrl = 'http://idec-ye.com:3000';
+  
+  // Current base URL - will be updated dynamically
+  static String _baseUrl = defaultBaseUrl;
+  
+  /// Get current base URL with validation
+  static String get baseUrl {
+    // Validate current URL
+    if (_baseUrl.isEmpty || !_baseUrl.contains(':')) {
+      debugPrint('⚠️ [API_CONSTANTS] Invalid baseUrl detected: $_baseUrl, using fallback');
+      _baseUrl = _getFallbackUrl();
+    }
+    
+    // Ensure port is included
+    if (!_baseUrl.contains(':3000')) {
+      debugPrint('⚠️ [API_CONSTANTS] Port missing in baseUrl: $_baseUrl, fixing...');
+      _baseUrl = _fixUrlWithPort(_baseUrl);
+    }
+    
+    debugPrint('🔗 [API_CONSTANTS] Current baseUrl: $_baseUrl');
+    return _baseUrl;
+  }
+  
+  /// Update base URL with validation
+  static void updateBaseUrl(String newUrl) {
+    debugPrint('🔄 [API_CONSTANTS] Updating baseUrl from: $_baseUrl to: $newUrl');
+    
+    if (newUrl.isEmpty) {
+      debugPrint('❌ [API_CONSTANTS] Empty URL provided, using fallback');
+      _baseUrl = _getFallbackUrl();
+      return;
+    }
+    
+    // Validate and fix the URL
+    final validatedUrl = _validateAndFixUrl(newUrl);
+    _baseUrl = validatedUrl;
+    
+    debugPrint('✅ [API_CONSTANTS] BaseUrl updated to: $_baseUrl');
+  }
+  
+  /// Validate and fix URL format
+  static String _validateAndFixUrl(String url) {
+    try {
+      // Remove any trailing slashes
+      String cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
+      
+      // Ensure http:// prefix
+      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+        cleanUrl = 'http://$cleanUrl';
+      }
+      
+      // Parse URL to validate
+      final uri = Uri.parse(cleanUrl);
+      final host = uri.host;
+      
+      if (host.isEmpty) {
+        debugPrint('❌ [API_CONSTANTS] Invalid host in URL: $url');
+        return _getFallbackUrl();
+      }
+      
+      // Ensure port is included
+      if (!cleanUrl.contains(':3000')) {
+        // Remove any existing port and add 3000
+        final hostWithoutPort = host.replaceAll(RegExp(r':\d+$'), '');
+        cleanUrl = 'http://$hostWithoutPort:3000';
+      }
+      
+      debugPrint('🔧 [API_CONSTANTS] URL validated and fixed: $url -> $cleanUrl');
+      return cleanUrl;
+      
+    } catch (e) {
+      debugPrint('❌ [API_CONSTANTS] Error validating URL $url: $e');
+      return _getFallbackUrl();
+    }
+  }
+  
+  /// Fix URL by ensuring port 3000 is included
+  static String _fixUrlWithPort(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
+      final fixedUrl = 'http://$host:3000';
+      debugPrint('🔧 [API_CONSTANTS] Fixed URL with port: $url -> $fixedUrl');
+      return fixedUrl;
+    } catch (e) {
+      debugPrint('❌ [API_CONSTANTS] Error fixing URL: $e');
+      return _getFallbackUrl();
+    }
+  }
+  
+  /// Get fallback URL based on build mode
+  static String _getFallbackUrl() {
+    final fallback = kDebugMode ? devUrl : prodUrl;
+    debugPrint('🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)');
+    return fallback;
+  }
+  
+  /// Reset to default URL
+  static void resetToDefault() {
+    debugPrint('🔄 [API_CONSTANTS] Resetting to default URL');
+    _baseUrl = defaultBaseUrl;
+  }
+  
+  /// Validate current configuration
+  static bool validateCurrentConfig() {
+    final isValid = _baseUrl.isNotEmpty && 
+                   _baseUrl.contains('http') && 
+                   _baseUrl.contains(':3000');
+    
+    debugPrint('🔍 [API_CONSTANTS] Config validation: $isValid (URL: $_baseUrl)');
+    
+    if (!isValid) {
+      debugPrint('❌ [API_CONSTANTS] Invalid config detected, fixing...');
+      _baseUrl = _getFallbackUrl();
+      return false;
+    }
+    
+    return true;
+  }
 
-  // Dynamic base URL - will be updated from server settings
-  static String baseUrl = defaultBaseUrl;
-
-  // API Version
-  static const String apiVersion = '/api/v1';
-
-  // Server endpoints
-  static const String serverSettings = '$apiVersion/server/settings';
-  static const String health = '$apiVersion/health';
-
-  // Authentication endpoints
-  static const String register = '$apiVersion/auth/register';
-  static const String login = '$apiVersion/auth/login';
-  static const String refreshToken = '$apiVersion/auth/refresh';
-  static const String logout = '$apiVersion/auth/logout';
-
-  // OTP endpoints
-  static const String sendOtp = '$apiVersion/auth/request-otp';
-  static const String verifyOtp = '$apiVersion/auth/verify-otp';
-  static const String resendOtp = '$apiVersion/auth/resend-otp';
-  static const String otpChannels = '$apiVersion/auth/otp-channels';
+  // API Endpoints
+  static const String authEndpoint = '/api/v1/auth';
+  static const String loginEndpoint = '$authEndpoint/login';
+  static const String registerEndpoint = '$authEndpoint/register';
+  static const String refreshTokenEndpoint = '$authEndpoint/refresh';
+  static const String logoutEndpoint = '$authEndpoint/logout';
+  static const String verifyPhoneEndpoint = '$authEndpoint/verify-phone';
+  static const String resendOtpEndpoint = '$authEndpoint/resend-otp';
+  static const String forgotPasswordEndpoint = '$authEndpoint/forgot-password';
+  static const String resetPasswordEndpoint = '$authEndpoint/reset-password';
+  static const String changePasswordEndpoint = '$authEndpoint/change-password';
 
   // User endpoints
-  static const String userProfile = '$apiVersion/users/profile';
-  static const String updateProfile = '$apiVersion/users/profile';
-  static const String userStatus = '$apiVersion/users/status';
+  static const String userEndpoint = '/api/v1/user';
+  static const String profileEndpoint = '$userEndpoint/profile';
+  static const String updateProfileEndpoint = '$userEndpoint/update';
 
-  // Profile endpoints
-  static const String profileMe = '$apiVersion/profiles/me';
-  static const String updateProfileMe = '$apiVersion/profiles/me';
-  static const String profileStatus = '$apiVersion/profiles/me/status';
-
-  // File management endpoints
-  static const String uploadFile = '$apiVersion/files/upload';
-  static const String uploadMultipleFiles = '$apiVersion/files/upload-multiple';
-  static const String getFiles = '$apiVersion/files';
-  static const String searchFiles = '$apiVersion/files/search';
-  static String getFile(String id) => '$apiVersion/files/$id';
-  static String deleteFile(String id) => '$apiVersion/files/$id';
-  static String downloadFile(String id) => '$apiVersion/files/$id/download';
-  static String getFileThumbnail(String id) =>
-      '$apiVersion/files/$id/thumbnail';
-  static String getFilePreview(String id) => '$apiVersion/files/$id/preview';
-
-  // Verification endpoints
-  static const String verificationRules = '$apiVersion/verification/rules';
-  static const String verificationRequests =
-      '$apiVersion/verification/requests';
-  static const String uploadVerificationDocument =
-      '$apiVersion/verification/upload';
-  static String getVerificationRequest(String id) =>
-      '$apiVersion/verification/requests/$id';
-  static String approveVerificationRequest(String id) =>
-      '$apiVersion/verification/requests/$id/approve';
-  static String rejectVerificationRequest(String id) =>
-      '$apiVersion/verification/requests/$id/reject';
-
-  // Notification endpoints
-  static const String getNotifications = '$apiVersion/notifications/logs';
-  static const String sendNotification = '$apiVersion/notifications/send';
-  static const String getNotificationTemplates =
-      '$apiVersion/notifications/templates';
-  static const String getNotificationStats = '$apiVersion/notifications/stats';
-  static const String getNotificationSettings =
-      '$apiVersion/notifications/settings';
-  static const String updateNotificationSettings =
-      '$apiVersion/notifications/settings';
-  static String markNotificationAsRead(String id) =>
-      '$apiVersion/notifications/$id/read';
-  static const String markAllNotificationsAsRead =
-      '$apiVersion/notifications/mark-all-read';
-  static String deleteNotification(String id) =>
-      '$apiVersion/notifications/$id';
-  static String getNotificationById(String id) =>
-      '$apiVersion/notifications/$id';
-  static const String bulkMarkNotificationsAsRead =
-      '$apiVersion/notifications/bulk-mark-read';
-  static const String bulkDeleteNotifications =
-      '$apiVersion/notifications/bulk-delete';
-  static const String searchNotifications = '$apiVersion/notifications/search';
-
-  // Request timeouts
-  static const int connectTimeout = 30000; // 30 seconds
-  static const int receiveTimeout = 30000; // 30 seconds
-  static const int sendTimeout = 30000; // 30 seconds
-
-  // File upload limits
-  static const int maxFileSize = 10 * 1024 * 1024; // 10 MB
-  static const int maxImageSize = 5 * 1024 * 1024; // 5 MB
-  static const List<String> allowedImageTypes = ['jpg', 'jpeg', 'png'];
-  static const List<String> allowedDocumentTypes = ['pdf', 'doc', 'docx'];
-
-  // Pagination
-  static const int defaultPageSize = 20;
-  static const int maxPageSize = 100;
-
-  // Cache keys
-  static const String userCacheKey = 'user_data';
-  static const String tokenCacheKey = 'auth_token';
-  static const String refreshTokenCacheKey = 'refresh_token';
-  static const String settingsCacheKey = 'app_settings';
-
-  // Error codes
-  static const String errorUnauthorized = 'UNAUTHORIZED';
-  static const String errorForbidden = 'FORBIDDEN';
-  static const String errorNotFound = 'NOT_FOUND';
-  static const String errorValidation = 'VALIDATION_ERROR';
-  static const String errorServer = 'SERVER_ERROR';
-  static const String errorNetwork = 'NETWORK_ERROR';
-  static const String errorTimeout = 'TIMEOUT_ERROR';
-
-  // Success codes
-  static const String successOk = 'OK';
-  static const String successCreated = 'CREATED';
-  static const String successUpdated = 'UPDATED';
-  static const String successDeleted = 'DELETED';
-
-  // Headers
-  static const String contentTypeJson = 'application/json';
-  static const String contentTypeFormData = 'multipart/form-data';
-  static const String authorizationHeader = 'Authorization';
-  static const String bearerPrefix = 'Bearer ';
-
-  // Development flags
-  static const bool isDevelopment = true;
-  static const bool enableLogging = true;
-  static const bool enableMockData = false;
-
-  // Update base URL from server settings
-  static Future<void> updateBaseUrlFromSettings(
-      ServerSettingsService serverSettingsService) async {
-    try {
-      final settings = await serverSettingsService.getCurrentSettings();
-      baseUrl = settings.baseUrl;
-      print('🔄 ApiConstants: Base URL updated to ${baseUrl}');
-    } catch (e) {
-      // Fallback to default if there's an error
-      baseUrl = defaultBaseUrl;
-      print(
-          '❌ ApiConstants: Failed to update base URL, using default: ${baseUrl}');
-    }
+  // Other endpoints
+  static const String uploadsEndpoint = '/api/v1/uploads';
+  static const String notificationsEndpoint = '/api/v1/notifications';
+  
+  // Full URLs with validation
+  static String get loginUrl {
+    final url = '$baseUrl$loginEndpoint';
+    debugPrint('🔗 [API_CONSTANTS] Login URL: $url');
+    return url;
   }
-
-  // Get full URL
-  static String getFullUrl(String endpoint) {
-    return '$baseUrl$endpoint';
+  
+  static String get registerUrl {
+    final url = '$baseUrl$registerEndpoint';
+    debugPrint('🔗 [API_CONSTANTS] Register URL: $url');
+    return url;
   }
-
-  // Get headers with auth token
-  static Map<String, String> getAuthHeaders(String? token) {
-    final headers = <String, String>{
-      'Content-Type': contentTypeJson,
-      'Accept': contentTypeJson,
-    };
-
-    if (token != null && token.isNotEmpty) {
-      headers[authorizationHeader] = '$bearerPrefix$token';
-    }
-
-    return headers;
-  }
-
-  // Get multipart headers with auth token
-  static Map<String, String> getMultipartHeaders(String? token) {
-    final headers = <String, String>{
-      'Accept': contentTypeJson,
-    };
-
-    if (token != null && token.isNotEmpty) {
-      headers[authorizationHeader] = '$bearerPrefix$token';
-    }
-
-    return headers;
+  
+  static String get refreshTokenUrl {
+    final url = '$baseUrl$refreshTokenEndpoint';
+    debugPrint('🔗 [API_CONSTANTS] Refresh token URL: $url');
+    return url;
   }
 }

@@ -69,10 +69,60 @@ void main() async {
   await StorageService.instance.init();
   debugPrint('✅ StorageService initialized successfully');
   
-  // Update ApiConstants with saved server settings
+  // Initialize and validate server settings
+  // Initialize server settings with enhanced production debugging
+  debugPrint('🚀 [MAIN] Starting server settings initialization...');
+  debugPrint('🚀 [MAIN] Build mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
+  
   final serverSettingsService = ServerSettingsService(StorageService.instance);
-  await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
-  debugPrint('✅ ApiConstants updated with server settings');
+  
+  // Add production-specific debugging
+  if (!kDebugMode) {
+    debugPrint('🏭 [PRODUCTION] Production mode detected - enabling detailed baseURL tracking');
+    debugPrint('🏭 [PRODUCTION] Initial ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
+  }
+  
+  // Validate and fix settings
+  debugPrint('🔧 [MAIN] Validating and fixing server settings...');
+  await serverSettingsService.validateAndFixSettings();
+  
+  // Get base URL
+  debugPrint('🔗 [MAIN] Getting base URL from server settings...');
+  final baseUrl = await serverSettingsService.getBaseUrl();
+  debugPrint('🔗 [MAIN] Retrieved base URL: $baseUrl');
+  
+  // Update ApiConstants
+  debugPrint('🔄 [MAIN] Updating ApiConstants with base URL...');
+  ApiConstants.updateBaseUrl(baseUrl);
+  
+  // Production-specific validation
+  if (!kDebugMode) {
+    debugPrint('🏭 [PRODUCTION] Post-update ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
+    debugPrint('🏭 [PRODUCTION] Checking if port 3000 is included: ${ApiConstants.baseUrl.contains(":3000")}');
+    if (!ApiConstants.baseUrl.contains(":3000")) {
+      debugPrint('❌ [PRODUCTION] CRITICAL: Port 3000 missing from baseURL!');
+      debugPrint('❌ [PRODUCTION] This will cause connection failures!');
+    } else {
+      debugPrint('✅ [PRODUCTION] Port 3000 correctly included in baseURL');
+    }
+  }
+  
+  // Validate configuration
+  final isValidConfig = ApiConstants.validateCurrentConfig();
+  debugPrint('✅ [MAIN] Configuration validation result: $isValidConfig');
+  
+  // Refresh DioService
+  debugPrint('🔄 [MAIN] Refreshing DioService with new settings...');
+  DioService.instance.refreshAfterServerChange();
+  
+  // Final production check
+  if (!kDebugMode) {
+    debugPrint('🏭 [PRODUCTION] Final DioService baseUrl check...');
+    debugPrint('🏭 [PRODUCTION] DioService will use: ${ApiConstants.baseUrl}');
+    debugPrint('🏭 [PRODUCTION] Expected format: http://idec-ye.com:3000');
+    debugPrint('🏭 [PRODUCTION] Match check: ${ApiConstants.baseUrl == "http://idec-ye.com:3000"}');
+  }
+  debugPrint('🔍 ApiConstants validation result: $isValidConfig');
   
   // Update DioService with new base URL
   DioService.instance.refreshAfterServerChange();

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../core/constants/api_constants.dart';
@@ -28,10 +29,25 @@ class DioService {
     _dio.options.receiveTimeout = const Duration(seconds: 30);
     _dio.options.sendTimeout = const Duration(seconds: 30);
 
+    // Production-specific baseURL logging
+    if (!kDebugMode) {
+      debugPrint('🏭 [DIO_PRODUCTION] Setting up interceptors with baseUrl: ${_dio.options.baseUrl}');
+      debugPrint('🏭 [DIO_PRODUCTION] Port check: ${_dio.options.baseUrl.contains(":3000")}');
+    }
+
     // Request interceptor
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // Production-specific request logging
+          if (!kDebugMode) {
+            debugPrint('🏭 [DIO_PRODUCTION] Making request to: ${options.uri}');
+            debugPrint('🏭 [DIO_PRODUCTION] Full URL: ${options.uri.toString()}');
+            debugPrint('🏭 [DIO_PRODUCTION] Host: ${options.uri.host}');
+            debugPrint('🏭 [DIO_PRODUCTION] Port: ${options.uri.port}');
+            debugPrint('🏭 [DIO_PRODUCTION] Path: ${options.path}');
+          }
+          
           // Add authorization header
           final token = await _storage.read(key: 'access_token');
           debugPrint('🔑 [DIO_DEBUG] Request to: ${options.path}');
@@ -222,9 +238,43 @@ class DioService {
 
   /// Refresh DioService after server settings change
   void refreshAfterServerChange() {
-    // Update base URL
-    _dio.options.baseUrl = ApiConstants.baseUrl;
-    debugPrint('🔄 DioService: Base URL updated to ${ApiConstants.baseUrl}');
+    try {
+      final oldBaseUrl = _dio.options.baseUrl;
+      final newBaseUrl = ApiConstants.baseUrl;
+      
+      debugPrint('🔄 [DIO_SERVICE] Refreshing after server change');
+      debugPrint('🔄 [DIO_SERVICE] Old base URL: $oldBaseUrl');
+      debugPrint('🔄 [DIO_SERVICE] New base URL: $newBaseUrl');
+      
+      // Validate new URL
+      if (newBaseUrl.isEmpty || !newBaseUrl.contains('http')) {
+        debugPrint('❌ [DIO_SERVICE] Invalid new base URL: $newBaseUrl');
+        return;
+      }
+      
+      // Ensure port is included
+      if (!newBaseUrl.contains(':3000')) {
+        debugPrint('⚠️ [DIO_SERVICE] Port missing in new URL: $newBaseUrl');
+      }
+      
+      // Update base URL
+      _dio.options.baseUrl = newBaseUrl;
+      
+      debugPrint('✅ [DIO_SERVICE] Base URL updated successfully');
+      debugPrint('🔗 [DIO_SERVICE] Current Dio base URL: ${_dio.options.baseUrl}');
+      
+      // Validate the update
+      if (_dio.options.baseUrl == newBaseUrl) {
+        debugPrint('✅ [DIO_SERVICE] Base URL validation passed');
+      } else {
+        debugPrint('❌ [DIO_SERVICE] Base URL validation failed');
+        debugPrint('❌ [DIO_SERVICE] Expected: $newBaseUrl');
+        debugPrint('❌ [DIO_SERVICE] Actual: ${_dio.options.baseUrl}');
+      }
+      
+    } catch (e) {
+      debugPrint('❌ [DIO_SERVICE] Error refreshing after server change: $e');
+    }
   }
 
   Future<String?> getRefreshToken() async {

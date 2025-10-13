@@ -41,6 +41,28 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     super.initState();
     print('OtpVerificationScreen initialized with phone: ${widget.phone}');
     _startTimer();
+    
+    // Request OTP automatically when screen loads (for registration flow)
+    if (!widget.isLogin) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _requestInitialOtp();
+      });
+    }
+  }
+
+  Future<void> _requestInitialOtp() async {
+    try {
+      print('Requesting initial OTP for registration: ${widget.phone}');
+      final success = await ref.read(authProvider.notifier).resendOtp(widget.phone);
+      
+      if (success) {
+        print('Initial OTP sent successfully');
+      } else {
+        print('Failed to send initial OTP');
+      }
+    } catch (e) {
+      print('Error sending initial OTP: $e');
+    }
   }
 
   @override

@@ -211,7 +211,8 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
       });
       
       // تحديث ApiConstants
-      await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
+      final baseUrl = await serverSettingsService.getBaseUrl();
+      ApiConstants.updateBaseUrl(baseUrl);
     } catch (e) {
       print('خطأ في تحميل إعدادات الخادم: $e');
     }
@@ -244,7 +245,8 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
       );
 
       await serverSettingsService.saveSettings(newSettings);
-      await ApiConstants.updateBaseUrlFromSettings(serverSettingsService);
+      final baseUrl = await serverSettingsService.getBaseUrl();
+      ApiConstants.updateBaseUrl(baseUrl);
 
       // إعادة تهيئة جميع الخدمات مع الإعدادات الجديدة
       DioService.instance.refreshAfterServerChange();

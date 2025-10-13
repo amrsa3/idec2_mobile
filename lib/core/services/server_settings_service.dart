@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../../services/storage_service.dart';
 
 // Provider for StorageService
@@ -15,12 +16,26 @@ class ServerSettings {
     required this.port,
   });
 
-  String get baseUrl => 'http://$host:$port';
+  String get baseUrl {
+    // Ensure port is always included
+    final cleanHost = host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
+    final url = 'http://$cleanHost:$port';
+    debugPrint('🔗 [SERVER_SETTINGS] Generated baseUrl: $url (host: $cleanHost, port: $port)');
+    return url;
+  }
 
   factory ServerSettings.fromJson(Map<String, dynamic> json) {
+    final host = json['host'] ?? 'idec-ye.com';
+    final port = json['port'] ?? 3000;
+    
+    // Clean host to remove any existing port
+    final cleanHost = host.toString().replaceAll(RegExp(r':\d+$'), '');
+    
+    debugPrint('🔧 [SERVER_SETTINGS] fromJson - host: $host -> cleanHost: $cleanHost, port: $port');
+    
     return ServerSettings(
-      host: json['host'] ?? 'idec-ye.com',
-      port: json['port'] ?? 3000,
+      host: cleanHost,
+      port: port,
     );
   }
 
@@ -35,9 +50,15 @@ class ServerSettings {
     String? host,
     int? port,
   }) {
+    final newHost = host ?? this.host;
+    final newPort = port ?? this.port;
+    
+    // Clean host to remove any existing port
+    final cleanHost = newHost.replaceAll(RegExp(r':\d+$'), '');
+    
     return ServerSettings(
-      host: host ?? this.host,
-      port: port ?? this.port,
+      host: cleanHost,
+      port: newPort,
     );
   }
 
@@ -56,6 +77,7 @@ class ServerSettings {
 class ServerSettingsService {
   static const String _serverHostKey = 'server_host';
   static const String _serverPortKey = 'server_port';
+  static const String _isInitializedKey = 'server_settings_initialized';
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
@@ -72,48 +94,131 @@ class ServerSettingsService {
 
   ServerSettingsService(this._storageService);
 
-  /// Get current server settings
+  /// Get current server settings with enhanced validation
   Future<ServerSettings> getCurrentSettings() async {
-    final host = await _storageService.getString(_serverHostKey);
-    final port = await _storageService.getInt(_serverPortKey);
-    
-    return ServerSettings(
-      host: host ?? 'idec-ye.com',
-      port: port ?? 3000,
-    );
+    try {
+      final host = await _storageService.getString(_serverHostKey);
+      final port = await _storageService.getInt(_serverPortKey);
+      final isInitialized = await _storageService.getBool(_isInitializedKey) ?? false;
+      
+      debugPrint('🔍 [SERVER_SETTINGS] getCurrentSettings - host: $host, port: $port, initialized: $isInitialized');
+      
+      // If not initialized or missing data, use defaults and initialize
+      if (!isInitialized || host == null || port == null) {
+        debugPrint('⚠️ [SERVER_SETTINGS] Settings not properly initialized, using defaults');
+        await _initializeWithDefaults();
+        return mainServer;
+      }
+      
+      // Clean host to remove any existing port
+      final cleanHost = host.replaceAll(RegExp(r':\d+$'), '');
+      final validPort = port > 0 ? port : 3000;
+      
+      final settings = ServerSettings(
+        host: cleanHost,
+        port: validPort,
+      );
+      
+      debugPrint('✅ [SERVER_SETTINGS] Returning settings: ${settings.baseUrl}');
+      return settings;
+    } catch (e) {
+      debugPrint('❌ [SERVER_SETTINGS] Error getting settings: $e');
+      await _initializeWithDefaults();
+      return mainServer;
+    }
   }
 
-  /// Save server settings
+  /// Initialize with default settings
+  Future<void> _initializeWithDefaults() async {
+    debugPrint('🔧 [SERVER_SETTINGS] Initializing with defaults');
+    await saveSettings(mainServer);
+    await _storageService.setBool(_isInitializedKey, true);
+  }
+
+  /// Save server settings with validation
   Future<void> saveSettings(ServerSettings settings) async {
-    await _storageService.setString(_serverHostKey, settings.host);
-    await _storageService.setInt(_serverPortKey, settings.port);
+    try {
+      // Clean host to remove any existing port
+      final cleanHost = settings.host.replaceAll(RegExp(r':\d+$'), '');
+      final validPort = settings.port > 0 ? settings.port : 3000;
+      
+      debugPrint('💾 [SERVER_SETTINGS] Saving settings - host: $cleanHost, port: $validPort');
+      
+      await _storageService.setString(_serverHostKey, cleanHost);
+      await _storageService.setInt(_serverPortKey, validPort);
+      await _storageService.setBool(_isInitializedKey, true);
+      
+      debugPrint('✅ [SERVER_SETTINGS] Settings saved successfully');
+    } catch (e) {
+      debugPrint('❌ [SERVER_SETTINGS] Error saving settings: $e');
+      rethrow;
+    }
   }
 
   /// Set main server configuration
   Future<void> setMainServer() async {
+    debugPrint('🌐 [SERVER_SETTINGS] Setting main server');
     await saveSettings(mainServer);
   }
 
   /// Set local server configuration
   Future<void> setLocalServer() async {
+    debugPrint('🏠 [SERVER_SETTINGS] Setting local server');
     await saveSettings(localServer);
   }
 
   /// Reset to default (main server)
   Future<void> resetToDefault() async {
+    debugPrint('🔄 [SERVER_SETTINGS] Resetting to default');
     await setMainServer();
   }
 
-  /// Check if settings exist
+  /// Check if settings exist and are properly initialized
   Future<bool> hasExistingSettings() async {
-    return _storageService.containsKey(_serverHostKey) &&
-           _storageService.containsKey(_serverPortKey);
+    final hasHost = await _storageService.containsKey(_serverHostKey);
+    final hasPort = await _storageService.containsKey(_serverPortKey);
+    final isInitialized = await _storageService.getBool(_isInitializedKey) ?? false;
+    
+    final exists = hasHost && hasPort && isInitialized;
+    debugPrint('🔍 [SERVER_SETTINGS] hasExistingSettings: $exists (host: $hasHost, port: $hasPort, init: $isInitialized)');
+    
+    return exists;
   }
 
   /// Get base URL for current settings
   Future<String> getBaseUrl() async {
     final settings = await getCurrentSettings();
-    return settings.baseUrl;
+    final url = settings.baseUrl;
+    debugPrint('🔗 [SERVER_SETTINGS] getBaseUrl: $url');
+    return url;
+  }
+
+  /// Validate and fix existing settings
+  Future<void> validateAndFixSettings() async {
+    try {
+      debugPrint('🔧 [SERVER_SETTINGS] Validating and fixing settings');
+      
+      final hasSettings = await hasExistingSettings();
+      if (!hasSettings) {
+        debugPrint('⚠️ [SERVER_SETTINGS] No valid settings found, initializing defaults');
+        await _initializeWithDefaults();
+        return;
+      }
+      
+      final settings = await getCurrentSettings();
+      
+      // Validate the generated URL
+      final url = settings.baseUrl;
+      if (!url.contains(':3000')) {
+        debugPrint('❌ [SERVER_SETTINGS] Invalid URL detected: $url, fixing...');
+        await _initializeWithDefaults();
+      } else {
+        debugPrint('✅ [SERVER_SETTINGS] Settings are valid: $url');
+      }
+    } catch (e) {
+      debugPrint('❌ [SERVER_SETTINGS] Error during validation: $e');
+      await _initializeWithDefaults();
+    }
   }
 }
 

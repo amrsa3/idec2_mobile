@@ -154,17 +154,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
               
               if (refreshResult.success && refreshResult.user != null) {
                 // Token refreshed successfully
-                state = state.copyWith(
-                  user: refreshResult.user,
-                  isEmailVerified: refreshResult.user!.isEmailVerified,
-                  phoneVerified: refreshResult.user!.phoneVerified,
-                );
-                
-                // Update saved user data
-                await _saveUserData(refreshResult.user!);
-                
-                print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refreshed successfully');
-                return;
+                try {
+                  state = state.copyWith(
+                    user: refreshResult.user,
+                    isEmailVerified: refreshResult.user?.isEmailVerified ?? false,
+                    phoneVerified: refreshResult.user?.phoneVerified ?? false,
+                  );
+                  
+                  // Update saved user data
+                  await _saveUserData(refreshResult.user!);
+                  
+                  print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refreshed successfully');
+                  return;
+                } catch (saveError) {
+                  print('🔍 [AUTH_DEBUG] _checkAuthStatus - error saving refreshed user data: $saveError');
+                  // Continue with offline data if save fails
+                }
               } else {
                 print('🔍 [AUTH_DEBUG] _checkAuthStatus - token refresh failed, continuing with offline data');
               }
@@ -213,17 +218,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final token = (result.accessToken?.isNotEmpty == true) ? result.accessToken! : result.token!;
         
         // Only save user data, token is already saved by AuthService in DioService
-        await _saveUserData(result.user!);
-        state = state.copyWith(
-          user: result.user,
-          isAuthenticated: true,
-          isLoading: false,
-          isEmailVerified: result.user!.isEmailVerified,
-          phoneVerified: result.user!.phoneVerified,
-        );
-        
-        debugPrint('AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
-        return true;
+        try {
+          await _saveUserData(result.user!);
+          state = state.copyWith(
+            user: result.user,
+            isAuthenticated: true,
+            isLoading: false,
+            isEmailVerified: result.user?.isEmailVerified ?? false,
+            phoneVerified: result.user?.phoneVerified ?? false,
+          );
+          
+          debugPrint('AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
+          return true;
+        } catch (saveError) {
+          debugPrint('AuthProvider: Error saving user data - $saveError');
+          state = state.copyWith(
+            isLoading: false,
+            error: 'خطأ في حفظ بيانات المستخدم',
+          );
+          return false;
+        }
       } else {
         // Check if the error is related to unverified phone number
         final errorMessage = result.message ?? '';
@@ -386,15 +400,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
         
         // Only save user data, token is already saved by AuthService in DioService
-        await _saveUserData(result.user!);
-        state = state.copyWith(
-          user: result.user,
-          isAuthenticated: true,
-          isLoading: false,
-          phoneVerified: true,
-          isRegistering: false, // Reset registration state after successful verification
-        );
-        return true;
+        try {
+          await _saveUserData(result.user!);
+          state = state.copyWith(
+            user: result.user,
+            isAuthenticated: true,
+            isLoading: false,
+            phoneVerified: true,
+            isRegistering: false, // Reset registration state after successful verification
+          );
+          return true;
+        } catch (saveError) {
+          debugPrint('AuthProvider: Error saving user data in verifyOtp - $saveError');
+          state = state.copyWith(
+            isLoading: false,
+            error: 'خطأ في حفظ بيانات المستخدم',
+          );
+          return false;
+        }
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -543,9 +566,45 @@ class AuthNotifier extends StateNotifier<AuthState> {
   // Helper methods
 
   Future<void> _saveUserData(UserModel user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.userKey, jsonEncode(user.toJson()));
-    print('🔍 [AUTH_DEBUG] _saveUserData - user saved: ${user.id}');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Safe JSON conversion with error handling
+      Map<String, dynamic> userJson;
+      try {
+        userJson = user.toJson();
+        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - user.toJson() successful');
+      } catch (toJsonError) {
+        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - toJson() failed: $toJsonError');
+        // Create safe minimal representation
+        userJson = {
+          'id': user.id,
+          'phone': user.phone,
+          'email': user.email,
+          'firstName': user.firstName,
+          'lastName': user.lastName,
+          'fullNameAr': user.fullNameAr,
+          'phoneVerified': user.phoneVerified,
+          'roles': user.roles,
+          'isVerified': user.isVerified,
+          'isActive': user.isActive,
+          'isEmailVerified': user.isEmailVerified,
+          'createdAt': user.createdAt?.toIso8601String(),
+          'updatedAt': user.updatedAt?.toIso8601String(),
+          'profilePictureUrl': user.profilePictureUrl,
+          'profilePicture': user.profilePicture,
+          'profile': null, // Skip profile to avoid nested issues
+        };
+        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - created safe JSON representation');
+      }
+      
+      final jsonString = jsonEncode(userJson);
+      await prefs.setString(AppConstants.userKey, jsonString);
+      print('🔍 [AUTH_DEBUG] _saveUserData - user saved: ${user.id}');
+    } catch (e) {
+      debugPrint('🔍 [AUTH_DEBUG] _saveUserData - error: $e');
+      rethrow;
+    }
   }
 
   Future<void> _clearAuthData() async {

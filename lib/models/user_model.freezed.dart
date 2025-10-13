@@ -601,7 +601,7 @@ mixin _$UserProfileModel {
   String? get languagePreference => throw _privateConstructorUsedError;
   bool? get marketingConsent => throw _privateConstructorUsedError;
   bool? get dataProcessingConsent => throw _privateConstructorUsedError;
-  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -648,7 +648,7 @@ abstract class $UserProfileModelCopyWith<$Res> {
       String? languagePreference,
       bool? marketingConsent,
       bool? dataProcessingConsent,
-      DateTime createdAt,
+      DateTime? createdAt,
       DateTime? updatedAt});
 }
 
@@ -696,7 +696,7 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
     Object? languagePreference = freezed,
     Object? marketingConsent = freezed,
     Object? dataProcessingConsent = freezed,
-    Object? createdAt = null,
+    Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
     return _then(_value.copyWith(
@@ -824,10 +824,10 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
           ? _value.dataProcessingConsent
           : dataProcessingConsent // ignore: cast_nullable_to_non_nullable
               as bool?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -876,7 +876,7 @@ abstract class _$$UserProfileModelImplCopyWith<$Res>
       String? languagePreference,
       bool? marketingConsent,
       bool? dataProcessingConsent,
-      DateTime createdAt,
+      DateTime? createdAt,
       DateTime? updatedAt});
 }
 
@@ -922,7 +922,7 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
     Object? languagePreference = freezed,
     Object? marketingConsent = freezed,
     Object? dataProcessingConsent = freezed,
-    Object? createdAt = null,
+    Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
     return _then(_$UserProfileModelImpl(
@@ -1050,10 +1050,10 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
           ? _value.dataProcessingConsent
           : dataProcessingConsent // ignore: cast_nullable_to_non_nullable
               as bool?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -1068,8 +1068,8 @@ class _$UserProfileModelImpl
     with DiagnosticableTreeMixin
     implements _UserProfileModel {
   const _$UserProfileModelImpl(
-      {required this.id,
-      required this.userId,
+      {this.id = '',
+      this.userId = '',
       this.title,
       this.specialization,
       this.workPlace,
@@ -1099,15 +1099,17 @@ class _$UserProfileModelImpl
       this.languagePreference,
       this.marketingConsent,
       this.dataProcessingConsent,
-      required this.createdAt,
+      this.createdAt,
       this.updatedAt});
 
   factory _$UserProfileModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileModelImplFromJson(json);
 
   @override
+  @JsonKey()
   final String id;
   @override
+  @JsonKey()
   final String userId;
   @override
   final String? title;
@@ -1168,7 +1170,7 @@ class _$UserProfileModelImpl
   @override
   final bool? dataProcessingConsent;
   @override
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @override
   final DateTime? updatedAt;
 
@@ -1342,8 +1344,8 @@ class _$UserProfileModelImpl
 
 abstract class _UserProfileModel implements UserProfileModel {
   const factory _UserProfileModel(
-      {required final String id,
-      required final String userId,
+      {final String id,
+      final String userId,
       final String? title,
       final String? specialization,
       final String? workPlace,
@@ -1373,7 +1375,7 @@ abstract class _UserProfileModel implements UserProfileModel {
       final String? languagePreference,
       final bool? marketingConsent,
       final bool? dataProcessingConsent,
-      required final DateTime createdAt,
+      final DateTime? createdAt,
       final DateTime? updatedAt}) = _$UserProfileModelImpl;
 
   factory _UserProfileModel.fromJson(Map<String, dynamic> json) =
@@ -1442,7 +1444,7 @@ abstract class _UserProfileModel implements UserProfileModel {
   @override
   bool? get dataProcessingConsent;
   @override
-  DateTime get createdAt;
+  DateTime? get createdAt;
   @override
   DateTime? get updatedAt;
   @override

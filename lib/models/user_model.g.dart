@@ -59,8 +59,8 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
 _$UserProfileModelImpl _$$UserProfileModelImplFromJson(
         Map<String, dynamic> json) =>
     _$UserProfileModelImpl(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
+      id: json['id'] as String? ?? '',
+      userId: json['userId'] as String? ?? '',
       title: json['title'] as String?,
       specialization: json['specialization'] as String?,
       workPlace: json['workPlace'] as String?,
@@ -92,7 +92,9 @@ _$UserProfileModelImpl _$$UserProfileModelImplFromJson(
       languagePreference: json['languagePreference'] as String?,
       marketingConsent: json['marketingConsent'] as bool?,
       dataProcessingConsent: json['dataProcessingConsent'] as bool?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
       updatedAt: json['updatedAt'] == null
           ? null
           : DateTime.parse(json['updatedAt'] as String),
@@ -132,7 +134,7 @@ Map<String, dynamic> _$$UserProfileModelImplToJson(
       'languagePreference': instance.languagePreference,
       'marketingConsent': instance.marketingConsent,
       'dataProcessingConsent': instance.dataProcessingConsent,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };
 

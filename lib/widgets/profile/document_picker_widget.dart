@@ -1,5 +1,6 @@
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,12 +15,14 @@ class SelectedDocument {
   final String name;
   final String type;
   final int size;
+  final Uint8List? bytes; // للويب
 
   SelectedDocument({
     required this.file,
     required this.name,
     required this.type,
     required this.size,
+    this.bytes,
   });
 }
 
@@ -47,36 +50,56 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
         allowMultiple: true,
+        withData: kIsWeb, // في بيئة الويب، نحتاج البيانات
       );
 
       if (result != null && result.files.isNotEmpty) {
         final newDocuments = <SelectedDocument>[];
         
         for (final platformFile in result.files) {
-          if (platformFile.path != null) {
-            final file = File(platformFile.path!);
-            final fileSize = await file.length();
-            
-            // التحقق من حجم الملف (أقصى 5 ميجابايت)
-            if (fileSize > 5 * 1024 * 1024) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('الملف ${platformFile.name} كبير جداً. الحد الأقصى 5 ميجابايت'),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-              }
+          int fileSize;
+          File? file;
+          
+          if (kIsWeb) {
+            // في بيئة الويب، استخدم bytes
+            if (platformFile.bytes != null) {
+              fileSize = platformFile.bytes!.length;
+              // في Flutter Web، إنشاء ملف وهمي للاسم فقط
+              // البيانات الفعلية ستكون في bytes
+              file = File('web_file_${platformFile.name}');
+            } else {
               continue;
             }
-
-            newDocuments.add(SelectedDocument(
-              file: file,
-              name: platformFile.name,
-              type: path.extension(platformFile.name).toLowerCase(),
-              size: fileSize,
-            ));
+          } else {
+            // في بيئة الموبايل، استخدم path
+            if (platformFile.path != null) {
+              file = File(platformFile.path!);
+              fileSize = await file.length();
+            } else {
+              continue;
+            }
           }
+          
+          // التحقق من حجم الملف (أقصى 5 ميجابايت)
+          if (fileSize > 5 * 1024 * 1024) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('الملف ${platformFile.name} كبير جداً. الحد الأقصى 5 ميجابايت'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+            continue;
+          }
+
+          newDocuments.add(SelectedDocument(
+             file: file!,
+             name: platformFile.name,
+             type: path.extension(platformFile.name).toLowerCase(),
+             size: fileSize,
+             bytes: kIsWeb ? platformFile.bytes : null,
+           ));
         }
 
         if (newDocuments.isNotEmpty) {

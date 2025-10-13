@@ -79,8 +79,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             }
           }
         } else {
-          // Show error message using central notification system
+          // Check if the error is related to unverified phone number
           final authState = ref.read(authProvider);
+          
+          if (authState.error == 'phone_not_verified' && authState.unverifiedPhone != null) {
+            // Redirect to phone verification screen
+            if (mounted) {
+              // First send OTP automatically
+              try {
+                await ref.read(authProvider.notifier).sendOtp(
+                  authState.unverifiedPhone!,
+                  'sms',
+                );
+                
+                // Navigate to OTP verification screen using GoRouter
+                context.pushReplacement(
+                  '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhone!)}&isLogin=true',
+                );
+                
+                await NotificationService.showInfo(
+                  title: 'التحقق من رقم الهاتف',
+                  message: 'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhone}',
+                );
+              } catch (otpError) {
+                debugPrint('❌ [LOGIN_SCREEN] Failed to send OTP: $otpError');
+                await NotificationService.showError(
+                  title: 'خطأ في إرسال رمز التحقق',
+                  message: 'فشل في إرسال رمز التحقق، يرجى المحاولة مرة أخرى',
+                );
+              }
+            }
+            return;
+          }
+          
+          // Show error message using central notification system
           String errorMessage = 'فشل في تسجيل الدخول';
           
           if (authState.error != null && authState.error!.isNotEmpty) {

@@ -120,13 +120,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Registration successful - show success message and navigate to OTP verification
-      await NotificationService.showSuccess(
-        title: 'تم التسجيل بنجاح',
-        message: 'تم إنشاء الحساب بنجاح، يرجى التحقق من رمز التأكيد',
+      // Registration successful - now request OTP automatically
+      print('Registration successful, requesting OTP for phone: $fullPhoneNumber');
+      
+      // Request OTP via WhatsApp (preferred channel)
+      final otpSuccess = await ref.read(authProvider.notifier).requestOtp(
+        fullPhoneNumber, 
+        channel: 'WHATSAPP'
       );
       
-      print('Registration successful, navigating to OTP verification with phone: $fullPhoneNumber');
+      if (otpSuccess) {
+        await NotificationService.showSuccess(
+          title: 'تم التسجيل بنجاح',
+          message: 'تم إنشاء الحساب وإرسال رمز التحقق عبر الواتساب',
+        );
+        print('OTP sent successfully via WhatsApp');
+      } else {
+        // If WhatsApp fails, try SMS as fallback
+        print('WhatsApp OTP failed, trying SMS fallback');
+        final smsSuccess = await ref.read(authProvider.notifier).requestOtp(
+          fullPhoneNumber, 
+          channel: 'SMS'
+        );
+        
+        if (smsSuccess) {
+          await NotificationService.showSuccess(
+            title: 'تم التسجيل بنجاح',
+            message: 'تم إنشاء الحساب وإرسال رمز التحقق عبر الرسائل النصية',
+          );
+          print('OTP sent successfully via SMS');
+        } else {
+          await NotificationService.showWarning(
+            title: 'تم التسجيل بنجاح',
+            message: 'تم إنشاء الحساب، يرجى طلب رمز التحقق من الصفحة التالية',
+          );
+          print('Both WhatsApp and SMS OTP failed');
+        }
+      }
+      
+      print('Navigating to OTP verification with phone: $fullPhoneNumber');
       // Use push instead of go to avoid GoRouter redirects
       if (mounted) {
         context.push('${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');

@@ -8,6 +8,7 @@ import '../core/constants/app_constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/session_manager.dart';
+import '../services/dio_service.dart';
 
 // Auth state class
 class AuthState {
@@ -20,6 +21,7 @@ class AuthState {
   final bool isRegistering; // New field to track registration process
   final bool sessionExpired; // New field to track session expiration
   final String? sessionExpiredReason; // Reason for session expiration
+  final String? unverifiedPhone; // Phone number that needs verification
 
   const AuthState({
     this.user,
@@ -31,6 +33,7 @@ class AuthState {
     this.isRegistering = false, // Default to false
     this.sessionExpired = false,
     this.sessionExpiredReason,
+    this.unverifiedPhone,
   });
 
   AuthState copyWith({
@@ -43,6 +46,7 @@ class AuthState {
     bool? isRegistering,
     bool? sessionExpired,
     String? sessionExpiredReason,
+    String? unverifiedPhone,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -54,6 +58,7 @@ class AuthState {
       isRegistering: isRegistering ?? this.isRegistering,
       sessionExpired: sessionExpired ?? this.sessionExpired,
       sessionExpiredReason: sessionExpiredReason ?? this.sessionExpiredReason,
+      unverifiedPhone: unverifiedPhone,
     );
   }
 
@@ -207,7 +212,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Use accessToken or fallback to token field
         final token = (result.accessToken?.isNotEmpty == true) ? result.accessToken! : result.token!;
         
-        await _saveAuthData(token, result.user!);
+        // Only save user data, token is already saved by AuthService in DioService
+        await _saveUserData(result.user!);
         state = state.copyWith(
           user: result.user,
           isAuthenticated: true,
@@ -219,6 +225,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
         debugPrint('AuthProvider: Login successful, user authenticated: ${state.isAuthenticated}');
         return true;
       } else {
+        // Check if the error is related to unverified phone number
+        final errorMessage = result.message ?? '';
+        if (errorMessage.contains('غير مفعل') || errorMessage.contains('unverified') || 
+            errorMessage.contains('التحقق من رقم الهاتف')) {
+          
+          // Check user status to confirm if user exists but is unverified
+          try {
+            final statusResult = await _authService.checkUserStatus(phoneNumber);
+            if (statusResult.success && statusResult.data != null) {
+              final statusData = statusResult.data as Map<String, dynamic>;
+              final exists = statusData['exists'] as bool? ?? false;
+              final verified = statusData['verified'] as bool? ?? false;
+              
+              if (exists && !verified) {
+                // User exists but phone is not verified - redirect to verification
+                state = state.copyWith(
+                  isLoading: false,
+                  error: 'phone_not_verified', // Special error code for UI handling
+                  unverifiedPhone: phoneNumber,
+                );
+                return false;
+              }
+            }
+          } catch (statusError) {
+            debugPrint('AuthProvider: Error checking user status - $statusError');
+          }
+        }
+        
         debugPrint('AuthProvider: Login failed - ${result.message}');
         state = state.copyWith(
           isLoading: false,
@@ -351,7 +385,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           throw Exception('No access token received from server');
         }
         
-        await _saveAuthData(token, result.user!);
+        // Only save user data, token is already saved by AuthService in DioService
+        await _saveUserData(result.user!);
         state = state.copyWith(
           user: result.user,
           isAuthenticated: true,
@@ -372,6 +407,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         error: 'فشل في التحقق من رمز OTP: $e',
       );
+      return false;
+    }
+  }
+
+  // Send OTP
+  Future<bool> sendOtp(String phoneNumber, String channel) async {
+    try {
+      final result = await _authService.resendOtp(phoneNumber, channel: channel);
+      if (!result.success) {
+        state = state.copyWith(error: result.message);
+      }
+      return result.success;
+    } catch (e) {
+      state = state.copyWith(error: 'فشل في إرسال رمز OTP: $e');
       return false;
     }
   }
@@ -492,13 +541,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Helper methods
-  Future<void> _saveAuthData(String token, UserModel user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.tokenKey, token);
-    await prefs.setString(AppConstants.userKey, jsonEncode(user.toJson()));
-    print('🔍 [AUTH_DEBUG] _saveAuthData - token saved: ${token.substring(0, 20)}...');
-    print('🔍 [AUTH_DEBUG] _saveAuthData - user saved: ${user.id}');
-  }
 
   Future<void> _saveUserData(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
@@ -508,39 +550,92 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.tokenKey);
     await prefs.remove(AppConstants.userKey);
     
-    // Also clear any other authentication-related data
-    await prefs.remove('refresh_token');
-    await prefs.remove('access_token');
+    // Clear tokens from DioService (FlutterSecureStorage)
+    await DioService.instance.clearTokens();
     
     print('🔍 [AUTH_DEBUG] _clearAuthData - all authentication data cleared');
   }
 
-  // Request password reset OTP
-  Future<void> requestPasswordReset(String phone) async {
+  // Request OTP for registration verification
+  Future<bool> requestOtp(String phoneNumber, {String? channel}) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
       
-      final response = await _authService.requestPasswordReset(phone);
+      final response = await _authService.requestOtp(phoneNumber, channel: channel);
       
       if (response.success) {
         state = state.copyWith(
           isLoading: false,
           error: null,
         );
+        return true;
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: response.message ?? 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور',
+          error: response.message ?? 'فشل في إرسال رمز التحقق',
         );
+        return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString().replaceFirst('Exception: ', ''),
       );
+      return false;
+    }
+  }
+
+  // Request password reset OTP
+  Future<PasswordResetResponse?> requestPasswordReset(String phone, {String? preferredChannel}) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final response = await _authService.requestPasswordReset(phone, preferredChannel: preferredChannel);
+      
+      state = state.copyWith(
+        isLoading: false,
+        error: null,
+      );
+      
+      return response;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return null;
+    }
+  }
+
+  // Confirm password reset OTP sending after channel selection
+  Future<PasswordResetResponse?> confirmPasswordResetOtp({
+    required String phoneNumber,
+    required String selectedChannel,
+    required String purpose,
+  }) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      
+      final response = await _authService.confirmPasswordResetOtp(
+        phoneNumber: phoneNumber,
+        selectedChannel: selectedChannel,
+        purpose: purpose,
+      );
+      
+      state = state.copyWith(
+        isLoading: false,
+        error: null,
+      );
+      
+      return response;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return null;
     }
   }
 

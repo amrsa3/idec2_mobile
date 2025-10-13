@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,68 +18,219 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta name="keywords" content="IDEC, معرض, مؤتمر, طب الاسنان, 2026">
+  <meta name="author" content="IDEC Team">
+  
+  <!-- SEO Meta Tags -->
+  <meta property="og:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta property="og:description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta name="twitter:description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="idec_conference_app">
+  <meta name="apple-mobile-web-app-title" content="IDEC">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
   
-  <!-- Google Fonts for Arabic and English text -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Disable Google Fonts completely -->
+  <script src="disable_google_fonts.js"></script>
+  
+  <!-- Local fonts for Arabic and English text - No external dependencies -->
+  <!-- Using system fonts for better performance and offline support -->
+  
+  <!-- Local fonts for Arabic and English text - No external dependencies -->
+  <style>
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'NotoSansArabic';
+      src: url('assets/assets/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+    }
+  </style>
 
-  <title>idec_conference_app</title>
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2196F3">
+  <meta name="msapplication-navbutton-color" content="#2196F3">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>منصه معرض ومؤتمر IDEC لطب الاسنان 2026</title>
   <link rel="manifest" href="manifest.json">
   
   <!-- Font fallbacks and CSS for text rendering -->
   <style>
+    /* Primary font stack with local fonts only */
+    :root {
+      --primary-font: 'Cairo', 'NotoSansArabic', 'Roboto', 'Tahoma', Arial, sans-serif;
+      --fallback-font: 'NotoSansArabic', 'Roboto', 'Tahoma', Arial, sans-serif;
+    }
+    
     /* Force immediate text visibility */
     body, html {
-      font-family: Arial, Helvetica, sans-serif !important;
-      font-display: block !important;
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      direction: rtl;
+      text-align: right;
     }
     
     /* Ensure all text is visible immediately */
     *, *::before, *::after {
-      font-family: Arial, Helvetica, sans-serif !important;
-      font-display: block !important;
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
       text-rendering: optimizeLegibility;
     }
     
     /* Flutter Web specific fixes */
     flt-glass-pane, flt-glass-pane * {
-      font-family: Arial, Helvetica, sans-serif !important;
-      font-display: block !important;
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
     }
     
     /* Force text visibility for all Flutter elements */
     flutter-view, flutter-view * {
-      font-family: Arial, Helvetica, sans-serif !important;
-      font-display: block !important;
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
     }
     
-    /* Arabic text support */
+    /* Arabic text support with better fallbacks */
     [dir="rtl"], [lang="ar"] {
-      font-family: Tahoma, Arial, sans-serif !important;
-      font-display: block !important;
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
+      unicode-bidi: bidi-override;
+      direction: rtl;
+    }
+    
+    /* English text support */
+    [dir="ltr"], [lang="en"] {
+      font-family: var(--fallback-font) !important;
+      direction: ltr;
+      text-align: left;
     }
     
     /* Prevent invisible text during font swap */
     .flutter-loader {
-      font-family: Arial, Helvetica, sans-serif !important;
+      font-family: var(--fallback-font) !important;
+    }
+    
+    /* Force text visibility */
+    * {
+      font-display: swap !important;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Ensure all text is visible */
+    body, html, flt-glass-pane, flt-scene-host {
+      font-family: var(--primary-font) !important;
+      color: #000 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    
+    /* Loading state with visible text */
+    .loading-text {
+      font-family: var(--fallback-font) !important;
+      font-size: 16px;
+      color: #333;
+      text-align: center;
+      margin: 20px;
+    }
+    
+    /* Ensure proper font loading */
+    @media (prefers-reduced-motion: no-preference) {
+      * {
+        font-display: swap !important;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Loading indicator with visible text -->
+  <div id="loading" class="loading-text">
+    <p>جاري تحميل منصة IDEC...</p>
+    <p>Loading IDEC Platform...</p>
+  </div>
+  
   <script src="flutter_web_config.js"></script>
   <script src="flutter_bootstrap.js" async></script>
+  
+  <script>
+    // Service Worker Version
+    var serviceWorkerVersion = "1201463201";
+    
+    // Modern Flutter Web initialization (3.x+)
+    window.addEventListener('load', function(ev) {
+      // Use the new Flutter loader API
+      _flutter.loader.load({
+        serviceWorkerSettings: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        config: window.flutterWebConfig || {
+          renderer: "html",
+          fontFallbacks: [
+            'system-ui',
+            '-apple-system', 
+            'BlinkMacSystemFont',
+            'Segoe UI',
+            'Arial',
+            'Helvetica',
+            'Tahoma',
+            'sans-serif'
+          ]
+        }
+      }).then(function(appRunner) {
+        appRunner.runApp();
+        
+        // Hide loading indicator when Flutter is ready
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.display = 'none';
+        }
+      });
+    });
+    
+    // Fallback: hide loading after 15 seconds
+    setTimeout(function() {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.style.display = 'none';
+      }
+    }, 15000);
+  </script>
 </body>
 </html>

@@ -42,16 +42,20 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   /// جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
   Future<void> loadRulesForCurrentUser({bool forceRefresh = false}) async {
     try {
-      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد المستخدم الحالي (forceRefresh: $forceRefresh)');
+      debugPrint(
+          '🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد المستخدم الحالي (forceRefresh: $forceRefresh)');
       state = state.copyWith(isLoading: true, error: null);
 
-      final result = await _rulesService.getRulesForCurrentUser(forceRefresh: forceRefresh);
+      final result = await _rulesService.getRulesForCurrentUser(
+          forceRefresh: forceRefresh);
 
-      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${result.rules.length} قاعدة للمستخدم (الحالة: ${result.userStatus.name})');
-      
+      debugPrint(
+          '✅ [PROFILE_RULES_PROVIDER] تم تحميل ${result.rules.length} قاعدة للمستخدم (الحالة: ${result.userStatus.name})');
+
       // طباعة تفاصيل القواعد المحملة
       for (var rule in result.rules) {
-        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+        debugPrint(
+            '   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
       }
 
       state = state.copyWith(
@@ -60,27 +64,34 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
-      debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد المستخدم الحالي: $e');
+      debugPrint(
+          '❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد المستخدم الحالي: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+        error:
+            'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
       );
     }
   }
 
   /// جلب القواعد حسب حالة معينة (للاستخدام الإداري)
-  Future<void> loadRulesForStatus(ProfileStatus status, {bool forceRefresh = false}) async {
+  Future<void> loadRulesForStatus(ProfileStatus status,
+      {bool forceRefresh = false}) async {
     try {
-      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد الحالة ${status.name} (forceRefresh: $forceRefresh)');
+      debugPrint(
+          '🔄 [PROFILE_RULES_PROVIDER] بدء تحميل قواعد الحالة ${status.name} (forceRefresh: $forceRefresh)');
       state = state.copyWith(isLoading: true, error: null);
 
-      final rules = await _rulesService.getRulesForStatus(status, forceRefresh: forceRefresh);
+      final rules = await _rulesService.getRulesForStatus(status,
+          forceRefresh: forceRefresh);
 
-      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة للحالة ${status.name}');
-      
+      debugPrint(
+          '✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة للحالة ${status.name}');
+
       // طباعة تفاصيل القواعد المحملة
       for (var rule in rules) {
-        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+        debugPrint(
+            '   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
       }
 
       state = state.copyWith(
@@ -89,10 +100,12 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
-      debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد الحالة ${status.name}: $e');
+      debugPrint(
+          '❌ [PROFILE_RULES_PROVIDER] خطأ في جلب قواعد الحالة ${status.name}: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+        error:
+            'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
       );
     }
   }
@@ -100,17 +113,20 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   /// جلب جميع القواعد (للتوافق مع الكود القديم)
   Future<void> loadRules({bool forceRefresh = false}) async {
     try {
-      debugPrint('🔄 [PROFILE_RULES_PROVIDER] بدء تحميل جميع القواعد (forceRefresh: $forceRefresh)');
+      debugPrint(
+          '🔄 [PROFILE_RULES_PROVIDER] بدء تحميل جميع القواعد (forceRefresh: $forceRefresh)');
       state = state.copyWith(isLoading: true, error: null);
 
       final rules =
           await _rulesService.getActiveRules(forceRefresh: forceRefresh);
 
-      debugPrint('✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة بنجاح');
-      
+      debugPrint(
+          '✅ [PROFILE_RULES_PROVIDER] تم تحميل ${rules.length} قاعدة بنجاح');
+
       // طباعة تفاصيل القواعد المحملة
       for (var rule in rules) {
-        debugPrint('   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
+        debugPrint(
+            '   - قاعدة: ${rule.fieldName} (${rule.targetStatus}) - يسمح بالتعديل: ${rule.allowEdit}');
       }
 
       state = state.copyWith(
@@ -122,7 +138,8 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
       debugPrint('❌ [PROFILE_RULES_PROVIDER] خطأ في جلب القواعد: $e');
       state = state.copyWith(
         isLoading: false,
-        error: 'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+        error:
+            'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.',
       );
     }
   }
@@ -136,17 +153,20 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
             rule.targetStatus == status &&
             rule.isActive)
         .toList();
-        
-    debugPrint('🔍 [PROFILE_RULES] البحث عن قواعد للحقل: $fieldName والحالة: $status');
-    debugPrint('📋 [PROFILE_RULES] إجمالي القواعد المتاحة: ${state.rules.length}');
+
+    debugPrint(
+        '🔍 [PROFILE_RULES] البحث عن قواعد للحقل: $fieldName والحالة: $status');
+    debugPrint(
+        '📋 [PROFILE_RULES] إجمالي القواعد المتاحة: ${state.rules.length}');
     debugPrint('📋 [PROFILE_RULES] القواعد المطابقة: ${matchingRules.length}');
-    
+
     if (matchingRules.isNotEmpty) {
       for (var rule in matchingRules) {
-        debugPrint('   - قاعدة: ${rule.id}, يسمح بالتعديل: ${rule.allowEdit}, يتطلب وثيقة: ${rule.requiresDocument}');
+        debugPrint(
+            '   - قاعدة: ${rule.id}, يسمح بالتعديل: ${rule.allowEdit}, يتطلب وثيقة: ${rule.requiresDocument}');
       }
     }
-    
+
     return matchingRules;
   }
 
@@ -154,17 +174,20 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   bool canEditField(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
 
-    debugPrint('🔍 [PROFILE_RULES] فحص إمكانية تعديل الحقل: $fieldName للحالة: $currentStatus');
+    debugPrint(
+        '🔍 [PROFILE_RULES] فحص إمكانية تعديل الحقل: $fieldName للحالة: $currentStatus');
     debugPrint('📋 [PROFILE_RULES] عدد القواعد المطبقة: ${rules.length}');
 
     if (rules.isEmpty) {
-      debugPrint('✅ [PROFILE_RULES] لا توجد قواعد للحقل $fieldName - مسموح بالتعديل');
+      debugPrint(
+          '✅ [PROFILE_RULES] لا توجد قواعد للحقل $fieldName - مسموح بالتعديل');
       return true; // لا توجد قواعد = مسموح بالتعديل
     }
 
     final canEdit = rules.every((rule) => rule.allowEdit);
-    debugPrint('📋 [PROFILE_RULES] نتيجة فحص التعديل للحقل $fieldName: $canEdit');
-    
+    debugPrint(
+        '📋 [PROFILE_RULES] نتيجة فحص التعديل للحقل $fieldName: $canEdit');
+
     return canEdit;
   }
 
@@ -172,9 +195,10 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   bool fieldRequiresDocument(String fieldName, ProfileStatus currentStatus) {
     final rules = getRulesForField(fieldName, currentStatus);
     final requiresDoc = rules.any((rule) => rule.requiresDocument);
-    
-    debugPrint('📋 [PROFILE_RULES] فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
-    
+
+    debugPrint(
+        '📋 [PROFILE_RULES] فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
+
     return requiresDoc;
   }
 
@@ -279,12 +303,12 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   bool canEditVerifiedProfile() {
     // التحقق من وجود قواعد تسمح بتعديل الملفات الموثقة
     final verifiedRules = state.rules
-        .where((rule) => 
-            rule.targetStatus == ProfileStatus.verified && 
-            rule.allowEdit && 
+        .where((rule) =>
+            rule.targetStatus == ProfileStatus.verified &&
+            rule.allowEdit &&
             rule.isActive)
         .toList();
-    
+
     return verifiedRules.isNotEmpty;
   }
 
@@ -295,15 +319,16 @@ class ProfileRulesNotifier extends StateNotifier<ProfileRulesState> {
   }
 
   /// الحصول على الحقول المطلوبة للتوثيق
+  /// تنبيهات بصرية للحقول المطلوبة
   List<String> getRequiredFieldsForVerification() {
     // الحقول الأساسية المطلوبة للتوثيق
     return [
-      'fullNameAr',
-      'fullNameEn',
-      'email',
-      'birthDate',
-      'governorateId',
-      'qualificationId',
+      // 'fullNameAr',
+      // 'fullNameEn',
+      // 'email',
+      //  'birthDate',
+      // 'governorateId',
+      // 'qualificationId',
     ];
   }
 

@@ -9,59 +9,52 @@ part of 'registration_settings_model.dart';
 _$RegistrationSettingsModelImpl _$$RegistrationSettingsModelImplFromJson(
         Map<String, dynamic> json) =>
     _$RegistrationSettingsModelImpl(
-      registrationEnabled: json['registrationEnabled'] as bool,
-      status: $enumDecode(_$RegistrationStatusEnumMap, json['status']),
-      availableOtpChannels: (json['availableOtpChannels'] as List<dynamic>)
-          .map((e) => OtpChannelModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      supportedLanguages: (json['supportedLanguages'] as List<dynamic>)
+      id: json['id'] as String,
+      registrationStatus:
+          $enumDecode(_$RegistrationStatusEnumMap, json['registrationStatus']),
+      otpChannels: (json['otpChannels'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      defaultLanguage: json['defaultLanguage'] as String,
+      otpLength: (json['otpLength'] as num).toInt(),
+      otpExpiryMinutes: (json['otpExpiryMinutes'] as num).toInt(),
+      maxOtpAttempts: (json['maxOtpAttempts'] as num).toInt(),
+      otpCooldownMinutes: (json['otpCooldownMinutes'] as num).toInt(),
+      requireDocumentUpload: json['requireDocumentUpload'] as bool,
+      allowEmailRegistration: json['allowEmailRegistration'] as bool,
+      requirePhoneVerification: json['requirePhoneVerification'] as bool,
+      autoApproveProfiles: json['autoApproveProfiles'] as bool,
       maintenanceMessage: json['maintenanceMessage'] as String?,
-      maintenanceStartTime: json['maintenanceStartTime'] == null
-          ? null
-          : DateTime.parse(json['maintenanceStartTime'] as String),
-      maintenanceEndTime: json['maintenanceEndTime'] == null
-          ? null
-          : DateTime.parse(json['maintenanceEndTime'] as String),
-      registrationClosedMessage: json['registrationClosedMessage'] as String?,
-      registrationOpenTime: json['registrationOpenTime'] == null
-          ? null
-          : DateTime.parse(json['registrationOpenTime'] as String),
-      registrationCloseTime: json['registrationCloseTime'] == null
-          ? null
-          : DateTime.parse(json['registrationCloseTime'] as String),
-      additionalSettings: json['additionalSettings'] as Map<String, dynamic>?,
-      lastUpdated: json['lastUpdated'] == null
-          ? null
-          : DateTime.parse(json['lastUpdated'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      updatedBy: json['updatedBy'] as String?,
     );
 
 Map<String, dynamic> _$$RegistrationSettingsModelImplToJson(
         _$RegistrationSettingsModelImpl instance) =>
     <String, dynamic>{
-      'registrationEnabled': instance.registrationEnabled,
-      'status': _$RegistrationStatusEnumMap[instance.status]!,
-      'availableOtpChannels': instance.availableOtpChannels,
-      'supportedLanguages': instance.supportedLanguages,
-      'defaultLanguage': instance.defaultLanguage,
+      'id': instance.id,
+      'registrationStatus':
+          _$RegistrationStatusEnumMap[instance.registrationStatus]!,
+      'otpChannels': instance.otpChannels,
+      'otpLength': instance.otpLength,
+      'otpExpiryMinutes': instance.otpExpiryMinutes,
+      'maxOtpAttempts': instance.maxOtpAttempts,
+      'otpCooldownMinutes': instance.otpCooldownMinutes,
+      'requireDocumentUpload': instance.requireDocumentUpload,
+      'allowEmailRegistration': instance.allowEmailRegistration,
+      'requirePhoneVerification': instance.requirePhoneVerification,
+      'autoApproveProfiles': instance.autoApproveProfiles,
       'maintenanceMessage': instance.maintenanceMessage,
-      'maintenanceStartTime': instance.maintenanceStartTime?.toIso8601String(),
-      'maintenanceEndTime': instance.maintenanceEndTime?.toIso8601String(),
-      'registrationClosedMessage': instance.registrationClosedMessage,
-      'registrationOpenTime': instance.registrationOpenTime?.toIso8601String(),
-      'registrationCloseTime':
-          instance.registrationCloseTime?.toIso8601String(),
-      'additionalSettings': instance.additionalSettings,
-      'lastUpdated': instance.lastUpdated?.toIso8601String(),
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
+      'updatedBy': instance.updatedBy,
     };
 
 const _$RegistrationStatusEnumMap = {
-  RegistrationStatus.open: 'open',
-  RegistrationStatus.closed: 'closed',
-  RegistrationStatus.maintenance: 'maintenance',
-  RegistrationStatus.limited: 'limited',
+  RegistrationStatus.open: 'OPEN',
+  RegistrationStatus.closed: 'CLOSED',
+  RegistrationStatus.maintenance: 'MAINTENANCE',
+  RegistrationStatus.limited: 'LIMITED',
 };
 
 _$OtpChannelModelImpl _$$OtpChannelModelImplFromJson(
@@ -72,10 +65,7 @@ _$OtpChannelModelImpl _$$OtpChannelModelImplFromJson(
       displayName: json['displayName'] as String,
       enabled: json['enabled'] as bool,
       isDefault: json['isDefault'] as bool,
-      priority: (json['priority'] as num?)?.toInt(),
-      settings: json['settings'] as Map<String, dynamic>?,
-      description: json['description'] as String?,
-      icon: json['icon'] as String?,
+      priority: (json['priority'] as num).toInt(),
     );
 
 Map<String, dynamic> _$$OtpChannelModelImplToJson(
@@ -87,25 +77,24 @@ Map<String, dynamic> _$$OtpChannelModelImplToJson(
       'enabled': instance.enabled,
       'isDefault': instance.isDefault,
       'priority': instance.priority,
-      'settings': instance.settings,
-      'description': instance.description,
-      'icon': instance.icon,
     };
 
-_$OtpChannelRequestImpl _$$OtpChannelRequestImplFromJson(
+_$OtpChannelSelectionImpl _$$OtpChannelSelectionImplFromJson(
         Map<String, dynamic> json) =>
-    _$OtpChannelRequestImpl(
+    _$OtpChannelSelectionImpl(
+      selectedChannel: json['selectedChannel'] as String,
       phoneNumber: json['phoneNumber'] as String,
-      channelId: json['channelId'] as String,
-      additionalData: json['additionalData'] as Map<String, dynamic>?,
+      success: json['success'] as bool,
+      message: json['message'] as String?,
     );
 
-Map<String, dynamic> _$$OtpChannelRequestImplToJson(
-        _$OtpChannelRequestImpl instance) =>
+Map<String, dynamic> _$$OtpChannelSelectionImplToJson(
+        _$OtpChannelSelectionImpl instance) =>
     <String, dynamic>{
+      'selectedChannel': instance.selectedChannel,
       'phoneNumber': instance.phoneNumber,
-      'channelId': instance.channelId,
-      'additionalData': instance.additionalData,
+      'success': instance.success,
+      'message': instance.message,
     };
 
 _$RegistrationStatusResponseImpl _$$RegistrationStatusResponseImplFromJson(
@@ -130,30 +119,6 @@ Map<String, dynamic> _$$RegistrationStatusResponseImplToJson(
       'reason': instance.reason,
       'nextAvailableTime': instance.nextAvailableTime?.toIso8601String(),
       'additionalInfo': instance.additionalInfo,
-    };
-
-_$OtpChannelSelectionImpl _$$OtpChannelSelectionImplFromJson(
-        Map<String, dynamic> json) =>
-    _$OtpChannelSelectionImpl(
-      channelId: json['channelId'] as String,
-      displayName: json['displayName'] as String,
-      isSelected: json['isSelected'] as bool,
-      isAvailable: json['isAvailable'] as bool,
-      description: json['description'] as String?,
-      icon: json['icon'] as String?,
-      metadata: json['metadata'] as Map<String, dynamic>?,
-    );
-
-Map<String, dynamic> _$$OtpChannelSelectionImplToJson(
-        _$OtpChannelSelectionImpl instance) =>
-    <String, dynamic>{
-      'channelId': instance.channelId,
-      'displayName': instance.displayName,
-      'isSelected': instance.isSelected,
-      'isAvailable': instance.isAvailable,
-      'description': instance.description,
-      'icon': instance.icon,
-      'metadata': instance.metadata,
     };
 
 _$RegistrationSettingsCacheImpl _$$RegistrationSettingsCacheImplFromJson(

@@ -59,12 +59,12 @@ class ServerSettingsService {
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
-    host: 'idec-ye.com',
+    host: 'localhost',
     port: 3000,
   );
   
   static const ServerSettings localServer = ServerSettings(
-    host: '192.168.0.165',
+    host: 'localhost',
     port: 3000,
   );
 

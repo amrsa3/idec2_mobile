@@ -155,7 +155,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'otp-verification',
         builder: (context, state) {
           final phone = state.uri.queryParameters['phone'] ?? '';
-          return OtpVerificationScreen(phone: phone);
+          final isLogin = state.uri.queryParameters['isLogin'] == 'true';
+          return OtpVerificationScreen(
+            phone: phone,
+            isLogin: isLogin,
+          );
         },
       ),
 

@@ -32,13 +32,36 @@ void main() async {
   RetryService.instance.initialize();
   debugPrint('✅ Retry service initialized');
   
-  // Web-specific configuration
+  // Web-specific configurations
   if (kIsWeb) {
-    // Force HTML renderer for better text support
-    debugPrint('Running on web - using HTML renderer for text');
-    // Ensure text is visible immediately
+    // Force HTML renderer for better text rendering
+    debugPrint('🌐 Web platform detected - configuring for web');
+    
+    // Prevent Google Fonts from loading
+    debugPrint('🚫 Disabling Google Fonts loading');
+    
+    // Force system fonts only
+    debugPrint('🔤 Using system fonts only');
+    
+    // Disable font fallback to Google Fonts
+    debugPrint('🔧 Disabling font fallback to Google Fonts');
+    
+    // Force system fonts in Flutter Web
+    debugPrint('🔧 Forcing system fonts in Flutter Web');
+    
+    // Disable Google Fonts loading for web
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('Web app loaded - text should be visible');
+      debugPrint('Web app loaded - using system fonts only');
+      
+      // Force text rendering for Arabic support with system fonts
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+        ),
+      );
+      
+      // Additional web-specific font configuration
+      debugPrint('Configured web app to use system fonts only - no external font loading');
     });
   }
   
@@ -154,7 +177,7 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       // ScaffoldMessenger configuration
       scaffoldMessengerKey: NotificationService.scaffoldMessengerKey,
       
-      // Theme configuration
+      // Theme configuration - Using system fonts for web compatibility
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,

@@ -79,6 +79,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
   bool _hasDocumentRequiringChanges() {
     try {
+      // التحقق من صحة البيانات الأساسية
+      if (widget.profile == null) {
+        debugPrint('⚠️ لا يمكن التحقق من التغييرات: الملف الشخصي غير متاح');
+        return false;
+      }
+
       // قائمة الحقول التي قد تتطلب وثائق
       final fieldsToCheck = [
         'fullNameAr',
@@ -93,48 +99,82 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       ];
 
       for (final fieldName in fieldsToCheck) {
-        // التحقق من وجود تغيير في الحقل
-        bool hasChange = false;
-        
-        switch (fieldName) {
-          case 'fullNameAr':
-            hasChange = _fullNameArController.text.trim() != (widget.profile.fullNameAr ?? '');
-            break;
-          case 'fullNameEn':
-            hasChange = _fullNameEnController.text.trim() != (widget.profile.fullNameEn ?? '');
-            break;
-          case 'email':
-            hasChange = _emailController.text.trim() != (widget.profile.email ?? '');
-            break;
-          case 'birthDate':
-            hasChange = _selectedBirthDate != widget.profile.birthDate;
-            break;
-          case 'governorateId':
-            hasChange = _selectedGovernorateId != widget.profile.governorateId;
-            break;
-          case 'qualificationId':
-            hasChange = _selectedQualificationId != widget.profile.qualificationId;
-            break;
-          case 'graduationYear':
-            hasChange = _selectedGraduationYear != widget.profile.graduationYear;
-            break;
-          case 'university':
-            hasChange = _universityController.text.trim() != (widget.profile.university ?? '');
-            break;
-          case 'workplace':
-            hasChange = _workplaceController.text.trim() != (widget.profile.workplace ?? '');
-            break;
-        }
+        try {
+          // التحقق من وجود تغيير في الحقل مع null safety
+          bool hasChange = false;
+          
+          switch (fieldName) {
+            case 'fullNameAr':
+              final currentValue = _fullNameArController.text.trim();
+              final originalValue = widget.profile.fullNameAr ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'fullNameEn':
+              final currentValue = _fullNameEnController.text.trim();
+              final originalValue = widget.profile.fullNameEn ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'email':
+              final currentValue = _emailController.text.trim();
+              final originalValue = widget.profile.email ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'birthDate':
+              hasChange = _selectedBirthDate != widget.profile.birthDate;
+              break;
+            case 'governorateId':
+              // معالجة خاصة للمحافظة مع null safety
+              final currentValue = _selectedGovernorateId ?? '';
+              final originalValue = widget.profile.governorateId ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'qualificationId':
+              // معالجة خاصة للمؤهل مع null safety
+              final currentValue = _selectedQualificationId ?? '';
+              final originalValue = widget.profile.qualificationId ?? '';
+              hasChange = currentValue != originalValue;
+              debugPrint('🎓 فحص تغيير المؤهل: الحالي="$currentValue", الأصلي="$originalValue", تغيير=$hasChange');
+              break;
+            case 'graduationYear':
+              // معالجة خاصة لسنة التخرج مع null safety
+              final currentValue = _selectedGraduationYear;
+              final originalValue = widget.profile.graduationYear;
+              hasChange = currentValue != originalValue;
+              break;
+            case 'university':
+              final currentValue = _universityController.text.trim();
+              final originalValue = widget.profile.university ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'workplace':
+              final currentValue = _workplaceController.text.trim();
+              final originalValue = widget.profile.workplace ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+          }
 
-        // إذا كان هناك تغيير وهذا الحقل يتطلب وثيقة
-        if (hasChange && _requiresDocument(fieldName)) {
-          return true;
+          // إذا كان هناك تغيير، التحقق من الحاجة للوثيقة
+          if (hasChange) {
+            debugPrint('📝 تم اكتشاف تغيير في الحقل: $fieldName');
+            
+            // التحقق من الحاجة للوثيقة مع معالجة الأخطاء
+            final requiresDoc = _requiresDocument(fieldName);
+            if (requiresDoc) {
+              debugPrint('📄 الحقل $fieldName يتطلب وثيقة');
+              return true;
+            }
+          }
+        } catch (fieldError) {
+          debugPrint('❌ خطأ في فحص الحقل $fieldName: $fieldError');
+          // الاستمرار في فحص الحقول الأخرى
+          continue;
         }
       }
 
       return false;
-    } catch (e) {
-      debugPrint('❌ خطأ في التحقق من التغييرات التي تتطلب وثائق: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ خطأ عام في التحقق من التغييرات التي تتطلب وثائق: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       return false;
     }
   }
@@ -185,8 +225,28 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         TextEditingController(text: widget.profile.workplace ?? '');
 
     _selectedBirthDate = widget.profile.birthDate;
-    _selectedGovernorateId = widget.profile.governorateId;
-    _selectedQualificationId = widget.profile.qualificationId;
+    
+    // التعامل مع governorateId - تحويل "0" إلى null لتجنب خطأ DropdownButton
+    final governorateId = widget.profile.governorateId;
+    if (governorateId == null || governorateId.isEmpty || governorateId == "0") {
+      _selectedGovernorateId = null;
+    } else {
+      _selectedGovernorateId = governorateId;
+    }
+    
+    // التعامل مع qualificationId - تحويل القيم غير الصالحة إلى null لتجنب خطأ DropdownButton
+    final qualificationId = widget.profile.qualificationId;
+    if (qualificationId == null || 
+        qualificationId.isEmpty || 
+        qualificationId == "0" || 
+        qualificationId.trim().isEmpty) {
+      _selectedQualificationId = null;
+      debugPrint('🔄 تم تعيين qualificationId إلى null (القيمة الأصلية: "$qualificationId")');
+    } else {
+      _selectedQualificationId = qualificationId;
+      debugPrint('✅ تم تعيين qualificationId إلى: "$qualificationId"');
+    }
+    
     _selectedGraduationYear = widget.profile.graduationYear;
   }
 
@@ -240,9 +300,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               label: 'إعادة المحاولة',
               textColor: Colors.white,
               onPressed: () {
-                ref
-                    .read(profileRulesProvider.notifier)
-                    .loadRules(forceRefresh: true);
+                if (mounted) {
+                  ref
+                      .read(profileRulesProvider.notifier)
+                      .loadRules(forceRefresh: true);
+                }
               },
             ),
           ),
@@ -572,10 +634,30 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             )));
             print('DEBUG: governorateId field enabled: $isEditable');
             
+            // معالجة آمنة للقيمة المختارة
+            final governorateItems = _getGovernorateItems(state);
+            final validValues = governorateItems.map((item) => item.value).toSet();
+            
+            // التحقق من صحة القيمة المختارة
+            String? safeValue = _selectedGovernorateId;
+            if (safeValue != null && 
+                (safeValue.isEmpty || safeValue == "0" || !validValues.contains(safeValue))) {
+              debugPrint('⚠️ إعادة تعيين قيمة المحافظة غير الصالحة: "$safeValue"');
+              safeValue = null;
+              // تحديث القيمة في الحالة
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _selectedGovernorateId = null;
+                  });
+                }
+              });
+            }
+            
             return CustomDropdown<String>(
               label: 'المحافظة',
-              value: _selectedGovernorateId,
-              items: _getGovernorateItems(state),
+              value: safeValue,
+              items: governorateItems,
               isRequired: true,
               enabled: isEditable,
               onChanged: (value) => setState(() => _selectedGovernorateId = value),
@@ -611,14 +693,48 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             
             debugPrint('🔍 [CONSUMER] فحص تعديل qualificationId: $canEdit للحالة: $profileStatus');
             
+            // الحصول على قائمة العناصر المتاحة
+            final qualificationItems = _getQualificationItems(state);
+            
+            // التحقق الآمن من صحة القيمة المختارة
+            String? safeValue = _selectedQualificationId;
+            
+            // معالجة القيم غير الصالحة
+            if (safeValue != null) {
+              if (safeValue.isEmpty || safeValue == "0" || safeValue.trim().isEmpty) {
+                safeValue = null;
+              } else {
+                // التحقق من وجود القيمة في قائمة العناصر
+                final validValues = qualificationItems.map((item) => item.value).toSet();
+                if (!validValues.contains(safeValue)) {
+                  debugPrint('⚠️ القيمة المختارة غير موجودة في القائمة: "$safeValue"');
+                  safeValue = null;
+                }
+              }
+            }
+            
+            // تحديث القيمة إذا تغيرت
+            if (safeValue != _selectedQualificationId) {
+              debugPrint('🔄 تصحيح قيمة المؤهل من "$_selectedQualificationId" إلى "$safeValue"');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _selectedQualificationId = safeValue;
+                  });
+                }
+              });
+            }
+            
             return CustomDropdown<String>(
               label: 'المؤهل العلمي',
-              value: _selectedQualificationId,
-              items: _getQualificationItems(state),
+              value: safeValue,
+              items: qualificationItems,
               isRequired: true,
               enabled: canEdit,
-              onChanged: (value) =>
-                  setState(() => _selectedQualificationId = value),
+              onChanged: (value) {
+                debugPrint('🔄 تغيير قيمة المؤهل إلى: "$value"');
+                setState(() => _selectedQualificationId = value);
+              },
               validator: (value) => _validateField('qualificationId', value),
               errorText: _fieldErrors['qualificationId'],
               suffixIcon: _buildDocumentIcon('qualificationId'),
@@ -819,164 +935,271 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   List<DropdownMenuItem<String>> _getGovernorateItems(ProfileState state) {
-    // إذا كانت البيانات فارغة أو null
-    if (state.governorates?.isEmpty ?? true) {
-      // إذا كان هناك خطأ في التحميل
-      if (state.error != null && state.error!.isNotEmpty) {
+    try {
+      // إذا كانت البيانات فارغة أو null
+      if (state.governorates?.isEmpty ?? true) {
+        // إعادة تعيين القيمة المختارة إلى null فوراً
+        if (_selectedGovernorateId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedGovernorateId = null;
+              });
+            }
+          });
+        }
+        
+        // إذا كان هناك خطأ في التحميل
+        if (state.error != null && state.error!.isNotEmpty) {
+          return [
+            DropdownMenuItem<String>(
+              value: null,
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('فشل تحميل المحافظات')),
+                  TextButton(
+                    onPressed: () => _retryLoadData(),
+                    child: const Text('إعادة المحاولة',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ];
+        }
+
+        // إذا كان التحميل جاري
         return [
-          DropdownMenuItem<String>(
+          const DropdownMenuItem<String>(
             value: null,
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 16),
-                const SizedBox(width: 8),
-                const Expanded(child: Text('فشل تحميل المحافظات')),
-                TextButton(
-                  onPressed: () => _retryLoadData(),
-                  child: const Text('إعادة المحاولة',
-                      style: TextStyle(fontSize: 12)),
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+                SizedBox(width: 8),
+                Text('جاري تحميل المحافظات...'),
               ],
             ),
           ),
         ];
       }
 
-      // إذا كان التحميل جاري وهناك قيمة مختارة، أضفها مؤقتاً
-      List<DropdownMenuItem<String>> items = [
+      // إنشاء قائمة العناصر من البيانات المحملة
+      List<DropdownMenuItem<String>> items = [];
+      final validValues = <String?>{}; // تتبع القيم الصالحة
+      
+      // إضافة عنصر فارغ اختياري
+      items.add(
         const DropdownMenuItem<String>(
           value: null,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              SizedBox(width: 8),
-              Text('جاري تحميل المحافظات...'),
-            ],
-          ),
+          child: Text('اختر المحافظة'),
         ),
-      ];
+      );
+      validValues.add(null);
 
-      // إضافة القيمة المختارة مؤقتاً إذا كانت موجودة
-      if (_selectedGovernorateId != null &&
-          _selectedGovernorateId!.isNotEmpty) {
-        items.add(
-          DropdownMenuItem<String>(
-            value: _selectedGovernorateId,
-            child: Text('المحافظة المختارة: $_selectedGovernorateId'),
-          ),
-        );
+      // إضافة المحافظات المتاحة
+      for (final governorate in state.governorates!) {
+        if (governorate.id != null && 
+            governorate.id!.isNotEmpty && 
+            governorate.id != "0" &&
+            governorate.id!.trim().isNotEmpty &&
+            !validValues.contains(governorate.id)) {
+          validValues.add(governorate.id!);
+          items.add(
+            DropdownMenuItem<String>(
+              value: governorate.id,
+              child: Text(governorate.nameAr),
+            ),
+          );
+        }
+      }
+
+      // التحقق الفوري من صحة القيمة المختارة
+      if (_selectedGovernorateId != null) {
+        // معالجة القيم غير الصالحة
+        if (_selectedGovernorateId!.isEmpty || 
+            _selectedGovernorateId == "0" ||
+            _selectedGovernorateId!.trim().isEmpty ||
+            !validValues.contains(_selectedGovernorateId)) {
+          
+          debugPrint('⚠️ القيمة المختارة للمحافظة غير صالحة: "$_selectedGovernorateId"');
+          debugPrint('⚠️ القيم الصالحة: $validValues');
+          
+          // إعادة تعيين فورية
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedGovernorateId = null;
+              });
+            }
+          });
+        }
       }
 
       return items;
+      
+    } catch (e) {
+      debugPrint('❌ خطأ في _getGovernorateItems: $e');
+      
+      // في حالة حدوث خطأ، إعادة تعيين القيمة المختارة فوراً
+      if (_selectedGovernorateId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _selectedGovernorateId = null;
+            });
+          }
+        });
+      }
+      
+      return [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('خطأ في تحميل المحافظات'),
+        ),
+      ];
     }
-
-    List<DropdownMenuItem<String>> items =
-        state.governorates!.map<DropdownMenuItem<String>>((governorate) {
-      return DropdownMenuItem<String>(
-        value: governorate.id,
-        child: Text(governorate.nameAr),
-      );
-    }).toList();
-
-    // التحقق من أن القيمة المختارة موجودة في القائمة
-    if (_selectedGovernorateId != null &&
-        _selectedGovernorateId!.isNotEmpty &&
-        !items.any((item) => item.value == _selectedGovernorateId)) {
-      // إضافة القيمة المختارة إذا لم تكن موجودة
-      items.insert(
-          0,
-          DropdownMenuItem<String>(
-            value: _selectedGovernorateId,
-            child: Text('المحافظة المختارة: $_selectedGovernorateId'),
-          ));
-    }
-
-    return items;
   }
 
   List<DropdownMenuItem<String>> _getQualificationItems(ProfileState state) {
-    // إذا كانت البيانات فارغة أو null
-    if (state.qualifications?.isEmpty ?? true) {
-      // إذا كان هناك خطأ في التحميل
-      if (state.error != null && state.error!.isNotEmpty) {
+    try {
+      // إذا كانت البيانات فارغة أو null
+      if (state.qualifications?.isEmpty ?? true) {
+        // إعادة تعيين القيمة المختارة إلى null فوراً
+        if (_selectedQualificationId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedQualificationId = null;
+              });
+            }
+          });
+        }
+        
+        // إذا كان هناك خطأ في التحميل
+        if (state.error != null && state.error!.isNotEmpty) {
+          return [
+            DropdownMenuItem<String>(
+              value: null,
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(child: Text('فشل تحميل المؤهلات')),
+                  TextButton(
+                    onPressed: () => _retryLoadData(),
+                    child: const Text('إعادة المحاولة',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ];
+        }
+        
+        // إذا كان التحميل جاري
         return [
-          DropdownMenuItem<String>(
+          const DropdownMenuItem<String>(
             value: null,
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 16),
-                const SizedBox(width: 8),
-                const Expanded(child: Text('فشل تحميل المؤهلات')),
-                TextButton(
-                  onPressed: () => _retryLoadData(),
-                  child: const Text('إعادة المحاولة',
-                      style: TextStyle(fontSize: 12)),
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+                SizedBox(width: 8),
+                Text('جاري تحميل المؤهلات...'),
               ],
             ),
           ),
         ];
       }
 
-      // إذا كان التحميل جاري وهناك قيمة مختارة، أضفها مؤقتاً
-      List<DropdownMenuItem<String>> items = [
+      // إنشاء قائمة العناصر من البيانات المحملة
+      List<DropdownMenuItem<String>> items = [];
+      final validValues = <String?>{}; // تتبع القيم الصالحة
+      
+      // إضافة عنصر فارغ اختياري
+      items.add(
         const DropdownMenuItem<String>(
           value: null,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              SizedBox(width: 8),
-              Text('جاري تحميل المؤهلات...'),
-            ],
-          ),
+          child: Text('اختر المؤهل العلمي'),
         ),
-      ];
+      );
+      validValues.add(null);
+      
+      // إضافة المؤهلات المتاحة مع تجنب القيم المكررة
+      for (final qualification in state.qualifications!) {
+        if (qualification.id != null && 
+            qualification.id!.isNotEmpty && 
+            qualification.id != "0" &&
+            qualification.id!.trim().isNotEmpty &&
+            !validValues.contains(qualification.id)) {
+          validValues.add(qualification.id!);
+          items.add(
+            DropdownMenuItem<String>(
+              value: qualification.id,
+              child: Text(qualification.nameAr ?? 'مؤهل غير محدد'),
+            ),
+          );
+        }
+      }
 
-      // إضافة القيمة المختارة مؤقتاً إذا كانت موجودة
-      if (_selectedQualificationId != null &&
-          _selectedQualificationId!.isNotEmpty) {
-        items.add(
-          DropdownMenuItem<String>(
-            value: _selectedQualificationId,
-            child: Text('المؤهل المختار: $_selectedQualificationId'),
-          ),
-        );
+      // التحقق الفوري من صحة القيمة المختارة
+      if (_selectedQualificationId != null) {
+        // معالجة القيم غير الصالحة
+        if (_selectedQualificationId!.isEmpty || 
+            _selectedQualificationId == "0" ||
+            _selectedQualificationId!.trim().isEmpty ||
+            !validValues.contains(_selectedQualificationId)) {
+          
+          debugPrint('⚠️ القيمة المختارة للمؤهل غير صالحة: "$_selectedQualificationId"');
+          debugPrint('⚠️ القيم الصالحة: $validValues');
+          
+          // إعادة تعيين فورية
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedQualificationId = null;
+              });
+            }
+          });
+        }
       }
 
       return items;
+      
+    } catch (e) {
+      debugPrint('❌ خطأ في _getQualificationItems: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      
+      // في حالة حدوث خطأ، إعادة تعيين القيمة المختارة فوراً
+      if (_selectedQualificationId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _selectedQualificationId = null;
+            });
+          }
+        });
+      }
+      
+      return [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('خطأ في تحميل المؤهلات'),
+        ),
+      ];
     }
-
-    List<DropdownMenuItem<String>> items =
-        state.qualifications!.map<DropdownMenuItem<String>>((qualification) {
-      return DropdownMenuItem<String>(
-        value: qualification.id,
-        child: Text(qualification.nameAr),
-      );
-    }).toList();
-
-    // التحقق من أن القيمة المختارة موجودة في القائمة
-    if (_selectedQualificationId != null &&
-        _selectedQualificationId!.isNotEmpty &&
-        !items.any((item) => item.value == _selectedQualificationId)) {
-      // إضافة القيمة المختارة إذا لم تكن موجودة
-      items.insert(
-          0,
-          DropdownMenuItem<String>(
-            value: _selectedQualificationId,
-            child: Text('المؤهل المختار: $_selectedQualificationId'),
-          ));
-    }
-
-    return items;
   }
+
+
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
@@ -1031,7 +1254,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final updateRequest = ProfileUpdateRequest(
         fullNameAr: updatedProfile.fullNameAr,
         fullNameEn: updatedProfile.fullNameEn,
-        email: updatedProfile.email,
+        email: updatedProfile.email.isEmpty ? null : updatedProfile.email,
         birthDate: updatedProfile.birthDate,
         governorateId: updatedProfile.governorateId,
         qualificationId: updatedProfile.qualificationId,
@@ -1045,9 +1268,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       );
 
       // حفظ البيانات أولاً
-      await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+      final updateResult = await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+      
+      // فحص نتيجة تحديث البيانات
+      if (!updateResult) {
+        // فشل في تحديث البيانات
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('فشل في حفظ البيانات. يرجى المحاولة مرة أخرى'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return; // إيقاف العملية
+      }
 
-      // رفع الملفات المختارة إذا كانت موجودة
+      // إذا نجح تحديث البيانات، نتابع لرفع الوثائق
+      bool documentsUploadSuccess = true;
+      int uploadedDocuments = 0;
+      
       if (_selectedDocuments.isNotEmpty) {
         for (int i = 0; i < _selectedDocuments.length; i++) {
           final selectedDoc = _selectedDocuments[i];
@@ -1057,21 +1297,43 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   fieldName: 'documents_${i + 1}', // اسم فريد لكل ملف
                   documentType: 'general', // نوع عام للوثائق
                   file: selectedDoc.file,
+                  fileBytes: selectedDoc.bytes, // تمرير البيانات للويب
                 );
+            uploadedDocuments++;
           } catch (e) {
             // في حالة فشل رفع ملف معين، نستمر مع باقي الملفات
             debugPrint('فشل في رفع الملف ${selectedDoc.file.path}: $e');
+            documentsUploadSuccess = false;
           }
         }
       }
 
       if (mounted) {
+        String message;
+        Color backgroundColor;
+        
+        if (_selectedDocuments.isEmpty) {
+          // لا توجد وثائق للرفع
+          message = 'تم حفظ البيانات بنجاح';
+          backgroundColor = AppColors.success;
+        } else if (documentsUploadSuccess && uploadedDocuments == _selectedDocuments.length) {
+          // تم رفع جميع الوثائق بنجاح
+          message = 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
+          backgroundColor = AppColors.success;
+        } else if (uploadedDocuments > 0) {
+          // تم رفع بعض الوثائق فقط
+          message = 'تم حفظ البيانات ورفع $uploadedDocuments من ${_selectedDocuments.length} وثائق';
+          backgroundColor = AppColors.warning;
+        } else {
+          // فشل في رفع جميع الوثائق
+          message = 'تم حفظ البيانات لكن فشل في رفع الوثائق';
+          backgroundColor = AppColors.warning;
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_selectedDocuments.isNotEmpty
-                ? 'تم حفظ البيانات ورفع الوثائق بنجاح'
-                : 'تم حفظ البيانات بنجاح'),
-            backgroundColor: AppColors.success,
+            content: Text(message),
+            backgroundColor: backgroundColor,
           ),
         );
         Navigator.pop(context);
@@ -1200,23 +1462,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
         const SizedBox(height: 12),
 
-        // زر طلب توثيق الحساب
-        if (_canRequestVerification())
-          LoadingButton(
-            text: 'طلب توثيق الحساب',
-            loadingText: 'جاري إرسال الطلب...',
-            onPressed: _requestAccountVerification,
-            isLoading: _isSaving,
-            isEnabled: !_isSaving,
-            backgroundColor: AppColors.success,
-            foregroundColor: Colors.white,
-            width: double.infinity,
-            height: 50,
-            borderRadius: BorderRadius.circular(12),
-            icon: const Icon(Icons.verified_outlined, size: 20),
-          ),
 
-        if (_canRequestVerification()) const SizedBox(height: 12),
 
         SizedBox(
           width: double.infinity,
@@ -1343,18 +1589,39 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   bool _requiresDocument(String fieldName) {
     try {
+      // التحقق من صحة المدخلات
+      if (fieldName.isEmpty) {
+        debugPrint('⚠️ اسم الحقل فارغ، لا يمكن التحقق من الحاجة للوثيقة');
+        return false;
+      }
+
       final profileState = ref.read(profileProvider);
       final currentProfile = profileState.currentProfile;
 
-      if (currentProfile == null) return false;
+      if (currentProfile == null) {
+        debugPrint('⚠️ الملف الشخصي غير متاح، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
+        return false;
+      }
+
+      // التحقق من حالة ProfileRulesProvider
+      final rulesState = ref.read(profileRulesProvider);
+      if (rulesState.rules.isEmpty) {
+        debugPrint('⚠️ قواعد الملف الشخصي غير متاحة، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
+        return false;
+      }
 
       // استخدام ProfileRulesProvider للتحقق من الحاجة للوثيقة
       final rulesNotifier = ref.read(profileRulesProvider.notifier);
       final profileStatus = _convertVerificationStatusToProfileStatus(
           currentProfile.verificationStatus);
-      return rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
-    } catch (e) {
+      
+      final requiresDoc = rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
+      debugPrint('📋 فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
+      
+      return requiresDoc;
+    } catch (e, stackTrace) {
       debugPrint('❌ خطأ في التحقق من الحاجة للوثيقة للحقل $fieldName: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       return false; // عدم طلب وثيقة في حالة الخطأ
     }
   }

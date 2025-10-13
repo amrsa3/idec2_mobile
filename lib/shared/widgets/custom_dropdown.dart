@@ -52,7 +52,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ],
         
         DropdownButtonFormField<T>(
-          value: widget.value,
+          value: _getValidValue(),
           items: widget.items,
           onChanged: widget.enabled ? widget.onChanged : null,
           validator: widget.validator,
@@ -83,6 +83,49 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ],
       ],
     );
+  }
+
+  /// التحقق من صحة القيمة المختارة وإرجاع قيمة صالحة
+  T? _getValidValue() {
+    // إذا كانت القيمة null، إرجاع null مباشرة
+    if (widget.value == null) return null;
+    
+    // إذا كانت قائمة العناصر فارغة، إرجاع null
+    if (widget.items.isEmpty) {
+      debugPrint('⚠️ CustomDropdown: قائمة العناصر فارغة');
+      return null;
+    }
+    
+    // التحقق من أن القيمة موجودة في قائمة العناصر
+    final validValues = widget.items.map((item) => item.value).toSet();
+    
+    // معالجة خاصة للقيم النصية الفارغة أو "0"
+    if (widget.value is String) {
+      final stringValue = widget.value as String;
+      if (stringValue.isEmpty || stringValue == "0" || stringValue.trim().isEmpty) {
+        debugPrint('⚠️ CustomDropdown: القيمة النصية فارغة أو غير صالحة: "$stringValue"');
+        return null;
+      }
+    }
+    
+    if (validValues.contains(widget.value)) {
+      return widget.value;
+    }
+    
+    // إذا لم تكن القيمة موجودة، إرجاع null مع تسجيل تفصيلي
+    debugPrint('⚠️ CustomDropdown: القيمة المختارة غير موجودة في القائمة: ${widget.value}');
+    debugPrint('⚠️ CustomDropdown: نوع القيمة: ${widget.value.runtimeType}');
+    debugPrint('⚠️ CustomDropdown: القيم الصالحة: $validValues');
+    
+    // إشعار الوالد بأن القيمة غير صالحة (إذا كان هناك callback)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.onChanged != null) {
+        debugPrint('🔄 CustomDropdown: إعادة تعيين القيمة إلى null');
+        widget.onChanged!(null);
+      }
+    });
+    
+    return null;
   }
 
   Widget _buildLabel() {

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
-  // Font Family with fallbacks for web compatibility
-  static const String fontFamily = 'Arial';
+  // System Font Family with local fonts as fallbacks for Arabic and English support
+  static const String fontFamily = 'Tahoma';
   static const List<String> fontFamilyFallbacks = [
-    'Arial',
-    'Helvetica',
     'Tahoma',
-    'sans-serif',
-    'Segoe UI',
-    'system-ui',
-    '-apple-system',
-    'BlinkMacSystemFont'
+    'Cairo',
+    'NotoSansArabic',
+    'Roboto',
+    'Arial',
+    'sans-serif'
   ];
   
   // Display Styles
@@ -124,7 +123,7 @@ class AppTextStyles {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     letterSpacing: 0.4,
-    color: AppColors.textSecondary,
+    color: AppColors.textPrimary,
   );
   
   // Label Styles
@@ -152,15 +151,15 @@ class AppTextStyles {
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.5,
-    color: AppColors.textSecondary,
+    color: AppColors.textPrimary,
   );
   
   // Custom Styles
   static const TextStyle button = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
     letterSpacing: 0.1,
     color: AppColors.textOnPrimary,
   );

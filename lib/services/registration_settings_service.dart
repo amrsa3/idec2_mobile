@@ -160,8 +160,8 @@ class RegistrationSettingsService {
       
       debugPrint('✅ Registration settings fetched successfully');
       debugPrint('📊 Registration enabled: ${settings.registrationEnabled}');
-      debugPrint('📊 Status: ${settings.status}');
-      debugPrint('📊 Available channels: ${settings.availableOtpChannels.length}');
+      debugPrint('📊 Status: ${settings.registrationStatus}');
+      debugPrint('📊 Available channels: ${settings.otpChannels.length}');
       
       return settings;
     } catch (e, stackTrace) {
@@ -357,42 +357,26 @@ class RegistrationSettingsService {
     }
   }
 
-  /// Get available OTP channels
-  Future<List<OtpChannelModel>> getAvailableOtpChannels() async {
+  /// Get available OTP channels (simplified)
+  Future<List<String>> getAvailableOtpChannels() async {
     try {
-      // Try public endpoint first
-      return await fetchPublicOtpChannels();
+      final settings = await getCurrentSettings();
+      return settings.otpChannels;
     } catch (e) {
       debugPrint('❌ Failed to get OTP channels: $e');
       // Return default SMS channel
-      return [
-        const OtpChannelModel(
-          id: 'sms',
-          name: 'sms',
-          displayName: 'SMS',
-          enabled: true,
-          isDefault: true,
-          priority: 1,
-        ),
-      ];
+      return ['SMS'];
     }
   }
 
-  /// Get default OTP channel
-  Future<OtpChannelModel?> getDefaultOtpChannel() async {
+  /// Get default OTP channel (simplified)
+  Future<String?> getDefaultOtpChannel() async {
     try {
       final settings = await getCurrentSettings();
       return settings.defaultChannel;
     } catch (e) {
       debugPrint('❌ Failed to get default OTP channel: $e');
-      return const OtpChannelModel(
-        id: 'sms',
-        name: 'sms',
-        displayName: 'SMS',
-        enabled: true,
-        isDefault: true,
-        priority: 1,
-      );
+      return 'SMS';
     }
   }
 
@@ -402,91 +386,64 @@ class RegistrationSettingsService {
     List<OtpChannelModel> availableChannels,
   ) async {
     try {
-      // If only one channel available, auto-select it
+      // If only one channel available, select it automatically
       if (availableChannels.length == 1) {
-        final channel = availableChannels.first;
+        final selectedChannel = availableChannels.first;
         return OtpChannelSelection(
-          channelId: channel.id,
-          displayName: channel.displayName,
-          isSelected: true,
-          isAvailable: true,
-          description: channel.description,
-          icon: channel.icon,
+          selectedChannel: selectedChannel.name,
+          phoneNumber: phoneNumber,
+          success: true,
+          message: 'Channel selected automatically: ${selectedChannel.displayName}',
         );
       }
 
-      // If multiple channels, return the default one as selected
-      final defaultChannel = availableChannels.firstWhere(
-        (channel) => channel.isDefault,
-        orElse: () => availableChannels.first,
-      );
+      // If multiple channels, select the default one (highest priority)
+      final defaultChannel = availableChannels
+          .where((channel) => channel.isDefault)
+          .firstOrNull;
+      
+      if (defaultChannel != null) {
+        return OtpChannelSelection(
+          selectedChannel: defaultChannel.name,
+          phoneNumber: phoneNumber,
+          success: true,
+          message: 'Default channel selected: ${defaultChannel.displayName}',
+        );
+      }
 
-      return OtpChannelSelection(
-        channelId: defaultChannel.id,
-        displayName: defaultChannel.displayName,
-        isSelected: true,
-        isAvailable: true,
-        description: defaultChannel.description,
-        icon: defaultChannel.icon,
+      // Fallback to first enabled channel
+      final enabledChannel = availableChannels
+          .where((channel) => channel.enabled)
+          .firstOrNull;
+      
+      if (enabledChannel != null) {
+        return OtpChannelSelection(
+          selectedChannel: enabledChannel.name,
+          phoneNumber: phoneNumber,
+          success: true,
+          message: 'Channel selected: ${enabledChannel.displayName}',
+        );
+      }
+
+      // No suitable channel found
+      return const OtpChannelSelection(
+        selectedChannel: 'sms',
+        phoneNumber: '',
+        success: false,
+        message: 'No suitable OTP channel found',
       );
     } catch (e) {
       debugPrint('❌ Failed to select OTP channel: $e');
-      
-      // Return default SMS selection
       return const OtpChannelSelection(
-        channelId: 'sms',
-        displayName: 'SMS',
-        isSelected: true,
-        isAvailable: true,
-      );
-    }
-  }
-
-  /// Request OTP with specific channel
-  Future<ApiResponse> requestOtpWithChannel(
-    String phoneNumber,
-    String channelId,
-  ) async {
-    try {
-      debugPrint('📱 Requesting OTP via channel: $channelId for phone: $phoneNumber');
-
-      final response = await _retryService.executeWithRetry(
-        () => _dioService.requestWithRetry(
-          '/api/v1/auth/request-otp',
-          method: 'POST',
-          data: {
-            'phone': phoneNumber,
-            'channel': channelId,
-          },
-          retryConfig: RetryConfig.api,
-        ),
-        maxRetries: 2,
-        shouldRetry: (error) => _shouldRetryOtpRequest(error),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ OTP request successful via $channelId');
-        return ApiResponse(
-          success: true,
-          message: response.data['message'] ?? 'OTP sent successfully',
-          data: response.data,
-        );
-      } else {
-        throw NetworkError(
-          message: response.data['message'] ?? 'Failed to send OTP',
-          statusCode: response.statusCode,
-        );
-      }
-    } catch (e, stackTrace) {
-      final error = ErrorHandler.instance.handleError(e, stackTrace);
-      debugPrint('❌ Failed to request OTP via $channelId: $error');
-      
-      return ApiResponse(
+        selectedChannel: 'sms',
+        phoneNumber: '',
         success: false,
-        message: _getOtpErrorMessage(error),
+        message: 'Error selecting OTP channel',
       );
     }
   }
+
+
 
   /// Validate registration before allowing registration flow
   Future<bool> validateRegistrationAllowed() async {
@@ -569,21 +526,20 @@ class RegistrationSettingsService {
 
   /// Get default settings as fallback
   RegistrationSettingsModel _getDefaultSettings() {
-    return const RegistrationSettingsModel(
-      registrationEnabled: true,
-      status: RegistrationStatus.open,
-      availableOtpChannels: [
-        OtpChannelModel(
-          id: 'sms',
-          name: 'sms',
-          displayName: 'SMS',
-          enabled: true,
-          isDefault: true,
-          priority: 1,
-        ),
-      ],
-      supportedLanguages: ['ar', 'en'],
-      defaultLanguage: 'ar',
+    return RegistrationSettingsModel(
+      id: 'default',
+      registrationStatus: RegistrationStatus.open,
+      otpChannels: ['SMS'],
+      otpLength: 6,
+      otpExpiryMinutes: 10,
+      maxOtpAttempts: 3,
+      otpCooldownMinutes: 5,
+      requireDocumentUpload: true,
+      allowEmailRegistration: true,
+      requirePhoneVerification: true,
+      autoApproveProfiles: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
   }
 
@@ -613,7 +569,7 @@ class RegistrationSettingsService {
       return 'Registration is disabled';
     }
     
-    switch (settings.status) {
+    switch (settings.registrationStatus) {
       case RegistrationStatus.closed:
         return 'Registration period has ended';
       case RegistrationStatus.maintenance:
@@ -627,14 +583,10 @@ class RegistrationSettingsService {
 
   /// Get next available time for registration
   DateTime? _getNextAvailableTime(RegistrationSettingsModel settings) {
-    if (settings.status == RegistrationStatus.maintenance && 
-        settings.maintenanceEndTime != null) {
-      return settings.maintenanceEndTime;
-    }
-    
-    if (settings.registrationOpenTime != null && 
-        DateTime.now().isBefore(settings.registrationOpenTime!)) {
-      return settings.registrationOpenTime;
+    if (settings.registrationStatus == RegistrationStatus.maintenance && 
+        settings.maintenanceMessage != null) {
+      // Return null since we don't have maintenance end time in new model
+      return null;
     }
     
     return null;
@@ -685,13 +637,15 @@ final registrationStatusProvider = FutureProvider<RegistrationStatusResponse>((r
 });
 
 /// Provider for available OTP channels
-final availableOtpChannelsProvider = FutureProvider<List<OtpChannelModel>>((ref) {
+final availableOtpChannelsProvider = FutureProvider<List<String>>((ref) async {
   final service = ref.watch(registrationSettingsServiceProvider);
-  return service.getAvailableOtpChannels();
+  final settings = await service.getCurrentSettings();
+  return settings.otpChannels;
 });
 
 /// Provider for default OTP channel
-final defaultOtpChannelProvider = FutureProvider<OtpChannelModel?>((ref) {
+final defaultOtpChannelProvider = FutureProvider<String?>((ref) async {
   final service = ref.watch(registrationSettingsServiceProvider);
-  return service.getDefaultOtpChannel();
+  final settings = await service.getCurrentSettings();
+  return settings.defaultChannel;
 });

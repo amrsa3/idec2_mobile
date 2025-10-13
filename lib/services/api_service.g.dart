@@ -486,13 +486,14 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<ApiResponse> checkUserStatus(String email) async {
+  Future<ApiResponse> checkUserStatus(Map<String, String> request) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'email': email};
+    final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
+    final _data = <String, dynamic>{};
+    _data.addAll(request);
     final _options = _setStreamType<ApiResponse>(Options(
-      method: 'GET',
+      method: 'POST',
       headers: _headers,
       extra: _extra,
     )

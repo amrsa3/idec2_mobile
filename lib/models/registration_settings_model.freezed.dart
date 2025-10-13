@@ -21,21 +21,22 @@ RegistrationSettingsModel _$RegistrationSettingsModelFromJson(
 
 /// @nodoc
 mixin _$RegistrationSettingsModel {
-  bool get registrationEnabled => throw _privateConstructorUsedError;
-  RegistrationStatus get status => throw _privateConstructorUsedError;
-  List<OtpChannelModel> get availableOtpChannels =>
+  String get id => throw _privateConstructorUsedError;
+  RegistrationStatus get registrationStatus =>
       throw _privateConstructorUsedError;
-  List<String> get supportedLanguages => throw _privateConstructorUsedError;
-  String get defaultLanguage => throw _privateConstructorUsedError;
+  List<String> get otpChannels => throw _privateConstructorUsedError;
+  int get otpLength => throw _privateConstructorUsedError;
+  int get otpExpiryMinutes => throw _privateConstructorUsedError;
+  int get maxOtpAttempts => throw _privateConstructorUsedError;
+  int get otpCooldownMinutes => throw _privateConstructorUsedError;
+  bool get requireDocumentUpload => throw _privateConstructorUsedError;
+  bool get allowEmailRegistration => throw _privateConstructorUsedError;
+  bool get requirePhoneVerification => throw _privateConstructorUsedError;
+  bool get autoApproveProfiles => throw _privateConstructorUsedError;
   String? get maintenanceMessage => throw _privateConstructorUsedError;
-  DateTime? get maintenanceStartTime => throw _privateConstructorUsedError;
-  DateTime? get maintenanceEndTime => throw _privateConstructorUsedError;
-  String? get registrationClosedMessage => throw _privateConstructorUsedError;
-  DateTime? get registrationOpenTime => throw _privateConstructorUsedError;
-  DateTime? get registrationCloseTime => throw _privateConstructorUsedError;
-  Map<String, dynamic>? get additionalSettings =>
-      throw _privateConstructorUsedError;
-  DateTime? get lastUpdated => throw _privateConstructorUsedError;
+  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime get updatedAt => throw _privateConstructorUsedError;
+  String? get updatedBy => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -50,19 +51,21 @@ abstract class $RegistrationSettingsModelCopyWith<$Res> {
       _$RegistrationSettingsModelCopyWithImpl<$Res, RegistrationSettingsModel>;
   @useResult
   $Res call(
-      {bool registrationEnabled,
-      RegistrationStatus status,
-      List<OtpChannelModel> availableOtpChannels,
-      List<String> supportedLanguages,
-      String defaultLanguage,
+      {String id,
+      RegistrationStatus registrationStatus,
+      List<String> otpChannels,
+      int otpLength,
+      int otpExpiryMinutes,
+      int maxOtpAttempts,
+      int otpCooldownMinutes,
+      bool requireDocumentUpload,
+      bool allowEmailRegistration,
+      bool requirePhoneVerification,
+      bool autoApproveProfiles,
       String? maintenanceMessage,
-      DateTime? maintenanceStartTime,
-      DateTime? maintenanceEndTime,
-      String? registrationClosedMessage,
-      DateTime? registrationOpenTime,
-      DateTime? registrationCloseTime,
-      Map<String, dynamic>? additionalSettings,
-      DateTime? lastUpdated});
+      DateTime createdAt,
+      DateTime updatedAt,
+      String? updatedBy});
 }
 
 /// @nodoc
@@ -79,73 +82,83 @@ class _$RegistrationSettingsModelCopyWithImpl<$Res,
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? registrationEnabled = null,
-    Object? status = null,
-    Object? availableOtpChannels = null,
-    Object? supportedLanguages = null,
-    Object? defaultLanguage = null,
+    Object? id = null,
+    Object? registrationStatus = null,
+    Object? otpChannels = null,
+    Object? otpLength = null,
+    Object? otpExpiryMinutes = null,
+    Object? maxOtpAttempts = null,
+    Object? otpCooldownMinutes = null,
+    Object? requireDocumentUpload = null,
+    Object? allowEmailRegistration = null,
+    Object? requirePhoneVerification = null,
+    Object? autoApproveProfiles = null,
     Object? maintenanceMessage = freezed,
-    Object? maintenanceStartTime = freezed,
-    Object? maintenanceEndTime = freezed,
-    Object? registrationClosedMessage = freezed,
-    Object? registrationOpenTime = freezed,
-    Object? registrationCloseTime = freezed,
-    Object? additionalSettings = freezed,
-    Object? lastUpdated = freezed,
+    Object? createdAt = null,
+    Object? updatedAt = null,
+    Object? updatedBy = freezed,
   }) {
     return _then(_value.copyWith(
-      registrationEnabled: null == registrationEnabled
-          ? _value.registrationEnabled
-          : registrationEnabled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as RegistrationStatus,
-      availableOtpChannels: null == availableOtpChannels
-          ? _value.availableOtpChannels
-          : availableOtpChannels // ignore: cast_nullable_to_non_nullable
-              as List<OtpChannelModel>,
-      supportedLanguages: null == supportedLanguages
-          ? _value.supportedLanguages
-          : supportedLanguages // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-      defaultLanguage: null == defaultLanguage
-          ? _value.defaultLanguage
-          : defaultLanguage // ignore: cast_nullable_to_non_nullable
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
               as String,
+      registrationStatus: null == registrationStatus
+          ? _value.registrationStatus
+          : registrationStatus // ignore: cast_nullable_to_non_nullable
+              as RegistrationStatus,
+      otpChannels: null == otpChannels
+          ? _value.otpChannels
+          : otpChannels // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      otpLength: null == otpLength
+          ? _value.otpLength
+          : otpLength // ignore: cast_nullable_to_non_nullable
+              as int,
+      otpExpiryMinutes: null == otpExpiryMinutes
+          ? _value.otpExpiryMinutes
+          : otpExpiryMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxOtpAttempts: null == maxOtpAttempts
+          ? _value.maxOtpAttempts
+          : maxOtpAttempts // ignore: cast_nullable_to_non_nullable
+              as int,
+      otpCooldownMinutes: null == otpCooldownMinutes
+          ? _value.otpCooldownMinutes
+          : otpCooldownMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
+      requireDocumentUpload: null == requireDocumentUpload
+          ? _value.requireDocumentUpload
+          : requireDocumentUpload // ignore: cast_nullable_to_non_nullable
+              as bool,
+      allowEmailRegistration: null == allowEmailRegistration
+          ? _value.allowEmailRegistration
+          : allowEmailRegistration // ignore: cast_nullable_to_non_nullable
+              as bool,
+      requirePhoneVerification: null == requirePhoneVerification
+          ? _value.requirePhoneVerification
+          : requirePhoneVerification // ignore: cast_nullable_to_non_nullable
+              as bool,
+      autoApproveProfiles: null == autoApproveProfiles
+          ? _value.autoApproveProfiles
+          : autoApproveProfiles // ignore: cast_nullable_to_non_nullable
+              as bool,
       maintenanceMessage: freezed == maintenanceMessage
           ? _value.maintenanceMessage
           : maintenanceMessage // ignore: cast_nullable_to_non_nullable
               as String?,
-      maintenanceStartTime: freezed == maintenanceStartTime
-          ? _value.maintenanceStartTime
-          : maintenanceStartTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      maintenanceEndTime: freezed == maintenanceEndTime
-          ? _value.maintenanceEndTime
-          : maintenanceEndTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      registrationClosedMessage: freezed == registrationClosedMessage
-          ? _value.registrationClosedMessage
-          : registrationClosedMessage // ignore: cast_nullable_to_non_nullable
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedAt: null == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedBy: freezed == updatedBy
+          ? _value.updatedBy
+          : updatedBy // ignore: cast_nullable_to_non_nullable
               as String?,
-      registrationOpenTime: freezed == registrationOpenTime
-          ? _value.registrationOpenTime
-          : registrationOpenTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      registrationCloseTime: freezed == registrationCloseTime
-          ? _value.registrationCloseTime
-          : registrationCloseTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      additionalSettings: freezed == additionalSettings
-          ? _value.additionalSettings
-          : additionalSettings // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-      lastUpdated: freezed == lastUpdated
-          ? _value.lastUpdated
-          : lastUpdated // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
     ) as $Val);
   }
 }
@@ -160,19 +173,21 @@ abstract class _$$RegistrationSettingsModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {bool registrationEnabled,
-      RegistrationStatus status,
-      List<OtpChannelModel> availableOtpChannels,
-      List<String> supportedLanguages,
-      String defaultLanguage,
+      {String id,
+      RegistrationStatus registrationStatus,
+      List<String> otpChannels,
+      int otpLength,
+      int otpExpiryMinutes,
+      int maxOtpAttempts,
+      int otpCooldownMinutes,
+      bool requireDocumentUpload,
+      bool allowEmailRegistration,
+      bool requirePhoneVerification,
+      bool autoApproveProfiles,
       String? maintenanceMessage,
-      DateTime? maintenanceStartTime,
-      DateTime? maintenanceEndTime,
-      String? registrationClosedMessage,
-      DateTime? registrationOpenTime,
-      DateTime? registrationCloseTime,
-      Map<String, dynamic>? additionalSettings,
-      DateTime? lastUpdated});
+      DateTime createdAt,
+      DateTime updatedAt,
+      String? updatedBy});
 }
 
 /// @nodoc
@@ -188,73 +203,83 @@ class __$$RegistrationSettingsModelImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? registrationEnabled = null,
-    Object? status = null,
-    Object? availableOtpChannels = null,
-    Object? supportedLanguages = null,
-    Object? defaultLanguage = null,
+    Object? id = null,
+    Object? registrationStatus = null,
+    Object? otpChannels = null,
+    Object? otpLength = null,
+    Object? otpExpiryMinutes = null,
+    Object? maxOtpAttempts = null,
+    Object? otpCooldownMinutes = null,
+    Object? requireDocumentUpload = null,
+    Object? allowEmailRegistration = null,
+    Object? requirePhoneVerification = null,
+    Object? autoApproveProfiles = null,
     Object? maintenanceMessage = freezed,
-    Object? maintenanceStartTime = freezed,
-    Object? maintenanceEndTime = freezed,
-    Object? registrationClosedMessage = freezed,
-    Object? registrationOpenTime = freezed,
-    Object? registrationCloseTime = freezed,
-    Object? additionalSettings = freezed,
-    Object? lastUpdated = freezed,
+    Object? createdAt = null,
+    Object? updatedAt = null,
+    Object? updatedBy = freezed,
   }) {
     return _then(_$RegistrationSettingsModelImpl(
-      registrationEnabled: null == registrationEnabled
-          ? _value.registrationEnabled
-          : registrationEnabled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as RegistrationStatus,
-      availableOtpChannels: null == availableOtpChannels
-          ? _value._availableOtpChannels
-          : availableOtpChannels // ignore: cast_nullable_to_non_nullable
-              as List<OtpChannelModel>,
-      supportedLanguages: null == supportedLanguages
-          ? _value._supportedLanguages
-          : supportedLanguages // ignore: cast_nullable_to_non_nullable
-              as List<String>,
-      defaultLanguage: null == defaultLanguage
-          ? _value.defaultLanguage
-          : defaultLanguage // ignore: cast_nullable_to_non_nullable
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
               as String,
+      registrationStatus: null == registrationStatus
+          ? _value.registrationStatus
+          : registrationStatus // ignore: cast_nullable_to_non_nullable
+              as RegistrationStatus,
+      otpChannels: null == otpChannels
+          ? _value._otpChannels
+          : otpChannels // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      otpLength: null == otpLength
+          ? _value.otpLength
+          : otpLength // ignore: cast_nullable_to_non_nullable
+              as int,
+      otpExpiryMinutes: null == otpExpiryMinutes
+          ? _value.otpExpiryMinutes
+          : otpExpiryMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
+      maxOtpAttempts: null == maxOtpAttempts
+          ? _value.maxOtpAttempts
+          : maxOtpAttempts // ignore: cast_nullable_to_non_nullable
+              as int,
+      otpCooldownMinutes: null == otpCooldownMinutes
+          ? _value.otpCooldownMinutes
+          : otpCooldownMinutes // ignore: cast_nullable_to_non_nullable
+              as int,
+      requireDocumentUpload: null == requireDocumentUpload
+          ? _value.requireDocumentUpload
+          : requireDocumentUpload // ignore: cast_nullable_to_non_nullable
+              as bool,
+      allowEmailRegistration: null == allowEmailRegistration
+          ? _value.allowEmailRegistration
+          : allowEmailRegistration // ignore: cast_nullable_to_non_nullable
+              as bool,
+      requirePhoneVerification: null == requirePhoneVerification
+          ? _value.requirePhoneVerification
+          : requirePhoneVerification // ignore: cast_nullable_to_non_nullable
+              as bool,
+      autoApproveProfiles: null == autoApproveProfiles
+          ? _value.autoApproveProfiles
+          : autoApproveProfiles // ignore: cast_nullable_to_non_nullable
+              as bool,
       maintenanceMessage: freezed == maintenanceMessage
           ? _value.maintenanceMessage
           : maintenanceMessage // ignore: cast_nullable_to_non_nullable
               as String?,
-      maintenanceStartTime: freezed == maintenanceStartTime
-          ? _value.maintenanceStartTime
-          : maintenanceStartTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      maintenanceEndTime: freezed == maintenanceEndTime
-          ? _value.maintenanceEndTime
-          : maintenanceEndTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      registrationClosedMessage: freezed == registrationClosedMessage
-          ? _value.registrationClosedMessage
-          : registrationClosedMessage // ignore: cast_nullable_to_non_nullable
+      createdAt: null == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedAt: null == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedBy: freezed == updatedBy
+          ? _value.updatedBy
+          : updatedBy // ignore: cast_nullable_to_non_nullable
               as String?,
-      registrationOpenTime: freezed == registrationOpenTime
-          ? _value.registrationOpenTime
-          : registrationOpenTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      registrationCloseTime: freezed == registrationCloseTime
-          ? _value.registrationCloseTime
-          : registrationCloseTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      additionalSettings: freezed == additionalSettings
-          ? _value._additionalSettings
-          : additionalSettings // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-      lastUpdated: freezed == lastUpdated
-          ? _value.lastUpdated
-          : lastUpdated // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
     ));
   }
 }
@@ -263,79 +288,66 @@ class __$$RegistrationSettingsModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$RegistrationSettingsModelImpl implements _RegistrationSettingsModel {
   const _$RegistrationSettingsModelImpl(
-      {required this.registrationEnabled,
-      required this.status,
-      required final List<OtpChannelModel> availableOtpChannels,
-      required final List<String> supportedLanguages,
-      required this.defaultLanguage,
+      {required this.id,
+      required this.registrationStatus,
+      required final List<String> otpChannels,
+      required this.otpLength,
+      required this.otpExpiryMinutes,
+      required this.maxOtpAttempts,
+      required this.otpCooldownMinutes,
+      required this.requireDocumentUpload,
+      required this.allowEmailRegistration,
+      required this.requirePhoneVerification,
+      required this.autoApproveProfiles,
       this.maintenanceMessage,
-      this.maintenanceStartTime,
-      this.maintenanceEndTime,
-      this.registrationClosedMessage,
-      this.registrationOpenTime,
-      this.registrationCloseTime,
-      final Map<String, dynamic>? additionalSettings,
-      this.lastUpdated})
-      : _availableOtpChannels = availableOtpChannels,
-        _supportedLanguages = supportedLanguages,
-        _additionalSettings = additionalSettings;
+      required this.createdAt,
+      required this.updatedAt,
+      this.updatedBy})
+      : _otpChannels = otpChannels;
 
   factory _$RegistrationSettingsModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$RegistrationSettingsModelImplFromJson(json);
 
   @override
-  final bool registrationEnabled;
+  final String id;
   @override
-  final RegistrationStatus status;
-  final List<OtpChannelModel> _availableOtpChannels;
+  final RegistrationStatus registrationStatus;
+  final List<String> _otpChannels;
   @override
-  List<OtpChannelModel> get availableOtpChannels {
-    if (_availableOtpChannels is EqualUnmodifiableListView)
-      return _availableOtpChannels;
+  List<String> get otpChannels {
+    if (_otpChannels is EqualUnmodifiableListView) return _otpChannels;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_availableOtpChannels);
-  }
-
-  final List<String> _supportedLanguages;
-  @override
-  List<String> get supportedLanguages {
-    if (_supportedLanguages is EqualUnmodifiableListView)
-      return _supportedLanguages;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_supportedLanguages);
+    return EqualUnmodifiableListView(_otpChannels);
   }
 
   @override
-  final String defaultLanguage;
+  final int otpLength;
+  @override
+  final int otpExpiryMinutes;
+  @override
+  final int maxOtpAttempts;
+  @override
+  final int otpCooldownMinutes;
+  @override
+  final bool requireDocumentUpload;
+  @override
+  final bool allowEmailRegistration;
+  @override
+  final bool requirePhoneVerification;
+  @override
+  final bool autoApproveProfiles;
   @override
   final String? maintenanceMessage;
   @override
-  final DateTime? maintenanceStartTime;
+  final DateTime createdAt;
   @override
-  final DateTime? maintenanceEndTime;
+  final DateTime updatedAt;
   @override
-  final String? registrationClosedMessage;
-  @override
-  final DateTime? registrationOpenTime;
-  @override
-  final DateTime? registrationCloseTime;
-  final Map<String, dynamic>? _additionalSettings;
-  @override
-  Map<String, dynamic>? get additionalSettings {
-    final value = _additionalSettings;
-    if (value == null) return null;
-    if (_additionalSettings is EqualUnmodifiableMapView)
-      return _additionalSettings;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
-  }
-
-  @override
-  final DateTime? lastUpdated;
+  final String? updatedBy;
 
   @override
   String toString() {
-    return 'RegistrationSettingsModel(registrationEnabled: $registrationEnabled, status: $status, availableOtpChannels: $availableOtpChannels, supportedLanguages: $supportedLanguages, defaultLanguage: $defaultLanguage, maintenanceMessage: $maintenanceMessage, maintenanceStartTime: $maintenanceStartTime, maintenanceEndTime: $maintenanceEndTime, registrationClosedMessage: $registrationClosedMessage, registrationOpenTime: $registrationOpenTime, registrationCloseTime: $registrationCloseTime, additionalSettings: $additionalSettings, lastUpdated: $lastUpdated)';
+    return 'RegistrationSettingsModel(id: $id, registrationStatus: $registrationStatus, otpChannels: $otpChannels, otpLength: $otpLength, otpExpiryMinutes: $otpExpiryMinutes, maxOtpAttempts: $maxOtpAttempts, otpCooldownMinutes: $otpCooldownMinutes, requireDocumentUpload: $requireDocumentUpload, allowEmailRegistration: $allowEmailRegistration, requirePhoneVerification: $requirePhoneVerification, autoApproveProfiles: $autoApproveProfiles, maintenanceMessage: $maintenanceMessage, createdAt: $createdAt, updatedAt: $updatedAt, updatedBy: $updatedBy)';
   }
 
   @override
@@ -343,51 +355,57 @@ class _$RegistrationSettingsModelImpl implements _RegistrationSettingsModel {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$RegistrationSettingsModelImpl &&
-            (identical(other.registrationEnabled, registrationEnabled) ||
-                other.registrationEnabled == registrationEnabled) &&
-            (identical(other.status, status) || other.status == status) &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.registrationStatus, registrationStatus) ||
+                other.registrationStatus == registrationStatus) &&
             const DeepCollectionEquality()
-                .equals(other._availableOtpChannels, _availableOtpChannels) &&
-            const DeepCollectionEquality()
-                .equals(other._supportedLanguages, _supportedLanguages) &&
-            (identical(other.defaultLanguage, defaultLanguage) ||
-                other.defaultLanguage == defaultLanguage) &&
+                .equals(other._otpChannels, _otpChannels) &&
+            (identical(other.otpLength, otpLength) ||
+                other.otpLength == otpLength) &&
+            (identical(other.otpExpiryMinutes, otpExpiryMinutes) ||
+                other.otpExpiryMinutes == otpExpiryMinutes) &&
+            (identical(other.maxOtpAttempts, maxOtpAttempts) ||
+                other.maxOtpAttempts == maxOtpAttempts) &&
+            (identical(other.otpCooldownMinutes, otpCooldownMinutes) ||
+                other.otpCooldownMinutes == otpCooldownMinutes) &&
+            (identical(other.requireDocumentUpload, requireDocumentUpload) ||
+                other.requireDocumentUpload == requireDocumentUpload) &&
+            (identical(other.allowEmailRegistration, allowEmailRegistration) ||
+                other.allowEmailRegistration == allowEmailRegistration) &&
+            (identical(
+                    other.requirePhoneVerification, requirePhoneVerification) ||
+                other.requirePhoneVerification == requirePhoneVerification) &&
+            (identical(other.autoApproveProfiles, autoApproveProfiles) ||
+                other.autoApproveProfiles == autoApproveProfiles) &&
             (identical(other.maintenanceMessage, maintenanceMessage) ||
                 other.maintenanceMessage == maintenanceMessage) &&
-            (identical(other.maintenanceStartTime, maintenanceStartTime) ||
-                other.maintenanceStartTime == maintenanceStartTime) &&
-            (identical(other.maintenanceEndTime, maintenanceEndTime) ||
-                other.maintenanceEndTime == maintenanceEndTime) &&
-            (identical(other.registrationClosedMessage,
-                    registrationClosedMessage) ||
-                other.registrationClosedMessage == registrationClosedMessage) &&
-            (identical(other.registrationOpenTime, registrationOpenTime) ||
-                other.registrationOpenTime == registrationOpenTime) &&
-            (identical(other.registrationCloseTime, registrationCloseTime) ||
-                other.registrationCloseTime == registrationCloseTime) &&
-            const DeepCollectionEquality()
-                .equals(other._additionalSettings, _additionalSettings) &&
-            (identical(other.lastUpdated, lastUpdated) ||
-                other.lastUpdated == lastUpdated));
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt) &&
+            (identical(other.updatedBy, updatedBy) ||
+                other.updatedBy == updatedBy));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      registrationEnabled,
-      status,
-      const DeepCollectionEquality().hash(_availableOtpChannels),
-      const DeepCollectionEquality().hash(_supportedLanguages),
-      defaultLanguage,
+      id,
+      registrationStatus,
+      const DeepCollectionEquality().hash(_otpChannels),
+      otpLength,
+      otpExpiryMinutes,
+      maxOtpAttempts,
+      otpCooldownMinutes,
+      requireDocumentUpload,
+      allowEmailRegistration,
+      requirePhoneVerification,
+      autoApproveProfiles,
       maintenanceMessage,
-      maintenanceStartTime,
-      maintenanceEndTime,
-      registrationClosedMessage,
-      registrationOpenTime,
-      registrationCloseTime,
-      const DeepCollectionEquality().hash(_additionalSettings),
-      lastUpdated);
+      createdAt,
+      updatedAt,
+      updatedBy);
 
   @JsonKey(ignore: true)
   @override
@@ -406,49 +424,55 @@ class _$RegistrationSettingsModelImpl implements _RegistrationSettingsModel {
 
 abstract class _RegistrationSettingsModel implements RegistrationSettingsModel {
   const factory _RegistrationSettingsModel(
-      {required final bool registrationEnabled,
-      required final RegistrationStatus status,
-      required final List<OtpChannelModel> availableOtpChannels,
-      required final List<String> supportedLanguages,
-      required final String defaultLanguage,
+      {required final String id,
+      required final RegistrationStatus registrationStatus,
+      required final List<String> otpChannels,
+      required final int otpLength,
+      required final int otpExpiryMinutes,
+      required final int maxOtpAttempts,
+      required final int otpCooldownMinutes,
+      required final bool requireDocumentUpload,
+      required final bool allowEmailRegistration,
+      required final bool requirePhoneVerification,
+      required final bool autoApproveProfiles,
       final String? maintenanceMessage,
-      final DateTime? maintenanceStartTime,
-      final DateTime? maintenanceEndTime,
-      final String? registrationClosedMessage,
-      final DateTime? registrationOpenTime,
-      final DateTime? registrationCloseTime,
-      final Map<String, dynamic>? additionalSettings,
-      final DateTime? lastUpdated}) = _$RegistrationSettingsModelImpl;
+      required final DateTime createdAt,
+      required final DateTime updatedAt,
+      final String? updatedBy}) = _$RegistrationSettingsModelImpl;
 
   factory _RegistrationSettingsModel.fromJson(Map<String, dynamic> json) =
       _$RegistrationSettingsModelImpl.fromJson;
 
   @override
-  bool get registrationEnabled;
+  String get id;
   @override
-  RegistrationStatus get status;
+  RegistrationStatus get registrationStatus;
   @override
-  List<OtpChannelModel> get availableOtpChannels;
+  List<String> get otpChannels;
   @override
-  List<String> get supportedLanguages;
+  int get otpLength;
   @override
-  String get defaultLanguage;
+  int get otpExpiryMinutes;
+  @override
+  int get maxOtpAttempts;
+  @override
+  int get otpCooldownMinutes;
+  @override
+  bool get requireDocumentUpload;
+  @override
+  bool get allowEmailRegistration;
+  @override
+  bool get requirePhoneVerification;
+  @override
+  bool get autoApproveProfiles;
   @override
   String? get maintenanceMessage;
   @override
-  DateTime? get maintenanceStartTime;
+  DateTime get createdAt;
   @override
-  DateTime? get maintenanceEndTime;
+  DateTime get updatedAt;
   @override
-  String? get registrationClosedMessage;
-  @override
-  DateTime? get registrationOpenTime;
-  @override
-  DateTime? get registrationCloseTime;
-  @override
-  Map<String, dynamic>? get additionalSettings;
-  @override
-  DateTime? get lastUpdated;
+  String? get updatedBy;
   @override
   @JsonKey(ignore: true)
   _$$RegistrationSettingsModelImplCopyWith<_$RegistrationSettingsModelImpl>
@@ -466,10 +490,7 @@ mixin _$OtpChannelModel {
   String get displayName => throw _privateConstructorUsedError;
   bool get enabled => throw _privateConstructorUsedError;
   bool get isDefault => throw _privateConstructorUsedError;
-  int? get priority => throw _privateConstructorUsedError;
-  Map<String, dynamic>? get settings => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError;
-  String? get icon => throw _privateConstructorUsedError;
+  int get priority => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -489,10 +510,7 @@ abstract class $OtpChannelModelCopyWith<$Res> {
       String displayName,
       bool enabled,
       bool isDefault,
-      int? priority,
-      Map<String, dynamic>? settings,
-      String? description,
-      String? icon});
+      int priority});
 }
 
 /// @nodoc
@@ -513,10 +531,7 @@ class _$OtpChannelModelCopyWithImpl<$Res, $Val extends OtpChannelModel>
     Object? displayName = null,
     Object? enabled = null,
     Object? isDefault = null,
-    Object? priority = freezed,
-    Object? settings = freezed,
-    Object? description = freezed,
-    Object? icon = freezed,
+    Object? priority = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -539,22 +554,10 @@ class _$OtpChannelModelCopyWithImpl<$Res, $Val extends OtpChannelModel>
           ? _value.isDefault
           : isDefault // ignore: cast_nullable_to_non_nullable
               as bool,
-      priority: freezed == priority
+      priority: null == priority
           ? _value.priority
           : priority // ignore: cast_nullable_to_non_nullable
-              as int?,
-      settings: freezed == settings
-          ? _value.settings
-          : settings // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      icon: freezed == icon
-          ? _value.icon
-          : icon // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as int,
     ) as $Val);
   }
 }
@@ -573,10 +576,7 @@ abstract class _$$OtpChannelModelImplCopyWith<$Res>
       String displayName,
       bool enabled,
       bool isDefault,
-      int? priority,
-      Map<String, dynamic>? settings,
-      String? description,
-      String? icon});
+      int priority});
 }
 
 /// @nodoc
@@ -595,10 +595,7 @@ class __$$OtpChannelModelImplCopyWithImpl<$Res>
     Object? displayName = null,
     Object? enabled = null,
     Object? isDefault = null,
-    Object? priority = freezed,
-    Object? settings = freezed,
-    Object? description = freezed,
-    Object? icon = freezed,
+    Object? priority = null,
   }) {
     return _then(_$OtpChannelModelImpl(
       id: null == id
@@ -621,22 +618,10 @@ class __$$OtpChannelModelImplCopyWithImpl<$Res>
           ? _value.isDefault
           : isDefault // ignore: cast_nullable_to_non_nullable
               as bool,
-      priority: freezed == priority
+      priority: null == priority
           ? _value.priority
           : priority // ignore: cast_nullable_to_non_nullable
-              as int?,
-      settings: freezed == settings
-          ? _value._settings
-          : settings // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      icon: freezed == icon
-          ? _value.icon
-          : icon // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as int,
     ));
   }
 }
@@ -650,11 +635,7 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
       required this.displayName,
       required this.enabled,
       required this.isDefault,
-      this.priority,
-      final Map<String, dynamic>? settings,
-      this.description,
-      this.icon})
-      : _settings = settings;
+      required this.priority});
 
   factory _$OtpChannelModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$OtpChannelModelImplFromJson(json);
@@ -670,25 +651,11 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
   @override
   final bool isDefault;
   @override
-  final int? priority;
-  final Map<String, dynamic>? _settings;
-  @override
-  Map<String, dynamic>? get settings {
-    final value = _settings;
-    if (value == null) return null;
-    if (_settings is EqualUnmodifiableMapView) return _settings;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
-  }
-
-  @override
-  final String? description;
-  @override
-  final String? icon;
+  final int priority;
 
   @override
   String toString() {
-    return 'OtpChannelModel(id: $id, name: $name, displayName: $displayName, enabled: $enabled, isDefault: $isDefault, priority: $priority, settings: $settings, description: $description, icon: $icon)';
+    return 'OtpChannelModel(id: $id, name: $name, displayName: $displayName, enabled: $enabled, isDefault: $isDefault, priority: $priority)';
   }
 
   @override
@@ -704,26 +671,13 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
             (identical(other.isDefault, isDefault) ||
                 other.isDefault == isDefault) &&
             (identical(other.priority, priority) ||
-                other.priority == priority) &&
-            const DeepCollectionEquality().equals(other._settings, _settings) &&
-            (identical(other.description, description) ||
-                other.description == description) &&
-            (identical(other.icon, icon) || other.icon == icon));
+                other.priority == priority));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      displayName,
-      enabled,
-      isDefault,
-      priority,
-      const DeepCollectionEquality().hash(_settings),
-      description,
-      icon);
+      runtimeType, id, name, displayName, enabled, isDefault, priority);
 
   @JsonKey(ignore: true)
   @override
@@ -747,10 +701,7 @@ abstract class _OtpChannelModel implements OtpChannelModel {
       required final String displayName,
       required final bool enabled,
       required final bool isDefault,
-      final int? priority,
-      final Map<String, dynamic>? settings,
-      final String? description,
-      final String? icon}) = _$OtpChannelModelImpl;
+      required final int priority}) = _$OtpChannelModelImpl;
 
   factory _OtpChannelModel.fromJson(Map<String, dynamic> json) =
       _$OtpChannelModelImpl.fromJson;
@@ -766,52 +717,47 @@ abstract class _OtpChannelModel implements OtpChannelModel {
   @override
   bool get isDefault;
   @override
-  int? get priority;
-  @override
-  Map<String, dynamic>? get settings;
-  @override
-  String? get description;
-  @override
-  String? get icon;
+  int get priority;
   @override
   @JsonKey(ignore: true)
   _$$OtpChannelModelImplCopyWith<_$OtpChannelModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
-OtpChannelRequest _$OtpChannelRequestFromJson(Map<String, dynamic> json) {
-  return _OtpChannelRequest.fromJson(json);
+OtpChannelSelection _$OtpChannelSelectionFromJson(Map<String, dynamic> json) {
+  return _OtpChannelSelection.fromJson(json);
 }
 
 /// @nodoc
-mixin _$OtpChannelRequest {
+mixin _$OtpChannelSelection {
+  String get selectedChannel => throw _privateConstructorUsedError;
   String get phoneNumber => throw _privateConstructorUsedError;
-  String get channelId => throw _privateConstructorUsedError;
-  Map<String, dynamic>? get additionalData =>
-      throw _privateConstructorUsedError;
+  bool get success => throw _privateConstructorUsedError;
+  String? get message => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
-  $OtpChannelRequestCopyWith<OtpChannelRequest> get copyWith =>
+  $OtpChannelSelectionCopyWith<OtpChannelSelection> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $OtpChannelRequestCopyWith<$Res> {
-  factory $OtpChannelRequestCopyWith(
-          OtpChannelRequest value, $Res Function(OtpChannelRequest) then) =
-      _$OtpChannelRequestCopyWithImpl<$Res, OtpChannelRequest>;
+abstract class $OtpChannelSelectionCopyWith<$Res> {
+  factory $OtpChannelSelectionCopyWith(
+          OtpChannelSelection value, $Res Function(OtpChannelSelection) then) =
+      _$OtpChannelSelectionCopyWithImpl<$Res, OtpChannelSelection>;
   @useResult
   $Res call(
-      {String phoneNumber,
-      String channelId,
-      Map<String, dynamic>? additionalData});
+      {String selectedChannel,
+      String phoneNumber,
+      bool success,
+      String? message});
 }
 
 /// @nodoc
-class _$OtpChannelRequestCopyWithImpl<$Res, $Val extends OtpChannelRequest>
-    implements $OtpChannelRequestCopyWith<$Res> {
-  _$OtpChannelRequestCopyWithImpl(this._value, this._then);
+class _$OtpChannelSelectionCopyWithImpl<$Res, $Val extends OtpChannelSelection>
+    implements $OtpChannelSelectionCopyWith<$Res> {
+  _$OtpChannelSelectionCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
@@ -821,155 +767,164 @@ class _$OtpChannelRequestCopyWithImpl<$Res, $Val extends OtpChannelRequest>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? selectedChannel = null,
     Object? phoneNumber = null,
-    Object? channelId = null,
-    Object? additionalData = freezed,
+    Object? success = null,
+    Object? message = freezed,
   }) {
     return _then(_value.copyWith(
+      selectedChannel: null == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as String,
       phoneNumber: null == phoneNumber
           ? _value.phoneNumber
           : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String,
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      additionalData: freezed == additionalData
-          ? _value.additionalData
-          : additionalData // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
+      success: null == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
 
 /// @nodoc
-abstract class _$$OtpChannelRequestImplCopyWith<$Res>
-    implements $OtpChannelRequestCopyWith<$Res> {
-  factory _$$OtpChannelRequestImplCopyWith(_$OtpChannelRequestImpl value,
-          $Res Function(_$OtpChannelRequestImpl) then) =
-      __$$OtpChannelRequestImplCopyWithImpl<$Res>;
+abstract class _$$OtpChannelSelectionImplCopyWith<$Res>
+    implements $OtpChannelSelectionCopyWith<$Res> {
+  factory _$$OtpChannelSelectionImplCopyWith(_$OtpChannelSelectionImpl value,
+          $Res Function(_$OtpChannelSelectionImpl) then) =
+      __$$OtpChannelSelectionImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call(
-      {String phoneNumber,
-      String channelId,
-      Map<String, dynamic>? additionalData});
+      {String selectedChannel,
+      String phoneNumber,
+      bool success,
+      String? message});
 }
 
 /// @nodoc
-class __$$OtpChannelRequestImplCopyWithImpl<$Res>
-    extends _$OtpChannelRequestCopyWithImpl<$Res, _$OtpChannelRequestImpl>
-    implements _$$OtpChannelRequestImplCopyWith<$Res> {
-  __$$OtpChannelRequestImplCopyWithImpl(_$OtpChannelRequestImpl _value,
-      $Res Function(_$OtpChannelRequestImpl) _then)
+class __$$OtpChannelSelectionImplCopyWithImpl<$Res>
+    extends _$OtpChannelSelectionCopyWithImpl<$Res, _$OtpChannelSelectionImpl>
+    implements _$$OtpChannelSelectionImplCopyWith<$Res> {
+  __$$OtpChannelSelectionImplCopyWithImpl(_$OtpChannelSelectionImpl _value,
+      $Res Function(_$OtpChannelSelectionImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? selectedChannel = null,
     Object? phoneNumber = null,
-    Object? channelId = null,
-    Object? additionalData = freezed,
+    Object? success = null,
+    Object? message = freezed,
   }) {
-    return _then(_$OtpChannelRequestImpl(
+    return _then(_$OtpChannelSelectionImpl(
+      selectedChannel: null == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as String,
       phoneNumber: null == phoneNumber
           ? _value.phoneNumber
           : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String,
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      additionalData: freezed == additionalData
-          ? _value._additionalData
-          : additionalData // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
+      success: null == success
+          ? _value.success
+          : success // ignore: cast_nullable_to_non_nullable
+              as bool,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$OtpChannelRequestImpl implements _OtpChannelRequest {
-  const _$OtpChannelRequestImpl(
-      {required this.phoneNumber,
-      required this.channelId,
-      final Map<String, dynamic>? additionalData})
-      : _additionalData = additionalData;
+class _$OtpChannelSelectionImpl implements _OtpChannelSelection {
+  const _$OtpChannelSelectionImpl(
+      {required this.selectedChannel,
+      required this.phoneNumber,
+      required this.success,
+      this.message});
 
-  factory _$OtpChannelRequestImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OtpChannelRequestImplFromJson(json);
+  factory _$OtpChannelSelectionImpl.fromJson(Map<String, dynamic> json) =>
+      _$$OtpChannelSelectionImplFromJson(json);
 
+  @override
+  final String selectedChannel;
   @override
   final String phoneNumber;
   @override
-  final String channelId;
-  final Map<String, dynamic>? _additionalData;
+  final bool success;
   @override
-  Map<String, dynamic>? get additionalData {
-    final value = _additionalData;
-    if (value == null) return null;
-    if (_additionalData is EqualUnmodifiableMapView) return _additionalData;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
-  }
+  final String? message;
 
   @override
   String toString() {
-    return 'OtpChannelRequest(phoneNumber: $phoneNumber, channelId: $channelId, additionalData: $additionalData)';
+    return 'OtpChannelSelection(selectedChannel: $selectedChannel, phoneNumber: $phoneNumber, success: $success, message: $message)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$OtpChannelRequestImpl &&
+            other is _$OtpChannelSelectionImpl &&
+            (identical(other.selectedChannel, selectedChannel) ||
+                other.selectedChannel == selectedChannel) &&
             (identical(other.phoneNumber, phoneNumber) ||
                 other.phoneNumber == phoneNumber) &&
-            (identical(other.channelId, channelId) ||
-                other.channelId == channelId) &&
-            const DeepCollectionEquality()
-                .equals(other._additionalData, _additionalData));
+            (identical(other.success, success) || other.success == success) &&
+            (identical(other.message, message) || other.message == message));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, phoneNumber, channelId,
-      const DeepCollectionEquality().hash(_additionalData));
+  int get hashCode =>
+      Object.hash(runtimeType, selectedChannel, phoneNumber, success, message);
 
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$OtpChannelRequestImplCopyWith<_$OtpChannelRequestImpl> get copyWith =>
-      __$$OtpChannelRequestImplCopyWithImpl<_$OtpChannelRequestImpl>(
+  _$$OtpChannelSelectionImplCopyWith<_$OtpChannelSelectionImpl> get copyWith =>
+      __$$OtpChannelSelectionImplCopyWithImpl<_$OtpChannelSelectionImpl>(
           this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$OtpChannelRequestImplToJson(
+    return _$$OtpChannelSelectionImplToJson(
       this,
     );
   }
 }
 
-abstract class _OtpChannelRequest implements OtpChannelRequest {
-  const factory _OtpChannelRequest(
-      {required final String phoneNumber,
-      required final String channelId,
-      final Map<String, dynamic>? additionalData}) = _$OtpChannelRequestImpl;
+abstract class _OtpChannelSelection implements OtpChannelSelection {
+  const factory _OtpChannelSelection(
+      {required final String selectedChannel,
+      required final String phoneNumber,
+      required final bool success,
+      final String? message}) = _$OtpChannelSelectionImpl;
 
-  factory _OtpChannelRequest.fromJson(Map<String, dynamic> json) =
-      _$OtpChannelRequestImpl.fromJson;
+  factory _OtpChannelSelection.fromJson(Map<String, dynamic> json) =
+      _$OtpChannelSelectionImpl.fromJson;
 
+  @override
+  String get selectedChannel;
   @override
   String get phoneNumber;
   @override
-  String get channelId;
+  bool get success;
   @override
-  Map<String, dynamic>? get additionalData;
+  String? get message;
   @override
   @JsonKey(ignore: true)
-  _$$OtpChannelRequestImplCopyWith<_$OtpChannelRequestImpl> get copyWith =>
+  _$$OtpChannelSelectionImplCopyWith<_$OtpChannelSelectionImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -1240,288 +1195,6 @@ abstract class _RegistrationStatusResponse
   @JsonKey(ignore: true)
   _$$RegistrationStatusResponseImplCopyWith<_$RegistrationStatusResponseImpl>
       get copyWith => throw _privateConstructorUsedError;
-}
-
-OtpChannelSelection _$OtpChannelSelectionFromJson(Map<String, dynamic> json) {
-  return _OtpChannelSelection.fromJson(json);
-}
-
-/// @nodoc
-mixin _$OtpChannelSelection {
-  String get channelId => throw _privateConstructorUsedError;
-  String get displayName => throw _privateConstructorUsedError;
-  bool get isSelected => throw _privateConstructorUsedError;
-  bool get isAvailable => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError;
-  String? get icon => throw _privateConstructorUsedError;
-  Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
-
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
-  $OtpChannelSelectionCopyWith<OtpChannelSelection> get copyWith =>
-      throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class $OtpChannelSelectionCopyWith<$Res> {
-  factory $OtpChannelSelectionCopyWith(
-          OtpChannelSelection value, $Res Function(OtpChannelSelection) then) =
-      _$OtpChannelSelectionCopyWithImpl<$Res, OtpChannelSelection>;
-  @useResult
-  $Res call(
-      {String channelId,
-      String displayName,
-      bool isSelected,
-      bool isAvailable,
-      String? description,
-      String? icon,
-      Map<String, dynamic>? metadata});
-}
-
-/// @nodoc
-class _$OtpChannelSelectionCopyWithImpl<$Res, $Val extends OtpChannelSelection>
-    implements $OtpChannelSelectionCopyWith<$Res> {
-  _$OtpChannelSelectionCopyWithImpl(this._value, this._then);
-
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? channelId = null,
-    Object? displayName = null,
-    Object? isSelected = null,
-    Object? isAvailable = null,
-    Object? description = freezed,
-    Object? icon = freezed,
-    Object? metadata = freezed,
-  }) {
-    return _then(_value.copyWith(
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      displayName: null == displayName
-          ? _value.displayName
-          : displayName // ignore: cast_nullable_to_non_nullable
-              as String,
-      isSelected: null == isSelected
-          ? _value.isSelected
-          : isSelected // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isAvailable: null == isAvailable
-          ? _value.isAvailable
-          : isAvailable // ignore: cast_nullable_to_non_nullable
-              as bool,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      icon: freezed == icon
-          ? _value.icon
-          : icon // ignore: cast_nullable_to_non_nullable
-              as String?,
-      metadata: freezed == metadata
-          ? _value.metadata
-          : metadata // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-    ) as $Val);
-  }
-}
-
-/// @nodoc
-abstract class _$$OtpChannelSelectionImplCopyWith<$Res>
-    implements $OtpChannelSelectionCopyWith<$Res> {
-  factory _$$OtpChannelSelectionImplCopyWith(_$OtpChannelSelectionImpl value,
-          $Res Function(_$OtpChannelSelectionImpl) then) =
-      __$$OtpChannelSelectionImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call(
-      {String channelId,
-      String displayName,
-      bool isSelected,
-      bool isAvailable,
-      String? description,
-      String? icon,
-      Map<String, dynamic>? metadata});
-}
-
-/// @nodoc
-class __$$OtpChannelSelectionImplCopyWithImpl<$Res>
-    extends _$OtpChannelSelectionCopyWithImpl<$Res, _$OtpChannelSelectionImpl>
-    implements _$$OtpChannelSelectionImplCopyWith<$Res> {
-  __$$OtpChannelSelectionImplCopyWithImpl(_$OtpChannelSelectionImpl _value,
-      $Res Function(_$OtpChannelSelectionImpl) _then)
-      : super(_value, _then);
-
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? channelId = null,
-    Object? displayName = null,
-    Object? isSelected = null,
-    Object? isAvailable = null,
-    Object? description = freezed,
-    Object? icon = freezed,
-    Object? metadata = freezed,
-  }) {
-    return _then(_$OtpChannelSelectionImpl(
-      channelId: null == channelId
-          ? _value.channelId
-          : channelId // ignore: cast_nullable_to_non_nullable
-              as String,
-      displayName: null == displayName
-          ? _value.displayName
-          : displayName // ignore: cast_nullable_to_non_nullable
-              as String,
-      isSelected: null == isSelected
-          ? _value.isSelected
-          : isSelected // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isAvailable: null == isAvailable
-          ? _value.isAvailable
-          : isAvailable // ignore: cast_nullable_to_non_nullable
-              as bool,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      icon: freezed == icon
-          ? _value.icon
-          : icon // ignore: cast_nullable_to_non_nullable
-              as String?,
-      metadata: freezed == metadata
-          ? _value._metadata
-          : metadata // ignore: cast_nullable_to_non_nullable
-              as Map<String, dynamic>?,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _$OtpChannelSelectionImpl implements _OtpChannelSelection {
-  const _$OtpChannelSelectionImpl(
-      {required this.channelId,
-      required this.displayName,
-      required this.isSelected,
-      required this.isAvailable,
-      this.description,
-      this.icon,
-      final Map<String, dynamic>? metadata})
-      : _metadata = metadata;
-
-  factory _$OtpChannelSelectionImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OtpChannelSelectionImplFromJson(json);
-
-  @override
-  final String channelId;
-  @override
-  final String displayName;
-  @override
-  final bool isSelected;
-  @override
-  final bool isAvailable;
-  @override
-  final String? description;
-  @override
-  final String? icon;
-  final Map<String, dynamic>? _metadata;
-  @override
-  Map<String, dynamic>? get metadata {
-    final value = _metadata;
-    if (value == null) return null;
-    if (_metadata is EqualUnmodifiableMapView) return _metadata;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
-  }
-
-  @override
-  String toString() {
-    return 'OtpChannelSelection(channelId: $channelId, displayName: $displayName, isSelected: $isSelected, isAvailable: $isAvailable, description: $description, icon: $icon, metadata: $metadata)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$OtpChannelSelectionImpl &&
-            (identical(other.channelId, channelId) ||
-                other.channelId == channelId) &&
-            (identical(other.displayName, displayName) ||
-                other.displayName == displayName) &&
-            (identical(other.isSelected, isSelected) ||
-                other.isSelected == isSelected) &&
-            (identical(other.isAvailable, isAvailable) ||
-                other.isAvailable == isAvailable) &&
-            (identical(other.description, description) ||
-                other.description == description) &&
-            (identical(other.icon, icon) || other.icon == icon) &&
-            const DeepCollectionEquality().equals(other._metadata, _metadata));
-  }
-
-  @JsonKey(ignore: true)
-  @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      channelId,
-      displayName,
-      isSelected,
-      isAvailable,
-      description,
-      icon,
-      const DeepCollectionEquality().hash(_metadata));
-
-  @JsonKey(ignore: true)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$OtpChannelSelectionImplCopyWith<_$OtpChannelSelectionImpl> get copyWith =>
-      __$$OtpChannelSelectionImplCopyWithImpl<_$OtpChannelSelectionImpl>(
-          this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OtpChannelSelectionImplToJson(
-      this,
-    );
-  }
-}
-
-abstract class _OtpChannelSelection implements OtpChannelSelection {
-  const factory _OtpChannelSelection(
-      {required final String channelId,
-      required final String displayName,
-      required final bool isSelected,
-      required final bool isAvailable,
-      final String? description,
-      final String? icon,
-      final Map<String, dynamic>? metadata}) = _$OtpChannelSelectionImpl;
-
-  factory _OtpChannelSelection.fromJson(Map<String, dynamic> json) =
-      _$OtpChannelSelectionImpl.fromJson;
-
-  @override
-  String get channelId;
-  @override
-  String get displayName;
-  @override
-  bool get isSelected;
-  @override
-  bool get isAvailable;
-  @override
-  String? get description;
-  @override
-  String? get icon;
-  @override
-  Map<String, dynamic>? get metadata;
-  @override
-  @JsonKey(ignore: true)
-  _$$OtpChannelSelectionImplCopyWith<_$OtpChannelSelectionImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }
 
 RegistrationSettingsCache _$RegistrationSettingsCacheFromJson(

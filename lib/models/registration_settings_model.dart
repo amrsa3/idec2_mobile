@@ -7,39 +7,28 @@ part 'registration_settings_model.g.dart';
 @freezed
 class RegistrationSettingsModel with _$RegistrationSettingsModel {
   const factory RegistrationSettingsModel({
-    required bool registrationEnabled,
-    required RegistrationStatus status,
-    required List<OtpChannelModel> availableOtpChannels,
-    required List<String> supportedLanguages,
-    required String defaultLanguage,
+    required String id,
+    required RegistrationStatus registrationStatus,
+    required List<String> otpChannels,
+    required int otpLength,
+    required int otpExpiryMinutes,
+    required int maxOtpAttempts,
+    required int otpCooldownMinutes,
+    required bool requireDocumentUpload,
+    required bool allowEmailRegistration,
+    required bool requirePhoneVerification,
+    required bool autoApproveProfiles,
     String? maintenanceMessage,
-    DateTime? maintenanceStartTime,
-    DateTime? maintenanceEndTime,
-    String? registrationClosedMessage,
-    DateTime? registrationOpenTime,
-    DateTime? registrationCloseTime,
-    Map<String, dynamic>? additionalSettings,
-    DateTime? lastUpdated,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    String? updatedBy,
   }) = _RegistrationSettingsModel;
 
   factory RegistrationSettingsModel.fromJson(Map<String, dynamic> json) =>
       _$RegistrationSettingsModelFromJson(json);
 }
 
-/// Registration status enum
-@JsonEnum()
-enum RegistrationStatus {
-  @JsonValue('open')
-  open,
-  @JsonValue('closed')
-  closed,
-  @JsonValue('maintenance')
-  maintenance,
-  @JsonValue('limited')
-  limited,
-}
-
-/// OTP channel model
+/// OTP Channel model
 @freezed
 class OtpChannelModel with _$OtpChannelModel {
   const factory OtpChannelModel({
@@ -48,27 +37,38 @@ class OtpChannelModel with _$OtpChannelModel {
     required String displayName,
     required bool enabled,
     required bool isDefault,
-    int? priority,
-    Map<String, dynamic>? settings,
-    String? description,
-    String? icon,
+    required int priority,
   }) = _OtpChannelModel;
 
   factory OtpChannelModel.fromJson(Map<String, dynamic> json) =>
       _$OtpChannelModelFromJson(json);
 }
 
-/// OTP channel request model
+/// OTP Channel Selection model
 @freezed
-class OtpChannelRequest with _$OtpChannelRequest {
-  const factory OtpChannelRequest({
+class OtpChannelSelection with _$OtpChannelSelection {
+  const factory OtpChannelSelection({
+    required String selectedChannel,
     required String phoneNumber,
-    required String channelId,
-    Map<String, dynamic>? additionalData,
-  }) = _OtpChannelRequest;
+    required bool success,
+    String? message,
+  }) = _OtpChannelSelection;
 
-  factory OtpChannelRequest.fromJson(Map<String, dynamic> json) =>
-      _$OtpChannelRequestFromJson(json);
+  factory OtpChannelSelection.fromJson(Map<String, dynamic> json) =>
+      _$OtpChannelSelectionFromJson(json);
+}
+
+/// Registration status enum
+@JsonEnum()
+enum RegistrationStatus {
+  @JsonValue('OPEN')
+  open,
+  @JsonValue('CLOSED')
+  closed,
+  @JsonValue('MAINTENANCE')
+  maintenance,
+  @JsonValue('LIMITED')
+  limited,
 }
 
 /// Registration status response model
@@ -85,23 +85,6 @@ class RegistrationStatusResponse with _$RegistrationStatusResponse {
 
   factory RegistrationStatusResponse.fromJson(Map<String, dynamic> json) =>
       _$RegistrationStatusResponseFromJson(json);
-}
-
-/// OTP channel selection model
-@freezed
-class OtpChannelSelection with _$OtpChannelSelection {
-  const factory OtpChannelSelection({
-    required String channelId,
-    required String displayName,
-    required bool isSelected,
-    required bool isAvailable,
-    String? description,
-    String? icon,
-    Map<String, dynamic>? metadata,
-  }) = _OtpChannelSelection;
-
-  factory OtpChannelSelection.fromJson(Map<String, dynamic> json) =>
-      _$OtpChannelSelectionFromJson(json);
 }
 
 /// Registration settings cache model
@@ -131,60 +114,30 @@ class RegistrationSettingsCache with _$RegistrationSettingsCache {
 extension RegistrationSettingsExtension on RegistrationSettingsModel {
   /// Check if registration is currently allowed
   bool get canRegister {
-    if (!registrationEnabled) return false;
-    if (status == RegistrationStatus.closed) return false;
-    if (status == RegistrationStatus.maintenance) return false;
+    if (registrationStatus == RegistrationStatus.closed) return false;
+    if (registrationStatus == RegistrationStatus.maintenance) return false;
     
-    // Check time-based restrictions
-    final now = DateTime.now();
-    if (registrationOpenTime != null && now.isBefore(registrationOpenTime!)) {
-      return false;
-    }
-    if (registrationCloseTime != null && now.isAfter(registrationCloseTime!)) {
-      return false;
-    }
-    
-    return true;
+    return registrationStatus == RegistrationStatus.open;
   }
 
-  /// Get enabled OTP channels
-  List<OtpChannelModel> get enabledChannels {
-    return availableOtpChannels.where((channel) => channel.enabled).toList();
+  /// Get enabled OTP channels as simple strings
+  List<String> get enabledChannels {
+    return otpChannels;
   }
 
-  /// Get default OTP channel
-  OtpChannelModel? get defaultChannel {
-    final enabledChannels = this.enabledChannels;
-    if (enabledChannels.isEmpty) return null;
-    
-    // Find the channel marked as default
-    final defaultChannel = enabledChannels.firstWhere(
-      (channel) => channel.isDefault,
-      orElse: () => enabledChannels.first,
-    );
-    
-    return defaultChannel;
-  }
-
-  /// Get sorted channels by priority
-  List<OtpChannelModel> get sortedChannels {
-    final channels = List<OtpChannelModel>.from(enabledChannels);
-    channels.sort((a, b) {
-      // Sort by priority (lower number = higher priority)
-      final aPriority = a.priority ?? 999;
-      final bPriority = b.priority ?? 999;
-      return aPriority.compareTo(bPriority);
-    });
-    return channels;
+  /// Get default OTP channel (first one in the list)
+  String? get defaultChannel {
+    if (otpChannels.isEmpty) return null;
+    return otpChannels.first;
   }
 
   /// Get user-friendly status message
   String getStatusMessage() {
-    switch (status) {
+    switch (registrationStatus) {
       case RegistrationStatus.open:
         return 'Registration is open';
       case RegistrationStatus.closed:
-        return registrationClosedMessage ?? 'Registration is currently closed';
+        return 'Registration is currently closed';
       case RegistrationStatus.maintenance:
         return maintenanceMessage ?? 'Registration is under maintenance';
       case RegistrationStatus.limited:
@@ -193,37 +146,11 @@ extension RegistrationSettingsExtension on RegistrationSettingsModel {
   }
 
   /// Check if maintenance mode is active
-  bool get isMaintenanceMode => status == RegistrationStatus.maintenance;
+  bool get isMaintenanceMode => registrationStatus == RegistrationStatus.maintenance;
 
   /// Check if registration is closed
-  bool get isRegistrationClosed => status == RegistrationStatus.closed;
-}
+  bool get isRegistrationClosed => registrationStatus == RegistrationStatus.closed;
 
-/// Extension methods for OtpChannelModel
-extension OtpChannelExtension on OtpChannelModel {
-  /// Get channel icon or default
-  String get iconOrDefault => icon ?? 'sms';
-
-  /// Check if channel is SMS
-  bool get isSms => id.toLowerCase() == 'sms';
-
-  /// Check if channel is WhatsApp
-  bool get isWhatsApp => id.toLowerCase() == 'whatsapp';
-
-  /// Check if channel is email
-  bool get isEmail => id.toLowerCase() == 'email';
-
-  /// Get user-friendly display name
-  String get friendlyName {
-    switch (id.toLowerCase()) {
-      case 'sms':
-        return 'SMS';
-      case 'whatsapp':
-        return 'WhatsApp';
-      case 'email':
-        return 'Email';
-      default:
-        return displayName;
-    }
-  }
+  /// Check if registration is enabled (open or limited)
+  bool get registrationEnabled => registrationStatus == RegistrationStatus.open || registrationStatus == RegistrationStatus.limited;
 }

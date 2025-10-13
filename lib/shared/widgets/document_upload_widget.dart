@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -470,10 +471,21 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         allowMultiple: false,
       );
       
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        if (_validateFile(file)) {
-          widget.onFileSelected?.call(file);
+      if (result != null && result.files.isNotEmpty) {
+        final platformFile = result.files.single;
+        
+        // في بيئة الويب، path غير متاح ويجب استخدام bytes
+        if (kIsWeb) {
+          _showErrorSnackBar('رفع الملفات غير مدعوم في بيئة الويب حالياً');
+          return;
+        } else {
+          // في البيئات الأخرى (Android/iOS)، استخدم path
+          if (platformFile.path != null) {
+            final file = File(platformFile.path!);
+            if (_validateFile(file)) {
+              widget.onFileSelected?.call(file);
+            }
+          }
         }
       }
     } catch (e) {

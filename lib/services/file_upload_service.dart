@@ -293,14 +293,32 @@ class FileUploadService {
         allowMultiple: false,
       );
 
-      if (result != null && result.files.single.path != null) {
-        return File(result.files.single.path!);
+      if (result != null && result.files.isNotEmpty) {
+        final platformFile = result.files.single;
+        
+        // في بيئة الويب، path غير متاح ويجب استخدام bytes
+        if (kIsWeb) {
+          if (platformFile.bytes != null) {
+            // إنشاء ملف مؤقت من البايتات للويب
+            // ملاحظة: هذا لن يعمل بشكل مثالي في الويب، يجب استخدام PlatformFile مباشرة
+            await NotificationService.showError(
+              title: 'غير مدعوم',
+              message: 'رفع الملفات غير مدعوم في بيئة الويب حالياً',
+            );
+            return null;
+          }
+        } else {
+          // في البيئات الأخرى (Android/iOS)، استخدم path
+          if (platformFile.path != null) {
+            return File(platformFile.path!);
+          }
+        }
       }
       return null;
     } catch (e) {
       await NotificationService.showError(
         title: 'خطأ في اختيار الملف',
-        message: 'فشل في اختيار الملف',
+        message: 'فشل في اختيار الملف: ${e.toString()}',
       );
       debugPrint('❌ [FILE_UPLOAD] خطأ في اختيار الملف: $e');
       return null;

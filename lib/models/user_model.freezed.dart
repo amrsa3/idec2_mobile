@@ -2971,6 +2971,7 @@ RequestPasswordResetRequest _$RequestPasswordResetRequestFromJson(
 /// @nodoc
 mixin _$RequestPasswordResetRequest {
   String get phone => throw _privateConstructorUsedError;
+  String? get preferredChannel => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -2986,7 +2987,7 @@ abstract class $RequestPasswordResetRequestCopyWith<$Res> {
       _$RequestPasswordResetRequestCopyWithImpl<$Res,
           RequestPasswordResetRequest>;
   @useResult
-  $Res call({String phone});
+  $Res call({String phone, String? preferredChannel});
 }
 
 /// @nodoc
@@ -3004,12 +3005,17 @@ class _$RequestPasswordResetRequestCopyWithImpl<$Res,
   @override
   $Res call({
     Object? phone = null,
+    Object? preferredChannel = freezed,
   }) {
     return _then(_value.copyWith(
       phone: null == phone
           ? _value.phone
           : phone // ignore: cast_nullable_to_non_nullable
               as String,
+      preferredChannel: freezed == preferredChannel
+          ? _value.preferredChannel
+          : preferredChannel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -3023,7 +3029,7 @@ abstract class _$$RequestPasswordResetRequestImplCopyWith<$Res>
       __$$RequestPasswordResetRequestImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String phone});
+  $Res call({String phone, String? preferredChannel});
 }
 
 /// @nodoc
@@ -3040,12 +3046,17 @@ class __$$RequestPasswordResetRequestImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? phone = null,
+    Object? preferredChannel = freezed,
   }) {
     return _then(_$RequestPasswordResetRequestImpl(
       phone: null == phone
           ? _value.phone
           : phone // ignore: cast_nullable_to_non_nullable
               as String,
+      preferredChannel: freezed == preferredChannel
+          ? _value.preferredChannel
+          : preferredChannel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -3055,7 +3066,8 @@ class __$$RequestPasswordResetRequestImplCopyWithImpl<$Res>
 class _$RequestPasswordResetRequestImpl
     with DiagnosticableTreeMixin
     implements _RequestPasswordResetRequest {
-  const _$RequestPasswordResetRequestImpl({required this.phone});
+  const _$RequestPasswordResetRequestImpl(
+      {required this.phone, this.preferredChannel});
 
   factory _$RequestPasswordResetRequestImpl.fromJson(
           Map<String, dynamic> json) =>
@@ -3063,10 +3075,12 @@ class _$RequestPasswordResetRequestImpl
 
   @override
   final String phone;
+  @override
+  final String? preferredChannel;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'RequestPasswordResetRequest(phone: $phone)';
+    return 'RequestPasswordResetRequest(phone: $phone, preferredChannel: $preferredChannel)';
   }
 
   @override
@@ -3074,7 +3088,8 @@ class _$RequestPasswordResetRequestImpl
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'RequestPasswordResetRequest'))
-      ..add(DiagnosticsProperty('phone', phone));
+      ..add(DiagnosticsProperty('phone', phone))
+      ..add(DiagnosticsProperty('preferredChannel', preferredChannel));
   }
 
   @override
@@ -3082,12 +3097,14 @@ class _$RequestPasswordResetRequestImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$RequestPasswordResetRequestImpl &&
-            (identical(other.phone, phone) || other.phone == phone));
+            (identical(other.phone, phone) || other.phone == phone) &&
+            (identical(other.preferredChannel, preferredChannel) ||
+                other.preferredChannel == preferredChannel));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, phone);
+  int get hashCode => Object.hash(runtimeType, phone, preferredChannel);
 
   @JsonKey(ignore: true)
   @override
@@ -3106,14 +3123,17 @@ class _$RequestPasswordResetRequestImpl
 
 abstract class _RequestPasswordResetRequest
     implements RequestPasswordResetRequest {
-  const factory _RequestPasswordResetRequest({required final String phone}) =
-      _$RequestPasswordResetRequestImpl;
+  const factory _RequestPasswordResetRequest(
+      {required final String phone,
+      final String? preferredChannel}) = _$RequestPasswordResetRequestImpl;
 
   factory _RequestPasswordResetRequest.fromJson(Map<String, dynamic> json) =
       _$RequestPasswordResetRequestImpl.fromJson;
 
   @override
   String get phone;
+  @override
+  String? get preferredChannel;
   @override
   @JsonKey(ignore: true)
   _$$RequestPasswordResetRequestImplCopyWith<_$RequestPasswordResetRequestImpl>
@@ -3317,6 +3337,11 @@ PasswordResetResponse _$PasswordResetResponseFromJson(
 mixin _$PasswordResetResponse {
   bool get success => throw _privateConstructorUsedError;
   String? get message => throw _privateConstructorUsedError;
+  List<String>? get availableChannels => throw _privateConstructorUsedError;
+  String? get selectedChannel => throw _privateConstructorUsedError;
+  String? get phoneNumber => throw _privateConstructorUsedError;
+  bool get requiresChannelSelection => throw _privateConstructorUsedError;
+  String? get purpose => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -3330,7 +3355,14 @@ abstract class $PasswordResetResponseCopyWith<$Res> {
           $Res Function(PasswordResetResponse) then) =
       _$PasswordResetResponseCopyWithImpl<$Res, PasswordResetResponse>;
   @useResult
-  $Res call({bool success, String? message});
+  $Res call(
+      {bool success,
+      String? message,
+      List<String>? availableChannels,
+      String? selectedChannel,
+      String? phoneNumber,
+      bool requiresChannelSelection,
+      String? purpose});
 }
 
 /// @nodoc
@@ -3349,6 +3381,11 @@ class _$PasswordResetResponseCopyWithImpl<$Res,
   $Res call({
     Object? success = null,
     Object? message = freezed,
+    Object? availableChannels = freezed,
+    Object? selectedChannel = freezed,
+    Object? phoneNumber = freezed,
+    Object? requiresChannelSelection = null,
+    Object? purpose = freezed,
   }) {
     return _then(_value.copyWith(
       success: null == success
@@ -3358,6 +3395,26 @@ class _$PasswordResetResponseCopyWithImpl<$Res,
       message: freezed == message
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      availableChannels: freezed == availableChannels
+          ? _value.availableChannels
+          : availableChannels // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      selectedChannel: freezed == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phoneNumber: freezed == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
+      requiresChannelSelection: null == requiresChannelSelection
+          ? _value.requiresChannelSelection
+          : requiresChannelSelection // ignore: cast_nullable_to_non_nullable
+              as bool,
+      purpose: freezed == purpose
+          ? _value.purpose
+          : purpose // ignore: cast_nullable_to_non_nullable
               as String?,
     ) as $Val);
   }
@@ -3372,7 +3429,14 @@ abstract class _$$PasswordResetResponseImplCopyWith<$Res>
       __$$PasswordResetResponseImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool success, String? message});
+  $Res call(
+      {bool success,
+      String? message,
+      List<String>? availableChannels,
+      String? selectedChannel,
+      String? phoneNumber,
+      bool requiresChannelSelection,
+      String? purpose});
 }
 
 /// @nodoc
@@ -3389,6 +3453,11 @@ class __$$PasswordResetResponseImplCopyWithImpl<$Res>
   $Res call({
     Object? success = null,
     Object? message = freezed,
+    Object? availableChannels = freezed,
+    Object? selectedChannel = freezed,
+    Object? phoneNumber = freezed,
+    Object? requiresChannelSelection = null,
+    Object? purpose = freezed,
   }) {
     return _then(_$PasswordResetResponseImpl(
       success: null == success
@@ -3399,6 +3468,26 @@ class __$$PasswordResetResponseImplCopyWithImpl<$Res>
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String?,
+      availableChannels: freezed == availableChannels
+          ? _value._availableChannels
+          : availableChannels // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
+      selectedChannel: freezed == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phoneNumber: freezed == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
+      requiresChannelSelection: null == requiresChannelSelection
+          ? _value.requiresChannelSelection
+          : requiresChannelSelection // ignore: cast_nullable_to_non_nullable
+              as bool,
+      purpose: freezed == purpose
+          ? _value.purpose
+          : purpose // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -3408,7 +3497,15 @@ class __$$PasswordResetResponseImplCopyWithImpl<$Res>
 class _$PasswordResetResponseImpl
     with DiagnosticableTreeMixin
     implements _PasswordResetResponse {
-  const _$PasswordResetResponseImpl({this.success = true, this.message});
+  const _$PasswordResetResponseImpl(
+      {this.success = true,
+      this.message,
+      final List<String>? availableChannels,
+      this.selectedChannel,
+      this.phoneNumber,
+      this.requiresChannelSelection = false,
+      this.purpose})
+      : _availableChannels = availableChannels;
 
   factory _$PasswordResetResponseImpl.fromJson(Map<String, dynamic> json) =>
       _$$PasswordResetResponseImplFromJson(json);
@@ -3418,10 +3515,30 @@ class _$PasswordResetResponseImpl
   final bool success;
   @override
   final String? message;
+  final List<String>? _availableChannels;
+  @override
+  List<String>? get availableChannels {
+    final value = _availableChannels;
+    if (value == null) return null;
+    if (_availableChannels is EqualUnmodifiableListView)
+      return _availableChannels;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final String? selectedChannel;
+  @override
+  final String? phoneNumber;
+  @override
+  @JsonKey()
+  final bool requiresChannelSelection;
+  @override
+  final String? purpose;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'PasswordResetResponse(success: $success, message: $message)';
+    return 'PasswordResetResponse(success: $success, message: $message, availableChannels: $availableChannels, selectedChannel: $selectedChannel, phoneNumber: $phoneNumber, requiresChannelSelection: $requiresChannelSelection, purpose: $purpose)';
   }
 
   @override
@@ -3430,7 +3547,13 @@ class _$PasswordResetResponseImpl
     properties
       ..add(DiagnosticsProperty('type', 'PasswordResetResponse'))
       ..add(DiagnosticsProperty('success', success))
-      ..add(DiagnosticsProperty('message', message));
+      ..add(DiagnosticsProperty('message', message))
+      ..add(DiagnosticsProperty('availableChannels', availableChannels))
+      ..add(DiagnosticsProperty('selectedChannel', selectedChannel))
+      ..add(DiagnosticsProperty('phoneNumber', phoneNumber))
+      ..add(DiagnosticsProperty(
+          'requiresChannelSelection', requiresChannelSelection))
+      ..add(DiagnosticsProperty('purpose', purpose));
   }
 
   @override
@@ -3439,12 +3562,30 @@ class _$PasswordResetResponseImpl
         (other.runtimeType == runtimeType &&
             other is _$PasswordResetResponseImpl &&
             (identical(other.success, success) || other.success == success) &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.message, message) || other.message == message) &&
+            const DeepCollectionEquality()
+                .equals(other._availableChannels, _availableChannels) &&
+            (identical(other.selectedChannel, selectedChannel) ||
+                other.selectedChannel == selectedChannel) &&
+            (identical(other.phoneNumber, phoneNumber) ||
+                other.phoneNumber == phoneNumber) &&
+            (identical(
+                    other.requiresChannelSelection, requiresChannelSelection) ||
+                other.requiresChannelSelection == requiresChannelSelection) &&
+            (identical(other.purpose, purpose) || other.purpose == purpose));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, success, message);
+  int get hashCode => Object.hash(
+      runtimeType,
+      success,
+      message,
+      const DeepCollectionEquality().hash(_availableChannels),
+      selectedChannel,
+      phoneNumber,
+      requiresChannelSelection,
+      purpose);
 
   @JsonKey(ignore: true)
   @override
@@ -3464,7 +3605,12 @@ class _$PasswordResetResponseImpl
 abstract class _PasswordResetResponse implements PasswordResetResponse {
   const factory _PasswordResetResponse(
       {final bool success,
-      final String? message}) = _$PasswordResetResponseImpl;
+      final String? message,
+      final List<String>? availableChannels,
+      final String? selectedChannel,
+      final String? phoneNumber,
+      final bool requiresChannelSelection,
+      final String? purpose}) = _$PasswordResetResponseImpl;
 
   factory _PasswordResetResponse.fromJson(Map<String, dynamic> json) =
       _$PasswordResetResponseImpl.fromJson;
@@ -3473,6 +3619,16 @@ abstract class _PasswordResetResponse implements PasswordResetResponse {
   bool get success;
   @override
   String? get message;
+  @override
+  List<String>? get availableChannels;
+  @override
+  String? get selectedChannel;
+  @override
+  String? get phoneNumber;
+  @override
+  bool get requiresChannelSelection;
+  @override
+  String? get purpose;
   @override
   @JsonKey(ignore: true)
   _$$PasswordResetResponseImplCopyWith<_$PasswordResetResponseImpl>

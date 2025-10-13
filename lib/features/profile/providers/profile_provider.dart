@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
+import 'dart:async';
+import 'dart:typed_data';
 
 import '../../../models/profile_data_models.dart';
 import '../../../models/profile_model.dart';
@@ -118,6 +120,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           !next.sessionExpired &&
           !next.isLoading) {
         debugPrint('🔄 ProfileProvider: User logged in, auto-reloading profile');
+        // Clear any previous error state
+        state = state.copyWith(error: null);
         Future.delayed(const Duration(milliseconds: 100), () {
           loadCurrentProfile(forceRefresh: true);
         });
@@ -130,6 +134,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           next.isAuthenticated &&
           !next.isLoading) {
         debugPrint('🔄 ProfileProvider: Session expiration cleared, auto-reloading profile');
+        // Clear any previous error state
+        state = state.copyWith(error: null);
         Future.delayed(const Duration(milliseconds: 300), () {
           loadCurrentProfile(forceRefresh: true);
         });
@@ -546,11 +552,14 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   /// Load current profile with retry mechanism and improved timing
   Future<void> loadCurrentProfile({bool forceRefresh = false, int retryCount = 0}) async {
     const maxRetries = 3;
-    const retryDelay = Duration(milliseconds: 500);
-    const authCheckDelay = Duration(milliseconds: 300);
+    const retryDelay = Duration(milliseconds: 1000);
+    const authCheckDelay = Duration(milliseconds: 500);
     
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      // Only set loading state if this is the first attempt
+      if (retryCount == 0) {
+        state = state.copyWith(isLoading: true, error: null);
+      }
       
       debugPrint('👤 ProfileProvider: Loading current profile (forceRefresh: $forceRefresh, retry: $retryCount)');
       
@@ -567,7 +576,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       // If AuthProvider is still loading, wait a bit more
       if (authState.isLoading && retryCount < maxRetries) {
         debugPrint('👤 ProfileProvider: AuthProvider still loading, waiting...');
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 1000));
         authState = ref.read(authProvider);
         debugPrint('👤 ProfileProvider: Auth state after wait - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
       }
@@ -592,7 +601,22 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
       
       debugPrint('👤 ProfileProvider: Authentication verified, loading profile from service...');
-      final currentProfile = await LocalProfileService.getCurrentProfile(forceRefresh: forceRefresh);
+      
+      // Try to load profile with timeout
+      ProfileModel? currentProfile;
+      try {
+        currentProfile = await LocalProfileService.getCurrentProfile(forceRefresh: forceRefresh)
+            .timeout(const Duration(seconds: 10));
+      } on TimeoutException {
+        debugPrint('⏰ ProfileProvider: Profile loading timed out');
+        if (retryCount < maxRetries) {
+          debugPrint('🔄 ProfileProvider: Retrying profile load due to timeout (attempt ${retryCount + 1})');
+          await Future.delayed(retryDelay);
+          return loadCurrentProfile(forceRefresh: forceRefresh, retryCount: retryCount + 1);
+        } else {
+          throw Exception('انتهت مهلة تحميل بيانات الملف الشخصي');
+        }
+      }
       
       // إضافة تسجيل تفصيلي لمعرفة قيمة profilePictureUrl
       debugPrint('🖼️ ProfileProvider: Profile loaded with profilePictureUrl: ${currentProfile?.profilePictureUrl}');
@@ -619,6 +643,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       state = state.copyWith(
         currentProfile: updatedProfile,
         isLoading: false,
+        error: null, // Clear any previous errors
       );
       
       debugPrint('✅ ProfileProvider: Current profile loaded successfully');
@@ -633,7 +658,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         debugPrint('❌ ProfileProvider: Authentication error detected: $e');
         
         // Wait a bit for SessionManager to notify AuthProvider
-        await Future.delayed(const Duration(milliseconds: 150));
+        await Future.delayed(const Duration(milliseconds: 300));
         
         // Re-check authentication status after delay
         final updatedAuthState = ref.read(authProvider);
@@ -671,9 +696,36 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
             error: 'خطأ في المصادقة، يرجى المحاولة مرة أخرى',
           );
         }
+      } else if (errorMessage.contains('404') || errorMessage.contains('not found')) {
+        // Profile not found - this might be a new user
+        debugPrint('❌ ProfileProvider: Profile not found (404) - might be new user');
+        
+        // If this is not a retry, try once more after a delay
+        if (retryCount < maxRetries) {
+          debugPrint('🔄 ProfileProvider: Retrying profile load for new user (attempt ${retryCount + 1})');
+          await Future.delayed(retryDelay);
+          return loadCurrentProfile(forceRefresh: true, retryCount: retryCount + 1);
+        } else {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'لم يتم العثور على بيانات الملف الشخصي. يرجى إنشاء ملف شخصي جديد.',
+          );
+        }
       } else {
         // Non-authentication error
         debugPrint('❌ ProfileProvider: Non-auth error: $e');
+        
+        // If this is not a retry and it's a network error, try again
+        if (retryCount < maxRetries && 
+            (errorMessage.contains('network') || 
+             errorMessage.contains('connection') ||
+             errorMessage.contains('timeout') ||
+             errorMessage.contains('dio'))) {
+          debugPrint('🔄 ProfileProvider: Retrying profile load due to network error (attempt ${retryCount + 1})');
+          await Future.delayed(retryDelay);
+          return loadCurrentProfile(forceRefresh: forceRefresh, retryCount: retryCount + 1);
+        }
+        
         state = state.copyWith(
           isLoading: false,
           error: 'فشل في جلب بيانات الملف الشخصي: $e',
@@ -881,6 +933,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required String fieldName,
     required String documentType,
     required File file,
+    Uint8List? fileBytes, // إضافة البيانات للويب
   }) async {
     try {
       state = state.copyWith(isUploadingDocument: true, error: null, successMessage: null);
@@ -891,6 +944,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         file: file,
         documentType: documentType,
         fieldName: fieldName,
+        fileBytes: fileBytes, // تمرير البيانات للويب
       );
       
       if (response != null) {

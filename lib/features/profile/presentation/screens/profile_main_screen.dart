@@ -45,24 +45,61 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     super.initState();
     // تحميل بيانات الملف الشخصي وقواعد التعديل عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileData();
+    });
+  }
+
+  /// Load profile data with retry mechanism
+  Future<void> _loadProfileData({int retryCount = 0}) async {
+    const maxRetries = 3;
+    const retryDelay = Duration(milliseconds: 1000);
+    
+    try {
       // Check if user is authenticated before loading profile
       final authState = ref.read(authProvider);
-      if (authState.isAuthenticated && !authState.sessionExpired) {
-        ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+      debugPrint('ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
+      
+      if (authState.isAuthenticated && !authState.sessionExpired && !authState.isLoading) {
+        debugPrint('ProfileMainScreen: Loading profile data (attempt ${retryCount + 1})');
+        // تحميل بيانات الملف الشخصي مع البيانات المرجعية (المحافظات والمؤهلات)
+        ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
+      } else if (authState.isLoading && retryCount < maxRetries) {
+        // Auth is still loading, wait and retry
+        debugPrint('ProfileMainScreen: Auth still loading, waiting and retrying...');
+        await Future.delayed(retryDelay);
+        return _loadProfileData(retryCount: retryCount + 1);
+      } else if (!authState.isAuthenticated && retryCount < maxRetries) {
+        // Not authenticated yet, wait and retry
+        debugPrint('ProfileMainScreen: Not authenticated yet, waiting and retrying...');
+        await Future.delayed(retryDelay);
+        return _loadProfileData(retryCount: retryCount + 1);
       } else {
-        // Wait a bit for auth state to stabilize, then try again
-        Future.delayed(const Duration(milliseconds: 500), () {
-          final updatedAuthState = ref.read(authProvider);
-          if (updatedAuthState.isAuthenticated && !updatedAuthState.sessionExpired) {
-            ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
-            // تحميل قواعد الملف الشخصي
-            ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
-          }
-        });
+        debugPrint('ProfileMainScreen: Failed to load profile after $maxRetries attempts');
+        // Show error message or redirect to login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('فشل في تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.'),
+              backgroundColor: AppColors.error,
+              action: SnackBarAction(
+                label: 'إعادة المحاولة',
+                textColor: Colors.white,
+                onPressed: () => _loadProfileData(),
+              ),
+            ),
+          );
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('ProfileMainScreen: Error loading profile data: $e');
+      if (retryCount < maxRetries) {
+        debugPrint('ProfileMainScreen: Retrying due to error (attempt ${retryCount + 1})');
+        await Future.delayed(retryDelay);
+        return _loadProfileData(retryCount: retryCount + 1);
+      }
+    }
   }
 
   @override
@@ -345,15 +382,30 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => ref.read(profileProvider.notifier).refresh(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('إعادة المحاولة'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _loadProfileData(),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إعادة المحاولة'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true),
+                    icon: const Icon(Icons.cloud_download),
+                    label: const Text('إعادة تحميل'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -363,10 +415,38 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
     final profile = state.currentProfile;
     if (profile == null) {
-      return const Center(
-        child: Text(
-          'لم يتم العثور على بيانات الملف الشخصي',
-          style: AppTextStyles.bodyLarge,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_outline,
+                size: 64,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'لم يتم العثور على بيانات الملف الشخصي',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _loadProfileData(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة تحميل البيانات'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -403,7 +483,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
           // البيانات الشخصية
           _buildPersonalDataSection(profile),
-          
+
           const SizedBox(height: 24),
 
           // البيانات الأكاديمية
@@ -541,8 +621,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الشخصية',
       icon: Icons.person_outline,
       children: [
-        _buildDataRowWithRules('الاسم العربي', profile.fullNameAr, 'arabicName', profile),
-        _buildDataRowWithRules('الاسم الإنجليزي', profile.fullNameEn, 'englishName', profile),
+        _buildDataRowWithRules('الاسم العربي', profile.fullNameAr, 'fullNameAr', profile),
+        _buildDataRowWithRules('الاسم الإنجليزي', profile.fullNameEn, 'fullNameEn', profile),
         _buildDataRowWithRules('البريد الإلكتروني', profile.email, 'email', profile),
         _buildDataRowWithRules(
           'تاريخ الميلاد',
@@ -552,7 +632,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           'birthDate',
           profile,
         ),
-        _buildDataRowWithRules('المحافظة', _getGovernorateDisplayName(profile.governorateId, ref), 'governorate', profile),
+        _buildDataRowWithRules('المحافظة', _getGovernorateDisplayName(profile.governorateId, ref), 'governorateId', profile),
       ],
     );
   }
@@ -562,7 +642,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       title: 'البيانات الأكاديمية',
       icon: Icons.school_outlined,
       children: [
-        _buildDataRowWithRules('المؤهل العلمي', _getQualificationDisplayName(profile.qualificationId, ref), 'qualification', profile),
+        _buildDataRowWithRules('المؤهل العلمي', _getQualificationDisplayName(profile.qualificationId, ref), 'qualificationId', profile),
         _buildDataRowWithRules('سنة التخرج', profile.graduationYear?.toString(), 'graduationYear', profile),
         _buildDataRowWithRules('الجامعة', profile.university, 'university', profile),
         _buildDataRowWithRules('مكان العمل', profile.workplace, 'workplace', profile),
@@ -876,7 +956,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   String _getGovernorateDisplayName(String? governorateId, WidgetRef ref) {
-    final governorates = ref.read(profileProvider).governorates;
+    final governorates = ref.watch(profileProvider).governorates;
     if (governorates != null && governorateId != null) {
       final governorate = governorates.firstWhere(
         (g) => g.id == governorateId,
@@ -888,7 +968,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   String _getQualificationDisplayName(String? qualificationId, WidgetRef ref) {
-    final qualifications = ref.read(profileProvider).qualifications;
+    final qualifications = ref.watch(profileProvider).qualifications;
     if (qualifications != null && qualificationId != null) {
       final qualification = qualifications.firstWhere(
         (q) => q.id == qualificationId,
@@ -911,13 +991,21 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
   // Navigation methods
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
-    // الانتقال إلى شاشة التعديل مباشرة بدون أي شروط
+    // الانتقال إلى شاشة التعديل مع callback لتحديث البيانات عند العودة
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfileEditScreen(profile: profile),
       ),
-    );
+    ).then((_) {
+      // تحديث البيانات والقواعد عند العودة من صفحة التعديل
+      debugPrint('ProfileMainScreen: Returned from edit screen, refreshing data...');
+      _loadProfileData();
+      // تحديث قواعد التعديل أيضاً
+      ref.read(profileRulesProvider.notifier).loadRules();
+      // تحديث حالة الملف الشخصي
+      ref.refresh(profileProvider);
+    });
   }
 
 

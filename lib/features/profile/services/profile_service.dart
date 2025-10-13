@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:http_parser/http_parser.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -242,35 +243,35 @@ class LocalProfileService {
         debugPrint('📊 ProfileService: Response data: $data');
         
         // التحقق من وجود بيانات الملف الشخصي
-        final profileData = data['profile'];
-        if (profileData == null) {
+        // الخادم يرسل البيانات مباشرة وليس داخل كائن profile
+        if (data == null || data['profile_id'] == null) {
           debugPrint('❌ ProfileService: No profile data found in response');
           throw Exception('لم يتم العثور على بيانات الملف الشخصي');
         }
         
-        debugPrint('📊 ProfileService: Profile data: $profileData');
+        debugPrint('📊 ProfileService: Profile data: $data');
         
         // Transform the response to match ProfileModel structure
-        // الخادم يرجع البيانات في profile object
+        // الخادم يرجع البيانات مباشرة مع snake_case field names
         final transformedData = {
-          'id': profileData['id']?.toString() ?? '',
-          'userId': profileData['userId']?.toString() ?? data['id']?.toString() ?? '',
-          'full_name_ar': profileData['fullNameAr']?.toString() ?? '',
-          'full_name_en': profileData['fullNameEn']?.toString() ?? '',
+          'id': data['profile_id']?.toString() ?? '',
+          'userId': data['user_id']?.toString() ?? data['id']?.toString() ?? '',
+          'full_name_ar': data['full_name_ar']?.toString() ?? '',
+          'full_name_en': data['full_name_en']?.toString() ?? '',
           'email': data['email']?.toString() ?? '',
-          'birth_date': profileData['birthDate']?.toString(),
-          'governorate_id': profileData['governorateId']?.toString(),
-          'qualification_id': profileData['qualificationId']?.toString(),
-          'graduation_year': profileData['graduationYear'] ?? 0,
-          'university': profileData['university']?.toString() ?? '',
-          'workplace': profileData['profileData']?['workplace']?.toString() ?? '',
-          'status': profileData['status']?.toString() ?? 'UNVERIFIED',
+          'birth_date': data['birth_date']?.toString(),
+          'governorate_id': data['governorate_id']?.toString(),
+          'qualification_id': data['qualification_id']?.toString(),
+          'graduation_year': data['graduation_year'] ?? 0,
+          'university': data['university']?.toString() ?? '',
+          'workplace': data['workplace']?.toString() ?? '',
+          'status': data['status']?.toString() ?? 'UNVERIFIED',
           'completion_percentage': 0.0, // Will be calculated
-          'profile_picture_url': profileData['profilePhotoUrl']?.toString(),
+          'profile_picture_url': data['profile_photo_url']?.toString(),
           'documents': [], // Will be loaded separately
           'required_documents': [], // Will be loaded separately
-          'created_at': profileData['createdAt']?.toString(),
-          'updated_at': profileData['updatedAt']?.toString(),
+          'created_at': data['profile_created_at']?.toString(),
+          'updated_at': data['profile_updated_at']?.toString(),
           'verified_at': null, // Not available from this endpoint
         };
         
@@ -528,8 +529,9 @@ class LocalProfileService {
     try {
       debugPrint('📜 ProfileService: Fetching verification history');
 
-      final token = await StorageService.instance.getToken();
-      if (token == null) {
+      // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+      final token = await DioService.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return [];
       }
@@ -1035,6 +1037,7 @@ class LocalProfileService {
     required File file,
     required String documentType,
     required String fieldName,
+    Uint8List? fileBytes, // إضافة البيانات للويب
   }) async {
     try {
       debugPrint('📄 ProfileService: Uploading document file for field: $fieldName');
@@ -1047,11 +1050,36 @@ class LocalProfileService {
       }
 
       // Create form data
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
+      MultipartFile multipartFile;
+      String fileName;
+      
+      if (kIsWeb) {
+        // في بيئة الويب، استخدم البيانات المرسلة مباشرة
+        fileName = file.path.isNotEmpty 
+            ? file.path 
+            : 'document_${DateTime.now().millisecondsSinceEpoch}';
+        
+        if (fileBytes != null) {
+          // استخدام البيانات المرسلة مباشرة
+          multipartFile = MultipartFile.fromBytes(
+            fileBytes,
+            filename: fileName,
+          );
+        } else {
+          debugPrint('❌ ProfileService: No file bytes provided for web upload');
+          throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
+        }
+      } else {
+        // في بيئة الموبايل، استخدم path
+        fileName = file.path.split('/').last;
+        multipartFile = await MultipartFile.fromFile(
           file.path,
-          filename: file.path.split('/').last,
-        ),
+          filename: fileName,
+        );
+      }
+      
+      final formData = FormData.fromMap({
+        'file': multipartFile,
         'category': fieldName, // استخدام category بدلاً من document_type
         'description': 'Document uploaded from mobile app', // إضافة وصف
       });
@@ -1122,13 +1150,16 @@ class LocalProfileService {
       debugPrint('💾 ProfileService: Updating profile data');
       debugPrint('💾 Request data: ${request.toJson()}');
 
-      final token = await StorageService.instance.getToken();
-      if (token == null) {
+      // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+      final token = await DioService.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        debugPrint('❌ ProfileService: No authentication token found');
         return const ProfileUpdateResponse(
           success: false,
           message: 'Authentication token not found',
         );
       }
+      debugPrint('🔑 ProfileService: Token found, length: ${token.length}');
 
       final response = await _dio.put(
         '${ApiConstants.baseUrl}/api/v1/profiles/me',

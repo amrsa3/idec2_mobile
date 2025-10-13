@@ -110,10 +110,29 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/animations/
+    - assets/fonts/
   
-  # fonts:
-  #   - family: Cairo
-  #     fonts:
-  #       - asset: assets/fonts/Cairo-Regular.ttf
-  #       - asset: assets/fonts/Cairo-Bold.ttf
-  #         weight: 700
+  fonts:
+    # Arabic fonts
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo/Cairo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo/Cairo-Bold.ttf
+          weight: 700
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+          weight: 400
+    # English fonts
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto/Roboto-Bold.ttf
+          weight: 700
+    # Fallback font
+    - family: Tahoma
+      fonts:
+        - asset: assets/fonts/Tahoma.ttf
+          weight: 400

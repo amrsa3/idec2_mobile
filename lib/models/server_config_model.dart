@@ -57,7 +57,7 @@ class ServerConfigValidation with _$ServerConfigValidation {
 // Default configurations
 class DefaultServerConfigs {
   static final ServerConfig development = ServerConfig(
-    baseUrl: '192.168.0.165',
+    baseUrl: 'localhost',
     port: 3000,
     isDefault: true,
     isSecure: false,

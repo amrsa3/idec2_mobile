@@ -305,6 +305,7 @@ class DocumentModel with _$DocumentModel {
 class RequestPasswordResetRequest with _$RequestPasswordResetRequest {
   const factory RequestPasswordResetRequest({
     required String phone,
+    String? preferredChannel,
   }) = _RequestPasswordResetRequest;
 
   factory RequestPasswordResetRequest.fromJson(Map<String, dynamic> json) =>
@@ -328,6 +329,11 @@ class PasswordResetResponse with _$PasswordResetResponse {
   const factory PasswordResetResponse({
     @Default(true) bool success,
     String? message,
+    List<String>? availableChannels,
+    String? selectedChannel,
+    String? phoneNumber,
+    @Default(false) bool requiresChannelSelection,
+    String? purpose,
   }) = _PasswordResetResponse;
 
   factory PasswordResetResponse.fromJson(Map<String, dynamic> json) =>

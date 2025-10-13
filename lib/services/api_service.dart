@@ -56,8 +56,8 @@ abstract class ApiService {
   @PUT('/api/v1/auth/profile')
   Future<UserModel> updateUserProfile(@Body() UserProfileModel profile);
 
-  @GET('/api/v1/auth/check-user-status')
-  Future<ApiResponse> checkUserStatus(@Query('email') String email);
+  @POST('/api/v1/auth/check-user-status')
+  Future<ApiResponse> checkUserStatus(@Body() Map<String, String> request);
 
   // Profile endpoints - New endpoints
   @GET('/api/v1/profiles/me')

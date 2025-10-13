@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/custom_otp_input.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -25,22 +26,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _otpController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _otpValue = '';
+  String? _otpError;
 
   @override
   void dispose() {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _otpController.dispose();
     super.dispose();
   }
 
   bool get _isFormValid {
     return _passwordController.text.isNotEmpty &&
            _confirmPasswordController.text.isNotEmpty &&
-           _otpController.text.isNotEmpty &&
+           _otpValue.isNotEmpty &&
            _passwordController.text == _confirmPasswordController.text &&
            _passwordController.text.length >= 8;
   }
@@ -51,7 +52,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     try {
       await ref.read(authProvider.notifier).resetPassword(
         widget.phone,
-        _otpController.text.trim(),
+        _otpValue.trim(),
         _passwordController.text.trim(),
       );
 
@@ -100,14 +101,21 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return null;
   }
 
-  String? _validateOtp(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'يرجى إدخال رمز التحقق';
-    }
-    if (value.length != 6) {
-      return 'رمز التحقق يجب أن يكون 6 أرقام';
-    }
-    return null;
+  void _onOtpChanged(String value) {
+    setState(() {
+      _otpValue = value;
+      _otpError = null; // Clear error when user types
+    });
+  }
+
+  void _validateOtp() {
+    setState(() {
+      if (_otpValue.isEmpty) {
+        _otpError = 'يرجى إدخال رمز التحقق';
+      } else {
+        _otpError = null;
+      }
+    });
   }
 
   @override
@@ -183,41 +191,30 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 
                 const SizedBox(height: 40),
                 
-                // OTP field
-                TextFormField(
-                  controller: _otpController,
-                  validator: _validateOtp,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'رمز التحقق',
-                    hintText: 'أدخل رمز التحقق المرسل',
-                    prefixIcon: const Icon(Icons.security),
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                // OTP Label
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'رمز التحقق',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.surface,
                   ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // OTP Input
+                CustomOtpInput(
+                  length: 4,
+                  autoFocus: true,
+                  errorText: _otpError,
+                  onChanged: _onOtpChanged,
+                  onCompleted: (value) {
+                    _validateOtp();
+                  },
                 ),
                 
                 const SizedBox(height: 20),

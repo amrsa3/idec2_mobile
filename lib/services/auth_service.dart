@@ -367,7 +367,7 @@ class AuthService {
         try {
           final defaultChannel = await _registrationSettingsService.getDefaultOtpChannel();
           if (defaultChannel != null) {
-            selectedChannel = defaultChannel.id;
+            selectedChannel = defaultChannel;
             debugPrint('Using default OTP channel: $selectedChannel');
           }
         } catch (e) {
@@ -377,18 +377,29 @@ class AuthService {
       
       debugPrint('Sending OTP via channel: $selectedChannel');
       
-      // Use the registration settings service for OTP request
-      final response = await _registrationSettingsService.requestOtpWithChannel(
-        phoneNumber,
-        selectedChannel,
+      // Direct API call for OTP request
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/request-otp',
+        data: {
+          'phone': phoneNumber,
+          'channel': selectedChannel,
+        },
       );
       
-      if (response.success) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('OTP request successful via $selectedChannel');
-        return response;
+        return ApiResponse(
+          success: true,
+          message: response.data['message'] ?? 'OTP sent successfully',
+          data: response.data,
+        );
       } else {
-        debugPrint('OTP request failed: ${response.message}');
-        return response;
+        debugPrint('OTP request failed: ${response.data}');
+        return ApiResponse(
+          success: false,
+          message: response.data['message'] ?? 'Failed to send OTP',
+        );
       }
     } catch (e) {
       debugPrint('OTP request error: $e');
@@ -550,8 +561,8 @@ class AuthService {
     }
   }
 
-  // Get OTP channels from registration settings
-  Future<List<OtpChannelModel>> getOtpChannels() async {
+  // Get OTP channels from registration settings (simplified)
+  Future<List<String>> getOtpChannels() async {
     try {
       debugPrint('Getting OTP channels from registration settings');
       
@@ -562,29 +573,11 @@ class AuthService {
     } catch (e) {
       debugPrint('Error getting OTP channels: $e');
       // Return default SMS channel
-      return [
-        const OtpChannelModel(
-          id: 'sms',
-          name: 'sms',
-          displayName: 'SMS',
-          enabled: true,
-          isDefault: true,
-          priority: 1,
-        ),
-      ];
+      return ['SMS'];
     }
   }
 
-  // Get OTP channels as string list (for backward compatibility)
-  Future<List<String>> getOtpChannelIds() async {
-    try {
-      final channels = await getOtpChannels();
-      return channels.map((channel) => channel.id).toList();
-    } catch (e) {
-      debugPrint('Error getting OTP channel IDs: $e');
-      return ['sms'];
-    }
-  }
+
 
   // Refresh token
   Future<AuthResponse> refreshToken() async {
@@ -718,7 +711,9 @@ class AuthService {
     try {
       debugPrint('Checking user status for phone: $phoneNumber');
       
-      final response = await _apiService.checkUserStatus(phoneNumber);
+      final response = await _apiService.checkUserStatus({
+        'phone': phoneNumber,
+      });
       
       debugPrint('User status check result: ${response.message}');
       return response;
@@ -808,16 +803,19 @@ class AuthService {
   }
 
   // Request password reset OTP
-  Future<PasswordResetResponse> requestPasswordReset(String phone) async {
+  Future<PasswordResetResponse> requestPasswordReset(String phone, {String? preferredChannel}) async {
     try {
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Requesting password reset for phone: $phone');
       
-      final request = RequestPasswordResetRequest(phone: phone);
+      final request = RequestPasswordResetRequest(
+        phone: phone,
+        preferredChannel: preferredChannel,
+      );
       
       // Make direct Dio call to handle response manually
       final dio = DioService.instance.dio;
       final response = await dio.post(
-        '/api/v1/auth/request-password-reset',
+        '/api/v1/auth/request-password-reset-otp',
         data: request.toJson(),
       );
       
@@ -853,6 +851,64 @@ class AuthService {
     } catch (e) {
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Unexpected error: $e');
       throw Exception('حدث خطأ غير متوقع أثناء طلب إعادة تعيين كلمة المرور');
+    }
+  }
+
+  // Confirm password reset OTP sending after channel selection
+  Future<PasswordResetResponse> confirmPasswordResetOtp({
+    required String phoneNumber,
+    required String selectedChannel,
+    required String purpose,
+  }) async {
+    try {
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Confirming password reset OTP for phone: $phoneNumber');
+      
+      final requestData = {
+        'phoneNumber': phoneNumber,
+        'selectedChannel': selectedChannel,
+        'purpose': purpose,
+      };
+      
+      // Make direct Dio call to handle response manually
+      final dio = DioService.instance.dio;
+      final response = await dio.post(
+        '/api/v1/auth/confirm-password-reset-otp',
+        data: requestData,
+      );
+      
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Raw response received successfully');
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response status: ${response.statusCode}');
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response data: ${response.data}');
+      
+      if (response.data == null) {
+        throw Exception('Response data is null');
+      }
+      
+      if (response.data is! Map<String, dynamic>) {
+        throw Exception('Response data is not a Map<String, dynamic>: ${response.data.runtimeType}');
+      }
+      
+      final responseData = response.data as Map<String, dynamic>;
+      final passwordResetResponse = PasswordResetResponse.fromJson(responseData);
+      
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Password reset OTP confirmation successful');
+      return passwordResetResponse;
+      
+    } on DioException catch (e) {
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] DioException occurred: ${e.message}');
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response status: ${e.response?.statusCode}');
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] Response data: ${e.response?.data}');
+      
+      if (e.response?.data != null && e.response?.data is Map<String, dynamic>) {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        final errorMessage = errorData['message'] ?? 'حدث خطأ أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور';
+        throw Exception(errorMessage);
+      }
+      
+      throw Exception('حدث خطأ في الشبكة أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور');
+    } catch (e) {
+      debugPrint('🔍 [CONFIRM_PASSWORD_RESET_DEBUG] General exception: $e');
+      throw Exception('حدث خطأ غير متوقع أثناء تأكيد إرسال كود إعادة تعيين كلمة المرور');
     }
   }
 

@@ -1,104 +1,110 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'core/theme/app_theme.dart';
-import 'core/router/app_router.dart';
-import 'core/errors/error_handler.dart';
+
 import 'core/constants/api_constants.dart';
-import 'providers/language_provider.dart';
-import 'providers/auth_provider.dart';
-import 'l10n/app_localizations.dart';
-import 'services/storage_service.dart';
-import 'services/retry_service.dart';
-import 'services/registration_settings_service.dart';
-import 'services/notification_service.dart';
-import 'services/dio_service.dart';
+import 'core/errors/error_handler.dart';
+import 'core/router/app_router.dart';
 import 'core/services/server_settings_service.dart';
+import 'core/theme/app_theme.dart';
+import 'features/profile/presentation/widgets/verification_notification_banner.dart';
+import 'l10n/app_localizations.dart';
+import 'providers/auth_provider.dart';
+import 'providers/language_provider.dart';
+import 'services/dio_service.dart';
+import 'services/notification_service.dart';
+import 'services/registration_settings_service.dart';
+import 'services/retry_service.dart';
+import 'services/storage_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
-import 'features/profile/presentation/widgets/verification_notification_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize error handling system
   ErrorHandler.instance.initialize();
   debugPrint('✅ Error handling system initialized');
-  
+
   // Initialize retry service
   RetryService.instance.initialize();
   debugPrint('✅ Retry service initialized');
-  
+
   // Web-specific configurations
   if (kIsWeb) {
     // Force HTML renderer for better text rendering
     debugPrint('🌐 Web platform detected - configuring for web');
-    
+
     // Prevent Google Fonts from loading
     debugPrint('🚫 Disabling Google Fonts loading');
-    
+
     // Force system fonts only
     debugPrint('🔤 Using system fonts only');
-    
+
     // Disable font fallback to Google Fonts
     debugPrint('🔧 Disabling font fallback to Google Fonts');
-    
+
     // Force system fonts in Flutter Web
     debugPrint('🔧 Forcing system fonts in Flutter Web');
-    
+
     // Disable Google Fonts loading for web
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('Web app loaded - using system fonts only');
-      
+
       // Force text rendering for Arabic support with system fonts
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
         ),
       );
-      
+
       // Additional web-specific font configuration
-      debugPrint('Configured web app to use system fonts only - no external font loading');
+      debugPrint(
+          'Configured web app to use system fonts only - no external font loading');
     });
   }
-  
+
   // Initialize StorageService first
   await StorageService.instance.init();
   debugPrint('✅ StorageService initialized successfully');
-  
+
   // Initialize and validate server settings
   // Initialize server settings with enhanced production debugging
   debugPrint('🚀 [MAIN] Starting server settings initialization...');
   debugPrint('🚀 [MAIN] Build mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
-  
+
   final serverSettingsService = ServerSettingsService(StorageService.instance);
-  
+
   // Add production-specific debugging
   if (!kDebugMode) {
-    debugPrint('🏭 [PRODUCTION] Production mode detected - enabling detailed baseURL tracking');
-    debugPrint('🏭 [PRODUCTION] Initial ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
+    debugPrint(
+        '🏭 [PRODUCTION] Production mode detected - enabling detailed baseURL tracking');
+    debugPrint(
+        '🏭 [PRODUCTION] Initial ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
   }
-  
+
   // Validate and fix settings
   debugPrint('🔧 [MAIN] Validating and fixing server settings...');
   await serverSettingsService.validateAndFixSettings();
-  
+
   // Get base URL
   debugPrint('🔗 [MAIN] Getting base URL from server settings...');
   final baseUrl = await serverSettingsService.getBaseUrl();
   debugPrint('🔗 [MAIN] Retrieved base URL: $baseUrl');
-  
+
   // Update ApiConstants
   debugPrint('🔄 [MAIN] Updating ApiConstants with base URL...');
   ApiConstants.updateBaseUrl(baseUrl);
-  
+
   // Production-specific validation
   if (!kDebugMode) {
-    debugPrint('🏭 [PRODUCTION] Post-update ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
-    debugPrint('🏭 [PRODUCTION] Checking if port 3000 is included: ${ApiConstants.baseUrl.contains(":3000")}');
+    debugPrint(
+        '🏭 [PRODUCTION] Post-update ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
+    debugPrint(
+        '🏭 [PRODUCTION] Checking if port 3000 is included: ${ApiConstants.baseUrl.contains(":3000")}');
     if (!ApiConstants.baseUrl.contains(":3000")) {
       debugPrint('❌ [PRODUCTION] CRITICAL: Port 3000 missing from baseURL!');
       debugPrint('❌ [PRODUCTION] This will cause connection failures!');
@@ -106,39 +112,41 @@ void main() async {
       debugPrint('✅ [PRODUCTION] Port 3000 correctly included in baseURL');
     }
   }
-  
+
   // Validate configuration
   final isValidConfig = ApiConstants.validateCurrentConfig();
   debugPrint('✅ [MAIN] Configuration validation result: $isValidConfig');
-  
+
   // Refresh DioService
   debugPrint('🔄 [MAIN] Refreshing DioService with new settings...');
   DioService.instance.refreshAfterServerChange();
-  
+
   // Final production check
   if (!kDebugMode) {
     debugPrint('🏭 [PRODUCTION] Final DioService baseUrl check...');
     debugPrint('🏭 [PRODUCTION] DioService will use: ${ApiConstants.baseUrl}');
     debugPrint('🏭 [PRODUCTION] Expected format: http://idec-ye.com:3000');
-    debugPrint('🏭 [PRODUCTION] Match check: ${ApiConstants.baseUrl == "http://idec-ye.com:3000"}');
+    debugPrint(
+        '🏭 [PRODUCTION] Match check: ${ApiConstants.baseUrl == "http://idec-ye.com:3000"}');
   }
   debugPrint('🔍 ApiConstants validation result: $isValidConfig');
-  
+
   // Update DioService with new base URL
   DioService.instance.refreshAfterServerChange();
   debugPrint('✅ DioService updated with new server settings');
-  
+
   // Initialize registration settings service after API constants are updated
   RegistrationSettingsService.instance.initialize().then((_) {
     debugPrint('✅ Registration settings service initialized');
   }).catchError((e) {
     debugPrint('⚠️ Registration settings service initialization failed: $e');
   });
-  debugPrint('🚀 Registration settings service initialization started (non-blocking)');
-  
+  debugPrint(
+      '🚀 Registration settings service initialization started (non-blocking)');
+
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
-  
+
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -148,13 +156,13 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   runApp(
     const ProviderScope(
       child: ErrorBoundary(
@@ -177,10 +185,10 @@ class _IDECAppState extends ConsumerState<IDECApp> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize service status provider
     _serviceStatusProvider = ServiceStatusProvider();
-    
+
     // Start verification notification service after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeServices();
@@ -201,16 +209,16 @@ class _IDECAppState extends ConsumerState<IDECApp> {
   void dispose() {
     // Stop verification notification service
     VerificationNotificationService.stopService();
-    
+
     // Dispose retry service
     RetryService.instance.dispose();
-    
+
     // Dispose registration settings service
     RegistrationSettingsService.instance.dispose();
-    
+
     // Dispose service status provider
     _serviceStatusProvider.dispose();
-    
+
     super.dispose();
   }
 
@@ -219,32 +227,32 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(currentLocaleProvider);
     final authState = ref.watch(authProvider);
-    
+
     return MaterialApp.router(
       title: 'IDEC',
       debugShowCheckedModeBanner: false,
-      
+
       // ScaffoldMessenger configuration
       scaffoldMessengerKey: NotificationService.scaffoldMessengerKey,
-      
+
       // Theme configuration - Using system fonts for web compatibility
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      
+
       // Localization configuration
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       locale: locale,
-      
+
       // Router configuration
       routerConfig: router,
-      
+
       // Builder for additional configuration
       builder: (context, child) {
         return Directionality(
-          textDirection: locale.languageCode == 'ar' 
-              ? TextDirection.rtl 
+          textDirection: locale.languageCode == 'ar'
+              ? TextDirection.rtl
               : TextDirection.ltr,
           child: ServiceStatusWrapper(
             statusProvider: _serviceStatusProvider,
@@ -252,7 +260,9 @@ class _IDECAppState extends ConsumerState<IDECApp> {
               children: [
                 child ?? const SizedBox.shrink(),
                 // Show verification notification banner for unverified users
-                if (authState.user != null && !authState.user!.isVerified)
+                if (authState.user != null &&
+                    !authState.user!
+                        .phoneVerified) // Use phoneVerified instead of isVerified
                   const Positioned(
                     top: 0,
                     left: 0,

@@ -9,6 +9,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/language_provider.dart';
 import '../../../services/notification_service.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
@@ -188,6 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(authProvider);
+    final isRTL = ref.watch(isRTLProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,

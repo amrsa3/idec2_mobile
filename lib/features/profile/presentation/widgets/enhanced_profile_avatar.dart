@@ -36,27 +36,32 @@ class EnhancedProfileAvatar extends StatefulWidget {
   });
 
   @override
+  State<EnhancedProfileAvatar> createState() => _EnhancedProfileAvatarState();
+}
+
+class _EnhancedProfileAvatarState extends State<EnhancedProfileAvatar> {
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Stack(
         children: [
           // Avatar container
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            width: size,
-            height: size,
+            width: widget.size,
+            height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: showBorder
+              border: widget.showBorder
                   ? Border.all(
-                      color: borderColor ?? AppColors.primary,
-                      width: borderWidth,
+                      color: widget.borderColor ?? AppColors.primary,
+                      width: widget.borderWidth,
                     )
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -68,11 +73,11 @@ class EnhancedProfileAvatar extends StatefulWidget {
           ),
 
           // Loading overlay
-          if (isLoading)
+          if (widget.isLoading)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -85,13 +90,13 @@ class EnhancedProfileAvatar extends StatefulWidget {
             ),
 
           // Edit icon
-          if (showEditIcon && !isLoading)
+          if (widget.showEditIcon && !widget.isLoading)
             Positioned(
               right: 0,
               bottom: 0,
               child: Container(
-                width: size * 0.3,
-                height: size * 0.3,
+                width: widget.size * 0.3,
+                height: widget.size * 0.3,
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   shape: BoxShape.circle,
@@ -101,7 +106,7 @@ class EnhancedProfileAvatar extends StatefulWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -110,7 +115,7 @@ class EnhancedProfileAvatar extends StatefulWidget {
                 child: Icon(
                   Icons.camera_alt,
                   color: Colors.white,
-                  size: size * 0.15,
+                  size: widget.size * 0.15,
                 ),
               ),
             ),
@@ -121,27 +126,27 @@ class EnhancedProfileAvatar extends StatefulWidget {
 
   Widget _buildAvatarContent() {
     // Priority: File > URL > Initials
-    if (imageFile != null) {
+    if (widget.imageFile != null) {
       return Image.file(
-        imageFile!,
-        width: size,
-        height: size,
+        widget.imageFile!,
+        width: widget.size,
+        height: widget.size,
         fit: BoxFit.cover,
       );
     }
 
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
+    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
       // Ensure the URL is complete
-      String fullImageUrl = imageUrl!;
+      String fullImageUrl = widget.imageUrl!;
       if (!fullImageUrl.startsWith('http')) {
         // Add base URL if it's a relative path
-        fullImageUrl = '${ApiConstants.baseUrl}$imageUrl';
+        fullImageUrl = '${ApiConstants.baseUrl}${widget.imageUrl}';
       }
 
       return AuthenticatedImageWidget(
         imageUrl: fullImageUrl,
-        width: size,
-        height: size,
+        width: widget.size,
+        height: widget.size,
         fit: BoxFit.cover,
         placeholder: _buildShimmerPlaceholder(),
         errorWidget: _buildInitials(),
@@ -156,8 +161,8 @@ class EnhancedProfileAvatar extends StatefulWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: Container(
-        width: size,
-        height: size,
+        width: widget.size,
+        height: widget.size,
         decoration: const BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
@@ -167,12 +172,12 @@ class EnhancedProfileAvatar extends StatefulWidget {
   }
 
   Widget _buildInitials() {
-    final displayInitials = initials ?? 'U';
-    final fontSize = size * 0.35;
+    final displayInitials = widget.initials ?? 'U';
+    final fontSize = widget.size * 0.35;
 
     return Container(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

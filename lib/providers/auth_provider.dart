@@ -4,13 +4,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/app_constants.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/dio_service.dart';
 import '../services/session_manager.dart';
+import '../services/web_compatible_storage.dart';
 
 // Auth state class
 class AuthState {
@@ -111,7 +111,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       final token = await _authService.getAccessToken();
-      final currentUser = await _authService.getCurrentUser();
+      UserModel? currentUser;
+
+      // Try to load user data from storage
+      try {
+        final userDataString =
+            await WebCompatibleStorage.instance.read(AppConstants.userKey);
+        if (userDataString != null && userDataString.isNotEmpty) {
+          final userData = jsonDecode(userDataString) as Map<String, dynamic>;
+          currentUser = UserModel.fromJsonSafe(userData);
+          debugPrint(
+              '🔍 [AUTH_DEBUG] _checkAuthStatus - user loaded from storage: ${currentUser.id}');
+        } else {
+          debugPrint(
+              '🔍 [AUTH_DEBUG] _checkAuthStatus - no user data in storage');
+        }
+      } catch (e) {
+        debugPrint(
+            '🔍 [AUTH_DEBUG] _checkAuthStatus - error loading user data: $e');
+        currentUser = null;
+      }
 
       print(
           '🔍 [AUTH_DEBUG] _checkAuthStatus - token: ${token != null ? 'exists' : 'null'}');
@@ -128,7 +147,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
             user: currentUser,
             isAuthenticated: true,
             isLoading: false,
-            isEmailVerified: currentUser.isEmailVerified,
             phoneVerified: currentUser.phoneVerified,
           );
 
@@ -141,7 +159,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
             // Token is valid, update with latest profile data
             state = state.copyWith(
               user: profile,
-              isEmailVerified: profile.isEmailVerified,
               phoneVerified: profile.phoneVerified,
             );
 
@@ -167,7 +184,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
                   state = state.copyWith(
                     user: refreshResult.user,
                     isEmailVerified:
-                        refreshResult.user?.isEmailVerified ?? false,
+                        false, // isEmailVerified not available in UserModel
                     phoneVerified: refreshResult.user?.phoneVerified ?? false,
                   );
 
@@ -225,7 +242,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await _authService.login(loginRequest);
 
       debugPrint(
-          'AuthProvider: Login result - success: ${result.success}, user: ${result.user?.fullNameAr}, accessToken: ${result.accessToken?.isNotEmpty == true}');
+          'AuthProvider: Login result - success: ${result.success}, user: ${result.user?.phone}, accessToken: ${result.accessToken?.isNotEmpty == true}');
 
       // Check if login was successful - be more flexible with success criteria
       if (result.success &&
@@ -244,7 +261,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
             user: result.user,
             isAuthenticated: true,
             isLoading: false,
-            isEmailVerified: result.user?.isEmailVerified ?? false,
+            isEmailVerified:
+                false, // isEmailVerified not available in UserModel
             phoneVerified: result.user?.phoneVerified ?? false,
           );
 
@@ -611,41 +629,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _saveUserData(UserModel user) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      debugPrint(
+          '🔍 [AUTH_DEBUG] _saveUserData - starting save for user: ${user.id}');
 
-      // Safe JSON conversion with error handling
-      Map<String, dynamic> userJson;
-      try {
-        userJson = user.toJson();
-        debugPrint('🔍 [AUTH_DEBUG] _saveUserData - user.toJson() successful');
-      } catch (toJsonError) {
-        debugPrint(
-            '🔍 [AUTH_DEBUG] _saveUserData - toJson() failed: $toJsonError');
-        // Create safe minimal representation
-        userJson = {
-          'id': user.id,
-          'phone': user.phone,
-          'email': user.email,
-          'firstName': user.firstName,
-          'lastName': user.lastName,
-          'fullNameAr': user.fullNameAr,
-          'phoneVerified': user.phoneVerified,
-          'roles': user.roles,
-          'isVerified': user.isVerified,
-          'isActive': user.isActive,
-          'isEmailVerified': user.isEmailVerified,
-          'createdAt': user.createdAt?.toIso8601String(),
-          'updatedAt': user.updatedAt?.toIso8601String(),
-          'profilePictureUrl': user.profilePictureUrl,
-          'profilePicture': user.profilePicture,
-          'profile': null, // Skip profile to avoid nested issues
-        };
-        debugPrint(
-            '🔍 [AUTH_DEBUG] _saveUserData - created safe JSON representation');
-      }
+      // Create safe minimal representation
+      final userJson = {
+        'id': user.id,
+        'phone': user.phone,
+        'email': user.email,
+        'phoneVerified': user.phoneVerified,
+        'roles': user.roles,
+        'createdAt': user.createdAt?.toIso8601String(),
+        'updatedAt': user.updatedAt?.toIso8601String(),
+        'profile': null, // Skip profile to avoid nested issues
+      };
 
       final jsonString = jsonEncode(userJson);
-      await prefs.setString(AppConstants.userKey, jsonString);
+
+      // Use WebCompatibleStorage for both web and mobile
+      await WebCompatibleStorage.instance
+          .write(AppConstants.userKey, jsonString);
+
       print('🔍 [AUTH_DEBUG] _saveUserData - user saved: ${user.id}');
     } catch (e) {
       debugPrint('🔍 [AUTH_DEBUG] _saveUserData - error: $e');
@@ -654,13 +658,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _clearAuthData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.userKey);
+    try {
+      debugPrint('🔍 [AUTH_DEBUG] _clearAuthData - starting clear');
 
-    // Clear tokens from DioService (FlutterSecureStorage)
-    await DioService.instance.clearTokens();
+      // Use WebCompatibleStorage for both web and mobile
+      await WebCompatibleStorage.instance.delete(AppConstants.userKey);
+      debugPrint('🔍 [AUTH_DEBUG] _clearAuthData - user data cleared');
 
-    print('🔍 [AUTH_DEBUG] _clearAuthData - all authentication data cleared');
+      // Clear tokens from DioService (FlutterSecureStorage)
+      await DioService.instance.clearTokens();
+      debugPrint('🔍 [AUTH_DEBUG] _clearAuthData - tokens cleared');
+
+      print('🔍 [AUTH_DEBUG] _clearAuthData - all authentication data cleared');
+    } catch (e) {
+      debugPrint('🔍 [AUTH_DEBUG] _clearAuthData - error: $e');
+      // Don't rethrow to avoid breaking the flow
+    }
   }
 
   // Request OTP for registration verification

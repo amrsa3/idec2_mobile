@@ -1,6 +1,7 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'verification_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+import 'verification_model.dart';
 
 part 'user_model.freezed.dart';
 part 'user_model.g.dart';
@@ -11,19 +12,10 @@ class UserModel with _$UserModel {
     required String id,
     required String phone,
     String? email,
-    @Default('') String firstName,
-    @Default('') String lastName,
-    @JsonKey(name: 'full_name_ar') @Default('') String fullNameAr,
-    @JsonKey(name: 'full_name_en') String? fullNameEn,
     @Default(false) bool phoneVerified,
     @Default([]) List<String> roles,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? profilePictureUrl,
-    String? profilePicture,
-    @Default(true) bool isVerified,
-    @Default(true) bool isActive,
-    @Default(false) bool isEmailVerified,
     UserProfileModel? profile,
   }) = _UserModel;
 
@@ -35,58 +27,50 @@ class UserModel with _$UserModel {
     try {
       debugPrint('UserModel.fromJsonSafe: Starting parsing');
       debugPrint('UserModel.fromJsonSafe: Input JSON: $json');
-      
-      // Create a safe copy of the JSON with proper null handling for boolean fields
+
+      // Create a safe copy of the JSON with proper null handling
       final safeJson = Map<String, dynamic>.from(json);
-      
-      // Handle boolean fields that might be null or missing
-      // Use phoneVerified from server response directly
+
+      // Handle required fields
+      safeJson['id'] = json['id']?.toString() ?? '';
+      safeJson['phone'] = json['phone']?.toString() ?? '';
+      safeJson['email'] = json['email'] as String?;
       safeJson['phoneVerified'] = json['phoneVerified'] as bool? ?? false;
-      
-      // Handle other boolean fields with safe defaults
-      safeJson['isEmailVerified'] = json['isEmailVerified'] as bool? ?? false;
-      safeJson['isVerified'] = json['isVerified'] as bool? ?? true;
-      safeJson['isActive'] = json['isActive'] as bool? ?? true;
-      
-      // Handle string fields with safe defaults
-      safeJson['firstName'] = json['firstName'] as String? ?? '';
-      safeJson['lastName'] = json['lastName'] as String? ?? '';
-      safeJson['fullNameAr'] = json['full_name_ar'] as String? ?? json['fullNameAr'] as String? ?? '';
-      safeJson['full_name_ar'] = safeJson['fullNameAr']; // Ensure JsonKey mapping works
-      
+
       // Handle roles array
       if (json['roles'] != null) {
         if (json['roles'] is List) {
-          safeJson['roles'] = (json['roles'] as List).map((e) => e.toString()).toList();
+          safeJson['roles'] =
+              (json['roles'] as List).map((e) => e.toString()).toList();
         } else {
           safeJson['roles'] = <String>[];
         }
       } else {
         safeJson['roles'] = <String>[];
       }
-      
-      // Handle id field - keep as string (don't convert to int)
-      if (json['id'] != null) {
-        safeJson['id'] = json['id'].toString();
-      }
-      
-      // Handle optional numeric fields
-      if (json['governorateId'] != null) {
-        if (json['governorateId'] is String) {
-          safeJson['governorateId'] = int.tryParse(json['governorateId']);
+
+      // Handle optional date fields
+      if (json['createdAt'] != null) {
+        try {
+          safeJson['createdAt'] = DateTime.parse(json['createdAt'].toString());
+        } catch (e) {
+          debugPrint('UserModel.fromJsonSafe: Error parsing createdAt: $e');
         }
       }
-      
-      if (json['qualificationId'] != null) {
-        if (json['qualificationId'] is String) {
-          safeJson['qualificationId'] = int.tryParse(json['qualificationId']);
+
+      if (json['updatedAt'] != null) {
+        try {
+          safeJson['updatedAt'] = DateTime.parse(json['updatedAt'].toString());
+        } catch (e) {
+          debugPrint('UserModel.fromJsonSafe: Error parsing updatedAt: $e');
         }
       }
-      
+
       debugPrint('UserModel.fromJsonSafe: Safe JSON prepared: $safeJson');
-      
+
       final user = UserModel.fromJson(safeJson);
-      debugPrint('UserModel.fromJsonSafe: Success - User created with phoneVerified: ${user.phoneVerified}');
+      debugPrint(
+          'UserModel.fromJsonSafe: Success - User created with phoneVerified: ${user.phoneVerified}');
       return user;
     } catch (e, stackTrace) {
       debugPrint('UserModel.fromJsonSafe: Error parsing user data: $e');
@@ -105,41 +89,85 @@ class UserProfileModel with _$UserProfileModel {
   const factory UserProfileModel({
     @Default('') String id,
     @Default('') String userId,
-    String? title,
-    String? specialization,
-    String? workPlace,
-    String? country,
-    String? city,
-    String? address,
-    String? phoneNumber,
-    String? whatsappNumber,
-    String? telegramNumber,
-    String? linkedinProfile,
-    String? facebookProfile,
-    String? instagramProfile,
-    String? twitterProfile,
-    String? websiteUrl,
-    String? bio,
-    DateTime? dateOfBirth,
+    @Default('') String fullNameAr,
+    String? fullNameEn,
+    DateTime? birthDate,
+    int? graduationYear,
+    String? university,
+    String? workplace,
     String? gender,
-    String? nationality,
-    String? passportNumber,
-    String? emergencyContactName,
-    String? emergencyContactPhone,
-    String? emergencyContactRelation,
-    String? dietaryRestrictions,
-    String? medicalConditions,
-    String? accommodationPreferences,
-    String? transportationNeeds,
-    String? languagePreference,
-    bool? marketingConsent,
-    bool? dataProcessingConsent,
+    String? address,
+    String? jobTitle,
+    String? specialization,
+    String? academicDegree,
+    String? profilePhotoUrl,
+    Map<String, dynamic>? profileData,
+    String? status,
+    String? categoryId,
+    String? qualificationId,
+    String? governorateId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) = _UserProfileModel;
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) =>
       _$UserProfileModelFromJson(json);
+
+  // Safe fromJson that handles snake_case to camelCase conversion
+  factory UserProfileModel.fromJsonSafe(Map<String, dynamic> json) {
+    try {
+      debugPrint('UserProfileModel.fromJsonSafe: Starting parsing');
+      debugPrint('UserProfileModel.fromJsonSafe: Input JSON: $json');
+
+      // Convert snake_case keys to camelCase for freezed
+      final convertedJson = <String, dynamic>{};
+
+      // Map snake_case keys to camelCase
+      convertedJson['id'] = json['id']?.toString() ?? '';
+      convertedJson['userId'] = json['user_id']?.toString() ?? '';
+      convertedJson['fullNameAr'] = json['full_name_ar']?.toString() ?? '';
+      convertedJson['fullNameEn'] = json['full_name_en']?.toString();
+      convertedJson['birthDate'] = json['birth_date'] != null
+          ? DateTime.tryParse(json['birth_date'].toString())
+          : null;
+      convertedJson['graduationYear'] = json['graduation_year'] != null
+          ? int.tryParse(json['graduation_year'].toString())
+          : null;
+      convertedJson['university'] = json['university']?.toString();
+      convertedJson['workplace'] = json['workplace']?.toString();
+      convertedJson['gender'] = json['gender']?.toString();
+      convertedJson['address'] = json['address']?.toString();
+      convertedJson['jobTitle'] = json['job_title']?.toString();
+      convertedJson['specialization'] = json['specialization']?.toString();
+      convertedJson['academicDegree'] = json['academic_degree']?.toString();
+      convertedJson['profilePhotoUrl'] = json['profile_photo_url']?.toString();
+      convertedJson['profileData'] =
+          json['profile_data'] as Map<String, dynamic>?;
+      convertedJson['status'] = json['status']?.toString();
+      convertedJson['categoryId'] = json['category_id']?.toString();
+      convertedJson['qualificationId'] = json['qualification_id']?.toString();
+      convertedJson['governorateId'] = json['governorate_id']?.toString();
+      convertedJson['createdAt'] = json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null;
+      convertedJson['updatedAt'] = json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'].toString())
+          : null;
+
+      debugPrint(
+          'UserProfileModel.fromJsonSafe: Converted JSON: $convertedJson');
+
+      final profile = UserProfileModel.fromJson(convertedJson);
+      debugPrint('UserProfileModel.fromJsonSafe: Success - Profile created');
+      return profile;
+    } catch (e, stackTrace) {
+      debugPrint(
+          'UserProfileModel.fromJsonSafe: Error parsing profile data: $e');
+      debugPrint('UserProfileModel.fromJsonSafe: Stack trace: $stackTrace');
+      debugPrint('UserProfileModel.fromJsonSafe: Raw JSON: $json');
+      rethrow;
+    }
+  }
 }
 
 @freezed
@@ -186,39 +214,41 @@ class AuthResponse with _$AuthResponse {
     try {
       debugPrint('AuthResponse.fromJsonSafe: Starting parsing');
       debugPrint('AuthResponse.fromJsonSafe: Input JSON: $json');
-      
+
       // Handle the case where the response is a simple registration response
-       // without user data (just success, message, otpCode)
-       if (json.containsKey('otpCode') && !json.containsKey('user')) {
-         debugPrint('AuthResponse.fromJsonSafe: Registration response detected (no user data)');
-         return AuthResponse(
-           accessToken: null,
-           refreshToken: null,
-           user: null,
-           success: true, // Registration responses are always successful if we get here
-           message: json['message'] as String?,
-           token: null,
-         );
-       }
-      
+      // without user data (just success, message, otpCode)
+      if (json.containsKey('otpCode') && !json.containsKey('user')) {
+        debugPrint(
+            'AuthResponse.fromJsonSafe: Registration response detected (no user data)');
+        return AuthResponse(
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          success:
+              true, // Registration responses are always successful if we get here
+          message: json['message'] as String?,
+          token: null,
+        );
+      }
+
       // Extract fields with safe casting
-       String? accessToken = json['accessToken'] as String?;
-       String? refreshToken = json['refreshToken'] as String?;
-       final userData = json['user'] as Map<String, dynamic>?;
-       final success = json['success'] as bool? ?? true;
-       final message = json['message'] as String?;
-       final token = json['token'] as String?;
-       
-       // Handle tokens object if present
-       final tokensData = json['tokens'] as Map<String, dynamic>?;
-       if (tokensData != null) {
-         accessToken = accessToken ?? tokensData['accessToken'] as String?;
-         refreshToken = refreshToken ?? tokensData['refreshToken'] as String?;
-       }
-       
-       // Fallback to access_token field if accessToken is still null
-       accessToken = accessToken ?? json['access_token'] as String?;
-      
+      String? accessToken = json['accessToken'] as String?;
+      String? refreshToken = json['refreshToken'] as String?;
+      final userData = json['user'] as Map<String, dynamic>?;
+      final success = json['success'] as bool? ?? true;
+      final message = json['message'] as String?;
+      final token = json['token'] as String?;
+
+      // Handle tokens object if present
+      final tokensData = json['tokens'] as Map<String, dynamic>?;
+      if (tokensData != null) {
+        accessToken = accessToken ?? tokensData['accessToken'] as String?;
+        refreshToken = refreshToken ?? tokensData['refreshToken'] as String?;
+      }
+
+      // Fallback to access_token field if accessToken is still null
+      accessToken = accessToken ?? json['access_token'] as String?;
+
       // Parse user data safely if it exists
       UserModel? user;
       if (userData != null) {
@@ -230,7 +260,7 @@ class AuthResponse with _$AuthResponse {
           user = null;
         }
       }
-      
+
       final authResponse = AuthResponse(
         accessToken: accessToken,
         refreshToken: refreshToken,
@@ -239,10 +269,9 @@ class AuthResponse with _$AuthResponse {
         message: message,
         token: token,
       );
-      
+
       debugPrint('AuthResponse.fromJsonSafe: Success');
       return authResponse;
-      
     } catch (e, stackTrace) {
       debugPrint('AuthResponse.fromJsonSafe: Error: $e');
       debugPrint('AuthResponse.fromJsonSafe: Stack trace: $stackTrace');

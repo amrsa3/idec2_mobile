@@ -179,12 +179,13 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     }
                   },
                   child: ProfileImageWidget(
-                    imageUrl: user?.profilePictureUrl,
+                    imageUrl: user?.profile
+                        ?.profilePhotoUrl, // Use profile.profilePhotoUrl
                     size: 60,
-                    fallbackText: user?.fullNameAr?.isNotEmpty == true
-                        ? user!.fullNameAr![0].toUpperCase()
-                        : (user?.fullNameEn?.isNotEmpty == true
-                            ? user!.fullNameEn![0].toUpperCase()
+                    fallbackText: user?.profile?.fullNameAr?.isNotEmpty == true
+                        ? user!.profile!.fullNameAr![0].toUpperCase()
+                        : (user?.profile?.fullNameEn?.isNotEmpty == true
+                            ? user!.profile!.fullNameEn![0].toUpperCase()
                             : 'U'),
                     showEditIcon: false,
                     isEditable: false,
@@ -193,7 +194,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 const SizedBox(height: 12),
                 // اسم المستخدم
                 Text(
-                  user?.fullNameAr ?? user?.fullNameEn ?? 'المستخدم',
+                  user?.profile?.fullNameAr ??
+                      user?.profile?.fullNameEn ??
+                      'المستخدم',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,

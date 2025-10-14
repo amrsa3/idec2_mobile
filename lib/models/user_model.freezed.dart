@@ -23,21 +23,10 @@ mixin _$UserModel {
   String get id => throw _privateConstructorUsedError;
   String get phone => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
-  String get firstName => throw _privateConstructorUsedError;
-  String get lastName => throw _privateConstructorUsedError;
-  @JsonKey(name: 'full_name_ar')
-  String get fullNameAr => throw _privateConstructorUsedError;
-  @JsonKey(name: 'full_name_en')
-  String? get fullNameEn => throw _privateConstructorUsedError;
   bool get phoneVerified => throw _privateConstructorUsedError;
   List<String> get roles => throw _privateConstructorUsedError;
   DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  String? get profilePictureUrl => throw _privateConstructorUsedError;
-  String? get profilePicture => throw _privateConstructorUsedError;
-  bool get isVerified => throw _privateConstructorUsedError;
-  bool get isActive => throw _privateConstructorUsedError;
-  bool get isEmailVerified => throw _privateConstructorUsedError;
   UserProfileModel? get profile => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -55,19 +44,10 @@ abstract class $UserModelCopyWith<$Res> {
       {String id,
       String phone,
       String? email,
-      String firstName,
-      String lastName,
-      @JsonKey(name: 'full_name_ar') String fullNameAr,
-      @JsonKey(name: 'full_name_en') String? fullNameEn,
       bool phoneVerified,
       List<String> roles,
       DateTime? createdAt,
       DateTime? updatedAt,
-      String? profilePictureUrl,
-      String? profilePicture,
-      bool isVerified,
-      bool isActive,
-      bool isEmailVerified,
       UserProfileModel? profile});
 
   $UserProfileModelCopyWith<$Res>? get profile;
@@ -89,19 +69,10 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? id = null,
     Object? phone = null,
     Object? email = freezed,
-    Object? firstName = null,
-    Object? lastName = null,
-    Object? fullNameAr = null,
-    Object? fullNameEn = freezed,
     Object? phoneVerified = null,
     Object? roles = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
-    Object? profilePictureUrl = freezed,
-    Object? profilePicture = freezed,
-    Object? isVerified = null,
-    Object? isActive = null,
-    Object? isEmailVerified = null,
     Object? profile = freezed,
   }) {
     return _then(_value.copyWith(
@@ -116,22 +87,6 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
       email: freezed == email
           ? _value.email
           : email // ignore: cast_nullable_to_non_nullable
-              as String?,
-      firstName: null == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
-              as String,
-      lastName: null == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
-              as String,
-      fullNameAr: null == fullNameAr
-          ? _value.fullNameAr
-          : fullNameAr // ignore: cast_nullable_to_non_nullable
-              as String,
-      fullNameEn: freezed == fullNameEn
-          ? _value.fullNameEn
-          : fullNameEn // ignore: cast_nullable_to_non_nullable
               as String?,
       phoneVerified: null == phoneVerified
           ? _value.phoneVerified
@@ -149,26 +104,6 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      profilePictureUrl: freezed == profilePictureUrl
-          ? _value.profilePictureUrl
-          : profilePictureUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      profilePicture: freezed == profilePicture
-          ? _value.profilePicture
-          : profilePicture // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isVerified: null == isVerified
-          ? _value.isVerified
-          : isVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isEmailVerified: null == isEmailVerified
-          ? _value.isEmailVerified
-          : isEmailVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
       profile: freezed == profile
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
@@ -201,19 +136,10 @@ abstract class _$$UserModelImplCopyWith<$Res>
       {String id,
       String phone,
       String? email,
-      String firstName,
-      String lastName,
-      @JsonKey(name: 'full_name_ar') String fullNameAr,
-      @JsonKey(name: 'full_name_en') String? fullNameEn,
       bool phoneVerified,
       List<String> roles,
       DateTime? createdAt,
       DateTime? updatedAt,
-      String? profilePictureUrl,
-      String? profilePicture,
-      bool isVerified,
-      bool isActive,
-      bool isEmailVerified,
       UserProfileModel? profile});
 
   @override
@@ -234,19 +160,10 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? phone = null,
     Object? email = freezed,
-    Object? firstName = null,
-    Object? lastName = null,
-    Object? fullNameAr = null,
-    Object? fullNameEn = freezed,
     Object? phoneVerified = null,
     Object? roles = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
-    Object? profilePictureUrl = freezed,
-    Object? profilePicture = freezed,
-    Object? isVerified = null,
-    Object? isActive = null,
-    Object? isEmailVerified = null,
     Object? profile = freezed,
   }) {
     return _then(_$UserModelImpl(
@@ -261,22 +178,6 @@ class __$$UserModelImplCopyWithImpl<$Res>
       email: freezed == email
           ? _value.email
           : email // ignore: cast_nullable_to_non_nullable
-              as String?,
-      firstName: null == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
-              as String,
-      lastName: null == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
-              as String,
-      fullNameAr: null == fullNameAr
-          ? _value.fullNameAr
-          : fullNameAr // ignore: cast_nullable_to_non_nullable
-              as String,
-      fullNameEn: freezed == fullNameEn
-          ? _value.fullNameEn
-          : fullNameEn // ignore: cast_nullable_to_non_nullable
               as String?,
       phoneVerified: null == phoneVerified
           ? _value.phoneVerified
@@ -294,26 +195,6 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      profilePictureUrl: freezed == profilePictureUrl
-          ? _value.profilePictureUrl
-          : profilePictureUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      profilePicture: freezed == profilePicture
-          ? _value.profilePicture
-          : profilePicture // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isVerified: null == isVerified
-          ? _value.isVerified
-          : isVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isEmailVerified: null == isEmailVerified
-          ? _value.isEmailVerified
-          : isEmailVerified // ignore: cast_nullable_to_non_nullable
-              as bool,
       profile: freezed == profile
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
@@ -329,19 +210,10 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       {required this.id,
       required this.phone,
       this.email,
-      this.firstName = '',
-      this.lastName = '',
-      @JsonKey(name: 'full_name_ar') this.fullNameAr = '',
-      @JsonKey(name: 'full_name_en') this.fullNameEn,
       this.phoneVerified = false,
       final List<String> roles = const [],
       this.createdAt,
       this.updatedAt,
-      this.profilePictureUrl,
-      this.profilePicture,
-      this.isVerified = true,
-      this.isActive = true,
-      this.isEmailVerified = false,
       this.profile})
       : _roles = roles;
 
@@ -354,18 +226,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
   final String phone;
   @override
   final String? email;
-  @override
-  @JsonKey()
-  final String firstName;
-  @override
-  @JsonKey()
-  final String lastName;
-  @override
-  @JsonKey(name: 'full_name_ar')
-  final String fullNameAr;
-  @override
-  @JsonKey(name: 'full_name_en')
-  final String? fullNameEn;
   @override
   @JsonKey()
   final bool phoneVerified;
@@ -383,24 +243,11 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
   @override
   final DateTime? updatedAt;
   @override
-  final String? profilePictureUrl;
-  @override
-  final String? profilePicture;
-  @override
-  @JsonKey()
-  final bool isVerified;
-  @override
-  @JsonKey()
-  final bool isActive;
-  @override
-  @JsonKey()
-  final bool isEmailVerified;
-  @override
   final UserProfileModel? profile;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'UserModel(id: $id, phone: $phone, email: $email, firstName: $firstName, lastName: $lastName, fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profilePictureUrl: $profilePictureUrl, profilePicture: $profilePicture, isVerified: $isVerified, isActive: $isActive, isEmailVerified: $isEmailVerified, profile: $profile)';
+    return 'UserModel(id: $id, phone: $phone, email: $email, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profile: $profile)';
   }
 
   @override
@@ -411,19 +258,10 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       ..add(DiagnosticsProperty('id', id))
       ..add(DiagnosticsProperty('phone', phone))
       ..add(DiagnosticsProperty('email', email))
-      ..add(DiagnosticsProperty('firstName', firstName))
-      ..add(DiagnosticsProperty('lastName', lastName))
-      ..add(DiagnosticsProperty('fullNameAr', fullNameAr))
-      ..add(DiagnosticsProperty('fullNameEn', fullNameEn))
       ..add(DiagnosticsProperty('phoneVerified', phoneVerified))
       ..add(DiagnosticsProperty('roles', roles))
       ..add(DiagnosticsProperty('createdAt', createdAt))
       ..add(DiagnosticsProperty('updatedAt', updatedAt))
-      ..add(DiagnosticsProperty('profilePictureUrl', profilePictureUrl))
-      ..add(DiagnosticsProperty('profilePicture', profilePicture))
-      ..add(DiagnosticsProperty('isVerified', isVerified))
-      ..add(DiagnosticsProperty('isActive', isActive))
-      ..add(DiagnosticsProperty('isEmailVerified', isEmailVerified))
       ..add(DiagnosticsProperty('profile', profile));
   }
 
@@ -435,14 +273,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.email, email) || other.email == email) &&
-            (identical(other.firstName, firstName) ||
-                other.firstName == firstName) &&
-            (identical(other.lastName, lastName) ||
-                other.lastName == lastName) &&
-            (identical(other.fullNameAr, fullNameAr) ||
-                other.fullNameAr == fullNameAr) &&
-            (identical(other.fullNameEn, fullNameEn) ||
-                other.fullNameEn == fullNameEn) &&
             (identical(other.phoneVerified, phoneVerified) ||
                 other.phoneVerified == phoneVerified) &&
             const DeepCollectionEquality().equals(other._roles, _roles) &&
@@ -450,16 +280,6 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
-            (identical(other.profilePictureUrl, profilePictureUrl) ||
-                other.profilePictureUrl == profilePictureUrl) &&
-            (identical(other.profilePicture, profilePicture) ||
-                other.profilePicture == profilePicture) &&
-            (identical(other.isVerified, isVerified) ||
-                other.isVerified == isVerified) &&
-            (identical(other.isActive, isActive) ||
-                other.isActive == isActive) &&
-            (identical(other.isEmailVerified, isEmailVerified) ||
-                other.isEmailVerified == isEmailVerified) &&
             (identical(other.profile, profile) || other.profile == profile));
   }
 
@@ -470,19 +290,10 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       id,
       phone,
       email,
-      firstName,
-      lastName,
-      fullNameAr,
-      fullNameEn,
       phoneVerified,
       const DeepCollectionEquality().hash(_roles),
       createdAt,
       updatedAt,
-      profilePictureUrl,
-      profilePicture,
-      isVerified,
-      isActive,
-      isEmailVerified,
       profile);
 
   @JsonKey(ignore: true)
@@ -504,19 +315,10 @@ abstract class _UserModel implements UserModel {
       {required final String id,
       required final String phone,
       final String? email,
-      final String firstName,
-      final String lastName,
-      @JsonKey(name: 'full_name_ar') final String fullNameAr,
-      @JsonKey(name: 'full_name_en') final String? fullNameEn,
       final bool phoneVerified,
       final List<String> roles,
       final DateTime? createdAt,
       final DateTime? updatedAt,
-      final String? profilePictureUrl,
-      final String? profilePicture,
-      final bool isVerified,
-      final bool isActive,
-      final bool isEmailVerified,
       final UserProfileModel? profile}) = _$UserModelImpl;
 
   factory _UserModel.fromJson(Map<String, dynamic> json) =
@@ -529,16 +331,6 @@ abstract class _UserModel implements UserModel {
   @override
   String? get email;
   @override
-  String get firstName;
-  @override
-  String get lastName;
-  @override
-  @JsonKey(name: 'full_name_ar')
-  String get fullNameAr;
-  @override
-  @JsonKey(name: 'full_name_en')
-  String? get fullNameEn;
-  @override
   bool get phoneVerified;
   @override
   List<String> get roles;
@@ -546,16 +338,6 @@ abstract class _UserModel implements UserModel {
   DateTime? get createdAt;
   @override
   DateTime? get updatedAt;
-  @override
-  String? get profilePictureUrl;
-  @override
-  String? get profilePicture;
-  @override
-  bool get isVerified;
-  @override
-  bool get isActive;
-  @override
-  bool get isEmailVerified;
   @override
   UserProfileModel? get profile;
   @override
@@ -571,37 +353,39 @@ UserProfileModel _$UserProfileModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$UserProfileModel {
   String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'user_id')
   String get userId => throw _privateConstructorUsedError;
-  String? get title => throw _privateConstructorUsedError;
-  String? get specialization => throw _privateConstructorUsedError;
-  String? get workPlace => throw _privateConstructorUsedError;
-  String? get country => throw _privateConstructorUsedError;
-  String? get city => throw _privateConstructorUsedError;
-  String? get address => throw _privateConstructorUsedError;
-  String? get phoneNumber => throw _privateConstructorUsedError;
-  String? get whatsappNumber => throw _privateConstructorUsedError;
-  String? get telegramNumber => throw _privateConstructorUsedError;
-  String? get linkedinProfile => throw _privateConstructorUsedError;
-  String? get facebookProfile => throw _privateConstructorUsedError;
-  String? get instagramProfile => throw _privateConstructorUsedError;
-  String? get twitterProfile => throw _privateConstructorUsedError;
-  String? get websiteUrl => throw _privateConstructorUsedError;
-  String? get bio => throw _privateConstructorUsedError;
-  DateTime? get dateOfBirth => throw _privateConstructorUsedError;
+  @JsonKey(name: 'full_name_ar')
+  String get fullNameAr => throw _privateConstructorUsedError;
+  @JsonKey(name: 'full_name_en')
+  String? get fullNameEn => throw _privateConstructorUsedError;
+  @JsonKey(name: 'birth_date')
+  DateTime? get birthDate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'graduation_year')
+  int? get graduationYear => throw _privateConstructorUsedError;
+  String? get university => throw _privateConstructorUsedError;
+  String? get workplace => throw _privateConstructorUsedError;
   String? get gender => throw _privateConstructorUsedError;
-  String? get nationality => throw _privateConstructorUsedError;
-  String? get passportNumber => throw _privateConstructorUsedError;
-  String? get emergencyContactName => throw _privateConstructorUsedError;
-  String? get emergencyContactPhone => throw _privateConstructorUsedError;
-  String? get emergencyContactRelation => throw _privateConstructorUsedError;
-  String? get dietaryRestrictions => throw _privateConstructorUsedError;
-  String? get medicalConditions => throw _privateConstructorUsedError;
-  String? get accommodationPreferences => throw _privateConstructorUsedError;
-  String? get transportationNeeds => throw _privateConstructorUsedError;
-  String? get languagePreference => throw _privateConstructorUsedError;
-  bool? get marketingConsent => throw _privateConstructorUsedError;
-  bool? get dataProcessingConsent => throw _privateConstructorUsedError;
+  String? get address => throw _privateConstructorUsedError;
+  @JsonKey(name: 'job_title')
+  String? get jobTitle => throw _privateConstructorUsedError;
+  String? get specialization => throw _privateConstructorUsedError;
+  @JsonKey(name: 'academic_degree')
+  String? get academicDegree => throw _privateConstructorUsedError;
+  @JsonKey(name: 'profile_photo_url')
+  String? get profilePhotoUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'profile_data')
+  Map<String, dynamic>? get profileData => throw _privateConstructorUsedError;
+  String? get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'category_id')
+  String? get categoryId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'qualification_id')
+  String? get qualificationId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'governorate_id')
+  String? get governorateId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime? get createdAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'updated_at')
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -618,38 +402,26 @@ abstract class $UserProfileModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String userId,
-      String? title,
-      String? specialization,
-      String? workPlace,
-      String? country,
-      String? city,
-      String? address,
-      String? phoneNumber,
-      String? whatsappNumber,
-      String? telegramNumber,
-      String? linkedinProfile,
-      String? facebookProfile,
-      String? instagramProfile,
-      String? twitterProfile,
-      String? websiteUrl,
-      String? bio,
-      DateTime? dateOfBirth,
+      @JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'full_name_ar') String fullNameAr,
+      @JsonKey(name: 'full_name_en') String? fullNameEn,
+      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'graduation_year') int? graduationYear,
+      String? university,
+      String? workplace,
       String? gender,
-      String? nationality,
-      String? passportNumber,
-      String? emergencyContactName,
-      String? emergencyContactPhone,
-      String? emergencyContactRelation,
-      String? dietaryRestrictions,
-      String? medicalConditions,
-      String? accommodationPreferences,
-      String? transportationNeeds,
-      String? languagePreference,
-      bool? marketingConsent,
-      bool? dataProcessingConsent,
-      DateTime? createdAt,
-      DateTime? updatedAt});
+      String? address,
+      @JsonKey(name: 'job_title') String? jobTitle,
+      String? specialization,
+      @JsonKey(name: 'academic_degree') String? academicDegree,
+      @JsonKey(name: 'profile_photo_url') String? profilePhotoUrl,
+      @JsonKey(name: 'profile_data') Map<String, dynamic>? profileData,
+      String? status,
+      @JsonKey(name: 'category_id') String? categoryId,
+      @JsonKey(name: 'qualification_id') String? qualificationId,
+      @JsonKey(name: 'governorate_id') String? governorateId,
+      @JsonKey(name: 'created_at') DateTime? createdAt,
+      @JsonKey(name: 'updated_at') DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -667,35 +439,23 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
   $Res call({
     Object? id = null,
     Object? userId = null,
-    Object? title = freezed,
-    Object? specialization = freezed,
-    Object? workPlace = freezed,
-    Object? country = freezed,
-    Object? city = freezed,
-    Object? address = freezed,
-    Object? phoneNumber = freezed,
-    Object? whatsappNumber = freezed,
-    Object? telegramNumber = freezed,
-    Object? linkedinProfile = freezed,
-    Object? facebookProfile = freezed,
-    Object? instagramProfile = freezed,
-    Object? twitterProfile = freezed,
-    Object? websiteUrl = freezed,
-    Object? bio = freezed,
-    Object? dateOfBirth = freezed,
+    Object? fullNameAr = null,
+    Object? fullNameEn = freezed,
+    Object? birthDate = freezed,
+    Object? graduationYear = freezed,
+    Object? university = freezed,
+    Object? workplace = freezed,
     Object? gender = freezed,
-    Object? nationality = freezed,
-    Object? passportNumber = freezed,
-    Object? emergencyContactName = freezed,
-    Object? emergencyContactPhone = freezed,
-    Object? emergencyContactRelation = freezed,
-    Object? dietaryRestrictions = freezed,
-    Object? medicalConditions = freezed,
-    Object? accommodationPreferences = freezed,
-    Object? transportationNeeds = freezed,
-    Object? languagePreference = freezed,
-    Object? marketingConsent = freezed,
-    Object? dataProcessingConsent = freezed,
+    Object? address = freezed,
+    Object? jobTitle = freezed,
+    Object? specialization = freezed,
+    Object? academicDegree = freezed,
+    Object? profilePhotoUrl = freezed,
+    Object? profileData = freezed,
+    Object? status = freezed,
+    Object? categoryId = freezed,
+    Object? qualificationId = freezed,
+    Object? governorateId = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -708,122 +468,74 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
               as String,
-      title: freezed == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
+      fullNameAr: null == fullNameAr
+          ? _value.fullNameAr
+          : fullNameAr // ignore: cast_nullable_to_non_nullable
+              as String,
+      fullNameEn: freezed == fullNameEn
+          ? _value.fullNameEn
+          : fullNameEn // ignore: cast_nullable_to_non_nullable
               as String?,
-      specialization: freezed == specialization
-          ? _value.specialization
-          : specialization // ignore: cast_nullable_to_non_nullable
+      birthDate: freezed == birthDate
+          ? _value.birthDate
+          : birthDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      graduationYear: freezed == graduationYear
+          ? _value.graduationYear
+          : graduationYear // ignore: cast_nullable_to_non_nullable
+              as int?,
+      university: freezed == university
+          ? _value.university
+          : university // ignore: cast_nullable_to_non_nullable
               as String?,
-      workPlace: freezed == workPlace
-          ? _value.workPlace
-          : workPlace // ignore: cast_nullable_to_non_nullable
+      workplace: freezed == workplace
+          ? _value.workplace
+          : workplace // ignore: cast_nullable_to_non_nullable
               as String?,
-      country: freezed == country
-          ? _value.country
-          : country // ignore: cast_nullable_to_non_nullable
-              as String?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
+      gender: freezed == gender
+          ? _value.gender
+          : gender // ignore: cast_nullable_to_non_nullable
               as String?,
       address: freezed == address
           ? _value.address
           : address // ignore: cast_nullable_to_non_nullable
               as String?,
-      phoneNumber: freezed == phoneNumber
-          ? _value.phoneNumber
-          : phoneNumber // ignore: cast_nullable_to_non_nullable
+      jobTitle: freezed == jobTitle
+          ? _value.jobTitle
+          : jobTitle // ignore: cast_nullable_to_non_nullable
               as String?,
-      whatsappNumber: freezed == whatsappNumber
-          ? _value.whatsappNumber
-          : whatsappNumber // ignore: cast_nullable_to_non_nullable
+      specialization: freezed == specialization
+          ? _value.specialization
+          : specialization // ignore: cast_nullable_to_non_nullable
               as String?,
-      telegramNumber: freezed == telegramNumber
-          ? _value.telegramNumber
-          : telegramNumber // ignore: cast_nullable_to_non_nullable
+      academicDegree: freezed == academicDegree
+          ? _value.academicDegree
+          : academicDegree // ignore: cast_nullable_to_non_nullable
               as String?,
-      linkedinProfile: freezed == linkedinProfile
-          ? _value.linkedinProfile
-          : linkedinProfile // ignore: cast_nullable_to_non_nullable
+      profilePhotoUrl: freezed == profilePhotoUrl
+          ? _value.profilePhotoUrl
+          : profilePhotoUrl // ignore: cast_nullable_to_non_nullable
               as String?,
-      facebookProfile: freezed == facebookProfile
-          ? _value.facebookProfile
-          : facebookProfile // ignore: cast_nullable_to_non_nullable
+      profileData: freezed == profileData
+          ? _value.profileData
+          : profileData // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      status: freezed == status
+          ? _value.status
+          : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      instagramProfile: freezed == instagramProfile
-          ? _value.instagramProfile
-          : instagramProfile // ignore: cast_nullable_to_non_nullable
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      twitterProfile: freezed == twitterProfile
-          ? _value.twitterProfile
-          : twitterProfile // ignore: cast_nullable_to_non_nullable
+      qualificationId: freezed == qualificationId
+          ? _value.qualificationId
+          : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
-      websiteUrl: freezed == websiteUrl
-          ? _value.websiteUrl
-          : websiteUrl // ignore: cast_nullable_to_non_nullable
+      governorateId: freezed == governorateId
+          ? _value.governorateId
+          : governorateId // ignore: cast_nullable_to_non_nullable
               as String?,
-      bio: freezed == bio
-          ? _value.bio
-          : bio // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dateOfBirth: freezed == dateOfBirth
-          ? _value.dateOfBirth
-          : dateOfBirth // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      gender: freezed == gender
-          ? _value.gender
-          : gender // ignore: cast_nullable_to_non_nullable
-              as String?,
-      nationality: freezed == nationality
-          ? _value.nationality
-          : nationality // ignore: cast_nullable_to_non_nullable
-              as String?,
-      passportNumber: freezed == passportNumber
-          ? _value.passportNumber
-          : passportNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactName: freezed == emergencyContactName
-          ? _value.emergencyContactName
-          : emergencyContactName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactPhone: freezed == emergencyContactPhone
-          ? _value.emergencyContactPhone
-          : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactRelation: freezed == emergencyContactRelation
-          ? _value.emergencyContactRelation
-          : emergencyContactRelation // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dietaryRestrictions: freezed == dietaryRestrictions
-          ? _value.dietaryRestrictions
-          : dietaryRestrictions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      medicalConditions: freezed == medicalConditions
-          ? _value.medicalConditions
-          : medicalConditions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      accommodationPreferences: freezed == accommodationPreferences
-          ? _value.accommodationPreferences
-          : accommodationPreferences // ignore: cast_nullable_to_non_nullable
-              as String?,
-      transportationNeeds: freezed == transportationNeeds
-          ? _value.transportationNeeds
-          : transportationNeeds // ignore: cast_nullable_to_non_nullable
-              as String?,
-      languagePreference: freezed == languagePreference
-          ? _value.languagePreference
-          : languagePreference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      marketingConsent: freezed == marketingConsent
-          ? _value.marketingConsent
-          : marketingConsent // ignore: cast_nullable_to_non_nullable
-              as bool?,
-      dataProcessingConsent: freezed == dataProcessingConsent
-          ? _value.dataProcessingConsent
-          : dataProcessingConsent // ignore: cast_nullable_to_non_nullable
-              as bool?,
       createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -846,38 +558,26 @@ abstract class _$$UserProfileModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      String userId,
-      String? title,
-      String? specialization,
-      String? workPlace,
-      String? country,
-      String? city,
-      String? address,
-      String? phoneNumber,
-      String? whatsappNumber,
-      String? telegramNumber,
-      String? linkedinProfile,
-      String? facebookProfile,
-      String? instagramProfile,
-      String? twitterProfile,
-      String? websiteUrl,
-      String? bio,
-      DateTime? dateOfBirth,
+      @JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'full_name_ar') String fullNameAr,
+      @JsonKey(name: 'full_name_en') String? fullNameEn,
+      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'graduation_year') int? graduationYear,
+      String? university,
+      String? workplace,
       String? gender,
-      String? nationality,
-      String? passportNumber,
-      String? emergencyContactName,
-      String? emergencyContactPhone,
-      String? emergencyContactRelation,
-      String? dietaryRestrictions,
-      String? medicalConditions,
-      String? accommodationPreferences,
-      String? transportationNeeds,
-      String? languagePreference,
-      bool? marketingConsent,
-      bool? dataProcessingConsent,
-      DateTime? createdAt,
-      DateTime? updatedAt});
+      String? address,
+      @JsonKey(name: 'job_title') String? jobTitle,
+      String? specialization,
+      @JsonKey(name: 'academic_degree') String? academicDegree,
+      @JsonKey(name: 'profile_photo_url') String? profilePhotoUrl,
+      @JsonKey(name: 'profile_data') Map<String, dynamic>? profileData,
+      String? status,
+      @JsonKey(name: 'category_id') String? categoryId,
+      @JsonKey(name: 'qualification_id') String? qualificationId,
+      @JsonKey(name: 'governorate_id') String? governorateId,
+      @JsonKey(name: 'created_at') DateTime? createdAt,
+      @JsonKey(name: 'updated_at') DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -893,35 +593,23 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? userId = null,
-    Object? title = freezed,
-    Object? specialization = freezed,
-    Object? workPlace = freezed,
-    Object? country = freezed,
-    Object? city = freezed,
-    Object? address = freezed,
-    Object? phoneNumber = freezed,
-    Object? whatsappNumber = freezed,
-    Object? telegramNumber = freezed,
-    Object? linkedinProfile = freezed,
-    Object? facebookProfile = freezed,
-    Object? instagramProfile = freezed,
-    Object? twitterProfile = freezed,
-    Object? websiteUrl = freezed,
-    Object? bio = freezed,
-    Object? dateOfBirth = freezed,
+    Object? fullNameAr = null,
+    Object? fullNameEn = freezed,
+    Object? birthDate = freezed,
+    Object? graduationYear = freezed,
+    Object? university = freezed,
+    Object? workplace = freezed,
     Object? gender = freezed,
-    Object? nationality = freezed,
-    Object? passportNumber = freezed,
-    Object? emergencyContactName = freezed,
-    Object? emergencyContactPhone = freezed,
-    Object? emergencyContactRelation = freezed,
-    Object? dietaryRestrictions = freezed,
-    Object? medicalConditions = freezed,
-    Object? accommodationPreferences = freezed,
-    Object? transportationNeeds = freezed,
-    Object? languagePreference = freezed,
-    Object? marketingConsent = freezed,
-    Object? dataProcessingConsent = freezed,
+    Object? address = freezed,
+    Object? jobTitle = freezed,
+    Object? specialization = freezed,
+    Object? academicDegree = freezed,
+    Object? profilePhotoUrl = freezed,
+    Object? profileData = freezed,
+    Object? status = freezed,
+    Object? categoryId = freezed,
+    Object? qualificationId = freezed,
+    Object? governorateId = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -934,122 +622,74 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
               as String,
-      title: freezed == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
+      fullNameAr: null == fullNameAr
+          ? _value.fullNameAr
+          : fullNameAr // ignore: cast_nullable_to_non_nullable
+              as String,
+      fullNameEn: freezed == fullNameEn
+          ? _value.fullNameEn
+          : fullNameEn // ignore: cast_nullable_to_non_nullable
               as String?,
-      specialization: freezed == specialization
-          ? _value.specialization
-          : specialization // ignore: cast_nullable_to_non_nullable
+      birthDate: freezed == birthDate
+          ? _value.birthDate
+          : birthDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      graduationYear: freezed == graduationYear
+          ? _value.graduationYear
+          : graduationYear // ignore: cast_nullable_to_non_nullable
+              as int?,
+      university: freezed == university
+          ? _value.university
+          : university // ignore: cast_nullable_to_non_nullable
               as String?,
-      workPlace: freezed == workPlace
-          ? _value.workPlace
-          : workPlace // ignore: cast_nullable_to_non_nullable
+      workplace: freezed == workplace
+          ? _value.workplace
+          : workplace // ignore: cast_nullable_to_non_nullable
               as String?,
-      country: freezed == country
-          ? _value.country
-          : country // ignore: cast_nullable_to_non_nullable
-              as String?,
-      city: freezed == city
-          ? _value.city
-          : city // ignore: cast_nullable_to_non_nullable
+      gender: freezed == gender
+          ? _value.gender
+          : gender // ignore: cast_nullable_to_non_nullable
               as String?,
       address: freezed == address
           ? _value.address
           : address // ignore: cast_nullable_to_non_nullable
               as String?,
-      phoneNumber: freezed == phoneNumber
-          ? _value.phoneNumber
-          : phoneNumber // ignore: cast_nullable_to_non_nullable
+      jobTitle: freezed == jobTitle
+          ? _value.jobTitle
+          : jobTitle // ignore: cast_nullable_to_non_nullable
               as String?,
-      whatsappNumber: freezed == whatsappNumber
-          ? _value.whatsappNumber
-          : whatsappNumber // ignore: cast_nullable_to_non_nullable
+      specialization: freezed == specialization
+          ? _value.specialization
+          : specialization // ignore: cast_nullable_to_non_nullable
               as String?,
-      telegramNumber: freezed == telegramNumber
-          ? _value.telegramNumber
-          : telegramNumber // ignore: cast_nullable_to_non_nullable
+      academicDegree: freezed == academicDegree
+          ? _value.academicDegree
+          : academicDegree // ignore: cast_nullable_to_non_nullable
               as String?,
-      linkedinProfile: freezed == linkedinProfile
-          ? _value.linkedinProfile
-          : linkedinProfile // ignore: cast_nullable_to_non_nullable
+      profilePhotoUrl: freezed == profilePhotoUrl
+          ? _value.profilePhotoUrl
+          : profilePhotoUrl // ignore: cast_nullable_to_non_nullable
               as String?,
-      facebookProfile: freezed == facebookProfile
-          ? _value.facebookProfile
-          : facebookProfile // ignore: cast_nullable_to_non_nullable
+      profileData: freezed == profileData
+          ? _value._profileData
+          : profileData // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>?,
+      status: freezed == status
+          ? _value.status
+          : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      instagramProfile: freezed == instagramProfile
-          ? _value.instagramProfile
-          : instagramProfile // ignore: cast_nullable_to_non_nullable
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      twitterProfile: freezed == twitterProfile
-          ? _value.twitterProfile
-          : twitterProfile // ignore: cast_nullable_to_non_nullable
+      qualificationId: freezed == qualificationId
+          ? _value.qualificationId
+          : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
-      websiteUrl: freezed == websiteUrl
-          ? _value.websiteUrl
-          : websiteUrl // ignore: cast_nullable_to_non_nullable
+      governorateId: freezed == governorateId
+          ? _value.governorateId
+          : governorateId // ignore: cast_nullable_to_non_nullable
               as String?,
-      bio: freezed == bio
-          ? _value.bio
-          : bio // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dateOfBirth: freezed == dateOfBirth
-          ? _value.dateOfBirth
-          : dateOfBirth // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      gender: freezed == gender
-          ? _value.gender
-          : gender // ignore: cast_nullable_to_non_nullable
-              as String?,
-      nationality: freezed == nationality
-          ? _value.nationality
-          : nationality // ignore: cast_nullable_to_non_nullable
-              as String?,
-      passportNumber: freezed == passportNumber
-          ? _value.passportNumber
-          : passportNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactName: freezed == emergencyContactName
-          ? _value.emergencyContactName
-          : emergencyContactName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactPhone: freezed == emergencyContactPhone
-          ? _value.emergencyContactPhone
-          : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactRelation: freezed == emergencyContactRelation
-          ? _value.emergencyContactRelation
-          : emergencyContactRelation // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dietaryRestrictions: freezed == dietaryRestrictions
-          ? _value.dietaryRestrictions
-          : dietaryRestrictions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      medicalConditions: freezed == medicalConditions
-          ? _value.medicalConditions
-          : medicalConditions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      accommodationPreferences: freezed == accommodationPreferences
-          ? _value.accommodationPreferences
-          : accommodationPreferences // ignore: cast_nullable_to_non_nullable
-              as String?,
-      transportationNeeds: freezed == transportationNeeds
-          ? _value.transportationNeeds
-          : transportationNeeds // ignore: cast_nullable_to_non_nullable
-              as String?,
-      languagePreference: freezed == languagePreference
-          ? _value.languagePreference
-          : languagePreference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      marketingConsent: freezed == marketingConsent
-          ? _value.marketingConsent
-          : marketingConsent // ignore: cast_nullable_to_non_nullable
-              as bool?,
-      dataProcessingConsent: freezed == dataProcessingConsent
-          ? _value.dataProcessingConsent
-          : dataProcessingConsent // ignore: cast_nullable_to_non_nullable
-              as bool?,
       createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -1069,38 +709,27 @@ class _$UserProfileModelImpl
     implements _UserProfileModel {
   const _$UserProfileModelImpl(
       {this.id = '',
-      this.userId = '',
-      this.title,
-      this.specialization,
-      this.workPlace,
-      this.country,
-      this.city,
-      this.address,
-      this.phoneNumber,
-      this.whatsappNumber,
-      this.telegramNumber,
-      this.linkedinProfile,
-      this.facebookProfile,
-      this.instagramProfile,
-      this.twitterProfile,
-      this.websiteUrl,
-      this.bio,
-      this.dateOfBirth,
+      @JsonKey(name: 'user_id') this.userId = '',
+      @JsonKey(name: 'full_name_ar') this.fullNameAr = '',
+      @JsonKey(name: 'full_name_en') this.fullNameEn,
+      @JsonKey(name: 'birth_date') this.birthDate,
+      @JsonKey(name: 'graduation_year') this.graduationYear,
+      this.university,
+      this.workplace,
       this.gender,
-      this.nationality,
-      this.passportNumber,
-      this.emergencyContactName,
-      this.emergencyContactPhone,
-      this.emergencyContactRelation,
-      this.dietaryRestrictions,
-      this.medicalConditions,
-      this.accommodationPreferences,
-      this.transportationNeeds,
-      this.languagePreference,
-      this.marketingConsent,
-      this.dataProcessingConsent,
-      this.createdAt,
-      this.updatedAt});
+      this.address,
+      @JsonKey(name: 'job_title') this.jobTitle,
+      this.specialization,
+      @JsonKey(name: 'academic_degree') this.academicDegree,
+      @JsonKey(name: 'profile_photo_url') this.profilePhotoUrl,
+      @JsonKey(name: 'profile_data') final Map<String, dynamic>? profileData,
+      this.status,
+      @JsonKey(name: 'category_id') this.categoryId,
+      @JsonKey(name: 'qualification_id') this.qualificationId,
+      @JsonKey(name: 'governorate_id') this.governorateId,
+      @JsonKey(name: 'created_at') this.createdAt,
+      @JsonKey(name: 'updated_at') this.updatedAt})
+      : _profileData = profileData;
 
   factory _$UserProfileModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileModelImplFromJson(json);
@@ -1109,74 +738,71 @@ class _$UserProfileModelImpl
   @JsonKey()
   final String id;
   @override
-  @JsonKey()
+  @JsonKey(name: 'user_id')
   final String userId;
   @override
-  final String? title;
+  @JsonKey(name: 'full_name_ar')
+  final String fullNameAr;
   @override
-  final String? specialization;
+  @JsonKey(name: 'full_name_en')
+  final String? fullNameEn;
   @override
-  final String? workPlace;
+  @JsonKey(name: 'birth_date')
+  final DateTime? birthDate;
   @override
-  final String? country;
+  @JsonKey(name: 'graduation_year')
+  final int? graduationYear;
   @override
-  final String? city;
+  final String? university;
   @override
-  final String? address;
-  @override
-  final String? phoneNumber;
-  @override
-  final String? whatsappNumber;
-  @override
-  final String? telegramNumber;
-  @override
-  final String? linkedinProfile;
-  @override
-  final String? facebookProfile;
-  @override
-  final String? instagramProfile;
-  @override
-  final String? twitterProfile;
-  @override
-  final String? websiteUrl;
-  @override
-  final String? bio;
-  @override
-  final DateTime? dateOfBirth;
+  final String? workplace;
   @override
   final String? gender;
   @override
-  final String? nationality;
+  final String? address;
   @override
-  final String? passportNumber;
+  @JsonKey(name: 'job_title')
+  final String? jobTitle;
   @override
-  final String? emergencyContactName;
+  final String? specialization;
   @override
-  final String? emergencyContactPhone;
+  @JsonKey(name: 'academic_degree')
+  final String? academicDegree;
   @override
-  final String? emergencyContactRelation;
+  @JsonKey(name: 'profile_photo_url')
+  final String? profilePhotoUrl;
+  final Map<String, dynamic>? _profileData;
   @override
-  final String? dietaryRestrictions;
+  @JsonKey(name: 'profile_data')
+  Map<String, dynamic>? get profileData {
+    final value = _profileData;
+    if (value == null) return null;
+    if (_profileData is EqualUnmodifiableMapView) return _profileData;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
   @override
-  final String? medicalConditions;
+  final String? status;
   @override
-  final String? accommodationPreferences;
+  @JsonKey(name: 'category_id')
+  final String? categoryId;
   @override
-  final String? transportationNeeds;
+  @JsonKey(name: 'qualification_id')
+  final String? qualificationId;
   @override
-  final String? languagePreference;
+  @JsonKey(name: 'governorate_id')
+  final String? governorateId;
   @override
-  final bool? marketingConsent;
-  @override
-  final bool? dataProcessingConsent;
-  @override
+  @JsonKey(name: 'created_at')
   final DateTime? createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'UserProfileModel(id: $id, userId: $userId, title: $title, specialization: $specialization, workPlace: $workPlace, country: $country, city: $city, address: $address, phoneNumber: $phoneNumber, whatsappNumber: $whatsappNumber, telegramNumber: $telegramNumber, linkedinProfile: $linkedinProfile, facebookProfile: $facebookProfile, instagramProfile: $instagramProfile, twitterProfile: $twitterProfile, websiteUrl: $websiteUrl, bio: $bio, dateOfBirth: $dateOfBirth, gender: $gender, nationality: $nationality, passportNumber: $passportNumber, emergencyContactName: $emergencyContactName, emergencyContactPhone: $emergencyContactPhone, emergencyContactRelation: $emergencyContactRelation, dietaryRestrictions: $dietaryRestrictions, medicalConditions: $medicalConditions, accommodationPreferences: $accommodationPreferences, transportationNeeds: $transportationNeeds, languagePreference: $languagePreference, marketingConsent: $marketingConsent, dataProcessingConsent: $dataProcessingConsent, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'UserProfileModel(id: $id, userId: $userId, fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, birthDate: $birthDate, graduationYear: $graduationYear, university: $university, workplace: $workplace, gender: $gender, address: $address, jobTitle: $jobTitle, specialization: $specialization, academicDegree: $academicDegree, profilePhotoUrl: $profilePhotoUrl, profileData: $profileData, status: $status, categoryId: $categoryId, qualificationId: $qualificationId, governorateId: $governorateId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -1186,37 +812,23 @@ class _$UserProfileModelImpl
       ..add(DiagnosticsProperty('type', 'UserProfileModel'))
       ..add(DiagnosticsProperty('id', id))
       ..add(DiagnosticsProperty('userId', userId))
-      ..add(DiagnosticsProperty('title', title))
-      ..add(DiagnosticsProperty('specialization', specialization))
-      ..add(DiagnosticsProperty('workPlace', workPlace))
-      ..add(DiagnosticsProperty('country', country))
-      ..add(DiagnosticsProperty('city', city))
-      ..add(DiagnosticsProperty('address', address))
-      ..add(DiagnosticsProperty('phoneNumber', phoneNumber))
-      ..add(DiagnosticsProperty('whatsappNumber', whatsappNumber))
-      ..add(DiagnosticsProperty('telegramNumber', telegramNumber))
-      ..add(DiagnosticsProperty('linkedinProfile', linkedinProfile))
-      ..add(DiagnosticsProperty('facebookProfile', facebookProfile))
-      ..add(DiagnosticsProperty('instagramProfile', instagramProfile))
-      ..add(DiagnosticsProperty('twitterProfile', twitterProfile))
-      ..add(DiagnosticsProperty('websiteUrl', websiteUrl))
-      ..add(DiagnosticsProperty('bio', bio))
-      ..add(DiagnosticsProperty('dateOfBirth', dateOfBirth))
+      ..add(DiagnosticsProperty('fullNameAr', fullNameAr))
+      ..add(DiagnosticsProperty('fullNameEn', fullNameEn))
+      ..add(DiagnosticsProperty('birthDate', birthDate))
+      ..add(DiagnosticsProperty('graduationYear', graduationYear))
+      ..add(DiagnosticsProperty('university', university))
+      ..add(DiagnosticsProperty('workplace', workplace))
       ..add(DiagnosticsProperty('gender', gender))
-      ..add(DiagnosticsProperty('nationality', nationality))
-      ..add(DiagnosticsProperty('passportNumber', passportNumber))
-      ..add(DiagnosticsProperty('emergencyContactName', emergencyContactName))
-      ..add(DiagnosticsProperty('emergencyContactPhone', emergencyContactPhone))
-      ..add(DiagnosticsProperty(
-          'emergencyContactRelation', emergencyContactRelation))
-      ..add(DiagnosticsProperty('dietaryRestrictions', dietaryRestrictions))
-      ..add(DiagnosticsProperty('medicalConditions', medicalConditions))
-      ..add(DiagnosticsProperty(
-          'accommodationPreferences', accommodationPreferences))
-      ..add(DiagnosticsProperty('transportationNeeds', transportationNeeds))
-      ..add(DiagnosticsProperty('languagePreference', languagePreference))
-      ..add(DiagnosticsProperty('marketingConsent', marketingConsent))
-      ..add(DiagnosticsProperty('dataProcessingConsent', dataProcessingConsent))
+      ..add(DiagnosticsProperty('address', address))
+      ..add(DiagnosticsProperty('jobTitle', jobTitle))
+      ..add(DiagnosticsProperty('specialization', specialization))
+      ..add(DiagnosticsProperty('academicDegree', academicDegree))
+      ..add(DiagnosticsProperty('profilePhotoUrl', profilePhotoUrl))
+      ..add(DiagnosticsProperty('profileData', profileData))
+      ..add(DiagnosticsProperty('status', status))
+      ..add(DiagnosticsProperty('categoryId', categoryId))
+      ..add(DiagnosticsProperty('qualificationId', qualificationId))
+      ..add(DiagnosticsProperty('governorateId', governorateId))
       ..add(DiagnosticsProperty('createdAt', createdAt))
       ..add(DiagnosticsProperty('updatedAt', updatedAt));
   }
@@ -1228,60 +840,37 @@ class _$UserProfileModelImpl
             other is _$UserProfileModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.userId, userId) || other.userId == userId) &&
-            (identical(other.title, title) || other.title == title) &&
+            (identical(other.fullNameAr, fullNameAr) ||
+                other.fullNameAr == fullNameAr) &&
+            (identical(other.fullNameEn, fullNameEn) ||
+                other.fullNameEn == fullNameEn) &&
+            (identical(other.birthDate, birthDate) ||
+                other.birthDate == birthDate) &&
+            (identical(other.graduationYear, graduationYear) ||
+                other.graduationYear == graduationYear) &&
+            (identical(other.university, university) ||
+                other.university == university) &&
+            (identical(other.workplace, workplace) ||
+                other.workplace == workplace) &&
+            (identical(other.gender, gender) || other.gender == gender) &&
+            (identical(other.address, address) || other.address == address) &&
+            (identical(other.jobTitle, jobTitle) ||
+                other.jobTitle == jobTitle) &&
             (identical(other.specialization, specialization) ||
                 other.specialization == specialization) &&
-            (identical(other.workPlace, workPlace) ||
-                other.workPlace == workPlace) &&
-            (identical(other.country, country) || other.country == country) &&
-            (identical(other.city, city) || other.city == city) &&
-            (identical(other.address, address) || other.address == address) &&
-            (identical(other.phoneNumber, phoneNumber) ||
-                other.phoneNumber == phoneNumber) &&
-            (identical(other.whatsappNumber, whatsappNumber) ||
-                other.whatsappNumber == whatsappNumber) &&
-            (identical(other.telegramNumber, telegramNumber) ||
-                other.telegramNumber == telegramNumber) &&
-            (identical(other.linkedinProfile, linkedinProfile) ||
-                other.linkedinProfile == linkedinProfile) &&
-            (identical(other.facebookProfile, facebookProfile) ||
-                other.facebookProfile == facebookProfile) &&
-            (identical(other.instagramProfile, instagramProfile) ||
-                other.instagramProfile == instagramProfile) &&
-            (identical(other.twitterProfile, twitterProfile) ||
-                other.twitterProfile == twitterProfile) &&
-            (identical(other.websiteUrl, websiteUrl) ||
-                other.websiteUrl == websiteUrl) &&
-            (identical(other.bio, bio) || other.bio == bio) &&
-            (identical(other.dateOfBirth, dateOfBirth) ||
-                other.dateOfBirth == dateOfBirth) &&
-            (identical(other.gender, gender) || other.gender == gender) &&
-            (identical(other.nationality, nationality) ||
-                other.nationality == nationality) &&
-            (identical(other.passportNumber, passportNumber) ||
-                other.passportNumber == passportNumber) &&
-            (identical(other.emergencyContactName, emergencyContactName) ||
-                other.emergencyContactName == emergencyContactName) &&
-            (identical(other.emergencyContactPhone, emergencyContactPhone) ||
-                other.emergencyContactPhone == emergencyContactPhone) &&
-            (identical(
-                    other.emergencyContactRelation, emergencyContactRelation) ||
-                other.emergencyContactRelation == emergencyContactRelation) &&
-            (identical(other.dietaryRestrictions, dietaryRestrictions) ||
-                other.dietaryRestrictions == dietaryRestrictions) &&
-            (identical(other.medicalConditions, medicalConditions) ||
-                other.medicalConditions == medicalConditions) &&
-            (identical(
-                    other.accommodationPreferences, accommodationPreferences) ||
-                other.accommodationPreferences == accommodationPreferences) &&
-            (identical(other.transportationNeeds, transportationNeeds) ||
-                other.transportationNeeds == transportationNeeds) &&
-            (identical(other.languagePreference, languagePreference) ||
-                other.languagePreference == languagePreference) &&
-            (identical(other.marketingConsent, marketingConsent) ||
-                other.marketingConsent == marketingConsent) &&
-            (identical(other.dataProcessingConsent, dataProcessingConsent) ||
-                other.dataProcessingConsent == dataProcessingConsent) &&
+            (identical(other.academicDegree, academicDegree) ||
+                other.academicDegree == academicDegree) &&
+            (identical(other.profilePhotoUrl, profilePhotoUrl) ||
+                other.profilePhotoUrl == profilePhotoUrl) &&
+            const DeepCollectionEquality()
+                .equals(other._profileData, _profileData) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.categoryId, categoryId) ||
+                other.categoryId == categoryId) &&
+            (identical(other.qualificationId, qualificationId) ||
+                other.qualificationId == qualificationId) &&
+            (identical(other.governorateId, governorateId) ||
+                other.governorateId == governorateId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -1294,35 +883,23 @@ class _$UserProfileModelImpl
         runtimeType,
         id,
         userId,
-        title,
-        specialization,
-        workPlace,
-        country,
-        city,
-        address,
-        phoneNumber,
-        whatsappNumber,
-        telegramNumber,
-        linkedinProfile,
-        facebookProfile,
-        instagramProfile,
-        twitterProfile,
-        websiteUrl,
-        bio,
-        dateOfBirth,
+        fullNameAr,
+        fullNameEn,
+        birthDate,
+        graduationYear,
+        university,
+        workplace,
         gender,
-        nationality,
-        passportNumber,
-        emergencyContactName,
-        emergencyContactPhone,
-        emergencyContactRelation,
-        dietaryRestrictions,
-        medicalConditions,
-        accommodationPreferences,
-        transportationNeeds,
-        languagePreference,
-        marketingConsent,
-        dataProcessingConsent,
+        address,
+        jobTitle,
+        specialization,
+        academicDegree,
+        profilePhotoUrl,
+        const DeepCollectionEquality().hash(_profileData),
+        status,
+        categoryId,
+        qualificationId,
+        governorateId,
         createdAt,
         updatedAt
       ]);
@@ -1345,37 +922,26 @@ class _$UserProfileModelImpl
 abstract class _UserProfileModel implements UserProfileModel {
   const factory _UserProfileModel(
       {final String id,
-      final String userId,
-      final String? title,
-      final String? specialization,
-      final String? workPlace,
-      final String? country,
-      final String? city,
-      final String? address,
-      final String? phoneNumber,
-      final String? whatsappNumber,
-      final String? telegramNumber,
-      final String? linkedinProfile,
-      final String? facebookProfile,
-      final String? instagramProfile,
-      final String? twitterProfile,
-      final String? websiteUrl,
-      final String? bio,
-      final DateTime? dateOfBirth,
+      @JsonKey(name: 'user_id') final String userId,
+      @JsonKey(name: 'full_name_ar') final String fullNameAr,
+      @JsonKey(name: 'full_name_en') final String? fullNameEn,
+      @JsonKey(name: 'birth_date') final DateTime? birthDate,
+      @JsonKey(name: 'graduation_year') final int? graduationYear,
+      final String? university,
+      final String? workplace,
       final String? gender,
-      final String? nationality,
-      final String? passportNumber,
-      final String? emergencyContactName,
-      final String? emergencyContactPhone,
-      final String? emergencyContactRelation,
-      final String? dietaryRestrictions,
-      final String? medicalConditions,
-      final String? accommodationPreferences,
-      final String? transportationNeeds,
-      final String? languagePreference,
-      final bool? marketingConsent,
-      final bool? dataProcessingConsent,
-      final DateTime? createdAt,
+      final String? address,
+      @JsonKey(name: 'job_title') final String? jobTitle,
+      final String? specialization,
+      @JsonKey(name: 'academic_degree') final String? academicDegree,
+      @JsonKey(name: 'profile_photo_url') final String? profilePhotoUrl,
+      @JsonKey(name: 'profile_data') final Map<String, dynamic>? profileData,
+      final String? status,
+      @JsonKey(name: 'category_id') final String? categoryId,
+      @JsonKey(name: 'qualification_id') final String? qualificationId,
+      @JsonKey(name: 'governorate_id') final String? governorateId,
+      @JsonKey(name: 'created_at') final DateTime? createdAt,
+      @JsonKey(name: 'updated_at')
       final DateTime? updatedAt}) = _$UserProfileModelImpl;
 
   factory _UserProfileModel.fromJson(Map<String, dynamic> json) =
@@ -1384,68 +950,58 @@ abstract class _UserProfileModel implements UserProfileModel {
   @override
   String get id;
   @override
+  @JsonKey(name: 'user_id')
   String get userId;
   @override
-  String? get title;
+  @JsonKey(name: 'full_name_ar')
+  String get fullNameAr;
   @override
-  String? get specialization;
+  @JsonKey(name: 'full_name_en')
+  String? get fullNameEn;
   @override
-  String? get workPlace;
+  @JsonKey(name: 'birth_date')
+  DateTime? get birthDate;
   @override
-  String? get country;
+  @JsonKey(name: 'graduation_year')
+  int? get graduationYear;
   @override
-  String? get city;
+  String? get university;
   @override
-  String? get address;
-  @override
-  String? get phoneNumber;
-  @override
-  String? get whatsappNumber;
-  @override
-  String? get telegramNumber;
-  @override
-  String? get linkedinProfile;
-  @override
-  String? get facebookProfile;
-  @override
-  String? get instagramProfile;
-  @override
-  String? get twitterProfile;
-  @override
-  String? get websiteUrl;
-  @override
-  String? get bio;
-  @override
-  DateTime? get dateOfBirth;
+  String? get workplace;
   @override
   String? get gender;
   @override
-  String? get nationality;
+  String? get address;
   @override
-  String? get passportNumber;
+  @JsonKey(name: 'job_title')
+  String? get jobTitle;
   @override
-  String? get emergencyContactName;
+  String? get specialization;
   @override
-  String? get emergencyContactPhone;
+  @JsonKey(name: 'academic_degree')
+  String? get academicDegree;
   @override
-  String? get emergencyContactRelation;
+  @JsonKey(name: 'profile_photo_url')
+  String? get profilePhotoUrl;
   @override
-  String? get dietaryRestrictions;
+  @JsonKey(name: 'profile_data')
+  Map<String, dynamic>? get profileData;
   @override
-  String? get medicalConditions;
+  String? get status;
   @override
-  String? get accommodationPreferences;
+  @JsonKey(name: 'category_id')
+  String? get categoryId;
   @override
-  String? get transportationNeeds;
+  @JsonKey(name: 'qualification_id')
+  String? get qualificationId;
   @override
-  String? get languagePreference;
+  @JsonKey(name: 'governorate_id')
+  String? get governorateId;
   @override
-  bool? get marketingConsent;
-  @override
-  bool? get dataProcessingConsent;
-  @override
+  @JsonKey(name: 'created_at')
   DateTime? get createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   DateTime? get updatedAt;
   @override
   @JsonKey(ignore: true)

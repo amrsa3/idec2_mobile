@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/foundation.dart';
 import 'app_colors.dart';
 
 class AppTextStyles {
@@ -13,7 +13,7 @@ class AppTextStyles {
     'Arial',
     'sans-serif'
   ];
-
+  
   // Display Styles
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
@@ -23,7 +23,7 @@ class AppTextStyles {
     letterSpacing: -0.25,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle displayMedium = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -32,7 +32,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle displaySmall = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -41,7 +41,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   // Headline Styles
   static const TextStyle headlineLarge = TextStyle(
     fontFamily: fontFamily,
@@ -51,7 +51,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle headlineMedium = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -60,7 +60,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle headlineSmall = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -69,7 +69,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   // Title Styles
   static const TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
@@ -79,7 +79,7 @@ class AppTextStyles {
     letterSpacing: 0,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle titleMedium = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -88,7 +88,7 @@ class AppTextStyles {
     letterSpacing: 0.15,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle titleSmall = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -97,7 +97,7 @@ class AppTextStyles {
     letterSpacing: 0.1,
     color: AppColors.textPrimary,
   );
-
+  
   // Body Styles
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
@@ -107,7 +107,7 @@ class AppTextStyles {
     letterSpacing: 0.5,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -116,7 +116,7 @@ class AppTextStyles {
     letterSpacing: 0.25,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -125,7 +125,7 @@ class AppTextStyles {
     letterSpacing: 0.4,
     color: AppColors.textPrimary,
   );
-
+  
   // Label Styles
   static const TextStyle labelLarge = TextStyle(
     fontFamily: fontFamily,
@@ -135,7 +135,7 @@ class AppTextStyles {
     letterSpacing: 0.1,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle labelMedium = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -144,7 +144,7 @@ class AppTextStyles {
     letterSpacing: 0.5,
     color: AppColors.textPrimary,
   );
-
+  
   static const TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -153,7 +153,7 @@ class AppTextStyles {
     letterSpacing: 0.5,
     color: AppColors.textPrimary,
   );
-
+  
   // Custom Styles
   static const TextStyle button = TextStyle(
     fontFamily: fontFamily,
@@ -163,7 +163,7 @@ class AppTextStyles {
     letterSpacing: 0.1,
     color: AppColors.textOnPrimary,
   );
-
+  
   static const TextStyle caption = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,
@@ -172,7 +172,7 @@ class AppTextStyles {
     letterSpacing: 0.4,
     color: AppColors.textSecondary,
   );
-
+  
   static const TextStyle overline = TextStyle(
     fontFamily: fontFamily,
     fontFamilyFallback: fontFamilyFallbacks,

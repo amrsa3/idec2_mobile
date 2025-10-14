@@ -1,14 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../models/profile_model.dart';
-import '../../../../providers/profile_rules_provider.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../models/user_profile_extended.dart';
+import '../../../../models/verification_model.dart';
+import '../../../../models/profile_model.dart';
 import '../../providers/profile_provider.dart';
+import '../../../../providers/profile_rules_provider.dart';
+import '../../../../services/profile_rules_service.dart';
+import '../widgets/document_uploader.dart';
 import '../widgets/zoomable_profile_image.dart';
 
 /// شاشة إدارة الوثائق
@@ -21,12 +25,10 @@ class DocumentManagementScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DocumentManagementScreen> createState() =>
-      _DocumentManagementScreenState();
+  ConsumerState<DocumentManagementScreen> createState() => _DocumentManagementScreenState();
 }
 
-class _DocumentManagementScreenState
-    extends ConsumerState<DocumentManagementScreen> {
+class _DocumentManagementScreenState extends ConsumerState<DocumentManagementScreen> {
   final Map<String, File?> _selectedDocuments = {};
   final Map<String, bool> _uploadingDocuments = {};
   bool _isLoading = false;
@@ -47,7 +49,7 @@ class _DocumentManagementScreenState
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
-
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: CustomAppBar(
@@ -76,7 +78,7 @@ class _DocumentManagementScreenState
     }
 
     final profileRulesState = ref.watch(profileRulesProvider);
-
+    
     // التحقق من توفر قواعد الملف الشخصي الجديدة
     if (profileRulesState.profileRules == null) {
       return const Center(
@@ -88,8 +90,7 @@ class _DocumentManagementScreenState
     }
 
     // استخدام النظام الجديد لتحديد الوثائق المطلوبة
-    final requiredDocuments =
-        _getRequiredDocumentsFromProfileRules(profileRulesState.profileRules!);
+    final requiredDocuments = _getRequiredDocumentsFromProfileRules(profileRulesState.profileRules!);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -98,15 +99,14 @@ class _DocumentManagementScreenState
         children: [
           // معلومات عامة
           _buildInfoCard(),
-
+          
           const SizedBox(height: 24),
 
           // الوثائق المطلوبة
           if (requiredDocuments.isNotEmpty) ...[
             _buildSectionTitle('الوثائق المطلوبة'),
             const SizedBox(height: 16),
-            ...requiredDocuments
-                .map((docType) => _buildDocumentSection(docType)),
+            ...requiredDocuments.map((docType) => _buildDocumentSection(docType)),
           ],
 
           // الوثائق الاختيارية
@@ -118,7 +118,7 @@ class _DocumentManagementScreenState
 
           // أزرار الحفظ والإلغاء
           _buildActionButtons(),
-
+          
           const SizedBox(height: 32),
         ],
       ),
@@ -128,7 +128,7 @@ class _DocumentManagementScreenState
   Widget _buildInfoCard() {
     final profileRulesState = ref.watch(profileRulesProvider);
     String infoText = _getInfoText(profileRulesState);
-
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -156,7 +156,9 @@ class _DocumentManagementScreenState
               ),
             ],
           ),
+          
           const SizedBox(height: 12),
+          
           Text(
             infoText,
             style: AppTextStyles.bodyMedium.copyWith(
@@ -170,38 +172,34 @@ class _DocumentManagementScreenState
   }
 
   String _getInfoText(ProfileRulesState profileRulesState) {
-    final verificationStatus =
-        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted;
-
+    final verificationStatus = widget.profile.verificationStatus ?? VerificationStatus.notSubmitted;
+    
     if (profileRulesState.profileRules != null) {
       final rules = profileRulesState.profileRules!;
       final canEdit = rules.canEditVerifiedProfile(verificationStatus);
-      final requiredPercentage =
-          rules.getRequiredCompletionPercentage(verificationStatus);
-
-      String baseInfo =
-          '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
-          '• تأكد من وضوح الوثائق وجودة الصورة\n'
-          '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
-          '• الصيغ المدعومة: PDF, JPG, PNG\n';
-
+      final requiredPercentage = rules.getRequiredCompletionPercentage(verificationStatus);
+      
+      String baseInfo = '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
+                       '• تأكد من وضوح الوثائق وجودة الصورة\n'
+                       '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
+                       '• الصيغ المدعومة: PDF, JPG, PNG\n';
+      
       if (verificationStatus == VerificationStatus.verified && !canEdit) {
         baseInfo += '• تم توثيق الملف الشخصي - لا يمكن تعديل الوثائق';
       } else if (verificationStatus == VerificationStatus.underReview) {
-        baseInfo +=
-            '• الملف الشخصي قيد المراجعة - قد تكون بعض التعديلات محدودة';
+        baseInfo += '• الملف الشخصي قيد المراجعة - قد تكون بعض التعديلات محدودة';
       } else if (requiredPercentage > 0) {
         baseInfo += '• مطلوب إكمال $requiredPercentage% من البيانات للتوثيق';
       }
-
+      
       return baseInfo;
     }
-
+    
     // النص الافتراضي
     return '• يجب رفع جميع الوثائق المطلوبة للحصول على توثيق الحساب\n'
-        '• تأكد من وضوح الوثائق وجودة الصورة\n'
-        '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
-        '• الصيغ المدعومة: PDF, JPG, PNG';
+           '• تأكد من وضوح الوثائق وجودة الصورة\n'
+           '• الحد الأقصى لحجم الملف: 5 ميجابايت\n'
+           '• الصيغ المدعومة: PDF, JPG, PNG';
   }
 
   Widget _buildSectionTitle(String title) {
@@ -216,11 +214,11 @@ class _DocumentManagementScreenState
   Widget _buildDocumentSection(String documentType) {
     final DocumentType docType = _getDocumentTypeFromString(documentType);
     final currentDocumentUrl = widget.profile.documents
-            .where((doc) => doc.documentType == docType)
-            .isNotEmpty
+        .where((doc) => doc.documentType == docType)
+        .isNotEmpty 
         ? widget.profile.documents
             .firstWhere((doc) => doc.documentType == docType)
-            .fileUrl
+            .fileUrl 
         : null;
     final selectedFile = _selectedDocuments[documentType];
     final isUploading = _uploadingDocuments[documentType] ?? false;
@@ -260,8 +258,7 @@ class _DocumentManagementScreenState
               ),
               if (currentDocumentUrl != null || selectedFile != null)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -276,30 +273,27 @@ class _DocumentManagementScreenState
                 ),
             ],
           ),
-
+          
           const SizedBox(height: 16),
-
+          
           // عرض الوثيقة الحالية
           if (currentDocumentUrl != null && selectedFile == null)
             _buildCurrentDocument(documentType, currentDocumentUrl),
-
+          
           // عرض الملف المختار
           if (selectedFile != null)
             _buildSelectedDocument(documentType, selectedFile),
-
+          
           const SizedBox(height: 16),
-
+          
           // أزرار الإجراءات
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed:
-                      isUploading ? null : () => _selectDocument(documentType),
+                  onPressed: isUploading ? null : () => _selectDocument(documentType),
                   icon: Icon(
-                    selectedFile != null
-                        ? Icons.change_circle
-                        : Icons.upload_file,
+                    selectedFile != null ? Icons.change_circle : Icons.upload_file,
                     size: 20,
                   ),
                   label: Text(
@@ -307,13 +301,12 @@ class _DocumentManagementScreenState
                   ),
                 ),
               ),
+              
               if (currentDocumentUrl != null || selectedFile != null) ...[
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: isUploading
-                        ? null
-                        : () => _removeDocument(documentType),
+                    onPressed: isUploading ? null : () => _removeDocument(documentType),
                     icon: const Icon(Icons.delete_outline, size: 20),
                     label: const Text('حذف'),
                     style: OutlinedButton.styleFrom(
@@ -325,7 +318,7 @@ class _DocumentManagementScreenState
               ],
             ],
           ),
-
+          
           if (isUploading)
             Padding(
               padding: const EdgeInsets.only(top: 16),
@@ -477,14 +470,18 @@ class _DocumentManagementScreenState
               ),
             ],
           ),
+          
           const SizedBox(height: 12),
+          
           Text(
             'يمكنك رفع وثائق إضافية لتعزيز ملفك الشخصي',
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
+          
           const SizedBox(height: 16),
+          
           OutlinedButton.icon(
             onPressed: () => _selectDocument('additional'),
             icon: const Icon(Icons.add),
@@ -511,7 +508,9 @@ class _DocumentManagementScreenState
                 : const Text('حفظ الوثائق'),
           ),
         ),
+        
         const SizedBox(height: 12),
+        
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
@@ -524,32 +523,31 @@ class _DocumentManagementScreenState
   }
 
   // Helper methods
-  List<String> _getRequiredDocumentsFromProfileRules(
-      ProfileRulesNotifier profileRules) {
+  List<String> _getRequiredDocumentsFromProfileRules(ProfileRulesNotifier profileRules) {
     // استخدام النظام الجديد لتحديد الوثائق المطلوبة
     final requiredDocs = profileRules.getRequiredDocumentsForVerification(
-        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted);
+      widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+    );
     return requiredDocs;
   }
 
   @deprecated
   List<String> _getRequiredDocuments(List<RequiredDocumentModel> rules) {
     final profileRulesState = ref.read(profileRulesProvider);
-
+    
     // استخدام قواعد الملف الشخصي الديناميكية إذا كانت متاحة
     if (profileRulesState.profileRules != null) {
-      final requiredDocs = profileRulesState.profileRules!
-          .getRequiredDocumentsForVerification(
-              widget.profile.verificationStatus ??
-                  VerificationStatus.notSubmitted);
+      final requiredDocs = profileRulesState.profileRules!.getRequiredDocumentsForVerification(
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
       return requiredDocs;
     }
-
+    
     // العودة للقواعد التقليدية كنسخة احتياطية
     if (rules.isNotEmpty) {
       return rules.map((rule) => rule.documentType).toList();
     }
-
+    
     // القيم الافتراضية
     return ['qualification', 'identity'];
   }
@@ -615,15 +613,15 @@ class _DocumentManagementScreenState
     final profileRulesState = ref.read(profileRulesProvider);
     if (profileRulesState.profileRules != null) {
       final canEdit = profileRulesState.profileRules!.canEditVerifiedProfile(
-          widget.profile.verificationStatus ?? VerificationStatus.notSubmitted);
-
-      if (!canEdit &&
-          widget.profile.verificationStatus == VerificationStatus.verified) {
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
+      
+      if (!canEdit && widget.profile.verificationStatus == VerificationStatus.verified) {
         _showEditNotAllowedDialog('لا يمكن تعديل الوثائق للملفات الموثقة');
         return;
       }
     }
-
+    
     try {
       // TODO: Implement file picker
       ScaffoldMessenger.of(context).showSnackBar(
@@ -644,15 +642,15 @@ class _DocumentManagementScreenState
     final profileRulesState = ref.read(profileRulesProvider);
     if (profileRulesState.profileRules != null) {
       final canEdit = profileRulesState.profileRules!.canEditVerifiedProfile(
-          widget.profile.verificationStatus ?? VerificationStatus.notSubmitted);
-
-      if (!canEdit &&
-          widget.profile.verificationStatus == VerificationStatus.verified) {
+        widget.profile.verificationStatus ?? VerificationStatus.notSubmitted
+      );
+      
+      if (!canEdit && widget.profile.verificationStatus == VerificationStatus.verified) {
         _showEditNotAllowedDialog('لا يمكن حذف الوثائق للملفات الموثقة');
         return;
       }
     }
-
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

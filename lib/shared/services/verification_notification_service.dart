@@ -43,31 +43,39 @@ class VerificationNotificationService {
       final authState = ref.read(authProvider);
       final user = authState.user;
 
-      debugPrint('🔔 VerificationNotificationService: Checking user verification status');
+      debugPrint(
+          '🔔 VerificationNotificationService: Checking user verification status');
       debugPrint('🔔 User: ${user?.id}');
-      debugPrint('🔔 Is verified: ${user?.isVerified}');
+      debugPrint(
+          '🔔 Is verified: ${user?.phoneVerified}'); // Use phoneVerified instead of isVerified
 
       // Only show notification for logged-in, unverified users
-      if (user != null && !user.isVerified) {
-        debugPrint('🔔 VerificationNotificationService: Showing verification notification');
-        
+      if (user != null && !user.phoneVerified) {
+        // Use phoneVerified instead of isVerified
+        debugPrint(
+            '🔔 VerificationNotificationService: Showing verification notification');
+
         _showVerificationNotification();
       } else {
-        debugPrint('🔔 VerificationNotificationService: User is verified or not logged in, skipping notification');
+        debugPrint(
+            '🔔 VerificationNotificationService: User is verified or not logged in, skipping notification');
       }
     } catch (e) {
-      debugPrint('🔔 VerificationNotificationService: Error checking verification status: $e');
+      debugPrint(
+          '🔔 VerificationNotificationService: Error checking verification status: $e');
     }
   }
 
   /// Show verification notification
   static void _showVerificationNotification() {
-    NotificationService.showWarning('يرجى توثيق حسابك لتتمكن من الاشتراك في المؤتمر والفعاليات المصاحبة');
+    NotificationService.showWarning(
+        'يرجى توثيق حسابك لتتمكن من الاشتراك في المؤتمر والفعاليات المصاحبة');
   }
 
   /// Show account verified notification
   static void showAccountVerifiedNotification() {
-    NotificationService.showSuccess('تم توثيق حسابك بنجاح! يمكنك الآن الاشتراك في المؤتمر والفعاليات المصاحبة');
+    NotificationService.showSuccess(
+        'تم توثيق حسابك بنجاح! يمكنك الآن الاشتراك في المؤتمر والفعاليات المصاحبة');
   }
 
   /// Show account verification rejected notification
@@ -77,7 +85,8 @@ class VerificationNotificationService {
 
   /// Show account under review notification
   static void showAccountUnderReviewNotification() {
-    NotificationService.showInfo('تم استلام طلب توثيق حسابك وهو قيد المراجعة من قبل الإدارة');
+    NotificationService.showInfo(
+        'تم استلام طلب توثيق حسابك وهو قيد المراجعة من قبل الإدارة');
   }
 
   /// Update notification settings
@@ -113,20 +122,22 @@ class VerificationNotificationService {
 
   /// Get current timer interval (for debugging)
   static Duration? get currentInterval {
-    return _notificationTimer?.isActive == true 
+    return _notificationTimer?.isActive == true
         ? const Duration(minutes: 30) // Default interval
         : null;
   }
 }
 
 /// Provider for verification notification service
-final verificationNotificationServiceProvider = Provider<VerificationNotificationService>((ref) {
+final verificationNotificationServiceProvider =
+    Provider<VerificationNotificationService>((ref) {
   return VerificationNotificationService();
 });
 
 /// Provider for verification notification settings
 final verificationNotificationSettingsProvider = StateNotifierProvider<
-    VerificationNotificationSettingsNotifier, VerificationNotificationSettings>((ref) {
+    VerificationNotificationSettingsNotifier,
+    VerificationNotificationSettings>((ref) {
   return VerificationNotificationSettingsNotifier();
 });
 

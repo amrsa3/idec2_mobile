@@ -23,20 +23,22 @@ class ProfileRulesService {
   // Cache للقواعد
   List<ProfileRuleModel>? _cachedRules;
   DateTime? _cacheExpiry;
-  
+
   // Cache للقواعد حسب الحالة
   final Map<String, Map<String, dynamic>> _statusCaches = {};
 
   /// جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
-  Future<ProfileRulesResult> getRulesForCurrentUser({bool forceRefresh = false}) async {
+  Future<ProfileRulesResult> getRulesForCurrentUser(
+      {bool forceRefresh = false}) async {
     try {
       const cacheKey = 'current_user_rules';
-      
+
       // التحقق من الـ cache
       if (!forceRefresh && _statusCaches.containsKey(cacheKey)) {
         final cachedData = _statusCaches[cacheKey]!;
         if (cachedData['expiry'].isAfter(DateTime.now())) {
-          debugPrint('✅ [PROFILE_RULES] استخدام قواعد المستخدم الحالي من الـ cache');
+          debugPrint(
+              '✅ [PROFILE_RULES] استخدام قواعد المستخدم الحالي من الـ cache');
           return ProfileRulesResult(
             rules: cachedData['rules'] as List<ProfileRuleModel>,
             userStatus: cachedData['userStatus'] as ProfileStatus,
@@ -46,15 +48,25 @@ class ProfileRulesService {
 
       debugPrint('🔍 [PROFILE_RULES] جلب قواعد المستخدم الحالي من الخادم...');
 
+      // Check if we have a valid token before making the request
+      final token = await DioService.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        debugPrint(
+            '❌ [PROFILE_RULES] No access token available, skipping rules load');
+        throw Exception('لا يوجد رمز مصادقة صالح. يرجى تسجيل الدخول مرة أخرى.');
+      }
+
       final dio = DioService.instance.dio;
       final response = await dio.get('/api/v1/profile-rules');
 
       if (response.statusCode == 200) {
         final responseData = response.data;
         final List<dynamic> data = responseData['data'] ?? [];
-        final String userStatusString = responseData['userStatus'] ?? 'UNVERIFIED';
+        final String userStatusString =
+            responseData['userStatus'] ?? 'UNVERIFIED';
 
-        final rules = data.map((json) => ProfileRuleModel.fromJson(json)).toList();
+        final rules =
+            data.map((json) => ProfileRuleModel.fromJson(json)).toList();
         final userStatus = ProfileStatus.values.firstWhere(
           (status) => status.apiValue == userStatusString,
           orElse: () => ProfileStatus.unverified,
@@ -67,8 +79,9 @@ class ProfileRulesService {
           'expiry': DateTime.now().add(const Duration(minutes: 5)),
         };
 
-        debugPrint('✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للمستخدم (الحالة: ${userStatus.name})');
-        
+        debugPrint(
+            '✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للمستخدم (الحالة: ${userStatus.name})');
+
         return ProfileRulesResult(
           rules: rules,
           userStatus: userStatus,
@@ -78,7 +91,8 @@ class ProfileRulesService {
       }
     } catch (e) {
       debugPrint('❌ [PROFILE_RULES] خطأ في جلب قواعد المستخدم الحالي: $e');
-      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+      throw Exception(
+          'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
     }
   }
 
@@ -89,20 +103,23 @@ class ProfileRulesService {
   }) async {
     try {
       final cacheKey = 'status_${status.name}';
-      
+
       // التحقق من الـ cache للحالة المحددة
       if (!forceRefresh && _statusCaches.containsKey(cacheKey)) {
         final cachedData = _statusCaches[cacheKey]!;
         if (cachedData['expiry'].isAfter(DateTime.now())) {
-          debugPrint('✅ [PROFILE_RULES] استخدام قواعد الحالة ${status.name} من الـ cache');
+          debugPrint(
+              '✅ [PROFILE_RULES] استخدام قواعد الحالة ${status.name} من الـ cache');
           return cachedData['rules'] as List<ProfileRuleModel>;
         }
       }
 
-      debugPrint('🔍 [PROFILE_RULES] جلب قواعد الحالة ${status.name} من الخادم...');
+      debugPrint(
+          '🔍 [PROFILE_RULES] جلب قواعد الحالة ${status.name} من الخادم...');
 
       final dio = DioService.instance.dio;
-      final response = await dio.get('/api/v1/profile-rules/all', queryParameters: {
+      final response =
+          await dio.get('/api/v1/profile-rules/all', queryParameters: {
         'status': status.apiValue,
       });
 
@@ -111,7 +128,8 @@ class ProfileRulesService {
             ? response.data
             : (response.data['data'] ?? []);
 
-        final rules = data.map((json) => ProfileRuleModel.fromJson(json)).toList();
+        final rules =
+            data.map((json) => ProfileRuleModel.fromJson(json)).toList();
 
         // حفظ في الـ cache للحالة المحددة
         _statusCaches[cacheKey] = {
@@ -119,14 +137,17 @@ class ProfileRulesService {
           'expiry': DateTime.now().add(const Duration(minutes: 5)),
         };
 
-        debugPrint('✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للحالة ${status.name}');
+        debugPrint(
+            '✅ [PROFILE_RULES] تم جلب ${rules.length} قاعدة للحالة ${status.name}');
         return rules;
       } else {
         throw Exception('فشل في جلب القواعد: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ [PROFILE_RULES] خطأ في جلب قواعد الحالة ${status.name}: $e');
-      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+      debugPrint(
+          '❌ [PROFILE_RULES] خطأ في جلب قواعد الحالة ${status.name}: $e');
+      throw Exception(
+          'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
     }
   }
 
@@ -165,7 +186,8 @@ class ProfileRulesService {
       debugPrint('❌ [PROFILE_RULES] خطأ في جلب القواعد: $e');
 
       // لا نستخدم قواعد افتراضية - التعديل يتطلب اتصال بالخادم
-      throw Exception('فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
+      throw Exception(
+          'فشل في جلب قواعد التعديل من الخادم. يرجى التأكد من الاتصال بالإنترنت والمحاولة مرة أخرى.');
     }
   }
 
@@ -493,8 +515,6 @@ class ProfileRulesService {
     _cacheExpiry = null;
     debugPrint('🗑️ [PROFILE_RULES] تم مسح الـ cache');
   }
-
-
 
   /// جلب أسماء الحقول المتاحة
   Future<List<String>> getAvailableFieldNames() async {

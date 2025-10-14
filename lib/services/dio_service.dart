@@ -52,7 +52,7 @@ class DioService {
           }
 
           // Add authorization header
-          final token = await _storage.read(key: 'access_token');
+          final token = await getAccessToken();
           debugPrint('🔑 [DIO_DEBUG] Request to: ${options.path}');
           debugPrint(
               '🔑 [DIO_DEBUG] Token status: ${token != null && token.isNotEmpty ? "found (${token.length} chars)" : "not found"}');
@@ -72,7 +72,8 @@ class DioService {
 
           // Add language header
           final language =
-              await _storage.read(key: 'selected_language') ?? 'ar';
+              await WebCompatibleStorage.instance.read('selected_language') ??
+                  'ar';
           options.headers['Accept-Language'] = language;
 
           // debugPrint('🔑 [DIO_DEBUG] Request headers: ${options.headers}');
@@ -91,7 +92,7 @@ class DioService {
           if (error.response?.statusCode == 401) {
             debugPrint(
                 '🔑 DioService: Received 401 Unauthorized, attempting token refresh');
-            final refreshToken = await _storage.read(key: 'refresh_token');
+            final refreshToken = await getRefreshToken();
             if (refreshToken != null) {
               try {
                 final newTokens = await _refreshToken(refreshToken);
@@ -213,9 +214,20 @@ class DioService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        await _storage.write(key: 'access_token', value: data['access_token']);
-        await _storage.write(
-            key: 'refresh_token', value: data['refresh_token']);
+
+        // Use WebCompatibleStorage for both web and mobile
+        if (kIsWeb) {
+          await WebCompatibleStorage.instance
+              .write('access_token', data['access_token']);
+          await WebCompatibleStorage.instance
+              .write('refresh_token', data['refresh_token']);
+        } else {
+          await _storage.write(
+              key: 'access_token', value: data['access_token']);
+          await _storage.write(
+              key: 'refresh_token', value: data['refresh_token']);
+        }
+
         return {
           'access_token': data['access_token'],
           'refresh_token': data['refresh_token'],

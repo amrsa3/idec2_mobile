@@ -1144,12 +1144,25 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   /// Initialize profile page data
   Future<void> initializeProfilePage({bool forceRefresh = false}) async {
-    await Future.wait([
-      loadCurrentProfile(forceRefresh: forceRefresh),
-      loadVerificationRules(),
-      loadQualifications(),
-      loadGovernorates(),
-    ]);
+    try {
+      // First load profile data
+      await loadCurrentProfile(forceRefresh: forceRefresh);
+
+      // Wait a bit to ensure token is properly saved
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Then load other data in parallel
+      await Future.wait([
+        loadVerificationRules(),
+        loadQualifications(),
+        loadGovernorates(),
+      ]);
+    } catch (e) {
+      debugPrint('❌ ProfileProvider: Error initializing profile page: $e');
+      state = state.copyWith(
+        error: 'فشل في تحميل بيانات الصفحة: $e',
+      );
+    }
   }
 
   /// Refresh profile data

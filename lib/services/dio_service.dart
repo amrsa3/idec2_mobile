@@ -7,6 +7,7 @@ import '../core/constants/api_constants.dart';
 import '../core/errors/app_error.dart';
 import 'retry_service.dart';
 import 'session_manager.dart';
+import 'token_manager.dart';
 import 'web_compatible_storage.dart';
 
 class DioService {
@@ -52,7 +53,7 @@ class DioService {
           }
 
           // Add authorization header
-          final token = await getAccessToken();
+          final token = await TokenManager.instance.getValidAccessToken();
           debugPrint('🔑 [DIO_DEBUG] Request to: ${options.path}');
           debugPrint(
               '🔑 [DIO_DEBUG] Token status: ${token != null && token.isNotEmpty ? "found (${token.length} chars)" : "not found"}');
@@ -92,52 +93,41 @@ class DioService {
           if (error.response?.statusCode == 401) {
             debugPrint(
                 '🔑 DioService: Received 401 Unauthorized, attempting token refresh');
-            final refreshToken = await getRefreshToken();
-            if (refreshToken != null) {
-              try {
-                final newTokens = await _refreshToken(refreshToken);
-                if (newTokens != null) {
-                  debugPrint(
-                      '✅ DioService: Token refresh successful, retrying request');
-                  // Retry the original request
-                  final options = error.requestOptions;
-                  options.headers['Authorization'] =
-                      'Bearer ${newTokens['access_token']}';
+            
+            try {
+              final refreshed = await TokenManager.instance.refreshAccessToken();
+              if (refreshed) {
+                debugPrint(
+                    '✅ DioService: Token refresh successful, retrying request');
+                // Retry the original request
+                final options = error.requestOptions;
+                final newToken = await TokenManager.instance.getValidAccessToken();
+                if (newToken != null) {
+                  options.headers['Authorization'] = 'Bearer $newToken';
                   final response = await _dio.fetch(options);
                   handler.resolve(response);
                   return;
-                } else {
-                  debugPrint(
-                      '❌ DioService: Token refresh failed, clearing tokens');
-                  await _clearTokens();
-                  // Add small delay before notifying session expiration
-                  await Future.delayed(const Duration(milliseconds: 50));
-                  // Notify session manager about session expiration
-                  SessionManager.instance.notifySessionExpired(
-                    reason: 'فشل في تحديث رمز المصادقة',
-                    shouldRedirectToLogin: true,
-                  );
                 }
-              } catch (e) {
-                debugPrint('❌ DioService: Token refresh exception: $e');
-                // Refresh failed, logout user
-                await _clearTokens();
-                // Add small delay before notifying session expiration
-                await Future.delayed(const Duration(milliseconds: 50));
-                // Notify session manager about session expiration
-                SessionManager.instance.notifySessionExpired(
-                  reason: 'انتهت صلاحية جلسة العمل',
-                  shouldRedirectToLogin: true,
-                );
               }
-            } else {
-              debugPrint('❌ DioService: No refresh token available');
-              await _clearTokens();
+              
+              debugPrint('❌ DioService: Token refresh failed, clearing tokens');
+              await TokenManager.instance.clearTokens();
               // Add small delay before notifying session expiration
               await Future.delayed(const Duration(milliseconds: 50));
               // Notify session manager about session expiration
               SessionManager.instance.notifySessionExpired(
-                reason: 'لا يوجد رمز تحديث صالح',
+                reason: 'فشل في تحديث رمز المصادقة',
+                shouldRedirectToLogin: true,
+              );
+            } catch (e) {
+              debugPrint('❌ DioService: Token refresh exception: $e');
+              // Refresh failed, logout user
+              await TokenManager.instance.clearTokens();
+              // Add small delay before notifying session expiration
+              await Future.delayed(const Duration(milliseconds: 50));
+              // Notify session manager about session expiration
+              SessionManager.instance.notifySessionExpired(
+                reason: 'انتهت صلاحية جلسة العمل',
                 shouldRedirectToLogin: true,
               );
             }

@@ -12,6 +12,7 @@ import 'api_service.dart';
 import 'dio_service.dart';
 import 'registration_settings_service.dart';
 import 'storage_service.dart';
+import 'token_manager.dart';
 
 class AuthService {
   static AuthService? _instance;
@@ -250,7 +251,11 @@ class AuthService {
             try {
               // Store tokens and user data
               debugPrint('🔍 [AUTH_DEBUG] Storing tokens and user data...');
-              await DioService.instance.setTokens(accessToken, refreshToken);
+              await TokenManager.instance.saveTokens(
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresIn: 3600, // 1 hour
+              );
 
               // Use safe storage method
               final storageSuccess = await _safeStoreUserData(user);
@@ -701,30 +706,88 @@ class AuthService {
     }
   }
 
-  // Logout
+  // Logout from all devices
+  Future<bool> logoutFromAllDevices() async {
+    try {
+      debugPrint('Logging out from all devices');
+      
+      final success = await TokenManager.instance.logoutFromAllDevices();
+      
+      // Clear stored user data
+      await _storageService.remove('user_data');
+      
+      debugPrint('Logout from all devices successful');
+      return success;
+    } catch (e) {
+      debugPrint('Logout from all devices error: $e');
+      return false;
+    }
+  }
+
+  // Logout (normal logout)
   Future<bool> logout() async {
     try {
-      final accessToken = await DioService.instance.getAccessToken();
-
-      if (accessToken != null && accessToken.isNotEmpty) {
-        debugPrint('Logging out user');
-
-        try {
-          await _apiService.logout();
-        } catch (e) {
-          debugPrint('Logout API call failed: $e');
-          // Continue with local logout even if API call fails
-        }
-      }
-
-      // Clear stored data using DioService to ensure consistency
-      await DioService.instance.clearTokens();
+      debugPrint('Logging out');
+      
+      final success = await TokenManager.instance.logout();
+      
+      // Clear stored user data
       await _storageService.remove('user_data');
-
+      
       debugPrint('Logout successful');
-      return true;
+      return success;
     } catch (e) {
       debugPrint('Logout error: $e');
+      return false;
+    }
+  }
+
+  // Get active sessions
+  Future<List<Map<String, dynamic>>> getActiveSessions() async {
+    try {
+      return await TokenManager.instance.getActiveSessions();
+    } catch (e) {
+      debugPrint('Error getting active sessions: $e');
+      return [];
+    }
+  }
+
+  // Terminate specific session
+  Future<bool> terminateSession(String sessionId) async {
+    try {
+      return await TokenManager.instance.terminateSession(sessionId);
+    } catch (e) {
+      debugPrint('Error terminating session: $e');
+      return false;
+    }
+  }
+
+  // Get security alerts
+  Future<List<Map<String, dynamic>>> getSecurityAlerts() async {
+    try {
+      return await TokenManager.instance.getSecurityAlerts();
+    } catch (e) {
+      debugPrint('Error getting security alerts: $e');
+      return [];
+    }
+  }
+
+  // Mark alert as read
+  Future<bool> markAlertAsRead(String alertId) async {
+    try {
+      return await TokenManager.instance.markAlertAsRead(alertId);
+    } catch (e) {
+      debugPrint('Error marking alert as read: $e');
+      return false;
+    }
+  }
+
+  // Check if user has valid session
+  Future<bool> hasValidSession() async {
+    try {
+      return await TokenManager.instance.hasValidSession();
+    } catch (e) {
+      debugPrint('Error checking session validity: $e');
       return false;
     }
   }
@@ -732,8 +795,7 @@ class AuthService {
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
     try {
-      final accessToken = await DioService.instance.getAccessToken();
-      return accessToken != null && accessToken.isNotEmpty;
+      return await TokenManager.instance.hasValidSession();
     } catch (e) {
       debugPrint('Error checking login status: $e');
       return false;

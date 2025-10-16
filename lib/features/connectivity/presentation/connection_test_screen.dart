@@ -658,7 +658,7 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
                 controller: _hostController,
                 decoration: InputDecoration(
                   labelText: l10n.serverHost,
-                  hintText: 'idec-ye.com',
+                  hintText: 'api.idec-ye.com',
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.dns),
                 ),

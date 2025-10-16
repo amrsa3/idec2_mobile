@@ -17,7 +17,14 @@ class ServerSettings {
   });
 
   String get baseUrl {
-    // Ensure port is always included
+    // For the new API domain, use HTTPS without port
+    if (host.contains('api.idec-ye.com')) {
+      final url = 'https://$host';
+      debugPrint('🔗 [SERVER_SETTINGS] Generated baseUrl: $url (HTTPS domain)');
+      return url;
+    }
+    
+    // For other hosts, use HTTP with port
     final cleanHost = host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
     final url = 'http://$cleanHost:$port';
     debugPrint('🔗 [SERVER_SETTINGS] Generated baseUrl: $url (host: $cleanHost, port: $port)');
@@ -25,7 +32,7 @@ class ServerSettings {
   }
 
   factory ServerSettings.fromJson(Map<String, dynamic> json) {
-    final host = json['host'] ?? 'idec-ye.com';
+    final host = json['host'] ?? 'api.idec-ye.com';
     final port = json['port'] ?? 3000;
     
     // Clean host to remove any existing port
@@ -81,8 +88,8 @@ class ServerSettingsService {
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
-    host: '84.247.128.128', // Use IP of idec-ye.com to avoid DNS issues
-    port: 3000,
+    host: 'api.idec-ye.com', // New API domain with HTTPS
+    port: 443, // HTTPS port (not used for api.idec-ye.com)
   );
   
   static const ServerSettings localServer = ServerSettings(
@@ -90,7 +97,7 @@ class ServerSettingsService {
     port: 3000,
   );
   
-  // Fallback domain server (in case IP doesn't work)
+  // Fallback domain server (legacy)
   static const ServerSettings domainServer = ServerSettings(
     host: 'idec-ye.com',
     port: 3000,
@@ -215,7 +222,7 @@ class ServerSettingsService {
       
       // Validate the generated URL
       final url = settings.baseUrl;
-      if (!url.contains(':3000')) {
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
         debugPrint('❌ [SERVER_SETTINGS] Invalid URL detected: $url, fixing...');
         await _initializeWithDefaults();
       } else {

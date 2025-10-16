@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة تشخيص IDEC Flutter Web</title>
+    
+    <!-- Enhanced Content Security Policy for Flutter Web - Local resources only -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: http:; connect-src 'self' https: http: ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
+    
+    <style>
+        /* Font definitions */
+        @font-face {
+            font-family: 'Cairo';
+            src: url('assets/assets/fonts/Cairo/Cairo-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'NotoSansArabic';
+            src: url('assets/assets/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Roboto';
+            src: url('assets/assets/fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-display: swap;
+        }
+        
+        body {
+            font-family: 'Cairo', 'NotoSansArabic', 'Roboto', 'Tahoma', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .font-test {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        
+        .cairo-font { font-family: 'Cairo', sans-serif; }
+        .noto-font { font-family: 'NotoSansArabic', sans-serif; }
+        .roboto-font { font-family: 'Roboto', sans-serif; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 أداة تشخيص IDEC Flutter Web</h1>
+        <p>هذه الأداة تساعد في تشخيص مشاكل الخطوط وسياسة أمان المحتوى (CSP) في تطبيق Flutter Web</p>
+        
+        <!-- Font Tests -->
+        <div class="test-section">
+            <h2>🔤 اختبار الخطوط</h2>
+            
+            <div class="font-test cairo-font">
+                <strong>خط Cairo:</strong> مرحباً بكم في معرض ومؤتمر IDEC لطب الأسنان 2026
+            </div>
+            
+            <div class="font-test noto-font">
+                <strong>خط NotoSansArabic:</strong> نص تجريبي باللغة العربية للتأكد من عمل الخط
+            </div>
+            
+            <div class="font-test roboto-font">
+                <strong>Roboto Font:</strong> Welcome to IDEC Dental Exhibition and Conference 2026
+            </div>
+            
+            <button onclick="testFonts()">اختبار تحميل الخطوط</button>
+            <div id="font-results"></div>
+        </div>
+        
+        <!-- CSP Tests -->
+        <div class="test-section">
+            <h2>🛡️ اختبار سياسة أمان المحتوى (CSP)</h2>
+            <button onclick="testCSP()">اختبار CSP</button>
+            <div id="csp-results"></div>
+        </div>
+        
+        <!-- CanvasKit Tests -->
+        <div class="test-section">
+            <h2>🎨 اختبار CanvasKit</h2>
+            <button onclick="testCanvasKit()">اختبار CanvasKit المحلي</button>
+            <button onclick="testCanvasKitCDNBlocking()">اختبار حظر CanvasKit CDN</button>
+            <div id="canvaskit-results"></div>
+        </div>
+        
+        <!-- CDN Blocking Tests -->
+        <div class="test-section">
+            <h2>🚫 اختبار حظر المصادر الخارجية</h2>
+            <button onclick="testCDNBlocking()">اختبار حظر Google CDN</button>
+            <div id="cdn-blocking-results"></div>
+        </div>
+        
+        <!-- Network Tests -->
+        <div class="test-section">
+            <h2>🌐 اختبار الشبكة والاتصال</h2>
+            <button onclick="testNetwork()">اختبار الاتصال بالخادم</button>
+            <div id="network-results"></div>
+        </div>
+        
+        <!-- Console Logs -->
+        <div class="test-section">
+            <h2>📋 سجل وحدة التحكم</h2>
+            <button onclick="clearLogs()">مسح السجل</button>
+            <button onclick="exportLogs()">تصدير السجل</button>
+            <div id="console-logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Console logging
+        const logs = [];
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        function logToDiv(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logs.push(logEntry);
+            
+            const logDiv = document.getElementById('console-logs');
+            logDiv.innerHTML += logEntry + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // Override console methods
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            logToDiv('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            logToDiv('error', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            logToDiv('warn', args.join(' '));
+        };
+        
+        // Font testing
+        function testFonts() {
+            const resultsDiv = document.getElementById('font-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار الخطوط...</p>';
+            
+            const fonts = [
+                { name: 'Cairo', url: 'assets/assets/fonts/Cairo/Cairo-Regular.ttf' },
+                { name: 'NotoSansArabic', url: 'assets/assets/fonts/NotoSansArabic-Regular.ttf' },
+                { name: 'Roboto', url: 'assets/assets/fonts/Roboto/Roboto-Regular.ttf' }
+            ];
+            
+            let results = '';
+            let completed = 0;
+            
+            fonts.forEach(font => {
+                fetch(font.url)
+                    .then(response => {
+                        if (response.ok) {
+                            results += `<div class="test-result success">✅ ${font.name}: تم تحميل الخط بنجاح</div>`;
+                            console.log(`Font ${font.name} loaded successfully`);
+                        } else {
+                            results += `<div class="test-result error">❌ ${font.name}: فشل في تحميل الخط (${response.status})</div>`;
+                            console.error(`Font ${font.name} failed to load: ${response.status}`);
+                        }
+                    })
+                    .catch(error => {
+                        results += `<div class="test-result error">❌ ${font.name}: خطأ في التحميل - ${error.message}</div>`;
+                        console.error(`Font ${font.name} error:`, error);
+                    })
+                    .finally(() => {
+                        completed++;
+                        if (completed === fonts.length) {
+                            resultsDiv.innerHTML = results;
+                        }
+                    });
+            });
+        }
+        
+        // CSP testing
+        function testCSP() {
+            const resultsDiv = document.getElementById('csp-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار CSP...</p>';
+            
+            let results = '';
+            
+            // Test script loading from gstatic.com
+            const script = document.createElement('script');
+            script.src = 'https://www.gstatic.com/flutter-canvaskit/d2913632a4578ee4d0b8b1c4a69888c8a0672c4b/canvaskit.js';
+            script.onload = function() {
+                results += '<div class="test-result success">✅ CSP: السماح بتحميل السكريبت من gstatic.com</div>';
+                resultsDiv.innerHTML = results;
+                console.log('CSP: Script from gstatic.com allowed');
+            };
+            script.onerror = function() {
+                results += '<div class="test-result error">❌ CSP: منع تحميل السكريبت من gstatic.com</div>';
+                resultsDiv.innerHTML = results;
+                console.error('CSP: Script from gstatic.com blocked');
+            };
+            
+            // Test local CanvasKit
+            setTimeout(() => {
+                fetch('./canvaskit/canvaskit.js')
+                    .then(response => {
+                        if (response.ok) {
+                            results += '<div class="test-result success">✅ CanvasKit المحلي: متوفر</div>';
+                            console.log('Local CanvasKit available');
+                        } else {
+                            results += '<div class="test-result warning">⚠️ CanvasKit المحلي: غير متوفر</div>';
+                            console.warn('Local CanvasKit not available');
+                        }
+                        resultsDiv.innerHTML = results;
+                    })
+                    .catch(error => {
+                        results += '<div class="test-result error">❌ CanvasKit المحلي: خطأ في التحميل</div>';
+                        resultsDiv.innerHTML = results;
+                        console.error('Local CanvasKit error:', error);
+                    });
+            }, 1000);
+            
+            document.head.appendChild(script);
+        }
+        
+        // CanvasKit testing
+        function testCanvasKit() {
+            const resultsDiv = document.getElementById('canvaskit-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار CanvasKit...</p>';
+            
+            let results = '';
+            
+            // Test local CanvasKit files
+            const canvasKitFiles = ['canvaskit.js', 'canvaskit.wasm'];
+            let completed = 0;
+            
+            canvasKitFiles.forEach(file => {
+                fetch(`./canvaskit/${file}`)
+                    .then(response => {
+                        if (response.ok) {
+                            results += `<div class="test-result success">✅ ${file}: متوفر محلياً</div>`;
+                            console.log(`CanvasKit file ${file} available locally`);
+                        } else {
+                            results += `<div class="test-result error">❌ ${file}: غير متوفر محلياً</div>`;
+                            console.error(`CanvasKit file ${file} not available locally`);
+                        }
+                    })
+                    .catch(error => {
+                        results += `<div class="test-result error">❌ ${file}: خطأ في التحميل</div>`;
+                        console.error(`CanvasKit file ${file} error:`, error);
+                    })
+                    .finally(() => {
+                        completed++;
+                        if (completed === canvasKitFiles.length) {
+                            resultsDiv.innerHTML = results;
+                        }
+                    });
+            });
+        }
+        
+        // Test CanvasKit CDN blocking
+        function testCanvasKitCDNBlocking() {
+            const resultsDiv = document.getElementById('canvaskit-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار حظر CanvasKit CDN...</p>';
+            
+            let results = '';
+            
+            // Test if CanvasKit CDN is blocked
+            const canvasKitCDNUrl = 'https://www.gstatic.com/flutter-canvaskit/d2913632a4578ee4d0b8b1c4a69888c8a0672c4b/canvaskit.js';
+            
+            fetch(canvasKitCDNUrl)
+                .then(response => {
+                    results += '<div class="test-result error">❌ CanvasKit CDN: لم يتم حظره بشكل صحيح</div>';
+                    console.error('CanvasKit CDN not blocked properly');
+                })
+                .catch(error => {
+                    results += '<div class="test-result success">✅ CanvasKit CDN: محظور بنجاح</div>';
+                    console.log('CanvasKit CDN blocked successfully:', error.message);
+                })
+                .finally(() => {
+                    resultsDiv.innerHTML = results;
+                });
+        }
+        
+        // Test CDN blocking
+        function testCDNBlocking() {
+            const resultsDiv = document.getElementById('cdn-blocking-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار حظر المصادر الخارجية...</p>';
+            
+            let results = '';
+            let completed = 0;
+            const totalTests = 3;
+            
+            // Test Google Fonts blocking
+            fetch('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap')
+                .then(response => {
+                    results += '<div class="test-result error">❌ Google Fonts: لم يتم حظره</div>';
+                    console.error('Google Fonts not blocked');
+                })
+                .catch(error => {
+                    results += '<div class="test-result success">✅ Google Fonts: محظور بنجاح</div>';
+                    console.log('Google Fonts blocked:', error.message);
+                })
+                .finally(() => {
+                    completed++;
+                    if (completed === totalTests) {
+                        resultsDiv.innerHTML = results;
+                    }
+                });
+            
+            // Test Google Fonts static blocking
+            fetch('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2')
+                .then(response => {
+                    results += '<div class="test-result error">❌ Google Fonts Static: لم يتم حظره</div>';
+                    console.error('Google Fonts static not blocked');
+                })
+                .catch(error => {
+                    results += '<div class="test-result success">✅ Google Fonts Static: محظور بنجاح</div>';
+                    console.log('Google Fonts static blocked:', error.message);
+                })
+                .finally(() => {
+                    completed++;
+                    if (completed === totalTests) {
+                        resultsDiv.innerHTML = results;
+                    }
+                });
+            
+            // Test CanvasKit CDN blocking
+            fetch('https://www.gstatic.com/flutter-canvaskit/d2913632a4578ee4d0b8b1c4a69888c8a0672c4b/canvaskit.js')
+                .then(response => {
+                    results += '<div class="test-result error">❌ CanvasKit CDN: لم يتم حظره</div>';
+                    console.error('CanvasKit CDN not blocked');
+                })
+                .catch(error => {
+                    results += '<div class="test-result success">✅ CanvasKit CDN: محظور بنجاح</div>';
+                    console.log('CanvasKit CDN blocked:', error.message);
+                })
+                .finally(() => {
+                    completed++;
+                    if (completed === totalTests) {
+                        resultsDiv.innerHTML = results;
+                    }
+                });
+        }
+        
+        // Network testing
+        function testNetwork() {
+            const resultsDiv = document.getElementById('network-results');
+            resultsDiv.innerHTML = '<p>جاري اختبار الشبكة...</p>';
+            
+            let results = '';
+            
+            // Test API connection
+            fetch('/health')
+                .then(response => {
+                    if (response.ok) {
+                        results += '<div class="test-result success">✅ API: الاتصال بالخادم ناجح</div>';
+                        console.log('API connection successful');
+                    } else {
+                        results += '<div class="test-result warning">⚠️ API: مشكلة في الاتصال بالخادم</div>';
+                        console.warn('API connection issue');
+                    }
+                })
+                .catch(error => {
+                    results += '<div class="test-result error">❌ API: فشل الاتصال بالخادم</div>';
+                    console.error('API connection failed:', error);
+                })
+                .finally(() => {
+                    resultsDiv.innerHTML = results;
+                });
+        }
+        
+        // Clear logs
+        function clearLogs() {
+            logs.length = 0;
+            document.getElementById('console-logs').innerHTML = '';
+        }
+        
+        // Export logs
+        function exportLogs() {
+            const logText = logs.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `idec-diagnostic-${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', function() {
+            console.log('🔧 IDEC Diagnostic Tool loaded');
+            console.log('📱 User Agent:', navigator.userAgent);
+            console.log('🌐 URL:', window.location.href);
+            
+            // Auto-test fonts
+            setTimeout(testFonts, 1000);
+        });
+    </script>
+</body>
+</html>

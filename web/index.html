@@ -14,7 +14,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -22,6 +22,9 @@
   <meta name="description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
   <meta name="keywords" content="IDEC, معرض, مؤتمر, طب الاسنان, 2026">
   <meta name="author" content="IDEC Team">
+  
+  <!-- Enhanced Content Security Policy for Flutter Web - Allow local CanvasKit -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: http: blob:; connect-src 'self' https: http: ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; worker-src 'self' blob:;">
   
   <!-- SEO Meta Tags -->
   <meta property="og:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
@@ -39,6 +42,7 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
   <link rel="icon" type="image/png" href="favicon.png"/>
   
   <!-- Disable Google Fonts completely -->
@@ -53,8 +57,8 @@
   <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type, Authorization, Accept, Origin, X-Requested-With">
   
   <!-- Preconnect to API server -->
-  <link rel="preconnect" href="https://idec-ye.com">
-  <link rel="dns-prefetch" href="https://idec-ye.com">
+  <link rel="preconnect" href="https://api.idec-ye.com">
+  <link rel="dns-prefetch" href="https://api.idec-ye.com">
   
   <!-- Local fonts for Arabic and English text - No external dependencies -->
   <!-- Using system fonts for better performance and offline support -->
@@ -63,14 +67,44 @@
   <style>
     @font-face {
       font-family: 'Cairo';
-      src: url('assets/assets/fonts/Cairo-Regular.ttf') format('truetype');
+      src: url('assets/assets/fonts/Cairo/Cairo-Regular.ttf') format('truetype');
       font-weight: 400;
       font-display: swap;
     }
     @font-face {
       font-family: 'Cairo';
-      src: url('assets/assets/fonts/Cairo-Bold.ttf') format('truetype');
+      src: url('assets/assets/fonts/Cairo/Cairo-Bold.ttf') format('truetype');
       font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo/Cairo-Medium.ttf') format('truetype');
+      font-weight: 500;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo/Cairo-SemiBold.ttf') format('truetype');
+      font-weight: 600;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto/Roboto-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto/Roboto-Medium.ttf') format('truetype');
+      font-weight: 500;
       font-display: swap;
     }
     @font-face {
@@ -80,14 +114,8 @@
       font-display: swap;
     }
     @font-face {
-      font-family: 'Roboto';
-      src: url('assets/assets/fonts/Roboto-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-display: swap;
-    }
-    @font-face {
-      font-family: 'Roboto';
-      src: url('assets/assets/fonts/Roboto-Bold.ttf') format('truetype');
+      font-family: 'NotoSansArabic';
+      src: url('assets/assets/fonts/NotoSansArabic-Bold.ttf') format('truetype');
       font-weight: 700;
       font-display: swap;
     }
@@ -105,8 +133,8 @@
   <style>
     /* Primary font stack with local fonts only */
     :root {
-      --primary-font: 'Cairo', 'NotoSansArabic', 'Roboto', 'Tahoma', Arial, sans-serif;
-      --fallback-font: 'NotoSansArabic', 'Roboto', 'Tahoma', Arial, sans-serif;
+      --primary-font: 'Cairo', 'NotoSansArabic', 'Roboto', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+      --fallback-font: 'NotoSansArabic', 'Roboto', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
     }
     
     /* Force immediate text visibility */
@@ -214,7 +242,11 @@
         },
         config: window.flutterWebConfig || {
           renderer: "html",
+          canvasKitBaseUrl: "./canvaskit/",
           fontFallbacks: [
+            'Cairo',
+            'NotoSansArabic',
+            'Roboto',
             'system-ui',
             '-apple-system', 
             'BlinkMacSystemFont',

@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default URLs with port explicitly included - using IP to avoid DNS issues
-  static const String defaultBaseUrl = 'http://84.247.128.128:3000';
-  static const String devUrl = 'http://84.247.128.128:3000';
-  static const String prodUrl = 'http://84.247.128.128:3000';
+  // Default URLs - using production API server
+  static const String defaultBaseUrl = 'https://api.idec-ye.com';
+  static const String devUrl = 'https://api.idec-ye.com';
+  static const String prodUrl = 'https://api.idec-ye.com';
 
-  // Fallback domain URL (in case IP doesn't work)
-  static const String domainUrl = 'http://idec-ye.com:3000';
+  // Fallback domain URL
+  static const String domainUrl = 'https://api.idec-ye.com';
 
   // Current base URL - will be updated dynamically
   static String _baseUrl = defaultBaseUrl;
@@ -17,15 +17,17 @@ class ApiConstants {
     // Validate current URL
     if (_baseUrl.isEmpty || !_baseUrl.contains(':')) {
       debugPrint(
-          '⚠️ [API_CONSTANTS] Invalid baseUrl detected: $_baseUrl, using fallback');
+        '⚠️ [API_CONSTANTS] Invalid baseUrl detected: $_baseUrl, using fallback',
+      );
       _baseUrl = _getFallbackUrl();
     }
 
-    // Ensure port is included
-    if (!_baseUrl.contains(':3000')) {
+    // Ensure HTTPS is used for production API
+    if (!_baseUrl.startsWith('https://')) {
       debugPrint(
-          '⚠️ [API_CONSTANTS] Port missing in baseUrl: $_baseUrl, fixing...');
-      _baseUrl = _fixUrlWithPort(_baseUrl);
+        '⚠️ [API_CONSTANTS] HTTPS missing in baseUrl: $_baseUrl, fixing...',
+      );
+      _baseUrl = _fixUrlWithHttps(_baseUrl);
     }
 
     debugPrint('🔗 [API_CONSTANTS] Current baseUrl: $_baseUrl');
@@ -35,7 +37,8 @@ class ApiConstants {
   /// Update base URL with validation
   static void updateBaseUrl(String newUrl) {
     debugPrint(
-        '🔄 [API_CONSTANTS] Updating baseUrl from: $_baseUrl to: $newUrl');
+      '🔄 [API_CONSTANTS] Updating baseUrl from: $_baseUrl to: $newUrl',
+    );
 
     if (newUrl.isEmpty) {
       debugPrint('❌ [API_CONSTANTS] Empty URL provided, using fallback');
@@ -56,9 +59,9 @@ class ApiConstants {
       // Remove any trailing slashes
       String cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
 
-      // Ensure http:// prefix
+      // Ensure https:// prefix for production API
       if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-        cleanUrl = 'http://$cleanUrl';
+        cleanUrl = 'https://$cleanUrl';
       }
 
       // Parse URL to validate
@@ -70,15 +73,14 @@ class ApiConstants {
         return _getFallbackUrl();
       }
 
-      // Ensure port is included
-      if (!cleanUrl.contains(':3000')) {
-        // Remove any existing port and add 3000
-        final hostWithoutPort = host.replaceAll(RegExp(r':\d+$'), '');
-        cleanUrl = 'http://$hostWithoutPort:3000';
+      // Ensure HTTPS is used for production API
+      if (cleanUrl.startsWith('http://')) {
+        cleanUrl = cleanUrl.replaceFirst('http://', 'https://');
       }
 
       debugPrint(
-          '🔧 [API_CONSTANTS] URL validated and fixed: $url -> $cleanUrl');
+        '🔧 [API_CONSTANTS] URL validated and fixed: $url -> $cleanUrl',
+      );
       return cleanUrl;
     } catch (e) {
       debugPrint('❌ [API_CONSTANTS] Error validating URL $url: $e');
@@ -86,14 +88,16 @@ class ApiConstants {
     }
   }
 
-  /// Fix URL by ensuring port 3000 is included
-  static String _fixUrlWithPort(String url) {
+  /// Fix URL by ensuring HTTPS is used
+  static String _fixUrlWithHttps(String url) {
     try {
       final uri = Uri.parse(url);
-      final host =
-          uri.host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
-      final fixedUrl = 'http://$host:3000';
-      debugPrint('🔧 [API_CONSTANTS] Fixed URL with port: $url -> $fixedUrl');
+      final host = uri.host.replaceAll(
+        RegExp(r':\d+$'),
+        '',
+      ); // Remove any existing port
+      final fixedUrl = 'https://$host';
+      debugPrint('🔧 [API_CONSTANTS] Fixed URL with HTTPS: $url -> $fixedUrl');
       return fixedUrl;
     } catch (e) {
       debugPrint('❌ [API_CONSTANTS] Error fixing URL: $e');
@@ -105,7 +109,8 @@ class ApiConstants {
   static String _getFallbackUrl() {
     final fallback = kDebugMode ? devUrl : prodUrl;
     debugPrint(
-        '🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)');
+      '🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)',
+    );
     return fallback;
   }
 
@@ -118,11 +123,12 @@ class ApiConstants {
   /// Validate current configuration
   static bool validateCurrentConfig() {
     final isValid = _baseUrl.isNotEmpty &&
-        _baseUrl.contains('http') &&
-        _baseUrl.contains(':3000');
+        _baseUrl.startsWith('https://') &&
+        _baseUrl.contains('api.idec-ye.com');
 
     debugPrint(
-        '🔍 [API_CONSTANTS] Config validation: $isValid (URL: $_baseUrl)');
+      '🔍 [API_CONSTANTS] Config validation: $isValid (URL: $_baseUrl)',
+    );
 
     if (!isValid) {
       debugPrint('❌ [API_CONSTANTS] Invalid config detected, fixing...');

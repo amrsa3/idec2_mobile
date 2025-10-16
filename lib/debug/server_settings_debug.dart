@@ -73,7 +73,7 @@ class ServerSettingsDebug {
     
     // Simulate corrupted settings (host without port)
     debugPrint('🔧 [DEBUG] Simulating corrupted settings');
-    await StorageService.instance.setString('server_host', 'idec-ye.com');
+    await StorageService.instance.setString('server_host', 'api.idec-ye.com');
     await StorageService.instance.setInt('server_port', 0); // Invalid port
     await StorageService.instance.setBool('server_settings_initialized', false);
     

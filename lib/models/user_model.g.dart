@@ -42,58 +42,58 @@ _$UserProfileModelImpl _$$UserProfileModelImplFromJson(
         Map<String, dynamic> json) =>
     _$UserProfileModelImpl(
       id: json['id'] as String? ?? '',
-      userId: json['user_id'] as String? ?? '',
-      fullNameAr: json['full_name_ar'] as String? ?? '',
-      fullNameEn: json['full_name_en'] as String?,
-      birthDate: json['birth_date'] == null
+      userId: json['userId'] as String? ?? '',
+      fullNameAr: json['fullNameAr'] as String? ?? '',
+      fullNameEn: json['fullNameEn'] as String?,
+      birthDate: json['birthDate'] == null
           ? null
-          : DateTime.parse(json['birth_date'] as String),
-      graduationYear: (json['graduation_year'] as num?)?.toInt(),
+          : DateTime.parse(json['birthDate'] as String),
+      graduationYear: (json['graduationYear'] as num?)?.toInt(),
       university: json['university'] as String?,
       workplace: json['workplace'] as String?,
       gender: json['gender'] as String?,
       address: json['address'] as String?,
-      jobTitle: json['job_title'] as String?,
+      jobTitle: json['jobTitle'] as String?,
       specialization: json['specialization'] as String?,
-      academicDegree: json['academic_degree'] as String?,
-      profilePhotoUrl: json['profile_photo_url'] as String?,
-      profileData: json['profile_data'] as Map<String, dynamic>?,
+      academicDegree: json['academicDegree'] as String?,
+      profilePhotoUrl: json['profilePhotoUrl'] as String?,
+      profileData: json['profileData'] as Map<String, dynamic>?,
       status: json['status'] as String?,
-      categoryId: json['category_id'] as String?,
-      qualificationId: json['qualification_id'] as String?,
-      governorateId: json['governorate_id'] as String?,
-      createdAt: json['created_at'] == null
+      categoryId: json['categoryId'] as String?,
+      qualificationId: json['qualificationId'] as String?,
+      governorateId: json['governorateId'] as String?,
+      createdAt: json['createdAt'] == null
           ? null
-          : DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] == null
+          : DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
           ? null
-          : DateTime.parse(json['updated_at'] as String),
+          : DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$$UserProfileModelImplToJson(
         _$UserProfileModelImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'user_id': instance.userId,
-      'full_name_ar': instance.fullNameAr,
-      'full_name_en': instance.fullNameEn,
-      'birth_date': instance.birthDate?.toIso8601String(),
-      'graduation_year': instance.graduationYear,
+      'userId': instance.userId,
+      'fullNameAr': instance.fullNameAr,
+      'fullNameEn': instance.fullNameEn,
+      'birthDate': instance.birthDate?.toIso8601String(),
+      'graduationYear': instance.graduationYear,
       'university': instance.university,
       'workplace': instance.workplace,
       'gender': instance.gender,
       'address': instance.address,
-      'job_title': instance.jobTitle,
+      'jobTitle': instance.jobTitle,
       'specialization': instance.specialization,
-      'academic_degree': instance.academicDegree,
-      'profile_photo_url': instance.profilePhotoUrl,
-      'profile_data': instance.profileData,
+      'academicDegree': instance.academicDegree,
+      'profilePhotoUrl': instance.profilePhotoUrl,
+      'profileData': instance.profileData,
       'status': instance.status,
-      'category_id': instance.categoryId,
-      'qualification_id': instance.qualificationId,
-      'governorate_id': instance.governorateId,
-      'created_at': instance.createdAt?.toIso8601String(),
-      'updated_at': instance.updatedAt?.toIso8601String(),
+      'categoryId': instance.categoryId,
+      'qualificationId': instance.qualificationId,
+      'governorateId': instance.governorateId,
+      'createdAt': instance.createdAt?.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
     };
 
 _$LoginRequestImpl _$$LoginRequestImplFromJson(Map<String, dynamic> json) =>

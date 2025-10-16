@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <base href="/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta name="keywords" content="IDEC, معرض, مؤتمر, طب الاسنان, 2026">
+  <meta name="author" content="IDEC Team">
+  
+  <!-- Simplified Content Security Policy for Flutter Web -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: http: blob:; connect-src 'self' https://api.idec-ye.com https: http: ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; worker-src 'self' blob:;">
+  
+  <!-- SEO Meta Tags -->
+  <meta property="og:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta property="og:description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+  <meta name="twitter:description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="IDEC">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico"/>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  
+  <!-- Preconnect to API server -->
+  <link rel="preconnect" href="https://api.idec-ye.com">
+  <link rel="dns-prefetch" href="https://api.idec-ye.com">
+  
+  <!-- Local fonts for Arabic and English text -->
+  <style>
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo/Cairo-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Cairo';
+      src: url('assets/assets/fonts/Cairo/Cairo-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto';
+      src: url('assets/assets/fonts/Roboto/Roboto-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'NotoSansArabic';
+      src: url('assets/assets/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-display: swap;
+    }
+  </style>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#2196F3">
+  <meta name="msapplication-navbutton-color" content="#2196F3">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>منصه معرض ومؤتمر IDEC لطب الاسنان 2026</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Font fallbacks and CSS for text rendering -->
+  <style>
+    :root {
+      --primary-font: 'Cairo', 'NotoSansArabic', 'Roboto', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+    }
+    
+    body, html {
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      direction: rtl;
+      text-align: right;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* Flutter Web specific fixes */
+    flt-glass-pane, flt-glass-pane * {
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
+    }
+    
+    flutter-view, flutter-view * {
+      font-family: var(--primary-font) !important;
+      font-display: swap !important;
+    }
+    
+    /* Loading state with visible text */
+    .loading-text {
+      font-family: var(--primary-font) !important;
+      font-size: 16px;
+      color: #333;
+      text-align: center;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading indicator with visible text -->
+  <div id="loading" class="loading-text">
+    <p>جاري تحميل منصة IDEC...</p>
+    <p>Loading IDEC Platform...</p>
+  </div>
+  
+  <script src="flutter_web_config_simple.js"></script>
+  
+  <script>
+    // Service Worker Version
+    var serviceWorkerVersion = "1201463201";
+    
+    // Simplified Flutter Web initialization
+    window.addEventListener('load', function(ev) {
+      // Use the new Flutter loader API
+      _flutter.loader.load({
+        serviceWorkerSettings: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        config: window.flutterWebConfig || {
+          renderer: "html",
+          fontFallbacks: [
+            'Cairo',
+            'NotoSansArabic',
+            'Roboto',
+            'system-ui',
+            '-apple-system', 
+            'BlinkMacSystemFont',
+            'Segoe UI',
+            'Arial',
+            'Helvetica',
+            'Tahoma',
+            'sans-serif'
+          ]
+        }
+      }).then(function(appRunner) {
+        appRunner.runApp();
+        
+        // Hide loading indicator when Flutter is ready
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.display = 'none';
+        }
+      }).catch(function(error) {
+        console.error('Flutter Web initialization error:', error);
+        
+        // Show error message
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">خطأ في تحميل التطبيق<br/>Error loading application<br/>Please refresh the page</p>';
+          loading.style.display = 'block';
+        }
+      });
+    });
+    
+    // Fallback: hide loading after 15 seconds
+    setTimeout(function() {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.style.display = 'none';
+      }
+    }, 15000);
+  </script>
+</body>
+</html>
+
+

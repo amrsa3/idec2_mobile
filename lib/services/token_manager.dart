@@ -376,6 +376,6 @@ class TokenManager {
 
   String _getBaseUrl() {
     // يمكن تخصيص هذا حسب البيئة
-    return 'http://localhost:3000'; // أو من متغيرات البيئة
+    return 'https://api.idec-ye.com'; // استخدام الخادم الرئيسي
   }
 }

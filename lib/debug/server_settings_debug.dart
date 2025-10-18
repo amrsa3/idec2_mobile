@@ -83,7 +83,7 @@ class ServerSettingsDebug {
     debugPrint('🔍 [DEBUG] Fixed settings: ${settings.baseUrl}');
     
     // Validate the fix
-    if (settings.baseUrl.contains(':3000')) {
+    if (settings.baseUrl.startsWith('https://') || !settings.baseUrl.contains('api.idec-ye.com')) {
       debugPrint('✅ [DEBUG] Production scenario fix successful');
     } else {
       debugPrint('❌ [DEBUG] Production scenario fix failed');
@@ -116,12 +116,12 @@ class ServerSettingsDebug {
     debugPrint('🔗 [DEBUG] DioService baseUrl: ${DioService.instance.dio.options.baseUrl}');
     
     // Validate configuration
-    final hasPort = ApiConstants.baseUrl.contains(':3000');
-    final hasHttp = ApiConstants.baseUrl.startsWith('http://');
-    final isValid = hasPort && hasHttp;
+    final hasHttps = ApiConstants.baseUrl.startsWith('https://');
+    final isApiDomain = ApiConstants.baseUrl.contains('api.idec-ye.com');
+    final isValid = hasHttps && isApiDomain;
     
-    debugPrint('✅ [DEBUG] Has HTTP: $hasHttp');
-    debugPrint('✅ [DEBUG] Has Port 3000: $hasPort');
+    debugPrint('✅ [DEBUG] Has HTTPS: $hasHttps');
+    debugPrint('✅ [DEBUG] Is API Domain: $isApiDomain');
     debugPrint('${isValid ? "✅" : "❌"} [DEBUG] Overall Valid: $isValid');
   }
 }

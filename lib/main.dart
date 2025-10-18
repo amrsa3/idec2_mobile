@@ -104,12 +104,12 @@ void main() async {
     debugPrint(
         '🏭 [PRODUCTION] Post-update ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
     debugPrint(
-        '🏭 [PRODUCTION] Checking if port 3000 is included: ${ApiConstants.baseUrl.contains(":3000")}');
-    if (!ApiConstants.baseUrl.contains(":3000")) {
-      debugPrint('❌ [PRODUCTION] CRITICAL: Port 3000 missing from baseURL!');
+        '🏭 [PRODUCTION] Checking if HTTPS is used: ${ApiConstants.baseUrl.startsWith("https://")}');
+    if (ApiConstants.baseUrl.contains('api.idec-ye.com') && !ApiConstants.baseUrl.startsWith("https://")) {
+      debugPrint('❌ [PRODUCTION] CRITICAL: HTTPS missing for production API!');
       debugPrint('❌ [PRODUCTION] This will cause connection failures!');
     } else {
-      debugPrint('✅ [PRODUCTION] Port 3000 correctly included in baseURL');
+      debugPrint('✅ [PRODUCTION] HTTPS correctly configured for production API');
     }
   }
 
@@ -125,9 +125,9 @@ void main() async {
   if (!kDebugMode) {
     debugPrint('🏭 [PRODUCTION] Final DioService baseUrl check...');
     debugPrint('🏭 [PRODUCTION] DioService will use: ${ApiConstants.baseUrl}');
-    debugPrint('🏭 [PRODUCTION] Expected format: http://idec-ye.com:3000');
+    debugPrint('🏭 [PRODUCTION] Expected format: https://api.idec-ye.com');
     debugPrint(
-        '🏭 [PRODUCTION] Match check: ${ApiConstants.baseUrl == "http://idec-ye.com:3000"}');
+        '🏭 [PRODUCTION] Match check: ${ApiConstants.baseUrl == "https://api.idec-ye.com"}');
   }
   debugPrint('🔍 ApiConstants validation result: $isValidConfig');
 

@@ -35,7 +35,7 @@ class DioService {
       debugPrint(
           '🏭 [DIO_PRODUCTION] Setting up interceptors with baseUrl: ${_dio.options.baseUrl}');
       debugPrint(
-          '🏭 [DIO_PRODUCTION] Port check: ${_dio.options.baseUrl.contains(":3000")}');
+          '🏭 [DIO_PRODUCTION] HTTPS check: ${_dio.options.baseUrl.startsWith("https://")}');
     }
 
     // Request interceptor
@@ -322,9 +322,9 @@ class DioService {
         return;
       }
 
-      // Ensure port is included
-      if (!newBaseUrl.contains(':3000')) {
-        debugPrint('⚠️ [DIO_SERVICE] Port missing in new URL: $newBaseUrl');
+      // Ensure HTTPS for production API
+      if (newBaseUrl.contains('api.idec-ye.com') && !newBaseUrl.startsWith('https://')) {
+        debugPrint('⚠️ [DIO_SERVICE] HTTPS missing for production API: $newBaseUrl');
       }
 
       // Update base URL

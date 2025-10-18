@@ -17,10 +17,18 @@ class ServerSettings {
   });
 
   String get baseUrl {
-    // Ensure port is always included
     final cleanHost = host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
+    
+    // Use HTTPS for production API server
+    if (cleanHost.contains('api.idec-ye.com')) {
+      final url = 'https://$cleanHost';
+      debugPrint('🔗 [SERVER_SETTINGS] Generated HTTPS baseUrl: $url (host: $cleanHost)');
+      return url;
+    }
+    
+    // Use HTTP with port for local/development servers
     final url = 'http://$cleanHost:$port';
-    debugPrint('🔗 [SERVER_SETTINGS] Generated baseUrl: $url (host: $cleanHost, port: $port)');
+    debugPrint('🔗 [SERVER_SETTINGS] Generated HTTP baseUrl: $url (host: $cleanHost, port: $port)');
     return url;
   }
 
@@ -81,8 +89,8 @@ class ServerSettingsService {
   
   // Default server configurations
   static const ServerSettings mainServer = ServerSettings(
-    host: '84.247.128.128', // Use IP of idec-ye.com to avoid DNS issues
-    port: 3000,
+    host: 'api.idec-ye.com', // Main production API server
+    port: 443, // HTTPS port
   );
   
   static const ServerSettings localServer = ServerSettings(
@@ -90,10 +98,10 @@ class ServerSettingsService {
     port: 3000,
   );
   
-  // Fallback domain server (in case IP doesn't work)
+  // Fallback domain server
   static const ServerSettings domainServer = ServerSettings(
-    host: 'idec-ye.com',
-    port: 3000,
+    host: 'api.idec-ye.com',
+    port: 443, // HTTPS port
   );
 
   final StorageService _storageService;
@@ -118,7 +126,8 @@ class ServerSettingsService {
       
       // Clean host to remove any existing port
       final cleanHost = host.replaceAll(RegExp(r':\d+$'), '');
-      final validPort = port > 0 ? port : 3000;
+      // Use 443 for HTTPS (production API) or 3000 for local development
+      final validPort = port > 0 ? port : (cleanHost.contains('api.idec-ye.com') ? 443 : 3000);
       
       final settings = ServerSettings(
         host: cleanHost,
@@ -146,7 +155,8 @@ class ServerSettingsService {
     try {
       // Clean host to remove any existing port
       final cleanHost = settings.host.replaceAll(RegExp(r':\d+$'), '');
-      final validPort = settings.port > 0 ? settings.port : 3000;
+      // Use 443 for HTTPS (production API) or 3000 for local development
+      final validPort = settings.port > 0 ? settings.port : (cleanHost.contains('api.idec-ye.com') ? 443 : 3000);
       
       debugPrint('💾 [SERVER_SETTINGS] Saving settings - host: $cleanHost, port: $validPort');
       

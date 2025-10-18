@@ -161,7 +161,7 @@ class AuthService {
         debugPrint(
             '🏭 [AUTH_PRODUCTION] DioService baseUrl: ${DioService.instance.dio.options.baseUrl}');
         debugPrint(
-            '🏭 [AUTH_PRODUCTION] Port check: ${DioService.instance.dio.options.baseUrl.contains(":3000")}');
+            '🏭 [AUTH_PRODUCTION] HTTPS check: ${DioService.instance.dio.options.baseUrl.startsWith("https://")}');
       }
 
       final dio = DioService.instance.dio;

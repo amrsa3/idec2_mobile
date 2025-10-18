@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default URLs with port explicitly included - using IP to avoid DNS issues
-  static const String defaultBaseUrl = 'http://84.247.128.128:3000';
-  static const String devUrl = 'http://84.247.128.128:3000';
-  static const String prodUrl = 'http://84.247.128.128:3000';
+  // Default URLs using the main API server
+  static const String defaultBaseUrl = 'https://api.idec-ye.com';
+  static const String devUrl = 'https://api.idec-ye.com';
+  static const String prodUrl = 'https://api.idec-ye.com';
 
-  // Fallback domain URL (in case IP doesn't work)
-  static const String domainUrl = 'http://idec-ye.com:3000';
+  // Fallback domain URL
+  static const String domainUrl = 'https://api.idec-ye.com';
 
   // Current base URL - will be updated dynamically
   static String _baseUrl = defaultBaseUrl;
@@ -21,11 +21,11 @@ class ApiConstants {
       _baseUrl = _getFallbackUrl();
     }
 
-    // Ensure port is included
-    if (!_baseUrl.contains(':3000')) {
+    // Validate HTTPS for production API
+    if (!_baseUrl.startsWith('https://') && _baseUrl.contains('api.idec-ye.com')) {
       debugPrint(
-          '⚠️ [API_CONSTANTS] Port missing in baseUrl: $_baseUrl, fixing...');
-      _baseUrl = _fixUrlWithPort(_baseUrl);
+          '⚠️ [API_CONSTANTS] HTTPS missing for production API: $_baseUrl, fixing...');
+      _baseUrl = _baseUrl.replaceFirst('http://', 'https://');
     }
 
     debugPrint('🔗 [API_CONSTANTS] Current baseUrl: $_baseUrl');
@@ -70,11 +70,9 @@ class ApiConstants {
         return _getFallbackUrl();
       }
 
-      // Ensure port is included
-      if (!cleanUrl.contains(':3000')) {
-        // Remove any existing port and add 3000
-        final hostWithoutPort = host.replaceAll(RegExp(r':\d+$'), '');
-        cleanUrl = 'http://$hostWithoutPort:3000';
+      // Ensure HTTPS for production API
+      if (cleanUrl.contains('api.idec-ye.com') && !cleanUrl.startsWith('https://')) {
+        cleanUrl = cleanUrl.replaceFirst('http://', 'https://');
       }
 
       debugPrint(
@@ -86,15 +84,15 @@ class ApiConstants {
     }
   }
 
-  /// Fix URL by ensuring port 3000 is included
-  static String _fixUrlWithPort(String url) {
+  /// Fix URL by ensuring HTTPS for production API
+  static String _fixUrlWithHttps(String url) {
     try {
-      final uri = Uri.parse(url);
-      final host =
-          uri.host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
-      final fixedUrl = 'http://$host:3000';
-      debugPrint('🔧 [API_CONSTANTS] Fixed URL with port: $url -> $fixedUrl');
-      return fixedUrl;
+      if (url.contains('api.idec-ye.com') && !url.startsWith('https://')) {
+        final fixedUrl = url.replaceFirst('http://', 'https://');
+        debugPrint('🔧 [API_CONSTANTS] Fixed URL with HTTPS: $url -> $fixedUrl');
+        return fixedUrl;
+      }
+      return url;
     } catch (e) {
       debugPrint('❌ [API_CONSTANTS] Error fixing URL: $e');
       return _getFallbackUrl();
@@ -119,7 +117,7 @@ class ApiConstants {
   static bool validateCurrentConfig() {
     final isValid = _baseUrl.isNotEmpty &&
         _baseUrl.contains('http') &&
-        _baseUrl.contains(':3000');
+        (_baseUrl.startsWith('https://') || !_baseUrl.contains('api.idec-ye.com'));
 
     debugPrint(
         '🔍 [API_CONSTANTS] Config validation: $isValid (URL: $_baseUrl)');

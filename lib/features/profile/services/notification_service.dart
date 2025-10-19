@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/notification_service.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 
 /// خدمة إشعارات التوثيق
 /// تدير إرسال الإشعارات المتعلقة بحالة توثيق الملف الشخصي

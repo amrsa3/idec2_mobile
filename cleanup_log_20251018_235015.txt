@@ -1,0 +1,32 @@
+[2025-10-18 23:50:15] [INFO] بدء عملية تنظيف الملفات القديمة
+[2025-10-18 23:50:15] [INFO] حذف الملفات المحددة...
+[2025-10-18 23:50:15] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\lib\services\dio_service.dart
+[2025-10-18 23:50:15] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\lib\services\token_manager.dart
+[2025-10-18 23:50:15] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\lib\services\session_manager.dart
+[2025-10-18 23:50:15] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\lib\services\storage_service.dart
+[2025-10-18 23:50:15] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\lib\providers\auth_provider.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\test\old_services_test.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\test\legacy_test.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\config\old_config.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\config\legacy_settings.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\models\old_user_model.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\models\legacy_auth_model.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\utils\old_helpers.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\utils\legacy_utils.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\constants\old_constants.dart
+[2025-10-18 23:50:15] [WARNING] الملف غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\constants\legacy_api_constants.dart
+[2025-10-18 23:50:15] [INFO] حذف المجلدات المحددة...
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\services\deprecated
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\providers\deprecated
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\models\deprecated
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\lib\utils\deprecated
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\test\deprecated
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\test\old_tests
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\docs\old
+[2025-10-18 23:50:15] [WARNING] المجلد غير موجود: G:\IDEC\IDEC2.4\mobile-app\docs\deprecated
+[2025-10-18 23:50:15] [INFO] حذف الملفات بناءً على الأنماط...
+[2025-10-18 23:50:51] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\backup\deprecated_services\auth_service_old.dart
+[2025-10-18 23:50:58] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\backup\main_backup.dart
+[2025-10-18 23:50:58] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\backup\pubspec_backup.yaml
+[2025-10-18 23:50:58] [INFO] DRY RUN: سيتم حذف G:\IDEC\IDEC2.4\mobile-app\backup\pubspec_lock_backup.lock
+[2025-10-18 23:51:07] [INFO] حذف ملفات السجلات القديمة...

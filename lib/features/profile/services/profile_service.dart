@@ -11,9 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/dio_service.dart';
+import '../../../services/enhanced_dio_service_v2.dart';
 import '../../../services/profile_rules_service.dart';
-import '../../../services/storage_service.dart';
+import '../../../services/platform_storage_service.dart';
 
 class LocalProfileService {
   static final Dio _dio = Dio();
@@ -106,7 +106,7 @@ class LocalProfileService {
       debugPrint('📋 ProfileService: Fetching profile data');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -145,7 +145,7 @@ class LocalProfileService {
       debugPrint('📊 ProfileService: Fetching profile completion status');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -227,7 +227,7 @@ class LocalProfileService {
       }
 
       // Fetch fresh data from server
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         throw Exception('لم يتم العثور على رمز المصادقة');
@@ -349,7 +349,7 @@ class LocalProfileService {
       debugPrint('🔄 ProfileService: Updating profile');
 
       // استخدام DioService للصصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -373,7 +373,23 @@ class LocalProfileService {
       if (response.statusCode == 200) {
         debugPrint('✅ ProfileService: Profile updated successfully');
         final data = response.data;
-        return ProfileModel.fromJson(data);
+        
+        // تحويل البيانات لضمان التوافق مع ProfileModel
+        final transformedData = Map<String, dynamic>.from(data);
+        
+        // التأكد من أن documents هو قائمة وليس string أو رقم
+        if (transformedData['documents'] != null && transformedData['documents'] is! List) {
+          debugPrint('⚠️ ProfileService: Converting documents from ${transformedData['documents'].runtimeType} to List');
+          transformedData['documents'] = [];
+        }
+        
+        // التأكد من أن required_documents هو قائمة
+        if (transformedData['required_documents'] != null && transformedData['required_documents'] is! List) {
+          debugPrint('⚠️ ProfileService: Converting required_documents from ${transformedData['required_documents'].runtimeType} to List');
+          transformedData['required_documents'] = [];
+        }
+        
+        return ProfileModel.fromJson(transformedData);
       } else {
         debugPrint(
             '❌ ProfileService: Update failed with status: ${response.statusCode}');
@@ -397,7 +413,7 @@ class LocalProfileService {
       debugPrint('📄 File URL: $fileUrl');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -425,7 +441,47 @@ class LocalProfileService {
         final data = response.data;
         debugPrint('📄 ProfileService: Document uploaded successfully');
 
-        return DocumentUploadModel.fromJson(data);
+        // تحويل البيانات مع معالجة أفضل للأخطاء
+        try {
+          // التأكد من تحويل جميع الحقول للنوع الصحيح
+          final safeData = Map<String, dynamic>.from(data);
+          
+          // التأكد من أن userId هو string
+          if (safeData['userId'] != null) {
+            safeData['userId'] = safeData['userId'].toString();
+          }
+          
+          // التأكد من أن id هو string
+          if (safeData['id'] != null) {
+            safeData['id'] = safeData['id'].toString();
+          }
+          
+          // التأكد من أن documentType هو string
+          if (safeData['documentType'] != null) {
+            safeData['documentType'] = safeData['documentType'].toString();
+          }
+          
+          // التأكد من أن fileName هو string
+          if (safeData['fileName'] != null) {
+            safeData['fileName'] = safeData['fileName'].toString();
+          }
+          
+          // التأكد من أن fileUrl هو string
+          if (safeData['fileUrl'] != null) {
+            safeData['fileUrl'] = safeData['fileUrl'].toString();
+          }
+          
+          // التأكد من أن status هو string
+          if (safeData['status'] != null) {
+            safeData['status'] = safeData['status'].toString();
+          }
+          
+          return DocumentUploadModel.fromJson(safeData);
+        } catch (conversionError) {
+          debugPrint('❌ ProfileService: Error converting document data: $conversionError');
+          debugPrint('📊 ProfileService: Original data: $data');
+          throw Exception('خطأ في تحويل بيانات الوثيقة: $conversionError');
+        }
       } else {
         debugPrint(
             '❌ ProfileService: Failed to upload document: ${response.statusCode}');
@@ -443,7 +499,7 @@ class LocalProfileService {
       debugPrint('📄 ProfileService: Fetching user documents');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return [];
@@ -463,9 +519,54 @@ class LocalProfileService {
         final data = response.data;
         debugPrint('📄 ProfileService: Documents received successfully');
 
-        final List<dynamic> documentsJson = data['documents'] ?? [];
+        // التأكد من أن documents هو قائمة
+        dynamic documentsData = data['documents'];
+        List<dynamic> documentsJson = [];
+        
+        if (documentsData is List) {
+          documentsJson = documentsData;
+        } else if (documentsData != null) {
+          debugPrint('⚠️ ProfileService: Documents is not a list, type: ${documentsData.runtimeType}, value: $documentsData');
+          // إذا كان documents ليس قائمة، نعيد قائمة فارغة
+          documentsJson = [];
+        }
+        
         return documentsJson
-            .map((json) => DocumentUploadModel.fromJson(json))
+            .map((json) {
+              try {
+                // تحويل البيانات مع معالجة أفضل للأخطاء
+                final safeData = Map<String, dynamic>.from(json);
+                
+                // التأكد من تحويل جميع الحقول للنوع الصحيح
+                if (safeData['userId'] != null) {
+                  safeData['userId'] = safeData['userId'].toString();
+                }
+                if (safeData['id'] != null) {
+                  safeData['id'] = safeData['id'].toString();
+                }
+                if (safeData['documentType'] != null) {
+                  safeData['documentType'] = safeData['documentType'].toString();
+                }
+                if (safeData['fileName'] != null) {
+                  safeData['fileName'] = safeData['fileName'].toString();
+                }
+                if (safeData['fileUrl'] != null) {
+                  safeData['fileUrl'] = safeData['fileUrl'].toString();
+                }
+                if (safeData['status'] != null) {
+                  safeData['status'] = safeData['status'].toString();
+                }
+                
+                return DocumentUploadModel.fromJson(safeData);
+              } catch (e) {
+                debugPrint('❌ ProfileService: Error converting document: $e');
+                debugPrint('📊 ProfileService: Problematic document data: $json');
+                // تخطي هذه الوثيقة والمتابعة
+                return null;
+              }
+            })
+            .where((doc) => doc != null)
+            .cast<DocumentUploadModel>()
             .toList();
       } else {
         debugPrint(
@@ -492,7 +593,7 @@ class LocalProfileService {
     try {
       debugPrint('🗑️ ProfileService: Deleting document: $documentId');
 
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         debugPrint('❌ ProfileService: No authentication token found');
         return false;
@@ -519,7 +620,7 @@ class LocalProfileService {
       debugPrint('✅ ProfileService: Submitting profile for verification');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return false;
@@ -547,7 +648,7 @@ class LocalProfileService {
       debugPrint('📜 ProfileService: Fetching verification history');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return [];
@@ -668,7 +769,7 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Uploading profile picture');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -837,7 +938,7 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Uploading profile picture (Web)');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -989,7 +1090,7 @@ class LocalProfileService {
       debugPrint('🗑️ ProfileService: Removing profile picture');
 
       // استخدام DioService للحصول على الرمز المميز
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -1092,7 +1193,7 @@ class LocalProfileService {
       debugPrint('✅ Request data: ${request.toJson()}');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -1260,7 +1361,7 @@ class LocalProfileService {
           '📄 ProfileService: Uploading document file for field: $fieldName');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -1326,12 +1427,34 @@ class LocalProfileService {
         if (data != null && data is Map<String, dynamic>) {
           try {
             // الخادم يرجع البيانات في حقل 'file'
+            Map<String, dynamic> documentData;
             if (data.containsKey('file') && data['file'] != null) {
-              return DocumentUploadModel.fromJson(data['file']);
+              documentData = Map<String, dynamic>.from(data['file']);
             } else {
-              // محاولة معالجة البيانات مباشرة
-              return DocumentUploadModel.fromJson(data);
+              documentData = Map<String, dynamic>.from(data);
             }
+            
+            // تحويل البيانات مع معالجة أفضل للأخطاء
+            if (documentData['userId'] != null) {
+              documentData['userId'] = documentData['userId'].toString();
+            }
+            if (documentData['id'] != null) {
+              documentData['id'] = documentData['id'].toString();
+            }
+            if (documentData['documentType'] != null) {
+              documentData['documentType'] = documentData['documentType'].toString();
+            }
+            if (documentData['fileName'] != null) {
+              documentData['fileName'] = documentData['fileName'].toString();
+            }
+            if (documentData['fileUrl'] != null) {
+              documentData['fileUrl'] = documentData['fileUrl'].toString();
+            }
+            if (documentData['status'] != null) {
+              documentData['status'] = documentData['status'].toString();
+            }
+            
+            return DocumentUploadModel.fromJson(documentData);
           } catch (e) {
             debugPrint(
                 '⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
@@ -1377,7 +1500,7 @@ class LocalProfileService {
       debugPrint('💾 Request data: ${request.toJson()}');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return const ProfileUpdateResponse(
@@ -1605,3 +1728,5 @@ class LocalProfileService {
     return completionPercentage;
   }
 }
+
+

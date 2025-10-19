@@ -6,7 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../providers/language_provider.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../services/language_service.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {

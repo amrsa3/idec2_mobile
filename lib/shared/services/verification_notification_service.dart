@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/auth_provider.dart';
+import '../../providers/enhanced_auth_provider.dart';
 import 'notification_service.dart';
 
 class VerificationNotificationService {

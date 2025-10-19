@@ -109,9 +109,9 @@ class ServerConfigService {
           );
         }
       } catch (e) {
-        // If primary health endpoint fails, try fallback
+        // If primary health endpoint fails, try a simpler fallback
         try {
-          final response = await dio.get('${config.fullUrl}/api/v1/registration-settings/status');
+          final response = await dio.get('${config.fullUrl}/api/v1/health/ping');
           stopwatch.stop();
           
           if (response.statusCode == 200) {
@@ -119,8 +119,8 @@ class ServerConfigService {
               isReachable: true,
               responseTime: stopwatch.elapsedMilliseconds,
               statusCode: response.statusCode,
-              message: 'Server is reachable via fallback endpoint',
-              endpoint: '/api/v1/registration-settings/status',
+              message: 'Server is reachable via ping endpoint',
+              endpoint: '/api/v1/health/ping',
             );
           }
         } catch (fallbackError) {

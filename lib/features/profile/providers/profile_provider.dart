@@ -9,7 +9,7 @@ import '../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../models/profile_data_models.dart';
 import '../../../models/profile_model.dart';
 import '../../../models/verification_request_model.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/profile_rules_provider.dart';
 import '../../../services/image_cache_service.dart';
 import '../../../shared/services/notification_service.dart';
@@ -113,9 +113,16 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     _listenToAuthChanges();
   }
 
+  /// تحديث الحالة بأمان مع فحص mounted
+  void _safeUpdateState(ProfileState Function() updateFunction) {
+    if (mounted) {
+      state = updateFunction();
+    }
+  }
+
   /// Listen to authentication state changes to auto-reload profile
   void _listenToAuthChanges() {
-    ref.listen<AuthState>(authProvider, (previous, next) {
+    ref.listen<EnhancedAuthState>(authProvider, (EnhancedAuthState? previous, EnhancedAuthState next) {
       debugPrint(
           '🔄 ProfileProvider: Auth state changed - prev: ${previous?.isAuthenticated}/${previous?.sessionExpired}, next: ${next.isAuthenticated}/${next.sessionExpired}');
 
@@ -128,9 +135,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         debugPrint(
             '🔄 ProfileProvider: User logged in, auto-reloading profile');
         // Clear any previous error state
-        state = state.copyWith(error: null);
+        _safeUpdateState(() => state.copyWith(error: null));
         Future.delayed(const Duration(milliseconds: 100), () {
-          loadCurrentProfile(forceRefresh: true);
+          if (mounted) {
+            loadCurrentProfile(forceRefresh: true);
+          }
         });
       }
 
@@ -143,9 +152,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         debugPrint(
             '🔄 ProfileProvider: Session expiration cleared, auto-reloading profile');
         // Clear any previous error state
-        state = state.copyWith(error: null);
+        _safeUpdateState(() => state.copyWith(error: null));
         Future.delayed(const Duration(milliseconds: 300), () {
-          loadCurrentProfile(forceRefresh: true);
+          if (mounted) {
+            loadCurrentProfile(forceRefresh: true);
+          }
         });
       }
 
@@ -155,20 +166,22 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           (!next.isAuthenticated || next.sessionExpired)) {
         debugPrint(
             '🔄 ProfileProvider: User logged out or session expired, clearing profile');
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           currentProfile: null,
           error: next.sessionExpired
               ? (next.sessionExpiredReason ?? 'انتهت صلاحية جلسة العمل')
               : 'تم تسجيل الخروج',
-        );
+        ));
       }
     });
   }
 
   /// Load profile data
   Future<void> loadProfile({bool forceRefresh = false}) async {
+    if (!mounted) return;
+    
     try {
-      state = state.copyWith(isLoading: true, error: null);
+      _safeUpdateState(() => state.copyWith(isLoading: true, error: null));
 
       debugPrint(
           '📋 ProfileProvider: Loading profile data (forceRefresh: $forceRefresh)');
@@ -226,32 +239,34 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         debugPrint('❌ ProfileProvider: Error converting qualifications: $e');
       }
 
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         currentProfile: profile,
         governorates: governorates,
         qualifications: qualifications,
         documents: documents,
         isLoading: false,
-      );
+      ));
 
       debugPrint('✅ ProfileProvider: Profile data loaded successfully');
       debugPrint('✅ Loaded ${governorates.length} governorates');
       debugPrint('✅ Loaded ${qualifications.length} qualifications');
     } catch (e) {
       String errorMessage = _getErrorMessage(e);
-      state = state.copyWith(
+      // التحقق من أن الـ notifier لم يتم dispose قبل تحديث الحالة
+      _safeUpdateState(() => state.copyWith(
         isLoading: false,
         error: errorMessage,
-      );
+      ));
       debugPrint('❌ ProfileProvider: Error loading profile data: $e');
     }
   }
 
   /// Update profile
   Future<bool> updateProfile(ProfileUpdateRequest request) async {
+    if (!mounted) return false;
+    
     try {
-      state =
-          state.copyWith(isUpdating: true, error: null, successMessage: null);
+      _safeUpdateState(() => state.copyWith(isUpdating: true, error: null, successMessage: null));
 
       debugPrint('💾 ProfileProvider: Updating profile');
 
@@ -261,18 +276,25 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         // Clear cache to force fresh data fetch
         await LocalProfileService.clearCache();
 
-        // Reload current profile with fresh data
-        await loadCurrentProfile(forceRefresh: true);
+        // Reload current profile with fresh data - مع معالجة الأخطاء
+        try {
+          await loadCurrentProfile(forceRefresh: true);
+        } catch (e) {
+          debugPrint('⚠️ ProfileProvider: Failed to reload profile after update: $e');
+          // لا نريد أن يفشل التحديث بسبب فشل إعادة التحميل
+          // سنحاول إعادة التحميل لاحقاً
+        }
 
         // Reload completion status - تعطيل مؤقت بسبب خطأ 404
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
         final completionStatus = null;
 
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           completionStatus: completionStatus,
           isUpdating: false,
           successMessage: 'تم تحديث الملف الشخصي بنجاح',
-        );
+          error: null, // Clear any previous errors
+        ));
 
         debugPrint('✅ ProfileProvider: Profile updated successfully');
 
@@ -280,10 +302,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         return true;
       } else {
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           isUpdating: false,
           error: 'فشل في تحديث الملف الشخصي',
-        );
+        ));
 
         NotificationService.showError('فشل في تحديث الملف الشخصي');
 
@@ -291,10 +313,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
     } catch (e) {
       String errorMessage = _getErrorMessage(e);
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         isUpdating: false,
         error: errorMessage,
-      );
+      ));
       debugPrint('❌ ProfileProvider: Error updating profile: $e');
 
       NotificationService.showError(errorMessage);
@@ -309,9 +331,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required String fileUrl,
     required String fileName,
   }) async {
+    if (!mounted) return false;
+    
     try {
-      state = state.copyWith(
-          isUploadingDocument: true, error: null, successMessage: null);
+      _safeUpdateState(() => state.copyWith(
+          isUploadingDocument: true, error: null, successMessage: null));
 
       debugPrint('📄 ProfileProvider: Uploading document: $documentType');
 
@@ -329,12 +353,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
         final completionStatus = null;
 
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           documents: updatedDocuments,
           completionStatus: completionStatus,
           isUploadingDocument: false,
           successMessage: 'تم رفع الوثيقة بنجاح',
-        );
+        ));
 
         debugPrint('✅ ProfileProvider: Document uploaded successfully');
 
@@ -346,10 +370,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
     } catch (e) {
       String errorMessage = _getErrorMessage(e);
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         isUploadingDocument: false,
         error: errorMessage,
-      );
+      ));
       debugPrint('❌ ProfileProvider: Error uploading document: $e');
 
       NotificationService.showError(errorMessage);
@@ -360,6 +384,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   /// Delete document
   Future<bool> deleteDocument(String documentId) async {
+    if (!mounted) return false;
+    
     try {
       debugPrint('🗑️ ProfileProvider: Deleting document: $documentId');
 
@@ -374,11 +400,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
         final completionStatus = null;
 
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           documents: updatedDocuments,
           completionStatus: completionStatus,
           successMessage: 'تم حذف الوثيقة بنجاح',
-        );
+        ));
 
         debugPrint('✅ ProfileProvider: Document deleted successfully');
 
@@ -390,9 +416,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
     } catch (e) {
       String errorMessage = _getErrorMessage(e);
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         error: errorMessage,
-      );
+      ));
       debugPrint('❌ ProfileProvider: Error deleting document: $e');
 
       NotificationService.showError(errorMessage);
@@ -516,16 +542,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
       final qualificationsData = await LocalProfileService.getQualifications();
 
-      // Enhanced null safety checks and error handling
-      if (qualificationsData == null) {
-        debugPrint('⚠️ ProfileProvider: Qualifications data is null');
-        state = state.copyWith(
-          qualifications: [],
-          isLoadingQualifications: false,
-        );
-        return;
-      }
-
       final List<QualificationModel> qualifications = [];
 
       for (final data in qualificationsData) {
@@ -580,7 +596,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     try {
       // Only set loading state if this is the first attempt
       if (retryCount == 0) {
-        state = state.copyWith(isLoading: true, error: null);
+        _safeUpdateState(() => state.copyWith(isLoading: true, error: null));
       }
 
       // Wait a bit for AuthProvider to stabilize if this is the first attempt
@@ -600,21 +616,21 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       if (!authState.isAuthenticated) {
         debugPrint(
             '❌ ProfileProvider: User not authenticated, cannot load profile');
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           isLoading: false,
           error: 'يجب تسجيل الدخول أولاً للوصول للملف الشخصي',
-        );
+        ));
         return;
       }
 
       // Check if session has expired
       if (authState.sessionExpired) {
         debugPrint('❌ ProfileProvider: Session expired, cannot load profile');
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           isLoading: false,
           error: authState.sessionExpiredReason ??
               'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
-        );
+        ));
         return;
       }
 
@@ -664,11 +680,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         }
       }
 
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         currentProfile: updatedProfile,
         isLoading: false,
         error: null, // Clear any previous errors
-      );
+      ));
 
       debugPrint('✅ ProfileProvider: Current profile loaded successfully');
     } catch (e) {
@@ -1130,10 +1146,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         return false;
       }
     } catch (e) {
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         isUpdating: false,
         error: 'فشل في تحديث البيانات: $e',
-      );
+      ));
       debugPrint('❌ ProfileProvider: Error updating profile data: $e');
 
       NotificationService.showError('فشل في تحديث بيانات الملف الشخصي');
@@ -1159,19 +1175,38 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       ]);
     } catch (e) {
       debugPrint('❌ ProfileProvider: Error initializing profile page: $e');
-      state = state.copyWith(
+      _safeUpdateState(() => state.copyWith(
         error: 'فشل في تحميل بيانات الصفحة: $e',
-      );
+      ));
     }
   }
 
   /// Refresh profile data
   Future<void> refresh() async {
+    if (!mounted) return;
+    
     // Clear cache to ensure fresh data
     await LocalProfileService.clearCache();
 
     // Force refresh all data
     await loadProfile(forceRefresh: true);
+  }
+
+  /// Light refresh - just update state without server call
+  void lightRefresh() {
+    if (!mounted) return;
+    
+    debugPrint('🔄 ProfileProvider: Light refresh - updating state only');
+    _safeUpdateState(() => state.copyWith(
+      error: null,
+      successMessage: null,
+    ));
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🗑️ ProfileNotifier: Disposing...');
+    super.dispose();
   }
 
   /// Get user-friendly error message in Arabic

@@ -353,39 +353,25 @@ UserProfileModel _$UserProfileModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$UserProfileModel {
   String get id => throw _privateConstructorUsedError;
-  @JsonKey(name: 'user_id')
   String get userId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'full_name_ar')
   String get fullNameAr => throw _privateConstructorUsedError;
-  @JsonKey(name: 'full_name_en')
   String? get fullNameEn => throw _privateConstructorUsedError;
-  @JsonKey(name: 'birth_date')
   DateTime? get birthDate => throw _privateConstructorUsedError;
-  @JsonKey(name: 'graduation_year')
   int? get graduationYear => throw _privateConstructorUsedError;
   String? get university => throw _privateConstructorUsedError;
   String? get workplace => throw _privateConstructorUsedError;
   String? get gender => throw _privateConstructorUsedError;
   String? get address => throw _privateConstructorUsedError;
-  @JsonKey(name: 'job_title')
   String? get jobTitle => throw _privateConstructorUsedError;
   String? get specialization => throw _privateConstructorUsedError;
-  @JsonKey(name: 'academic_degree')
   String? get academicDegree => throw _privateConstructorUsedError;
-  @JsonKey(name: 'profile_photo_url')
   String? get profilePhotoUrl => throw _privateConstructorUsedError;
-  @JsonKey(name: 'profile_data')
   Map<String, dynamic>? get profileData => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
-  @JsonKey(name: 'category_id')
   String? get categoryId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'qualification_id')
   String? get qualificationId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'governorate_id')
   String? get governorateId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'created_at')
   DateTime? get createdAt => throw _privateConstructorUsedError;
-  @JsonKey(name: 'updated_at')
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -402,26 +388,26 @@ abstract class $UserProfileModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      @JsonKey(name: 'user_id') String userId,
-      @JsonKey(name: 'full_name_ar') String fullNameAr,
-      @JsonKey(name: 'full_name_en') String? fullNameEn,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
-      @JsonKey(name: 'graduation_year') int? graduationYear,
+      String userId,
+      String fullNameAr,
+      String? fullNameEn,
+      DateTime? birthDate,
+      int? graduationYear,
       String? university,
       String? workplace,
       String? gender,
       String? address,
-      @JsonKey(name: 'job_title') String? jobTitle,
+      String? jobTitle,
       String? specialization,
-      @JsonKey(name: 'academic_degree') String? academicDegree,
-      @JsonKey(name: 'profile_photo_url') String? profilePhotoUrl,
-      @JsonKey(name: 'profile_data') Map<String, dynamic>? profileData,
+      String? academicDegree,
+      String? profilePhotoUrl,
+      Map<String, dynamic>? profileData,
       String? status,
-      @JsonKey(name: 'category_id') String? categoryId,
-      @JsonKey(name: 'qualification_id') String? qualificationId,
-      @JsonKey(name: 'governorate_id') String? governorateId,
-      @JsonKey(name: 'created_at') DateTime? createdAt,
-      @JsonKey(name: 'updated_at') DateTime? updatedAt});
+      String? categoryId,
+      String? qualificationId,
+      String? governorateId,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -558,26 +544,26 @@ abstract class _$$UserProfileModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      @JsonKey(name: 'user_id') String userId,
-      @JsonKey(name: 'full_name_ar') String fullNameAr,
-      @JsonKey(name: 'full_name_en') String? fullNameEn,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
-      @JsonKey(name: 'graduation_year') int? graduationYear,
+      String userId,
+      String fullNameAr,
+      String? fullNameEn,
+      DateTime? birthDate,
+      int? graduationYear,
       String? university,
       String? workplace,
       String? gender,
       String? address,
-      @JsonKey(name: 'job_title') String? jobTitle,
+      String? jobTitle,
       String? specialization,
-      @JsonKey(name: 'academic_degree') String? academicDegree,
-      @JsonKey(name: 'profile_photo_url') String? profilePhotoUrl,
-      @JsonKey(name: 'profile_data') Map<String, dynamic>? profileData,
+      String? academicDegree,
+      String? profilePhotoUrl,
+      Map<String, dynamic>? profileData,
       String? status,
-      @JsonKey(name: 'category_id') String? categoryId,
-      @JsonKey(name: 'qualification_id') String? qualificationId,
-      @JsonKey(name: 'governorate_id') String? governorateId,
-      @JsonKey(name: 'created_at') DateTime? createdAt,
-      @JsonKey(name: 'updated_at') DateTime? updatedAt});
+      String? categoryId,
+      String? qualificationId,
+      String? governorateId,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -709,26 +695,26 @@ class _$UserProfileModelImpl
     implements _UserProfileModel {
   const _$UserProfileModelImpl(
       {this.id = '',
-      @JsonKey(name: 'user_id') this.userId = '',
-      @JsonKey(name: 'full_name_ar') this.fullNameAr = '',
-      @JsonKey(name: 'full_name_en') this.fullNameEn,
-      @JsonKey(name: 'birth_date') this.birthDate,
-      @JsonKey(name: 'graduation_year') this.graduationYear,
+      this.userId = '',
+      this.fullNameAr = '',
+      this.fullNameEn,
+      this.birthDate,
+      this.graduationYear,
       this.university,
       this.workplace,
       this.gender,
       this.address,
-      @JsonKey(name: 'job_title') this.jobTitle,
+      this.jobTitle,
       this.specialization,
-      @JsonKey(name: 'academic_degree') this.academicDegree,
-      @JsonKey(name: 'profile_photo_url') this.profilePhotoUrl,
-      @JsonKey(name: 'profile_data') final Map<String, dynamic>? profileData,
+      this.academicDegree,
+      this.profilePhotoUrl,
+      final Map<String, dynamic>? profileData,
       this.status,
-      @JsonKey(name: 'category_id') this.categoryId,
-      @JsonKey(name: 'qualification_id') this.qualificationId,
-      @JsonKey(name: 'governorate_id') this.governorateId,
-      @JsonKey(name: 'created_at') this.createdAt,
-      @JsonKey(name: 'updated_at') this.updatedAt})
+      this.categoryId,
+      this.qualificationId,
+      this.governorateId,
+      this.createdAt,
+      this.updatedAt})
       : _profileData = profileData;
 
   factory _$UserProfileModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -738,19 +724,16 @@ class _$UserProfileModelImpl
   @JsonKey()
   final String id;
   @override
-  @JsonKey(name: 'user_id')
+  @JsonKey()
   final String userId;
   @override
-  @JsonKey(name: 'full_name_ar')
+  @JsonKey()
   final String fullNameAr;
   @override
-  @JsonKey(name: 'full_name_en')
   final String? fullNameEn;
   @override
-  @JsonKey(name: 'birth_date')
   final DateTime? birthDate;
   @override
-  @JsonKey(name: 'graduation_year')
   final int? graduationYear;
   @override
   final String? university;
@@ -761,19 +744,15 @@ class _$UserProfileModelImpl
   @override
   final String? address;
   @override
-  @JsonKey(name: 'job_title')
   final String? jobTitle;
   @override
   final String? specialization;
   @override
-  @JsonKey(name: 'academic_degree')
   final String? academicDegree;
   @override
-  @JsonKey(name: 'profile_photo_url')
   final String? profilePhotoUrl;
   final Map<String, dynamic>? _profileData;
   @override
-  @JsonKey(name: 'profile_data')
   Map<String, dynamic>? get profileData {
     final value = _profileData;
     if (value == null) return null;
@@ -785,19 +764,14 @@ class _$UserProfileModelImpl
   @override
   final String? status;
   @override
-  @JsonKey(name: 'category_id')
   final String? categoryId;
   @override
-  @JsonKey(name: 'qualification_id')
   final String? qualificationId;
   @override
-  @JsonKey(name: 'governorate_id')
   final String? governorateId;
   @override
-  @JsonKey(name: 'created_at')
   final DateTime? createdAt;
   @override
-  @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
   @override
@@ -922,26 +896,25 @@ class _$UserProfileModelImpl
 abstract class _UserProfileModel implements UserProfileModel {
   const factory _UserProfileModel(
       {final String id,
-      @JsonKey(name: 'user_id') final String userId,
-      @JsonKey(name: 'full_name_ar') final String fullNameAr,
-      @JsonKey(name: 'full_name_en') final String? fullNameEn,
-      @JsonKey(name: 'birth_date') final DateTime? birthDate,
-      @JsonKey(name: 'graduation_year') final int? graduationYear,
+      final String userId,
+      final String fullNameAr,
+      final String? fullNameEn,
+      final DateTime? birthDate,
+      final int? graduationYear,
       final String? university,
       final String? workplace,
       final String? gender,
       final String? address,
-      @JsonKey(name: 'job_title') final String? jobTitle,
+      final String? jobTitle,
       final String? specialization,
-      @JsonKey(name: 'academic_degree') final String? academicDegree,
-      @JsonKey(name: 'profile_photo_url') final String? profilePhotoUrl,
-      @JsonKey(name: 'profile_data') final Map<String, dynamic>? profileData,
+      final String? academicDegree,
+      final String? profilePhotoUrl,
+      final Map<String, dynamic>? profileData,
       final String? status,
-      @JsonKey(name: 'category_id') final String? categoryId,
-      @JsonKey(name: 'qualification_id') final String? qualificationId,
-      @JsonKey(name: 'governorate_id') final String? governorateId,
-      @JsonKey(name: 'created_at') final DateTime? createdAt,
-      @JsonKey(name: 'updated_at')
+      final String? categoryId,
+      final String? qualificationId,
+      final String? governorateId,
+      final DateTime? createdAt,
       final DateTime? updatedAt}) = _$UserProfileModelImpl;
 
   factory _UserProfileModel.fromJson(Map<String, dynamic> json) =
@@ -950,19 +923,14 @@ abstract class _UserProfileModel implements UserProfileModel {
   @override
   String get id;
   @override
-  @JsonKey(name: 'user_id')
   String get userId;
   @override
-  @JsonKey(name: 'full_name_ar')
   String get fullNameAr;
   @override
-  @JsonKey(name: 'full_name_en')
   String? get fullNameEn;
   @override
-  @JsonKey(name: 'birth_date')
   DateTime? get birthDate;
   @override
-  @JsonKey(name: 'graduation_year')
   int? get graduationYear;
   @override
   String? get university;
@@ -973,35 +941,26 @@ abstract class _UserProfileModel implements UserProfileModel {
   @override
   String? get address;
   @override
-  @JsonKey(name: 'job_title')
   String? get jobTitle;
   @override
   String? get specialization;
   @override
-  @JsonKey(name: 'academic_degree')
   String? get academicDegree;
   @override
-  @JsonKey(name: 'profile_photo_url')
   String? get profilePhotoUrl;
   @override
-  @JsonKey(name: 'profile_data')
   Map<String, dynamic>? get profileData;
   @override
   String? get status;
   @override
-  @JsonKey(name: 'category_id')
   String? get categoryId;
   @override
-  @JsonKey(name: 'qualification_id')
   String? get qualificationId;
   @override
-  @JsonKey(name: 'governorate_id')
   String? get governorateId;
   @override
-  @JsonKey(name: 'created_at')
   DateTime? get createdAt;
   @override
-  @JsonKey(name: 'updated_at')
   DateTime? get updatedAt;
   @override
   @JsonKey(ignore: true)
@@ -1423,6 +1382,7 @@ mixin _$AuthResponse {
   bool get success => throw _privateConstructorUsedError;
   String? get message => throw _privateConstructorUsedError;
   String? get token => throw _privateConstructorUsedError;
+  int? get expiresIn => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1442,7 +1402,8 @@ abstract class $AuthResponseCopyWith<$Res> {
       UserModel? user,
       bool success,
       String? message,
-      String? token});
+      String? token,
+      int? expiresIn});
 
   $UserModelCopyWith<$Res>? get user;
 }
@@ -1466,6 +1427,7 @@ class _$AuthResponseCopyWithImpl<$Res, $Val extends AuthResponse>
     Object? success = null,
     Object? message = freezed,
     Object? token = freezed,
+    Object? expiresIn = freezed,
   }) {
     return _then(_value.copyWith(
       accessToken: freezed == accessToken
@@ -1492,6 +1454,10 @@ class _$AuthResponseCopyWithImpl<$Res, $Val extends AuthResponse>
           ? _value.token
           : token // ignore: cast_nullable_to_non_nullable
               as String?,
+      expiresIn: freezed == expiresIn
+          ? _value.expiresIn
+          : expiresIn // ignore: cast_nullable_to_non_nullable
+              as int?,
     ) as $Val);
   }
 
@@ -1522,7 +1488,8 @@ abstract class _$$AuthResponseImplCopyWith<$Res>
       UserModel? user,
       bool success,
       String? message,
-      String? token});
+      String? token,
+      int? expiresIn});
 
   @override
   $UserModelCopyWith<$Res>? get user;
@@ -1545,6 +1512,7 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
     Object? success = null,
     Object? message = freezed,
     Object? token = freezed,
+    Object? expiresIn = freezed,
   }) {
     return _then(_$AuthResponseImpl(
       accessToken: freezed == accessToken
@@ -1571,6 +1539,10 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
           ? _value.token
           : token // ignore: cast_nullable_to_non_nullable
               as String?,
+      expiresIn: freezed == expiresIn
+          ? _value.expiresIn
+          : expiresIn // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -1584,7 +1556,8 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
       this.user,
       this.success = true,
       this.message,
-      this.token});
+      this.token,
+      this.expiresIn});
 
   factory _$AuthResponseImpl.fromJson(Map<String, dynamic> json) =>
       _$$AuthResponseImplFromJson(json);
@@ -1602,10 +1575,12 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
   final String? message;
   @override
   final String? token;
+  @override
+  final int? expiresIn;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'AuthResponse(accessToken: $accessToken, refreshToken: $refreshToken, user: $user, success: $success, message: $message, token: $token)';
+    return 'AuthResponse(accessToken: $accessToken, refreshToken: $refreshToken, user: $user, success: $success, message: $message, token: $token, expiresIn: $expiresIn)';
   }
 
   @override
@@ -1618,7 +1593,8 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
       ..add(DiagnosticsProperty('user', user))
       ..add(DiagnosticsProperty('success', success))
       ..add(DiagnosticsProperty('message', message))
-      ..add(DiagnosticsProperty('token', token));
+      ..add(DiagnosticsProperty('token', token))
+      ..add(DiagnosticsProperty('expiresIn', expiresIn));
   }
 
   @override
@@ -1633,13 +1609,15 @@ class _$AuthResponseImpl with DiagnosticableTreeMixin implements _AuthResponse {
             (identical(other.user, user) || other.user == user) &&
             (identical(other.success, success) || other.success == success) &&
             (identical(other.message, message) || other.message == message) &&
-            (identical(other.token, token) || other.token == token));
+            (identical(other.token, token) || other.token == token) &&
+            (identical(other.expiresIn, expiresIn) ||
+                other.expiresIn == expiresIn));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, accessToken, refreshToken, user, success, message, token);
+  int get hashCode => Object.hash(runtimeType, accessToken, refreshToken, user,
+      success, message, token, expiresIn);
 
   @JsonKey(ignore: true)
   @override
@@ -1662,7 +1640,8 @@ abstract class _AuthResponse implements AuthResponse {
       final UserModel? user,
       final bool success,
       final String? message,
-      final String? token}) = _$AuthResponseImpl;
+      final String? token,
+      final int? expiresIn}) = _$AuthResponseImpl;
 
   factory _AuthResponse.fromJson(Map<String, dynamic> json) =
       _$AuthResponseImpl.fromJson;
@@ -1679,6 +1658,8 @@ abstract class _AuthResponse implements AuthResponse {
   String? get message;
   @override
   String? get token;
+  @override
+  int? get expiresIn;
   @override
   @JsonKey(ignore: true)
   _$$AuthResponseImplCopyWith<_$AuthResponseImpl> get copyWith =>

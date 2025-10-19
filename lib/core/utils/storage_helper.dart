@@ -2,8 +2,8 @@ import '../../services/storage_service.dart';
 
 /// مساعد التخزين - يوفر واجهة مبسطة للوصول إلى StorageService
 class StorageHelper {
-  static StorageService get _storage => StorageService.instance;
-  
+  static StorageService get _storage => DefaultStorageService();
+
   /// الحصول على رمز الوصول
   static Future<String?> getToken() async {
     try {
@@ -12,7 +12,7 @@ class StorageHelper {
       return null;
     }
   }
-  
+
   /// حفظ رمز الوصول
   static Future<void> setToken(String token) async {
     try {
@@ -21,7 +21,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// الحصول على رمز التحديث
   static Future<String?> getRefreshToken() async {
     try {
@@ -30,7 +30,7 @@ class StorageHelper {
       return null;
     }
   }
-  
+
   /// حفظ رمز التحديث
   static Future<void> setRefreshToken(String token) async {
     try {
@@ -39,7 +39,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// مسح جميع الرموز
   static Future<void> clearTokens() async {
     try {
@@ -49,7 +49,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// الحصول على قيمة نصية
   static Future<String?> getString(String key) async {
     try {
@@ -58,7 +58,7 @@ class StorageHelper {
       return null;
     }
   }
-  
+
   /// حفظ قيمة نصية
   static Future<void> setString(String key, String value) async {
     try {
@@ -67,7 +67,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// الحصول على قيمة منطقية
   static Future<bool?> getBool(String key) async {
     try {
@@ -76,7 +76,7 @@ class StorageHelper {
       return null;
     }
   }
-  
+
   /// حفظ قيمة منطقية
   static Future<void> setBool(String key, bool value) async {
     try {
@@ -85,7 +85,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// حذف مفتاح
   static Future<void> remove(String key) async {
     try {
@@ -94,7 +94,7 @@ class StorageHelper {
       // تجاهل الأخطاء
     }
   }
-  
+
   /// مسح جميع البيانات
   static Future<void> clear() async {
     try {

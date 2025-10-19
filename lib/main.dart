@@ -11,12 +11,13 @@ import 'core/services/server_settings_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/profile/presentation/widgets/verification_notification_banner.dart';
 import 'l10n/app_localizations.dart';
-import 'providers/auth_provider.dart';
+import 'providers/enhanced_auth_provider.dart';
 import 'providers/language_provider.dart';
-import 'services/dio_service.dart';
+import 'services/enhanced_dio_service_v2.dart';
 import 'services/notification_service.dart';
 import 'services/registration_settings_service.dart';
 import 'services/retry_service.dart';
+import 'services/platform_storage_service.dart';
 import 'services/storage_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
@@ -68,7 +69,7 @@ void main() async {
   }
 
   // Initialize StorageService first
-  await StorageService.instance.init();
+  await PlatformStorageService.instance.init();
   debugPrint('✅ StorageService initialized successfully');
 
   // Initialize and validate server settings
@@ -76,7 +77,7 @@ void main() async {
   debugPrint('🚀 [MAIN] Starting server settings initialization...');
   debugPrint('🚀 [MAIN] Build mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
 
-  final serverSettingsService = ServerSettingsService(StorageService.instance);
+  final serverSettingsService = ServerSettingsService(DefaultStorageService());
 
   // Add production-specific debugging
   if (!kDebugMode) {
@@ -117,9 +118,9 @@ void main() async {
   final isValidConfig = ApiConstants.validateCurrentConfig();
   debugPrint('✅ [MAIN] Configuration validation result: $isValidConfig');
 
-  // Refresh DioService
-  debugPrint('🔄 [MAIN] Refreshing DioService with new settings...');
-  DioService.instance.refreshAfterServerChange();
+  // Initialize Enhanced DioService V2
+  debugPrint('🔄 [MAIN] Initializing Enhanced DioService V2...');
+  await EnhancedDioServiceV2.instance.initialize();
 
   // Final production check
   if (!kDebugMode) {
@@ -131,18 +132,12 @@ void main() async {
   }
   debugPrint('🔍 ApiConstants validation result: $isValidConfig');
 
-  // Update DioService with new base URL
-  DioService.instance.refreshAfterServerChange();
-  debugPrint('✅ DioService updated with new server settings');
+  // Enhanced DioService V2 is already initialized with new settings
+  debugPrint('✅ Enhanced DioService V2 initialized with new server settings');
 
-  // Initialize registration settings service after API constants are updated
-  RegistrationSettingsService.instance.initialize().then((_) {
-    debugPrint('✅ Registration settings service initialized');
-  }).catchError((e) {
-    debugPrint('⚠️ Registration settings service initialization failed: $e');
-  });
-  debugPrint(
-      '🚀 Registration settings service initialization started (non-blocking)');
+  // تم إزالة تهيئة registration settings من هنا لتحسين الأداء
+  // سيتم تهيئتها فقط عند الحاجة إليها في صفحة التسجيل
+  debugPrint('🚀 Registration settings will be initialized only when needed');
 
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
@@ -277,3 +272,5 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     );
   }
 }
+
+

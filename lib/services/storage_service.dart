@@ -1,92 +1,101 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'platform_storage_service.dart';
 
-class StorageService {
-  static StorageService? _instance;
-  static StorageService get instance => _instance ??= StorageService._internal();
-  
-  late SharedPreferences _prefs;
-  bool _isInitialized = false;
-  
-  StorageService._internal();
-  
-  Future<void> init() async {
+/// Abstract storage service interface
+abstract class StorageService {
+  Future<void> init();
+  Future<String?> read(String key);
+  Future<void> write(String key, String value);
+  Future<void> delete(String key);
+  Future<void> clear();
+  Future<String?> getString(String key);
+  Future<void> setString(String key, String value);
+  Future<bool?> getBool(String key);
+  Future<void> setBool(String key, bool value);
+  Future<int?> getInt(String key);
+  Future<void> setInt(String key, int value);
+  Future<double?> getDouble(String key);
+  Future<void> setDouble(String key, double value);
+  Future<List<String>?> getStringList(String key);
+  Future<void> setStringList(String key, List<String> value);
+  Future<bool> containsKey(String key);
+  Future<Map<String, String>> readBatch(List<String> keys);
+  Future<void> writeBatch(Map<String, String> data);
+  Future<void> remove(String key);
+}
+
+/// Default implementation using PlatformStorageService
+class DefaultStorageService extends StorageService {
+  final PlatformStorageService _platformStorage = PlatformStorageService.instance;
+
+  @override
+  Future<void> init() => _platformStorage.init();
+
+  @override
+  Future<String?> read(String key) => _platformStorage.read(key);
+
+  @override
+  Future<void> write(String key, String value) => _platformStorage.write(key, value);
+
+  @override
+  Future<void> delete(String key) => _platformStorage.delete(key);
+
+  @override
+  Future<void> clear() => _platformStorage.clear();
+
+  @override
+  Future<String?> getString(String key) => _platformStorage.getString(key);
+
+  @override
+  Future<void> setString(String key, String value) => _platformStorage.setString(key, value);
+
+  @override
+  Future<bool?> getBool(String key) => _platformStorage.getBool(key);
+
+  @override
+  Future<void> setBool(String key, bool value) => _platformStorage.setBool(key, value);
+
+  @override
+  Future<int?> getInt(String key) => _platformStorage.getInt(key);
+
+  @override
+  Future<void> setInt(String key, int value) => _platformStorage.setInt(key, value);
+
+  @override
+  Future<double?> getDouble(String key) => _platformStorage.getDouble(key);
+
+  @override
+  Future<void> setDouble(String key, double value) => _platformStorage.setDouble(key, value);
+
+  @override
+  Future<List<String>?> getStringList(String key) async {
+    // PlatformStorageService doesn't have getStringList, so we'll implement it
+    final value = await _platformStorage.getString(key);
+    if (value == null) return null;
     try {
-      _prefs = await SharedPreferences.getInstance();
-      _isInitialized = true;
-      debugPrint('🔧 StorageService: SharedPreferences initialized successfully');
+      final List<dynamic> list = json.decode(value);
+      return list.cast<String>();
     } catch (e) {
-      debugPrint('❌ StorageService: Failed to initialize SharedPreferences: $e');
-      rethrow;
+      return null;
     }
   }
-  
-  void _checkInitialization() {
-    if (!_isInitialized) {
-      throw StateError('StorageService not initialized. Call StorageService.instance.init() first.');
-    }
+
+  @override
+  Future<void> setStringList(String key, List<String> value) async {
+    // PlatformStorageService doesn't have setStringList, so we'll implement it
+    final jsonString = json.encode(value);
+    await _platformStorage.setString(key, jsonString);
   }
-  
-  // String operations
-  Future<void> setString(String key, String value) async {
-    _checkInitialization();
-    await _prefs.setString(key, value);
-  }
-  
-  String? getString(String key) {
-    _checkInitialization();
-    return _prefs.getString(key);
-  }
-  
-  // Bool operations
-  Future<void> setBool(String key, bool value) async {
-    _checkInitialization();
-    await _prefs.setBool(key, value);
-  }
-  
-  bool? getBool(String key) {
-    _checkInitialization();
-    return _prefs.getBool(key);
-  }
-  
-  // Int operations
-  Future<void> setInt(String key, int value) async {
-    _checkInitialization();
-    await _prefs.setInt(key, value);
-  }
-  
-  int? getInt(String key) {
-    _checkInitialization();
-    return _prefs.getInt(key);
-  }
-  
-  // Remove operations
-  Future<void> remove(String key) async {
-    _checkInitialization();
-    await _prefs.remove(key);
-  }
-  
-  Future<void> clear() async {
-    _checkInitialization();
-    await _prefs.clear();
-  }
-  
-  // Check if key exists
-  bool containsKey(String key) {
-    _checkInitialization();
-    return _prefs.containsKey(key);
-  }
-  
-  // Token operations
-  Future<void> setToken(String token) async {
-    await setString('auth_token', token);
-  }
-  
-  Future<String?> getToken() async {
-    return getString('auth_token');
-  }
-  
-  Future<void> removeToken() async {
-    await remove('auth_token');
-  }
+
+  @override
+  Future<bool> containsKey(String key) => _platformStorage.containsKey(key);
+
+  @override
+  Future<Map<String, String>> readBatch(List<String> keys) => _platformStorage.readBatch(keys);
+
+  @override
+  Future<void> writeBatch(Map<String, String> data) => _platformStorage.writeBatch(data);
+
+  @override
+  Future<void> remove(String key) => _platformStorage.delete(key);
 }

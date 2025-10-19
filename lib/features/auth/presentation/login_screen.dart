@@ -8,7 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../services/notification_service.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
@@ -73,24 +73,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           final authState = ref.read(authProvider);
 
           if (authState.error == 'phone_not_verified' &&
-              authState.unverifiedPhone != null) {
+              authState.unverifiedPhoneNumber != null) {
             // Redirect to phone verification screen
             if (mounted) {
               // First send OTP automatically
               try {
-                await ref.read(authProvider.notifier).sendOtp(
-                      authState.unverifiedPhone!,
+                await ref.read(authProvider.notifier).resendOtp(
+                      authState.unverifiedPhoneNumber!,
                     );
 
                 // Navigate to OTP verification screen
                 context.go(
-                  '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhone!)}&isLogin=true',
+                  '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
                 );
 
                 await NotificationService.showInfo(
                   title: 'التحقق من رقم الهاتف',
                   message:
-                      'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhone}',
+                      'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhoneNumber}',
                 );
               } catch (otpError) {
                 debugPrint('❌ [LOGIN_SCREEN] Failed to send OTP: $otpError');

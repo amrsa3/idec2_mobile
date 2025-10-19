@@ -8,7 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/notification_service.dart';
 
@@ -49,18 +49,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         return;
       }
 
-      if (response == null) {
-        await NotificationService.showError(
-          title: 'خطأ',
-          message: 'فشل في معالجة طلب إعادة تعيين كلمة المرور',
-        );
-        return;
-      }
-
-      if (response.success) {
+      if (response) {
         await NotificationService.showSuccess(
           title: 'إرسال رمز إعادة التعيين',
-          message: response.message ?? 'تم إرسال رمز إعادة تعيين كلمة المرور إلى رقم هاتفك',
+          message: 'تم إرسال رمز إعادة تعيين كلمة المرور إلى رقم هاتفك',
         );
 
         if (mounted) {
@@ -70,7 +62,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       } else {
         await NotificationService.showError(
           title: 'خطأ',
-          message: response.message ?? 'فشل في إرسال رمز إعادة التعيين',
+          message: 'فشل في إرسال رمز إعادة التعيين',
         );
       }
     } catch (e) {

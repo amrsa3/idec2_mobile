@@ -18,7 +18,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
 // Import providers
-import '../../providers/auth_provider.dart';
+import '../../providers/enhanced_auth_provider.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
 
 // Route names

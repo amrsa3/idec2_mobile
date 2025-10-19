@@ -8,9 +8,10 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/notification_service.dart';
+import '../../../services/registration_settings_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 
@@ -57,17 +58,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
-      // TODO: Implement API call to check registration settings
-      // For now, assume registration is enabled
-      await Future.delayed(const Duration(seconds: 1));
+      // تهيئة registration settings فقط عند فتح صفحة التسجيل
+      await RegistrationSettingsService.instance.initialize();
+      
+      // فحص حالة التسجيل
+      final status = await RegistrationSettingsService.instance.checkRegistrationStatus();
       
       if (mounted) {
         setState(() {
-          _registrationEnabled = true; // This should come from API
+          _registrationEnabled = status.canRegister;
           _isCheckingRegistrationSettings = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ RegisterScreen: Error checking registration settings: $e');
       if (mounted) {
         setState(() {
           _registrationEnabled = false;
@@ -111,10 +115,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ref.read(authProvider.notifier).clearError();
     
     final success = await ref.read(authProvider.notifier).registerWithPhone(
-      _fullNameController.text.trim(),
-      _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
       fullPhoneNumber,
       _passwordController.text,
+      _fullNameController.text.trim(),
     );
 
     if (!mounted) return;

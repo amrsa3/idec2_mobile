@@ -13,7 +13,7 @@ import '../../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../../models/profile_data_models.dart';
 import '../../../../models/profile_model.dart';
 import '../../../../models/profile_rule_model.dart';
-import '../../../../providers/auth_provider.dart';
+import '../../../../providers/enhanced_auth_provider.dart';
 import '../../../../providers/profile_rules_provider.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
@@ -116,7 +116,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final currentProfile = profileState.currentProfile;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -569,12 +569,25 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
                     const SizedBox(height: 4),
 
-                    // البريد الإلكتروني
-                    if (profile.email != null)
-                      Text(
-                        profile.email!,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                    // المؤهل العلمي (يظهر فقط للحسابات الموثقة)
+                    if (profile.verificationStatus == VerificationStatus.verified && 
+                        profile.qualificationId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getQualificationDisplayName(profile.qualificationId, ref),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
 
@@ -1017,15 +1030,20 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       MaterialPageRoute(
         builder: (context) => ProfileEditScreen(profile: profile),
       ),
-    ).then((_) {
-      // تحديث البيانات والقواعد عند العودة من صفحة التعديل
-      debugPrint(
-          'ProfileMainScreen: Returned from edit screen, refreshing data...');
-      _loadProfileData();
-      // تحديث قواعد التعديل أيضاً
-      ref.read(profileRulesProvider.notifier).loadRules();
-      // تحديث حالة الملف الشخصي
-      ref.refresh(profileProvider);
+    ).then((result) {
+      // تحديث البيانات فقط إذا كان هناك تحديث فعلي
+      if (result == true) {
+        debugPrint(
+            'ProfileMainScreen: Profile was updated, refreshing data...');
+        _loadProfileData();
+        // تحديث قواعد التعديل أيضاً
+        ref.read(profileRulesProvider.notifier).loadRules();
+      } else {
+        debugPrint(
+            'ProfileMainScreen: No profile update, skipping refresh...');
+        // فقط تحديث خفيف للحالة دون إعادة تحميل من الخادم
+         ref.read(profileProvider.notifier).lightRefresh();
+      }
     });
   }
 

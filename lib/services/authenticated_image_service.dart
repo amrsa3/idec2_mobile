@@ -13,14 +13,14 @@ class AuthenticatedImageService {
           '🖼️ AuthenticatedImageService: Loading image with auth: $imageUrl');
 
       // الحصول على رمز المصادقة
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint(
             '❌ AuthenticatedImageService: No authentication token found');
         throw Exception('No authentication token available');
       }
 
-      // استخدام DioService.instance.dio للاستفادة من interceptors
+      // استخدام EnhancedDioServiceV2.instance.dio للاستفادة من interceptors
       // استخراج fileId من URL
       final uri = Uri.parse(imageUrl);
       final pathSegments = uri.pathSegments;
@@ -42,7 +42,7 @@ class AuthenticatedImageService {
       final profileFileUrl =
           '${ApiConstants.baseUrl}/api/v1/profiles/me/files/$fileId/download';
 
-      final response = await DioService.instance.dio.get(
+      final response = await EnhancedDioServiceV2.instance.dio.get(
         profileFileUrl,
         options: Options(
           headers: {

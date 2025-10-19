@@ -19,7 +19,7 @@ class FileService {
   final ImagePicker _imagePicker = ImagePicker();
 
   FileService._internal() {
-    _apiService = ApiService(DioService.instance.dio);
+    _apiService = ApiService(EnhancedDioServiceV2.instance.dio);
   }
 
   // Pick image from gallery or camera
@@ -206,7 +206,7 @@ class FileService {
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/$fileName';
 
-      await DioService.instance.dio.download(
+      await EnhancedDioServiceV2.instance.dio.download(
         '${ApiConstants.baseUrl}/api/v1/files/$fileId/download',
         filePath,
         onReceiveProgress: onProgress,
@@ -222,7 +222,7 @@ class FileService {
   // Get file thumbnail
   Future<Uint8List?> getFileThumbnail(String fileId) async {
     try {
-      final response = await DioService.instance.dio.get(
+      final response = await EnhancedDioServiceV2.instance.dio.get(
         '${ApiConstants.baseUrl}/api/v1/files/$fileId/thumbnail',
         options: Options(responseType: ResponseType.bytes),
       );
@@ -237,7 +237,7 @@ class FileService {
   // Get file preview
   Future<Uint8List?> getFilePreview(String fileId) async {
     try {
-      final response = await DioService.instance.dio.get(
+      final response = await EnhancedDioServiceV2.instance.dio.get(
         '${ApiConstants.baseUrl}/api/v1/files/$fileId/preview',
         options: Options(responseType: ResponseType.bytes),
       );

@@ -1,13 +1,15 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default URLs using the main API server
-  static const String defaultBaseUrl = 'https://api.idec-ye.com';
-  static const String devUrl = 'https://api.idec-ye.com';
-  static const String prodUrl = 'https://api.idec-ye.com';
+  // Production API URL - Primary server
+  static const String productionUrl = 'https://api.idec-ye.com';
 
-  // Fallback domain URL
-  static const String domainUrl = 'https://api.idec-ye.com';
+  // Development URLs for local testing
+  static const String devUrl = 'http://localhost:3000';
+  static const String localhostUrl = 'http://localhost:3000';
+
+  // Default base URL - Using production server
+  static const String defaultBaseUrl = productionUrl;
 
   // Current base URL - will be updated dynamically
   static String _baseUrl = defaultBaseUrl;
@@ -21,8 +23,16 @@ class ApiConstants {
       _baseUrl = _getFallbackUrl();
     }
 
-    // Validate HTTPS for production API
-    if (!_baseUrl.startsWith('https://') && _baseUrl.contains('api.idec-ye.com')) {
+    // For localhost, ensure port 3000 is included
+    if (_baseUrl.contains('localhost') && !_baseUrl.contains(':3000')) {
+      debugPrint(
+          '⚠️ [API_CONSTANTS] Port missing for localhost: $_baseUrl, fixing...');
+      _baseUrl = _baseUrl.replaceAll(RegExp(r':\d+'), '') + ':3000';
+    }
+
+    // Validate HTTPS for production API only
+    if (!_baseUrl.startsWith('https://') &&
+        _baseUrl.contains('api.idec-ye.com')) {
       debugPrint(
           '⚠️ [API_CONSTANTS] HTTPS missing for production API: $_baseUrl, fixing...');
       _baseUrl = _baseUrl.replaceFirst('http://', 'https://');
@@ -70,8 +80,14 @@ class ApiConstants {
         return _getFallbackUrl();
       }
 
-      // Ensure HTTPS for production API
-      if (cleanUrl.contains('api.idec-ye.com') && !cleanUrl.startsWith('https://')) {
+      // For localhost, ensure port 3000
+      if (host == 'localhost' && !cleanUrl.contains(':3000')) {
+        cleanUrl = 'http://localhost:3000';
+      }
+
+      // Ensure HTTPS for production API only
+      if (cleanUrl.contains('api.idec-ye.com') &&
+          !cleanUrl.startsWith('https://')) {
         cleanUrl = cleanUrl.replaceFirst('http://', 'https://');
       }
 
@@ -89,7 +105,8 @@ class ApiConstants {
     try {
       if (url.contains('api.idec-ye.com') && !url.startsWith('https://')) {
         final fixedUrl = url.replaceFirst('http://', 'https://');
-        debugPrint('🔧 [API_CONSTANTS] Fixed URL with HTTPS: $url -> $fixedUrl');
+        debugPrint(
+            '🔧 [API_CONSTANTS] Fixed URL with HTTPS: $url -> $fixedUrl');
         return fixedUrl;
       }
       return url;
@@ -101,7 +118,7 @@ class ApiConstants {
 
   /// Get fallback URL based on build mode
   static String _getFallbackUrl() {
-    final fallback = kDebugMode ? devUrl : prodUrl;
+    final fallback = kDebugMode ? devUrl : productionUrl;
     debugPrint(
         '🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)');
     return fallback;
@@ -117,7 +134,9 @@ class ApiConstants {
   static bool validateCurrentConfig() {
     final isValid = _baseUrl.isNotEmpty &&
         _baseUrl.contains('http') &&
-        (_baseUrl.startsWith('https://') || !_baseUrl.contains('api.idec-ye.com'));
+        (_baseUrl.contains(':3000') ||
+            _baseUrl.contains('api.idec-ye.com') ||
+            _baseUrl.contains('localhost'));
 
     debugPrint(
         '🔍 [API_CONSTANTS] Config validation: $isValid (URL: $_baseUrl)');

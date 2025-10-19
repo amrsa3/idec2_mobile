@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import '../l10n/app_localizations.dart';
 
 /// خدمة اختيار الصور من المعرض أو الكاميرا
@@ -10,8 +12,8 @@ class ImagePickerService {
 
   /// عرض حوار اختيار مصدر الصورة (معرض أو كاميرا)
   static Future<File?> showImageSourceDialog(BuildContext context) async {
-    final localizations = AppLocalizations.of(context)!;
-    
+    final localizations = AppLocalizations.of(context);
+
     final result = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -77,14 +79,14 @@ class ImagePickerService {
         // لـ iOS
         permission = await Permission.photos.request();
       }
-      
+
       if (!permission.isGranted) {
         debugPrint('Gallery permission denied. Status: $permission');
         return null;
       }
 
       debugPrint('Gallery permission granted. Attempting to pick image...');
-      
+
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1024,
@@ -152,16 +154,18 @@ class ImagePickerService {
 
   /// التحقق من جميع شروط الملف
   static String? validateImageFile(File file, BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    
+    final localizations = AppLocalizations.of(context);
+
     if (!isValidImageFile(file)) {
-      return localizations.invalidImageFormat ?? 'صيغة الصورة غير صحيحة. يرجى اختيار صورة بصيغة JPG أو PNG';
+      return localizations.invalidImageFormat ??
+          'صيغة الصورة غير صحيحة. يرجى اختيار صورة بصيغة JPG أو PNG';
     }
-    
+
     if (!isValidFileSize(file)) {
-      return localizations.imageTooLarge ?? 'حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت';
+      return localizations.imageTooLarge ??
+          'حجم الصورة كبير جداً. الحد الأقصى 5 ميجابايت';
     }
-    
+
     return null;
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  // API Configuration
-  static const String baseUrl = 'https://api.idec-ye.com';
+  // API Configuration - تم تغييره للخادم المحلي
+  static const String baseUrl = 'http://localhost:3000';
 
   // Supported Locales
   static const List<Locale> supportedLocales = [

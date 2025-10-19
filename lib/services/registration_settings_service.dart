@@ -7,8 +7,9 @@ import '../models/registration_settings_model.dart';
 import '../models/api_response_model.dart';
 import '../core/errors/app_error.dart';
 import '../core/errors/error_handler.dart';
-import 'dio_service.dart';
+import 'enhanced_dio_service_v2.dart';
 import 'storage_service.dart';
+import 'platform_storage_service.dart';
 import 'retry_service.dart';
 
 /// Service for managing registration settings
@@ -19,8 +20,8 @@ class RegistrationSettingsService {
 
   RegistrationSettingsService._();
 
-  final DioService _dioService = DioService.instance;
-  final StorageService _storageService = StorageService.instance;
+  final EnhancedDioServiceV2 _dioService = EnhancedDioServiceV2.instance;
+  final PlatformStorageService _storageService = PlatformStorageService.instance;
   final RetryService _retryService = RetryService.instance;
 
   // Cache settings
@@ -120,10 +121,10 @@ class RegistrationSettingsService {
 
       debugPrint('🔄 Fetching registration settings from server...');
 
-      // Make API call with retry logic
+      // Make API call with retry logic - use public endpoint to avoid permission issues
       final response = await _retryService.executeWithRetry(
         () => _dioService.requestWithRetry(
-          '/api/v1/registration-settings',
+          '/api/v1/registration-settings/public',
           method: 'GET',
           retryConfig: RetryConfig.api,
         ),
@@ -464,7 +465,7 @@ class RegistrationSettingsService {
   /// Clear cached settings
   Future<void> clearCache() async {
     try {
-      await _storageService.remove(_cacheKey);
+      await _storageService.delete(_cacheKey);
       _cache = null;
       debugPrint('🗑️ Registration settings cache cleared');
     } catch (e) {
@@ -477,7 +478,7 @@ class RegistrationSettingsService {
   /// Load cached settings from storage
   Future<void> _loadCachedSettings() async {
     try {
-      final cachedData = _storageService.getString(_cacheKey);
+      final cachedData = await _storageService.read(_cacheKey);
       if (cachedData != null && cachedData.isNotEmpty) {
         final cacheJson = jsonDecode(cachedData) as Map<String, dynamic>;
         _cache = RegistrationSettingsCache.fromJson(cacheJson);
@@ -506,7 +507,7 @@ class RegistrationSettingsService {
       );
       
       final cacheJson = jsonEncode(cache.toJson());
-      await _storageService.setString(_cacheKey, cacheJson);
+      await _storageService.write(_cacheKey, cacheJson);
       
       _cache = cache;
       debugPrint('💾 Registration settings cached successfully');

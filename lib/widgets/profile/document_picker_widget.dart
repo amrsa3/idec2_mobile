@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 
 import '../../core/theme/app_colors.dart';
@@ -38,11 +38,11 @@ class DocumentPickerWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DocumentPickerWidget> createState() => _DocumentPickerWidgetState();
+  ConsumerState<DocumentPickerWidget> createState() =>
+      _DocumentPickerWidgetState();
 }
 
 class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
-  
   /// اختيار ملفات جديدة
   Future<void> _pickDocuments() async {
     try {
@@ -55,11 +55,11 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
 
       if (result != null && result.files.isNotEmpty) {
         final newDocuments = <SelectedDocument>[];
-        
+
         for (final platformFile in result.files) {
           int fileSize;
           File? file;
-          
+
           if (kIsWeb) {
             // في بيئة الويب، استخدم bytes
             if (platformFile.bytes != null) {
@@ -79,13 +79,14 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
               continue;
             }
           }
-          
+
           // التحقق من حجم الملف (أقصى 5 ميجابايت)
           if (fileSize > 5 * 1024 * 1024) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('الملف ${platformFile.name} كبير جداً. الحد الأقصى 5 ميجابايت'),
+                  content: Text(
+                      'الملف ${platformFile.name} كبير جداً. الحد الأقصى 5 ميجابايت'),
                   backgroundColor: AppColors.error,
                 ),
               );
@@ -94,18 +95,21 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
           }
 
           newDocuments.add(SelectedDocument(
-             file: file!,
-             name: platformFile.name,
-             type: path.extension(platformFile.name).toLowerCase(),
-             size: fileSize,
-             bytes: kIsWeb ? platformFile.bytes : null,
-           ));
+            file: file,
+            name: platformFile.name,
+            type: path.extension(platformFile.name).toLowerCase(),
+            size: fileSize,
+            bytes: kIsWeb ? platformFile.bytes : null,
+          ));
         }
 
         if (newDocuments.isNotEmpty) {
-          final updatedDocuments = [...widget.selectedDocuments, ...newDocuments];
+          final updatedDocuments = [
+            ...widget.selectedDocuments,
+            ...newDocuments
+          ];
           widget.onDocumentsChanged(updatedDocuments);
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -130,10 +134,11 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
 
   /// حذف ملف من القائمة
   void _removeDocument(int index) {
-    final updatedDocuments = List<SelectedDocument>.from(widget.selectedDocuments);
+    final updatedDocuments =
+        List<SelectedDocument>.from(widget.selectedDocuments);
     updatedDocuments.removeAt(index);
     widget.onDocumentsChanged(updatedDocuments);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('تم حذف الملف'),
@@ -222,7 +227,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 16),
 
         // قائمة الملفات المختارة
@@ -235,11 +240,10 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             ),
           ),
           const SizedBox(height: 12),
-          
           ...widget.selectedDocuments.asMap().entries.map((entry) {
             final index = entry.key;
             final document = entry.value;
-            
+
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
@@ -257,7 +261,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
                     size: 24,
                   ),
                   const SizedBox(width: 12),
-                  
+
                   // معلومات الملف
                   Expanded(
                     child: Column(
@@ -280,7 +284,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
                       ],
                     ),
                   ),
-                  
+
                   // زر الحذف
                   IconButton(
                     onPressed: () => _removeDocument(index),
@@ -327,9 +331,9 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             ),
           ),
         ],
-        
+
         const SizedBox(height: 8),
-        
+
         // نص توضيحي
         Text(
           'يمكنك إرفاق ملفات PDF، صور (JPG, PNG)، أو مستندات Word. الحد الأقصى لحجم الملف 5 ميجابايت.',

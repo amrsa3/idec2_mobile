@@ -10,7 +10,7 @@ import 'package:path/path.dart' as path;
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/api_constants.dart';
-import '../../services/storage_service.dart';
+import '../../services/platform_storage_service.dart';
 
 /// Upload file types
 enum FileType {
@@ -142,7 +142,7 @@ class FileUploadService {
       debugPrint('📤 File type: $fileType');
 
       // Get authentication token
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         return FileUploadResult.error('Authentication token not found');
       }
@@ -289,7 +289,7 @@ class FileUploadService {
     try {
       debugPrint('🗑️ FileUploadService: Deleting file: $fileUrl');
 
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         debugPrint('❌ FileUploadService: Authentication token not found');
         return false;
@@ -364,3 +364,5 @@ class FileUploadService {
     }
   }
 }
+
+

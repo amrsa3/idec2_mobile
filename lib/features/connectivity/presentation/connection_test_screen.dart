@@ -1,20 +1,18 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/server_settings_service.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/connection_status.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/advanced_connectivity_service.dart';
-import '../../../services/dio_service.dart';
+import '../../../services/enhanced_dio_service_v2.dart';
 import '../../../shared/widgets/custom_button.dart';
-import '../../connection/presentation/server_config_screen.dart';
 import '../../connection/presentation/error_reporting_screen.dart';
+import '../../connection/presentation/server_config_screen.dart';
 import 'connection_history_screen.dart';
 
 class ConnectionTestScreen extends ConsumerStatefulWidget {
@@ -220,7 +218,7 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
 
   // حفظ إعدادات الخادم
   Future<void> _saveServerSettings() async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     if (_hostController.text.isEmpty || _portController.text.isEmpty) {
       _showErrorSnackBar(l10n.enterValidHost);
@@ -249,7 +247,7 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
       ApiConstants.updateBaseUrl(baseUrl);
 
       // إعادة تهيئة جميع الخدمات مع الإعدادات الجديدة
-      DioService.instance.refreshAfterServerChange();
+      EnhancedDioServiceV2.instance.refreshAfterServerChange();
       await _connectivityService.refreshAfterServerChange();
 
       setState(() {
@@ -604,7 +602,7 @@ class _ConnectionTestScreenState extends ConsumerState<ConnectionTestScreen>
   }
 
   Widget _buildServerSettingsCard() {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Card(
       elevation: 2,

@@ -27,7 +27,7 @@ class FileUploadService {
     Function(double)? onProgress,
   }) async {
     try {
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 [FILE_UPLOAD] Token retrieved: ${token != null ? "موجود (${token.length} حرف)" : "غير موجود"}');
 

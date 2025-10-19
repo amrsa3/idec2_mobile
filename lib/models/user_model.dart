@@ -204,6 +204,7 @@ class AuthResponse with _$AuthResponse {
     @Default(true) bool success,
     String? message,
     String? token,
+    int? expiresIn,
   }) = _AuthResponse;
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) =>

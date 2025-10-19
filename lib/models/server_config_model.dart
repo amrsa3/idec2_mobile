@@ -57,20 +57,27 @@ class ServerConfigValidation with _$ServerConfigValidation {
 // Default configurations
 class DefaultServerConfigs {
   static final ServerConfig development = ServerConfig(
-    baseUrl: 'localhost',
-    port: 3000,
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: true,
-    isSecure: false,
+    isSecure: true,
   );
 
   static final ServerConfig production = ServerConfig(
-    baseUrl: 'api.idec.com',
+    baseUrl: 'api.idec-ye.com',
     port: 443,
     isDefault: false,
     isSecure: true,
   );
 
   static final ServerConfig localhost = ServerConfig(
+    baseUrl: 'localhost',
+    port: 3000,
+    isDefault: false,
+    isSecure: false,
+  );
+
+  static final ServerConfig localDevelopment = ServerConfig(
     baseUrl: 'localhost',
     port: 3000,
     isDefault: false,
@@ -88,6 +95,7 @@ class DefaultServerConfigs {
     development,
     production,
     localhost,
+    localDevelopment,
     emulator,
   ];
 }

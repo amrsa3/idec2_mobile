@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../core/services/server_settings_service.dart';
 import '../core/constants/api_constants.dart';
-import '../services/storage_service.dart';
-import '../services/dio_service.dart';
+import './services/platform_storage_service.dart';
+import '../services/enhanced_dio_service_v2.dart';
 
 /// Debug utility for testing server settings configuration
 class ServerSettingsDebug {
@@ -11,11 +11,11 @@ class ServerSettingsDebug {
     
     try {
       // Initialize storage service
-      await StorageService.instance.init();
+      await PlatformStorageService.instance.init();
       debugPrint('✅ [DEBUG] StorageService initialized');
       
       // Create server settings service
-      final serverSettingsService = ServerSettingsService(StorageService.instance);
+      final serverSettingsService = ServerSettingsService(PlatformStorageService.instance);
       
       // Test 1: Check existing settings
       debugPrint('\n📋 [DEBUG] Test 1: Checking existing settings');
@@ -49,7 +49,7 @@ class ServerSettingsDebug {
       
       // Test 7: Update DioService
       debugPrint('\n📋 [DEBUG] Test 7: Updating DioService');
-      DioService.instance.refreshAfterServerChange();
+      EnhancedDioServiceV2.instance.refreshAfterServerChange();
       
       // Test 8: Check final URLs
       debugPrint('\n📋 [DEBUG] Test 8: Final URL check');
@@ -73,9 +73,9 @@ class ServerSettingsDebug {
     
     // Simulate corrupted settings (host without port)
     debugPrint('🔧 [DEBUG] Simulating corrupted settings');
-    await StorageService.instance.setString('server_host', 'idec-ye.com');
-    await StorageService.instance.setInt('server_port', 0); // Invalid port
-    await StorageService.instance.setBool('server_settings_initialized', false);
+    await PlatformStorageService.instance.setString('server_host', 'idec-ye.com');
+    await PlatformStorageService.instance.setInt('server_port', 0); // Invalid port
+    await PlatformStorageService.instance.setBool('server_settings_initialized', false);
     
     // Try to get settings (should trigger fix)
     debugPrint('🔧 [DEBUG] Getting settings with corrupted data');
@@ -93,9 +93,9 @@ class ServerSettingsDebug {
   static Future<void> clearAllSettings() async {
     debugPrint('🧹 [DEBUG] Clearing all server settings...');
     
-    await StorageService.instance.remove('server_host');
-    await StorageService.instance.remove('server_port');
-    await StorageService.instance.remove('server_settings_initialized');
+    await PlatformStorageService.instance.remove('server_host');
+    await PlatformStorageService.instance.remove('server_port');
+    await PlatformStorageService.instance.remove('server_settings_initialized');
     
     debugPrint('✅ [DEBUG] All settings cleared');
   }
@@ -103,7 +103,7 @@ class ServerSettingsDebug {
   static Future<void> resetToDefaults() async {
     debugPrint('🔄 [DEBUG] Resetting to default settings...');
     
-    final serverSettingsService = ServerSettingsService(StorageService.instance);
+    final serverSettingsService = ServerSettingsService(PlatformStorageService.instance);
     await serverSettingsService.resetToDefault();
     
     debugPrint('✅ [DEBUG] Reset to defaults completed');
@@ -113,7 +113,7 @@ class ServerSettingsDebug {
     debugPrint('\n📊 [DEBUG] Current Configuration Summary:');
     debugPrint('🔗 [DEBUG] ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
     debugPrint('🔗 [DEBUG] ApiConstants.loginUrl: ${ApiConstants.loginUrl}');
-    debugPrint('🔗 [DEBUG] DioService baseUrl: ${DioService.instance.dio.options.baseUrl}');
+    debugPrint('🔗 [DEBUG] DioService baseUrl: ${EnhancedDioServiceV2.instance.dio.options.baseUrl}');
     
     // Validate configuration
     final hasHttps = ApiConstants.baseUrl.startsWith('https://');
@@ -125,3 +125,4 @@ class ServerSettingsDebug {
     debugPrint('${isValid ? "✅" : "❌"} [DEBUG] Overall Valid: $isValid');
   }
 }
+

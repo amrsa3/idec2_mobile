@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/profile_rule_model.dart';
-import '../services/dio_service.dart';
+import '../services/enhanced_dio_service_v2.dart';
 
 /// نتيجة جلب قواعد المستخدم
 class ProfileRulesResult {
@@ -49,14 +49,14 @@ class ProfileRulesService {
       debugPrint('🔍 [PROFILE_RULES] جلب قواعد المستخدم الحالي من الخادم...');
 
       // Check if we have a valid token before making the request
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint(
             '❌ [PROFILE_RULES] No access token available, skipping rules load');
         throw Exception('لا يوجد رمز مصادقة صالح. يرجى تسجيل الدخول مرة أخرى.');
       }
 
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.get('/api/v1/profile-rules');
 
       if (response.statusCode == 200) {
@@ -117,7 +117,7 @@ class ProfileRulesService {
       debugPrint(
           '🔍 [PROFILE_RULES] جلب قواعد الحالة ${status.name} من الخادم...');
 
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response =
           await dio.get('/api/v1/profile-rules/all', queryParameters: {
         'status': status.apiValue,
@@ -163,7 +163,7 @@ class ProfileRulesService {
 
       debugPrint('🔍 [PROFILE_RULES] جلب جميع القواعد من الخادم...');
 
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.get('/api/v1/profile-rules');
 
       if (response.statusCode == 200) {
@@ -519,7 +519,7 @@ class ProfileRulesService {
   /// جلب أسماء الحقول المتاحة
   Future<List<String>> getAvailableFieldNames() async {
     try {
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.get('/api/v1/profile-rules/field-names');
 
       if (response.statusCode == 200) {

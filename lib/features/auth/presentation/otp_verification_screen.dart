@@ -9,7 +9,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/auth_provider.dart';
+import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_otp_input.dart';
@@ -110,10 +110,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _resendOtp() async {
     if (!_canResend) return;
 
-    final success =
+    final response =
         await ref.read(authProvider.notifier).resendOtp(widget.phone);
 
-    if (success) {
+    if (response.success) {
       _startTimer();
       _clearOtp();
 

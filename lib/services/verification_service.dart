@@ -11,7 +11,7 @@ class VerificationService {
   late ApiService _apiService;
 
   VerificationService._internal() {
-    _apiService = ApiService(DioService.instance.dio);
+    _apiService = ApiService(EnhancedDioServiceV2.instance.dio);
   }
 
   // Get verification rules (deprecated - use ProfileRulesProvider instead)

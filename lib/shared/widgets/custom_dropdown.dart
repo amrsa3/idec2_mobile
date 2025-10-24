@@ -288,7 +288,7 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                                 widget.itemDisplayText(value),
                                 style: AppTextStyles.bodySmall,
                               ),
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                               deleteIcon: Icon(
                                 Icons.close,
                                 size: 16,
@@ -583,7 +583,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                           Navigator.pop(context);
                         },
                         selected: widget.value == item.value,
-                        selectedTileColor: AppColors.primary.withOpacity(0.1),
+                        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
                       );
                     },
                   ),

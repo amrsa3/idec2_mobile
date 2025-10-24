@@ -13,8 +13,8 @@ import '../../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../../models/profile_data_models.dart';
 import '../../../../models/profile_model.dart';
 import '../../../../models/profile_rule_model.dart';
-import '../../../../providers/enhanced_auth_provider.dart';
 import '../../../../providers/profile_rules_provider.dart';
+import '../../../../services/compatible_auth_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
@@ -50,8 +50,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     const retryDelay = Duration(milliseconds: 1000);
 
     try {
+      // تحديث حالة المصادقة أولاً
+      ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+      
       // Check if user is authenticated before loading profile
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       debugPrint(
           'ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
 
@@ -77,6 +80,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
       } else {
+        // User is not authenticated or session expired
+        debugPrint(
+            'ProfileMainScreen: User not authenticated or session expired');
+        debugPrint(
+            'ProfileMainScreen: Auth details - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, user: ${authState.user?.phone}');
+        debugPrint(
+            'ProfileMainScreen: Error: ${authState.error}');
+        
         debugPrint(
             'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
         // Show error message or redirect to login
@@ -84,12 +95,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                  'فشل في تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.'),
+                  'انتهاء صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى.'),
               backgroundColor: AppColors.error,
               action: SnackBarAction(
-                label: 'إعادة المحاولة',
+                label: 'تسجيل الدخول',
                 textColor: Colors.white,
-                onPressed: () => _loadProfileData(),
+                onPressed: () => context.go(AppRoutes.login),
               ),
             ),
           );
@@ -149,7 +160,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   // إنشاء القائمة الجانبية
   Widget _buildSideDrawer(
       BuildContext context, AppLocalizations l10n, ProfileModel? profile) {
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(compatibleAuthProvider);
     final user = authState.user;
 
     return Drawer(
@@ -344,7 +355,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       );
 
       // تسجيل الخروج
-      await ref.read(authProvider.notifier).logout();
+      await ref.read(compatibleAuthProvider.notifier).logout();
 
       // إغلاق مؤشر التحميل
       if (mounted) {

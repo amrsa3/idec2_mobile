@@ -5,8 +5,8 @@ class ApiConstants {
   static const String productionUrl = 'https://api.idec-ye.com';
 
   // Development URLs for local testing
-  static const String devUrl = 'http://localhost:3000';
-  static const String localhostUrl = 'http://localhost:3000';
+  static const String devUrl = 'https://api.idec-ye.com';
+  static const String localhostUrl = 'https://api.idec-ye.com';
 
   // Default base URL - Using production server
   static const String defaultBaseUrl = productionUrl;

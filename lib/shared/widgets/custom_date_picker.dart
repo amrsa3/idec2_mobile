@@ -133,7 +133,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       filled: true,
       fillColor: widget.enabled 
           ? Colors.white 
-          : AppColors.grey.withOpacity(0.1),
+          : AppColors.grey.withValues(alpha: 0.1),
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),
@@ -162,9 +162,9 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       borderColor = AppColors.primary;
       borderWidth = 2;
     } else if (isDisabled) {
-      borderColor = AppColors.grey.withOpacity(0.3);
+      borderColor = AppColors.grey.withValues(alpha: 0.3);
     } else {
-      borderColor = AppColors.grey.withOpacity(0.5);
+      borderColor = AppColors.grey.withValues(alpha: 0.5);
     }
     
     return OutlineInputBorder(
@@ -334,7 +334,7 @@ class _CustomDateRangePickerState extends State<CustomDateRangePicker> {
       filled: true,
       fillColor: widget.enabled 
           ? Colors.white 
-          : AppColors.grey.withOpacity(0.1),
+          : AppColors.grey.withValues(alpha: 0.1),
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),
@@ -363,9 +363,9 @@ class _CustomDateRangePickerState extends State<CustomDateRangePicker> {
       borderColor = AppColors.primary;
       borderWidth = 2;
     } else if (isDisabled) {
-      borderColor = AppColors.grey.withOpacity(0.3);
+      borderColor = AppColors.grey.withValues(alpha: 0.3);
     } else {
-      borderColor = AppColors.grey.withOpacity(0.5);
+      borderColor = AppColors.grey.withValues(alpha: 0.5);
     }
     
     return OutlineInputBorder(
@@ -520,7 +520,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       filled: true,
       fillColor: widget.enabled 
           ? Colors.white 
-          : AppColors.grey.withOpacity(0.1),
+          : AppColors.grey.withValues(alpha: 0.1),
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),
@@ -549,9 +549,9 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       borderColor = AppColors.primary;
       borderWidth = 2;
     } else if (isDisabled) {
-      borderColor = AppColors.grey.withOpacity(0.3);
+      borderColor = AppColors.grey.withValues(alpha: 0.3);
     } else {
-      borderColor = AppColors.grey.withOpacity(0.5);
+      borderColor = AppColors.grey.withValues(alpha: 0.5);
     }
     
     return OutlineInputBorder(

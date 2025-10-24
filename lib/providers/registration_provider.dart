@@ -1,23 +1,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../models/registration_settings_model.dart';
-import '../services/registration_settings_service.dart';
+
 import '../core/errors/app_error.dart';
 import '../core/errors/error_handler.dart';
+import '../models/registration_settings_model.dart';
+import '../services/enhanced_auth_service.dart';
 
 part 'registration_provider.freezed.dart';
 
 @freezed
 class RegistrationState with _$RegistrationState {
   const RegistrationState._();
-  
+
   const factory RegistrationState({
     RegistrationSettingsModel? settings,
     RegistrationStatusResponse? status,
     @Default(false) bool isLoading,
     AppError? error,
     DateTime? lastUpdated,
+    // إضافة الخصائص المفقودة
+    List<OtpChannelModel>? availableChannels,
+    OtpChannelModel? selectedChannel,
+    OtpChannelModel? defaultChannel,
   }) = _RegistrationState;
 
   /// Check if registration is allowed
@@ -30,11 +35,12 @@ class RegistrationState with _$RegistrationState {
   bool get hasError => error != null;
 
   /// Copy with new values
-  RegistrationState copyWith({
+  RegistrationState copyWithNew({
     RegistrationSettingsModel? settings,
     RegistrationStatusResponse? status,
     List<OtpChannelModel>? availableChannels,
     OtpChannelModel? selectedChannel,
+    OtpChannelModel? defaultChannel,
     bool? isLoading,
     AppError? error,
     DateTime? lastUpdated,
@@ -45,9 +51,10 @@ class RegistrationState with _$RegistrationState {
       settings: settings ?? this.settings,
       status: status ?? this.status,
       availableChannels: availableChannels ?? this.availableChannels,
-      selectedChannel: clearSelectedChannel 
-          ? null 
+      selectedChannel: clearSelectedChannel
+          ? null
           : (selectedChannel ?? this.selectedChannel),
+      defaultChannel: defaultChannel ?? this.defaultChannel,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       lastUpdated: lastUpdated ?? this.lastUpdated,
@@ -57,30 +64,30 @@ class RegistrationState with _$RegistrationState {
 
 /// Registration state notifier
 class RegistrationNotifier extends StateNotifier<RegistrationState> {
-  RegistrationNotifier(this._registrationSettingsService) 
+  RegistrationNotifier(this._registrationSettingsService)
       : super(const RegistrationState());
 
   final RegistrationSettingsService _registrationSettingsService;
 
   /// Initialize registration state
   Future<void> initialize() async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    
+    state = state.copyWithNew(isLoading: true, clearError: true);
+
     try {
       // Load settings first (this should always work with defaults)
       await _loadSettings();
-      
+
       // Load status and channels asynchronously (non-blocking)
       _loadStatusAsync();
       _loadChannelsAsync();
-      
-      state = state.copyWith(
+
+      state = state.copyWithNew(
         isLoading: false,
         lastUpdated: DateTime.now(),
       );
     } catch (e, stackTrace) {
       final error = ErrorHandler.instance.handleError(e, stackTrace);
-      state = state.copyWith(
+      state = state.copyWithNew(
         isLoading: false,
         error: error,
       );
@@ -109,22 +116,22 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
 
   /// Refresh all registration data
   Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    
+    state = state.copyWithNew(isLoading: true, clearError: true);
+
     try {
       // Force refresh settings
       await _registrationSettingsService.refreshSettings();
       await _loadSettings();
       await _loadStatus();
       await _loadChannels();
-      
-      state = state.copyWith(
+
+      state = state.copyWithNew(
         isLoading: false,
         lastUpdated: DateTime.now(),
       );
     } catch (e, stackTrace) {
       final error = ErrorHandler.instance.handleError(e, stackTrace);
-      state = state.copyWith(
+      state = state.copyWithNew(
         isLoading: false,
         error: error,
       );
@@ -135,7 +142,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
   Future<void> _loadSettings() async {
     try {
       final settings = await _registrationSettingsService.getCurrentSettings();
-      state = state.copyWith(settings: settings);
+      state = state.copyWithNew(settings: settings);
     } catch (e) {
       debugPrint('⚠️ Could not load registration settings: $e');
       // Settings service should provide defaults, but just in case
@@ -145,8 +152,9 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
   /// Load registration status
   Future<void> _loadStatus() async {
     try {
-      final status = await _registrationSettingsService.checkRegistrationStatus();
-      state = state.copyWith(status: status);
+      final status =
+          await _registrationSettingsService.checkRegistrationStatus();
+      state = state.copyWithNew(status: status);
     } catch (e) {
       debugPrint('⚠️ Could not load registration status: $e');
       // App should work without status
@@ -156,51 +164,63 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
   /// Load available channels
   Future<void> _loadChannels() async {
     try {
-      final channels = await _registrationSettingsService.getAvailableOtpChannels();
-      state = state.copyWith(availableChannels: channels);
+      final channels =
+          await _registrationSettingsService.getAvailableOtpChannels();
+      // تحويل List<String> إلى List<OtpChannelModel>
+      final channelModels = channels
+          .map((channel) => OtpChannelModel(
+                name: channel,
+                type: channel.toLowerCase(),
+                isEnabled: true,
+              ))
+          .toList();
+
+      state = state.copyWithNew(availableChannels: channelModels);
     } catch (e) {
       debugPrint('⚠️ Could not load OTP channels: $e');
       // App should work without channels
     }
-    
+
     // Auto-select default channel if none selected
-    if (state.selectedChannel == null && state.availableChannels.isNotEmpty) {
+    if (state.selectedChannel == null &&
+        state.availableChannels?.isNotEmpty == true) {
       final defaultChannel = state.defaultChannel;
       if (defaultChannel != null) {
-        state = state.copyWith(selectedChannel: defaultChannel);
+        state = state.copyWithNew(selectedChannel: defaultChannel);
       }
     }
   }
 
   /// Select OTP channel
   void selectChannel(OtpChannelModel channel) {
-    state = state.copyWith(selectedChannel: channel);
+    state = state.copyWithNew(selectedChannel: channel);
   }
 
   /// Clear selected channel
   void clearSelectedChannel() {
-    state = state.copyWith(clearSelectedChannel: true);
+    state = state.copyWithNew(clearSelectedChannel: true);
   }
 
   /// Clear error
   void clearError() {
-    state = state.copyWith(clearError: true);
+    state = state.copyWithNew(clearError: true);
   }
 
   /// Check if registration is allowed
   Future<bool> checkRegistrationAllowed() async {
     try {
-      final allowed = await _registrationSettingsService.validateRegistrationAllowed();
-      
+      final allowed =
+          await _registrationSettingsService.validateRegistrationAllowed();
+
       // Update status if needed
       if (!allowed) {
         await _loadStatus();
       }
-      
+
       return allowed;
     } catch (e, stackTrace) {
       final error = ErrorHandler.instance.handleError(e, stackTrace);
-      state = state.copyWith(error: error);
+      state = state.copyWithNew(error: error);
       return false;
     }
   }
@@ -208,23 +228,28 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
   /// Request OTP with selected channel
   Future<bool> requestOtp(String phoneNumber) async {
     try {
-      state = state.copyWith(clearError: true);
-      
-      final response = await _registrationSettingsService.requestOtp(phoneNumber);
-      
-      return response.success;
+      state = state.copyWithNew(clearError: true);
+
+      // استخدام خدمة المصادقة المحسنة بدلاً من registration service
+      final authService = ref.read(enhancedAuthServiceProvider);
+      final result = await authService.requestOtp(phoneNumber);
+
+      return result.when(
+        success: (user, message) => true,
+        error: (message) => false,
+        loading: (message) => false,
+      );
     } catch (e, stackTrace) {
       final error = ErrorHandler.instance.handleError(e, stackTrace);
-      state = state.copyWith(error: error);
+      state = state.copyWithNew(error: error);
       return false;
     }
   }
-
-
 }
 
 /// Registration provider
-final registrationProvider = StateNotifierProvider<RegistrationNotifier, RegistrationState>((ref) {
+final registrationProvider =
+    StateNotifierProvider<RegistrationNotifier, RegistrationState>((ref) {
   final service = ref.watch(registrationSettingsServiceProvider);
   return RegistrationNotifier(service);
 });
@@ -236,7 +261,8 @@ final registrationAllowedProvider = FutureProvider<bool>((ref) async {
 });
 
 /// Provider for registration settings
-final registrationSettingsProvider = Provider<RegistrationSettingsModel?>((ref) {
+final registrationSettingsProvider =
+    Provider<RegistrationSettingsModel?>((ref) {
   return ref.watch(registrationProvider).settings;
 });
 
@@ -244,8 +270,6 @@ final registrationSettingsProvider = Provider<RegistrationSettingsModel?>((ref) 
 final registrationStatusProvider = Provider<RegistrationStatusResponse?>((ref) {
   return ref.watch(registrationProvider).status;
 });
-
-
 
 /// Extension for easy registration management
 extension RegistrationExtension on WidgetRef {

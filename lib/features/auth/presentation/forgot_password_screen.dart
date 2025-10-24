@@ -1,22 +1,23 @@
+import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:country_code_picker/country_code_picker.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/notification_service.dart';
+import '../../../services/compatible_auth_service.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -35,12 +36,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     try {
       final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
-      
+
       // Call the forgot password API
-      final response = await ref.read(authProvider.notifier).requestPasswordReset(fullPhoneNumber);
-      
+      final response = await ref.read(compatibleAuthProvider.notifier)
+          .requestPasswordReset(fullPhoneNumber);
+
       // Check if there was an error
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       if (authState.error != null) {
         await NotificationService.showError(
           title: 'خطأ',
@@ -57,7 +59,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
         if (mounted) {
           // Navigate to reset password OTP screen
-          context.push('${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
+          context.push(
+              '${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
         }
       } else {
         await NotificationService.showError(
@@ -73,31 +76,29 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
-
-
   String? _validatePhone(String? value) {
     if (value == null || value.isEmpty) {
       return 'رقم الهاتف مطلوب';
     }
-    
+
     // Remove any non-digit characters for validation
     final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
-    
+
     if (digitsOnly.length < 7) {
       return 'رقم الهاتف قصير جداً';
     }
-    
+
     if (digitsOnly.length > 15) {
       return 'رقم الهاتف طويل جداً';
     }
-    
+
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(compatibleAuthProvider);
     final isRTL = ref.watch(isRTLProvider);
 
     return Scaffold(
@@ -130,7 +131,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Logo section
                 Center(
                   child: Container(
@@ -154,32 +155,32 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Title
                 Text(
                   'نسيت كلمة المرور؟',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Subtitle
                 Text(
                   'أدخل رقم هاتفك وسنرسل لك رمز إعادة تعيين كلمة المرور',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                        color: AppColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 48),
-                
+
                 // Phone number field with country code
                 Container(
                   decoration: BoxDecoration(
@@ -214,14 +215,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         flagWidth: 25,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
-                      
+
                       // Divider
                       Container(
                         height: 30,
                         width: 1,
                         color: AppColors.border,
                       ),
-                      
+
                       // Phone number input
                       Expanded(
                         child: TextFormField(
@@ -250,9 +251,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Send reset code button
                 Container(
                   width: double.infinity,
@@ -260,7 +261,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   child: ElevatedButton(
                     onPressed: authState.isLoading ? null : _sendResetCode,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: authState.isLoading 
+                      backgroundColor: authState.isLoading
                           ? AppColors.primary.withOpacity(0.6)
                           : AppColors.primary,
                       foregroundColor: Colors.white,
@@ -302,9 +303,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Back to login
                 Center(
                   child: TextButton(

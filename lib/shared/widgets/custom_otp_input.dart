@@ -167,7 +167,7 @@ class _CustomOtpInputState extends State<CustomOtpInput> {
                         boxShadow: _focusNodes[index].hasFocus
                             ? [
                                 BoxShadow(
-                                  color: (widget.errorText != null ? AppColors.error : AppColors.primary).withOpacity(0.2),
+                                  color: (widget.errorText != null ? AppColors.error : AppColors.primary).withValues(alpha: 0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),

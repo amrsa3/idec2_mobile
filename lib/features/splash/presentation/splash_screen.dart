@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/language_service.dart';
@@ -73,7 +74,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     // Start animations
     _logoController.forward();
-    
+
     // Start text animation after logo animation
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
@@ -84,20 +85,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(milliseconds: 3000));
-    
+
     if (!mounted) return;
 
     // Check authentication status
-    final authState = ref.read(authProvider);
-    
+    final authState = ref.read(enhancedAuthProvider);
+
     // Check first-time flags
     final isLanguageFirstTime = await LanguageService.isLanguageFirstTime();
     final isOnboardingCompleted = await LanguageService.isOnboardingCompleted();
 
     // Determine next route based on app state
     String nextRoute;
-    
-    if (authState.isAuthenticated) {
+
+    final authProvider = ref.read(enhancedAuthProvider.notifier);
+
+    if (authProvider.isAuthenticated) {
       // User is logged in - go to main screen
       nextRoute = AppRoutes.main;
     } else {
@@ -129,7 +132,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final isRTL = ref.watch(isRTLProvider);
-    
+
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Container(
@@ -148,7 +151,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             children: [
               // Top spacing
               const Spacer(flex: 2),
-              
+
               // Logo section
               Expanded(
                 flex: 3,
@@ -183,7 +186,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   ),
                 ),
               ),
-              
+
               // Text section
               Expanded(
                 flex: 2,
@@ -200,30 +203,36 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             // Conference title
                             Text(
                               'IDEC 2026',
-                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                  ),
                               textAlign: TextAlign.center,
                             ),
-                            
+
                             const SizedBox(height: 8),
-                            
+
                             // Subtitle
                             Text(
-                              isRTL 
-                                ? 'معرض ومؤتمر IDEC لطب الاسنان'
-                                : 'IDEC Dental Conference & Exhibition',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withOpacity(0.9),
-                                fontWeight: FontWeight.w300,
-                              ),
+                              isRTL
+                                  ? 'معرض ومؤتمر IDEC لطب الاسنان'
+                                  : 'IDEC Dental Conference & Exhibition',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.w300,
+                                  ),
                               textAlign: TextAlign.center,
                             ),
-                            
+
                             const SizedBox(height: 24),
-                            
+
                             // Loading indicator
                             SizedBox(
                               width: 40,
@@ -242,10 +251,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   },
                 ),
               ),
-              
+
               // Bottom spacing
               const Spacer(flex: 1),
-              
+
               // Version info
               AnimatedBuilder(
                 animation: _textAnimation,
@@ -257,8 +266,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       child: Text(
                         'Version 1.0.0',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withOpacity(0.7),
-                        ),
+                              color: Colors.white.withOpacity(0.7),
+                            ),
                       ),
                     ),
                   );

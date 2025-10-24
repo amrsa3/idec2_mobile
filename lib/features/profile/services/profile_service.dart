@@ -12,8 +12,8 @@ import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/enhanced_dio_service_v2.dart';
-import '../../../services/profile_rules_service.dart';
 import '../../../services/platform_storage_service.dart';
+import '../../../services/profile_rules_service.dart';
 
 class LocalProfileService {
   static final Dio _dio = Dio();
@@ -373,22 +373,26 @@ class LocalProfileService {
       if (response.statusCode == 200) {
         debugPrint('✅ ProfileService: Profile updated successfully');
         final data = response.data;
-        
+
         // تحويل البيانات لضمان التوافق مع ProfileModel
         final transformedData = Map<String, dynamic>.from(data);
-        
+
         // التأكد من أن documents هو قائمة وليس string أو رقم
-        if (transformedData['documents'] != null && transformedData['documents'] is! List) {
-          debugPrint('⚠️ ProfileService: Converting documents from ${transformedData['documents'].runtimeType} to List');
+        if (transformedData['documents'] != null &&
+            transformedData['documents'] is! List) {
+          debugPrint(
+              '⚠️ ProfileService: Converting documents from ${transformedData['documents'].runtimeType} to List');
           transformedData['documents'] = [];
         }
-        
+
         // التأكد من أن required_documents هو قائمة
-        if (transformedData['required_documents'] != null && transformedData['required_documents'] is! List) {
-          debugPrint('⚠️ ProfileService: Converting required_documents from ${transformedData['required_documents'].runtimeType} to List');
+        if (transformedData['required_documents'] != null &&
+            transformedData['required_documents'] is! List) {
+          debugPrint(
+              '⚠️ ProfileService: Converting required_documents from ${transformedData['required_documents'].runtimeType} to List');
           transformedData['required_documents'] = [];
         }
-        
+
         return ProfileModel.fromJson(transformedData);
       } else {
         debugPrint(
@@ -420,7 +424,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: {
           'documentType': documentType,
           'fileUrl': fileUrl,
@@ -445,40 +449,41 @@ class LocalProfileService {
         try {
           // التأكد من تحويل جميع الحقول للنوع الصحيح
           final safeData = Map<String, dynamic>.from(data);
-          
+
           // التأكد من أن userId هو string
           if (safeData['userId'] != null) {
             safeData['userId'] = safeData['userId'].toString();
           }
-          
+
           // التأكد من أن id هو string
           if (safeData['id'] != null) {
             safeData['id'] = safeData['id'].toString();
           }
-          
+
           // التأكد من أن documentType هو string
           if (safeData['documentType'] != null) {
             safeData['documentType'] = safeData['documentType'].toString();
           }
-          
+
           // التأكد من أن fileName هو string
           if (safeData['fileName'] != null) {
             safeData['fileName'] = safeData['fileName'].toString();
           }
-          
+
           // التأكد من أن fileUrl هو string
           if (safeData['fileUrl'] != null) {
             safeData['fileUrl'] = safeData['fileUrl'].toString();
           }
-          
+
           // التأكد من أن status هو string
           if (safeData['status'] != null) {
             safeData['status'] = safeData['status'].toString();
           }
-          
+
           return DocumentUploadModel.fromJson(safeData);
         } catch (conversionError) {
-          debugPrint('❌ ProfileService: Error converting document data: $conversionError');
+          debugPrint(
+              '❌ ProfileService: Error converting document data: $conversionError');
           debugPrint('📊 ProfileService: Original data: $data');
           throw Exception('خطأ في تحويل بيانات الوثيقة: $conversionError');
         }
@@ -506,7 +511,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -522,21 +527,22 @@ class LocalProfileService {
         // التأكد من أن documents هو قائمة
         dynamic documentsData = data['documents'];
         List<dynamic> documentsJson = [];
-        
+
         if (documentsData is List) {
           documentsJson = documentsData;
         } else if (documentsData != null) {
-          debugPrint('⚠️ ProfileService: Documents is not a list, type: ${documentsData.runtimeType}, value: $documentsData');
+          debugPrint(
+              '⚠️ ProfileService: Documents is not a list, type: ${documentsData.runtimeType}, value: $documentsData');
           // إذا كان documents ليس قائمة، نعيد قائمة فارغة
           documentsJson = [];
         }
-        
+
         return documentsJson
             .map((json) {
               try {
                 // تحويل البيانات مع معالجة أفضل للأخطاء
                 final safeData = Map<String, dynamic>.from(json);
-                
+
                 // التأكد من تحويل جميع الحقول للنوع الصحيح
                 if (safeData['userId'] != null) {
                   safeData['userId'] = safeData['userId'].toString();
@@ -545,7 +551,8 @@ class LocalProfileService {
                   safeData['id'] = safeData['id'].toString();
                 }
                 if (safeData['documentType'] != null) {
-                  safeData['documentType'] = safeData['documentType'].toString();
+                  safeData['documentType'] =
+                      safeData['documentType'].toString();
                 }
                 if (safeData['fileName'] != null) {
                   safeData['fileName'] = safeData['fileName'].toString();
@@ -556,11 +563,12 @@ class LocalProfileService {
                 if (safeData['status'] != null) {
                   safeData['status'] = safeData['status'].toString();
                 }
-                
+
                 return DocumentUploadModel.fromJson(safeData);
               } catch (e) {
                 debugPrint('❌ ProfileService: Error converting document: $e');
-                debugPrint('📊 ProfileService: Problematic document data: $json');
+                debugPrint(
+                    '📊 ProfileService: Problematic document data: $json');
                 // تخطي هذه الوثيقة والمتابعة
                 return null;
               }
@@ -600,7 +608,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.delete(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents/$documentId',
+        '${ApiConstants.baseUrl}/api/v1/files/$documentId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -828,7 +836,7 @@ class LocalProfileService {
 
       // Use the correct endpoint that matches the backend
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
@@ -987,7 +995,7 @@ class LocalProfileService {
 
       // Use the correct endpoint that matches the backend
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
@@ -1349,6 +1357,229 @@ class LocalProfileService {
     }
   }
 
+  /// Upload document file for specific field with retry mechanism and progress tracking
+  static Future<DocumentUploadModel?> uploadDocumentFileWithRetry({
+    required File file,
+    required String documentType,
+    required String fieldName,
+    Uint8List? fileBytes, // إضافة البيانات للويب
+    int maxRetries = 3,
+    Duration retryDelay = const Duration(seconds: 2),
+    Function(double)? onProgress, // إضافة callback للتقدم
+  }) async {
+    int retryCount = 0;
+    Exception? lastException;
+
+    while (retryCount < maxRetries) {
+      try {
+        debugPrint(
+            '📄 ProfileService: Uploading document file for field: $fieldName (attempt ${retryCount + 1}/$maxRetries)');
+
+        // فحص الاتصال قبل المحاولة
+        if (retryCount > 0) {
+          debugPrint(
+              '📄 ProfileService: Waiting ${retryDelay.inSeconds} seconds before retry...');
+          await Future.delayed(retryDelay);
+        }
+
+        // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+        final token = await EnhancedDioServiceV2.instance.getAccessToken();
+        if (token == null || token.isEmpty) {
+          debugPrint('❌ ProfileService: No authentication token found');
+          throw Exception('لا يوجد رمز مصادقة صالح');
+        }
+
+        // Create form data
+        MultipartFile multipartFile;
+        String fileName;
+
+        if (kIsWeb) {
+          // في بيئة الويب، استخدم البيانات المرسلة مباشرة
+          fileName = file.path.isNotEmpty
+              ? file.path
+              : 'document_${DateTime.now().millisecondsSinceEpoch}';
+
+          if (fileBytes != null) {
+            // استخدام البيانات المرسلة مباشرة
+            multipartFile = MultipartFile.fromBytes(
+              fileBytes,
+              filename: fileName,
+            );
+          } else {
+            debugPrint(
+                '❌ ProfileService: No file bytes provided for web upload');
+            throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
+          }
+        } else {
+          // في بيئة الموبايل، استخدم path
+          fileName = file.path.split('/').last;
+          multipartFile = await MultipartFile.fromFile(
+            file.path,
+            filename: fileName,
+          );
+        }
+
+        // الحصول على معرف المستخدم الحقيقي من التوكن
+        String userId = 'current_user'; // قيمة افتراضية
+        try {
+          // محاولة الحصول على معرف المستخدم من التوكن
+          final token = await EnhancedDioServiceV2.instance.getAccessToken();
+          if (token != null && token.isNotEmpty) {
+            // فك تشفير التوكن للحصول على معرف المستخدم
+            final parts = token.split('.');
+            if (parts.length == 3) {
+              final payload = parts[1];
+              final normalized = base64Url.normalize(payload);
+              final resp = utf8.decode(base64Url.decode(normalized));
+              final payloadMap = jsonDecode(resp) as Map<String, dynamic>;
+              userId = payloadMap['sub']?.toString() ??
+                  payloadMap['id']?.toString() ??
+                  'current_user';
+              debugPrint(
+                  '🔐 ProfileService: Extracted user ID from token: $userId');
+            }
+          }
+
+          // إذا فشل فك تشفير التوكن، جرب التخزين الآمن
+          if (userId == 'current_user') {
+            final storage = PlatformStorageService.instance;
+            final user = await storage.readSecure('current_user');
+            if (user != null) {
+              try {
+                final userData = jsonDecode(user) as Map<String, dynamic>;
+                userId = userData['id']?.toString() ?? 'current_user';
+                debugPrint(
+                    '🔐 ProfileService: Got user ID from storage: $userId');
+              } catch (e) {
+                debugPrint('❌ ProfileService: Error parsing user data: $e');
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Error getting user ID: $e');
+        }
+
+        final formData = FormData.fromMap({
+          'file': multipartFile,
+          'entityType': 'profile', // نوع الكيان
+          'entityId': userId, // معرف المستخدم الحقيقي
+          'fileCategory': fieldName, // فئة الملف
+          'description': 'Document uploaded from mobile app', // وصف الملف
+        });
+
+        final response = await _dio.post(
+          '${ApiConstants.baseUrl}/api/v1/files/upload',
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'multipart/form-data',
+            },
+            sendTimeout: const Duration(seconds: 30), // زيادة مهلة الإرسال
+            receiveTimeout: const Duration(seconds: 30), // زيادة مهلة الاستقبال
+          ),
+          onSendProgress: (sent, total) {
+            // حساب نسبة التقدم
+            if (total > 0) {
+              final progress = sent / total;
+              debugPrint(
+                  '📄 ProfileService: Upload progress: ${(progress * 100).toStringAsFixed(1)}%');
+              onProgress?.call(progress);
+            }
+          },
+        );
+
+        debugPrint(
+            '📄 ProfileService: Upload response status: ${response.statusCode}');
+
+        if (response.statusCode != null &&
+            response.statusCode! >= 200 &&
+            response.statusCode! < 300) {
+          final data = response.data;
+          debugPrint('📄 ProfileService: Document uploaded successfully');
+          debugPrint('📄 ProfileService: Response data: $data');
+
+          // فحص البيانات قبل المعالجة
+          if (data != null && data is Map<String, dynamic>) {
+            try {
+              // الخادم يرجع البيانات في حقل 'file'
+              Map<String, dynamic> documentData;
+              if (data.containsKey('file') && data['file'] != null) {
+                documentData = Map<String, dynamic>.from(data['file']);
+              } else {
+                documentData = Map<String, dynamic>.from(data);
+              }
+
+              // تحويل البيانات من FileResponseDto إلى DocumentUploadModel
+              final convertedData = <String, dynamic>{
+                'id': documentData['id']?.toString() ?? '',
+                'userId': documentData['entityId']?.toString() ??
+                    documentData['uploadedBy']?.toString() ??
+                    '',
+                'documentType': documentData['fileCategory']?.toString() ??
+                    documentData['documentType']?.toString() ??
+                    'general',
+                'fileName': documentData['originalName']?.toString() ??
+                    documentData['fileName']?.toString() ??
+                    '',
+                'fileUrl': documentData['url']?.toString() ??
+                    documentData['fileUrl']?.toString() ??
+                    '',
+                'status': 'uploaded', // افتراضي لأن الرفع نجح
+                'uploadedAt': DateTime.now().toIso8601String(),
+              };
+
+              final document = DocumentUploadModel.fromJson(convertedData);
+              debugPrint(
+                  '✅ ProfileService: Document model created successfully');
+              return document;
+            } catch (e) {
+              debugPrint('❌ ProfileService: Error parsing document data: $e');
+              throw Exception('خطأ في معالجة بيانات الوثيقة: $e');
+            }
+          } else {
+            debugPrint('❌ ProfileService: Invalid response data format');
+            throw Exception('تنسيق بيانات الاستجابة غير صحيح');
+          }
+        } else {
+          debugPrint(
+              '❌ ProfileService: Upload failed with status: ${response.statusCode}');
+          throw Exception(
+              'فشل في رفع الوثيقة. رمز الخطأ: ${response.statusCode}');
+        }
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        retryCount++;
+
+        debugPrint('❌ ProfileService: Upload attempt $retryCount failed: $e');
+
+        // إذا كان الخطأ متعلق بالمصادقة، لا نحاول مرة أخرى
+        if (e.toString().contains('مصادقة') || e.toString().contains('token')) {
+          debugPrint('❌ ProfileService: Authentication error, not retrying');
+          break;
+        }
+
+        // إذا كان الخطأ متعلق بالملف نفسه، لا نحاول مرة أخرى
+        if (e.toString().contains('file') &&
+            e.toString().contains('not found')) {
+          debugPrint('❌ ProfileService: File error, not retrying');
+          break;
+        }
+
+        if (retryCount >= maxRetries) {
+          debugPrint('❌ ProfileService: All retry attempts failed');
+          break;
+        }
+      }
+    }
+
+    // إذا وصلنا هنا، فشلت جميع المحاولات
+    debugPrint(
+        '❌ ProfileService: Document upload failed after $maxRetries attempts');
+    throw lastException ??
+        Exception('فشل في رفع الوثيقة بعد $maxRetries محاولات');
+  }
+
   /// Upload document file for specific field
   static Future<DocumentUploadModel?> uploadDocumentFile({
     required File file,
@@ -1396,14 +1627,56 @@ class LocalProfileService {
         );
       }
 
+      // الحصول على معرف المستخدم الحقيقي من التوكن
+      String userId = 'current_user'; // قيمة افتراضية
+      try {
+        // محاولة الحصول على معرف المستخدم من التوكن
+        final token = await EnhancedDioServiceV2.instance.getAccessToken();
+        if (token != null && token.isNotEmpty) {
+          // فك تشفير التوكن للحصول على معرف المستخدم
+          final parts = token.split('.');
+          if (parts.length == 3) {
+            final payload = parts[1];
+            final normalized = base64Url.normalize(payload);
+            final resp = utf8.decode(base64Url.decode(normalized));
+            final payloadMap = jsonDecode(resp) as Map<String, dynamic>;
+            userId = payloadMap['sub']?.toString() ??
+                payloadMap['id']?.toString() ??
+                'current_user';
+            debugPrint(
+                '🔐 ProfileService: Extracted user ID from token: $userId');
+          }
+        }
+
+        // إذا فشل فك تشفير التوكن، جرب التخزين الآمن
+        if (userId == 'current_user') {
+          final storage = PlatformStorageService.instance;
+          final user = await storage.readSecure('current_user');
+          if (user != null) {
+            try {
+              final userData = jsonDecode(user) as Map<String, dynamic>;
+              userId = userData['id']?.toString() ?? 'current_user';
+              debugPrint(
+                  '🔐 ProfileService: Got user ID from storage: $userId');
+            } catch (e) {
+              debugPrint('❌ ProfileService: Error parsing user data: $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ ProfileService: Error getting user ID: $e');
+      }
+
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': fieldName, // استخدام category بدلاً من document_type
-        'description': 'Document uploaded from mobile app', // إضافة وصف
+        'entityType': 'profile', // نوع الكيان
+        'entityId': userId, // معرف المستخدم الحقيقي
+        'fileCategory': fieldName, // فئة الملف
+        'description': 'Document uploaded from mobile app', // وصف الملف
       });
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents', // الـ endpoint الصحيح
+        '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
@@ -1433,28 +1706,27 @@ class LocalProfileService {
             } else {
               documentData = Map<String, dynamic>.from(data);
             }
-            
-            // تحويل البيانات مع معالجة أفضل للأخطاء
-            if (documentData['userId'] != null) {
-              documentData['userId'] = documentData['userId'].toString();
-            }
-            if (documentData['id'] != null) {
-              documentData['id'] = documentData['id'].toString();
-            }
-            if (documentData['documentType'] != null) {
-              documentData['documentType'] = documentData['documentType'].toString();
-            }
-            if (documentData['fileName'] != null) {
-              documentData['fileName'] = documentData['fileName'].toString();
-            }
-            if (documentData['fileUrl'] != null) {
-              documentData['fileUrl'] = documentData['fileUrl'].toString();
-            }
-            if (documentData['status'] != null) {
-              documentData['status'] = documentData['status'].toString();
-            }
-            
-            return DocumentUploadModel.fromJson(documentData);
+
+            // تحويل البيانات من FileResponseDto إلى DocumentUploadModel
+            final convertedData = <String, dynamic>{
+              'id': documentData['id']?.toString() ?? '',
+              'userId': documentData['entityId']?.toString() ??
+                  documentData['uploadedBy']?.toString() ??
+                  '',
+              'documentType': documentData['fileCategory']?.toString() ??
+                  documentData['documentType']?.toString() ??
+                  'general',
+              'fileName': documentData['originalName']?.toString() ??
+                  documentData['fileName']?.toString() ??
+                  '',
+              'fileUrl': documentData['url']?.toString() ??
+                  documentData['fileUrl']?.toString() ??
+                  '',
+              'status': 'uploaded', // افتراضي لأن الرفع نجح
+              'uploadedAt': DateTime.now().toIso8601String(),
+            };
+
+            return DocumentUploadModel.fromJson(convertedData);
           } catch (e) {
             debugPrint(
                 '⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
@@ -1728,5 +2000,3 @@ class LocalProfileService {
     return completionPercentage;
   }
 }
-
-

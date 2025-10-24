@@ -1,253 +1,332 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:dio/dio.dart';
 
-/// Enhanced connectivity service for checking internet and server connectivity
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+
+/// خدمة إدارة الاتصال المحسنة
+/// تدعم مراقبة حالة الاتصال وإدارة التبديل بين الوضعين
 class ConnectivityService {
   static ConnectivityService? _instance;
-  static ConnectivityService get instance => _instance ??= ConnectivityService._();
+  static ConnectivityService get instance =>
+      _instance ??= ConnectivityService._internal();
 
-  ConnectivityService._();
+  late Connectivity _connectivity;
+  late Completer<void> _initCompleter;
+  bool _isInitialized = false;
 
-  final Connectivity _connectivity = Connectivity();
-  final Dio _dio = Dio();
+  // Stream controllers
+  final StreamController<ConnectivityStatus> _statusController =
+      StreamController<ConnectivityStatus>.broadcast();
+  final StreamController<bool> _isConnectedController =
+      StreamController<bool>.broadcast();
+
+  // Current state
+  ConnectivityStatus _currentStatus = ConnectivityStatus.unknown;
+  bool _isConnected = false;
+
+  // Configuration
+  static const Duration _connectionCheckInterval = Duration(seconds: 30);
+  static const Duration _connectionTimeout = Duration(seconds: 10);
+
+  // Monitoring
+  Timer? _monitoringTimer;
   StreamSubscription<ConnectivityResult>? _connectivitySubscription;
   
-  bool _isOnline = true;
-  bool _isServerReachable = false;
-  DateTime? _lastServerCheck;
-  
-  final List<Function(bool)> _connectivityListeners = [];
-  final List<Function(bool)> _serverListeners = [];
+  ConnectivityService._internal() {
+    _initCompleter = Completer<void>();
+  }
 
-  /// Initialize the connectivity service
+  /// Stream لحالة الاتصال
+  Stream<ConnectivityStatus> get connectivityStream => _statusController.stream;
+
+  /// Stream لحالة الاتصال (boolean)
+  Stream<bool> get isConnectedStream => _isConnectedController.stream;
+
+  /// الحالة الحالية للاتصال
+  ConnectivityStatus get currentStatus => _currentStatus;
+
+  /// هل متصل حالياً
+  bool get isConnected => _isConnected;
+
+  /// تهيئة الخدمة
   Future<void> initialize() async {
-    _setupDio();
-    await _checkInitialConnectivity();
-    _setupConnectivityListener();
-  }
+    if (_isInitialized) return;
 
-  /// Setup Dio configuration
-  void _setupDio() {
-    _dio.options = BaseOptions(
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
-      sendTimeout: const Duration(seconds: 5),
-    );
-  }
+    try {
+      debugPrint(
+          '🌐 [CONNECTIVITY_SERVICE] Initializing connectivity service...');
 
-  /// Check initial connectivity status
-  Future<void> _checkInitialConnectivity() async {
-    final result = await _connectivity.checkConnectivity();
-    _isOnline = result != ConnectivityResult.none;
-    
-    if (_isOnline) {
-      await _checkServerConnectivity();
+      _connectivity = Connectivity();
+
+      // Get initial connectivity status
+      await _checkConnectivity();
+
+      // Start monitoring
+      _startMonitoring();
+
+      _isInitialized = true;
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.complete();
+      }
+
+      debugPrint(
+          '✅ [CONNECTIVITY_SERVICE] Connectivity service initialized successfully');
+    } catch (e) {
+      debugPrint('❌ [CONNECTIVITY_SERVICE] Initialization error: $e');
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.completeError(e);
+      }
+      rethrow;
     }
   }
 
-  /// Setup connectivity listener
-  void _setupConnectivityListener() {
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((result) async {
-      final wasOnline = _isOnline;
-      _isOnline = result != ConnectivityResult.none;
+  /// التأكد من التهيئة
+  Future<void> _ensureInitialized() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    await _initCompleter.future;
+  }
 
-      if (_isOnline != wasOnline) {
-        _notifyConnectivityListeners(_isOnline);
-        
-        if (_isOnline) {
-          await _checkServerConnectivity();
-        } else {
-          _isServerReachable = false;
-          _notifyServerListeners(false);
+  /// التحقق من حالة الاتصال
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await _connectivity.checkConnectivity();
+      await _updateConnectivityStatus(result);
+    } catch (e) {
+      debugPrint('❌ [CONNECTIVITY_SERVICE] Error checking connectivity: $e');
+      _updateStatus(ConnectivityStatus.unknown, false);
+    }
+  }
+
+  /// تحديث حالة الاتصال
+  Future<void> _updateConnectivityStatus(ConnectivityResult result) async {
+    try {
+      ConnectivityStatus newStatus;
+      bool newIsConnected;
+
+      switch (result) {
+        case ConnectivityResult.wifi:
+          newStatus = ConnectivityStatus.wifi;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.mobile:
+          newStatus = ConnectivityStatus.mobile;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.ethernet:
+          newStatus = ConnectivityStatus.ethernet;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.vpn:
+          newStatus = ConnectivityStatus.vpn;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.bluetooth:
+          newStatus = ConnectivityStatus.bluetooth;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.other:
+          newStatus = ConnectivityStatus.other;
+          newIsConnected = await _testInternetConnection();
+          break;
+        case ConnectivityResult.none:
+          newStatus = ConnectivityStatus.disconnected;
+          newIsConnected = false;
+          break;
+      }
+
+      _updateStatus(newStatus, newIsConnected);
+    } catch (e) {
+      debugPrint(
+          '❌ [CONNECTIVITY_SERVICE] Error updating connectivity status: $e');
+      _updateStatus(ConnectivityStatus.unknown, false);
+    }
+  }
+
+  /// اختبار الاتصال بالإنترنت
+  Future<bool> _testInternetConnection() async {
+    try {
+      // On web platform, use HTTP request instead of InternetAddress.lookup
+      if (kIsWeb) {
+        try {
+          final response = await http.get(
+            Uri.parse('https://www.google.com'),
+          ).timeout(_connectionTimeout);
+          return response.statusCode == 200;
+        } catch (e) {
+          debugPrint('❌ [CONNECTIVITY_SERVICE] Web internet test failed: $e');
+          return false;
         }
+      }
+
+      // On mobile platforms, use InternetAddress.lookup
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(_connectionTimeout);
+
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (e) {
+      debugPrint(
+          '❌ [CONNECTIVITY_SERVICE] Internet connection test failed: $e');
+      return false;
+    }
+  }
+
+  /// تحديث الحالة
+  void _updateStatus(ConnectivityStatus status, bool isConnected) {
+    final statusChanged = _currentStatus != status;
+    final connectionChanged = _isConnected != isConnected;
+
+    _currentStatus = status;
+    _isConnected = isConnected;
+
+    if (statusChanged) {
+      debugPrint(
+          '🌐 [CONNECTIVITY_SERVICE] Connectivity status changed: $status');
+      _statusController.add(status);
+    }
+
+    if (connectionChanged) {
+      debugPrint(
+          '🌐 [CONNECTIVITY_SERVICE] Connection status changed: $isConnected');
+      _isConnectedController.add(isConnected);
+    }
+  }
+
+  /// بدء المراقبة
+  void _startMonitoring() {
+    // Listen to connectivity changes
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+      _updateConnectivityStatus,
+      onError: (error) {
+        debugPrint(
+            '❌ [CONNECTIVITY_SERVICE] Connectivity monitoring error: $error');
+      },
+    );
+
+    // Periodic connectivity check
+    _monitoringTimer = Timer.periodic(_connectionCheckInterval, (timer) async {
+      try {
+        await _checkConnectivity();
+      } catch (e) {
+        debugPrint('❌ [CONNECTIVITY_SERVICE] Periodic check error: $e');
       }
     });
   }
 
-  /// Check server connectivity
-  Future<bool> _checkServerConnectivity() async {
-    try {
-      // Skip if checked recently (within 30 seconds)
-      if (_lastServerCheck != null && 
-          DateTime.now().difference(_lastServerCheck!).inSeconds < 30) {
-        return _isServerReachable;
-      }
-
-      final response = await _dio.get(
-        'https://api.idec-ye.com/health',
-        options: Options(
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
-
-      _isServerReachable = response.statusCode == 200;
-      _lastServerCheck = DateTime.now();
-      
-      _notifyServerListeners(_isServerReachable);
-      
-      debugPrint('🌐 [CONNECTIVITY] Server reachable: $_isServerReachable');
-      return _isServerReachable;
-    } catch (e) {
-      _isServerReachable = false;
-      _lastServerCheck = DateTime.now();
-      _notifyServerListeners(false);
-      
-      debugPrint('❌ [CONNECTIVITY] Server check failed: $e');
-      return false;
-    }
-  }
-
-  /// Check if internet is available
-  Future<bool> hasInternetConnection() async {
-    try {
-      final result = await InternetAddress.lookup('google.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Check if server is reachable
-  Future<bool> isServerReachable({bool forceCheck = false}) async {
-    if (forceCheck || _lastServerCheck == null || 
-        DateTime.now().difference(_lastServerCheck!).inMinutes > 5) {
-      return await _checkServerConnectivity();
-    }
-    return _isServerReachable;
-  }
-
-  /// Check if operation requires internet connection
-  bool requiresInternetConnection(String operation) {
-    const internetRequiredOperations = [
-      'login',
-      'register',
-      'verify_otp',
-      'forgot_password',
-      'reset_password',
-      'update_profile',
-      'upload_file',
-      'submit_form',
-      'payment',
-      'sync_data',
-    ];
-    
-    return internetRequiredOperations.contains(operation.toLowerCase());
-  }
-
-  /// Validate connectivity before operation
-  Future<ConnectivityResult> validateConnectivity(String operation) async {
-    if (!requiresInternetConnection(operation)) {
-      return ConnectivityResult.success;
-    }
-
-    if (!_isOnline) {
-      return ConnectivityResult.noInternet;
-    }
-
-    final serverReachable = await isServerReachable();
-    if (!serverReachable) {
-      return ConnectivityResult.serverUnreachable;
-    }
-
-    return ConnectivityResult.success;
-  }
-
-  /// Add connectivity listener
-  void addConnectivityListener(Function(bool) listener) {
-    _connectivityListeners.add(listener);
-  }
-
-  /// Remove connectivity listener
-  void removeConnectivityListener(Function(bool) listener) {
-    _connectivityListeners.remove(listener);
-  }
-
-  /// Add server connectivity listener
-  void addServerListener(Function(bool) listener) {
-    _serverListeners.add(listener);
-  }
-
-  /// Remove server connectivity listener
-  void removeServerListener(Function(bool) listener) {
-    _serverListeners.remove(listener);
-  }
-
-  /// Notify connectivity listeners
-  void _notifyConnectivityListeners(bool isOnline) {
-    for (final listener in _connectivityListeners) {
-      try {
-        listener(isOnline);
-      } catch (e) {
-        debugPrint('❌ [CONNECTIVITY] Error in connectivity listener: $e');
-      }
-    }
-  }
-
-  /// Notify server listeners
-  void _notifyServerListeners(bool isReachable) {
-    for (final listener in _serverListeners) {
-      try {
-        listener(isReachable);
-      } catch (e) {
-        debugPrint('❌ [CONNECTIVITY] Error in server listener: $e');
-      }
-    }
-  }
-
-  /// Get current connectivity status
-  ConnectivityStatus get currentStatus => ConnectivityStatus(
-    isOnline: _isOnline,
-    isServerReachable: _isServerReachable,
-    lastServerCheck: _lastServerCheck,
-  );
-
-  /// Dispose resources
-  void dispose() {
+  /// إيقاف المراقبة
+  void _stopMonitoring() {
     _connectivitySubscription?.cancel();
-    _connectivityListeners.clear();
-    _serverListeners.clear();
+    _connectivitySubscription = null;
+    _monitoringTimer?.cancel();
+    _monitoringTimer = null;
   }
 
-  // Getters
-  bool get isOnline => _isOnline;
-  bool get isServerConnected => _isServerReachable;
-}
-
-/// Connectivity validation result
-enum ConnectivityResult {
-  success,
-  noInternet,
-  serverUnreachable,
-}
-
-/// Connectivity status model
-class ConnectivityStatus {
-  final bool isOnline;
-  final bool isServerReachable;
-  final DateTime? lastServerCheck;
-
-  ConnectivityStatus({
-    required this.isOnline,
-    required this.isServerReachable,
-    this.lastServerCheck,
-  });
-
-  bool get isFullyConnected => isOnline && isServerReachable;
-
-  String get statusMessage {
-    if (!isOnline) return 'لا يوجد اتصال بالإنترنت';
-    if (!isServerReachable) return 'الخادم غير متاح';
-    return 'متصل';
+  /// التحقق من الاتصال (public method)
+  Future<bool> checkConnection() async {
+    await _ensureInitialized();
+    await _checkConnectivity();
+    return _isConnected;
   }
 
-  Map<String, dynamic> toJson() => {
-    'isOnline': isOnline,
-    'isServerReachable': isServerReachable,
-    'lastServerCheck': lastServerCheck?.toIso8601String(),
-    'isFullyConnected': isFullyConnected,
-    'statusMessage': statusMessage,
-  };
+  /// الحصول على نوع الاتصال الحالي
+  Future<ConnectivityStatus> getCurrentConnectivityType() async {
+    await _ensureInitialized();
+    return _currentStatus;
+  }
+
+  /// انتظار الاتصال
+  Future<void> waitForConnection({Duration? timeout}) async {
+    await _ensureInitialized();
+
+    final completer = Completer<void>();
+    late StreamSubscription subscription;
+
+    subscription = isConnectedStream.listen((connected) {
+      if (connected) {
+        subscription.cancel();
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+    });
+
+    // Check if already connected
+    if (_isConnected) {
+      subscription.cancel();
+      completer.complete();
+    }
+
+    // Set timeout if provided
+    if (timeout != null) {
+      Timer(timeout, () {
+        subscription.cancel();
+        if (!completer.isCompleted) {
+          completer
+              .completeError(TimeoutException('Connection timeout', timeout));
+        }
+      });
+    }
+
+    return completer.future;
+  }
+
+  /// الحصول على معلومات الاتصال
+  Future<Map<String, dynamic>> getConnectivityInfo() async {
+    await _ensureInitialized();
+
+    return {
+      'currentStatus': _currentStatus.name,
+      'isConnected': _isConnected,
+      'connectionType': _currentStatus.name,
+      'lastCheck': DateTime.now().toIso8601String(),
+      'platform': kIsWeb ? 'web' : Platform.operatingSystem,
+    };
+  }
+
+  /// تنظيف الموارد
+  Future<void> dispose() async {
+    try {
+      debugPrint('🌐 [CONNECTIVITY_SERVICE] Disposing...');
+
+      _stopMonitoring();
+
+      await _statusController.close();
+      await _isConnectedController.close();
+      } catch (e) {
+      debugPrint('❌ [CONNECTIVITY_SERVICE] Disposal error: $e');
+    }
+  }
 }
+
+/// أنواع حالة الاتصال
+enum ConnectivityStatus {
+  wifi,
+  mobile,
+  ethernet,
+  vpn,
+  bluetooth,
+  other,
+  disconnected,
+  unknown,
+}
+
+/// Provider للخدمة
+final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
+  return ConnectivityService.instance;
+});
+
+/// Provider لحالة الاتصال
+final connectivityStatusProvider = StreamProvider<ConnectivityStatus>((ref) {
+  final service = ref.watch(connectivityServiceProvider);
+  return service.connectivityStream;
+});
+
+/// Provider لحالة الاتصال (boolean)
+final isConnectedProvider = StreamProvider<bool>((ref) {
+  final service = ref.watch(connectivityServiceProvider);
+  return service.isConnectedStream;
+});

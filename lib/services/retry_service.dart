@@ -63,7 +63,7 @@ class RetryService {
         }
 
         if (kDebugMode) {
-          print('Retry attempt $attempt/$maxRetries after ${delay.inMilliseconds}ms');
+          debugPrint('Retry attempt $attempt/$maxRetries after ${delay.inMilliseconds}ms');
         }
 
         await Future.delayed(delay);
@@ -84,7 +84,7 @@ class RetryService {
     _offlineQueue.add(operation);
     
     if (kDebugMode) {
-      print('Operation queued for offline execution: ${operation.id}');
+      debugPrint('Operation queued for offline execution: ${operation.id}');
     }
   }
 
@@ -108,13 +108,13 @@ class RetryService {
         operation.onSuccess?.call();
         
         if (kDebugMode) {
-          print('Queued operation executed successfully: ${operation.id}');
+          debugPrint('Queued operation executed successfully: ${operation.id}');
         }
       } catch (error) {
         operation.onError?.call(error);
         
         if (kDebugMode) {
-          print('Queued operation failed: ${operation.id} - $error');
+          debugPrint('Queued operation failed: ${operation.id} - $error');
         }
         
         // Re-queue if it should be retried

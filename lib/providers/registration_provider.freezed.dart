@@ -20,7 +20,12 @@ mixin _$RegistrationState {
   RegistrationStatusResponse? get status => throw _privateConstructorUsedError;
   bool get isLoading => throw _privateConstructorUsedError;
   AppError? get error => throw _privateConstructorUsedError;
-  DateTime? get lastUpdated => throw _privateConstructorUsedError;
+  DateTime? get lastUpdated =>
+      throw _privateConstructorUsedError; // إضافة الخصائص المفقودة
+  List<OtpChannelModel>? get availableChannels =>
+      throw _privateConstructorUsedError;
+  OtpChannelModel? get selectedChannel => throw _privateConstructorUsedError;
+  OtpChannelModel? get defaultChannel => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $RegistrationStateCopyWith<RegistrationState> get copyWith =>
@@ -38,10 +43,15 @@ abstract class $RegistrationStateCopyWith<$Res> {
       RegistrationStatusResponse? status,
       bool isLoading,
       AppError? error,
-      DateTime? lastUpdated});
+      DateTime? lastUpdated,
+      List<OtpChannelModel>? availableChannels,
+      OtpChannelModel? selectedChannel,
+      OtpChannelModel? defaultChannel});
 
   $RegistrationSettingsModelCopyWith<$Res>? get settings;
   $RegistrationStatusResponseCopyWith<$Res>? get status;
+  $OtpChannelModelCopyWith<$Res>? get selectedChannel;
+  $OtpChannelModelCopyWith<$Res>? get defaultChannel;
 }
 
 /// @nodoc
@@ -62,6 +72,9 @@ class _$RegistrationStateCopyWithImpl<$Res, $Val extends RegistrationState>
     Object? isLoading = null,
     Object? error = freezed,
     Object? lastUpdated = freezed,
+    Object? availableChannels = freezed,
+    Object? selectedChannel = freezed,
+    Object? defaultChannel = freezed,
   }) {
     return _then(_value.copyWith(
       settings: freezed == settings
@@ -84,6 +97,18 @@ class _$RegistrationStateCopyWithImpl<$Res, $Val extends RegistrationState>
           ? _value.lastUpdated
           : lastUpdated // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      availableChannels: freezed == availableChannels
+          ? _value.availableChannels
+          : availableChannels // ignore: cast_nullable_to_non_nullable
+              as List<OtpChannelModel>?,
+      selectedChannel: freezed == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as OtpChannelModel?,
+      defaultChannel: freezed == defaultChannel
+          ? _value.defaultChannel
+          : defaultChannel // ignore: cast_nullable_to_non_nullable
+              as OtpChannelModel?,
     ) as $Val);
   }
 
@@ -110,6 +135,30 @@ class _$RegistrationStateCopyWithImpl<$Res, $Val extends RegistrationState>
       return _then(_value.copyWith(status: value) as $Val);
     });
   }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $OtpChannelModelCopyWith<$Res>? get selectedChannel {
+    if (_value.selectedChannel == null) {
+      return null;
+    }
+
+    return $OtpChannelModelCopyWith<$Res>(_value.selectedChannel!, (value) {
+      return _then(_value.copyWith(selectedChannel: value) as $Val);
+    });
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $OtpChannelModelCopyWith<$Res>? get defaultChannel {
+    if (_value.defaultChannel == null) {
+      return null;
+    }
+
+    return $OtpChannelModelCopyWith<$Res>(_value.defaultChannel!, (value) {
+      return _then(_value.copyWith(defaultChannel: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -125,12 +174,19 @@ abstract class _$$RegistrationStateImplCopyWith<$Res>
       RegistrationStatusResponse? status,
       bool isLoading,
       AppError? error,
-      DateTime? lastUpdated});
+      DateTime? lastUpdated,
+      List<OtpChannelModel>? availableChannels,
+      OtpChannelModel? selectedChannel,
+      OtpChannelModel? defaultChannel});
 
   @override
   $RegistrationSettingsModelCopyWith<$Res>? get settings;
   @override
   $RegistrationStatusResponseCopyWith<$Res>? get status;
+  @override
+  $OtpChannelModelCopyWith<$Res>? get selectedChannel;
+  @override
+  $OtpChannelModelCopyWith<$Res>? get defaultChannel;
 }
 
 /// @nodoc
@@ -149,6 +205,9 @@ class __$$RegistrationStateImplCopyWithImpl<$Res>
     Object? isLoading = null,
     Object? error = freezed,
     Object? lastUpdated = freezed,
+    Object? availableChannels = freezed,
+    Object? selectedChannel = freezed,
+    Object? defaultChannel = freezed,
   }) {
     return _then(_$RegistrationStateImpl(
       settings: freezed == settings
@@ -171,6 +230,18 @@ class __$$RegistrationStateImplCopyWithImpl<$Res>
           ? _value.lastUpdated
           : lastUpdated // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      availableChannels: freezed == availableChannels
+          ? _value._availableChannels
+          : availableChannels // ignore: cast_nullable_to_non_nullable
+              as List<OtpChannelModel>?,
+      selectedChannel: freezed == selectedChannel
+          ? _value.selectedChannel
+          : selectedChannel // ignore: cast_nullable_to_non_nullable
+              as OtpChannelModel?,
+      defaultChannel: freezed == defaultChannel
+          ? _value.defaultChannel
+          : defaultChannel // ignore: cast_nullable_to_non_nullable
+              as OtpChannelModel?,
     ));
   }
 }
@@ -184,8 +255,12 @@ class _$RegistrationStateImpl extends _RegistrationState
       this.status,
       this.isLoading = false,
       this.error,
-      this.lastUpdated})
-      : super._();
+      this.lastUpdated,
+      final List<OtpChannelModel>? availableChannels,
+      this.selectedChannel,
+      this.defaultChannel})
+      : _availableChannels = availableChannels,
+        super._();
 
   @override
   final RegistrationSettingsModel? settings;
@@ -198,10 +273,27 @@ class _$RegistrationStateImpl extends _RegistrationState
   final AppError? error;
   @override
   final DateTime? lastUpdated;
+// إضافة الخصائص المفقودة
+  final List<OtpChannelModel>? _availableChannels;
+// إضافة الخصائص المفقودة
+  @override
+  List<OtpChannelModel>? get availableChannels {
+    final value = _availableChannels;
+    if (value == null) return null;
+    if (_availableChannels is EqualUnmodifiableListView)
+      return _availableChannels;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final OtpChannelModel? selectedChannel;
+  @override
+  final OtpChannelModel? defaultChannel;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'RegistrationState(settings: $settings, status: $status, isLoading: $isLoading, error: $error, lastUpdated: $lastUpdated)';
+    return 'RegistrationState(settings: $settings, status: $status, isLoading: $isLoading, error: $error, lastUpdated: $lastUpdated, availableChannels: $availableChannels, selectedChannel: $selectedChannel, defaultChannel: $defaultChannel)';
   }
 
   @override
@@ -213,7 +305,10 @@ class _$RegistrationStateImpl extends _RegistrationState
       ..add(DiagnosticsProperty('status', status))
       ..add(DiagnosticsProperty('isLoading', isLoading))
       ..add(DiagnosticsProperty('error', error))
-      ..add(DiagnosticsProperty('lastUpdated', lastUpdated));
+      ..add(DiagnosticsProperty('lastUpdated', lastUpdated))
+      ..add(DiagnosticsProperty('availableChannels', availableChannels))
+      ..add(DiagnosticsProperty('selectedChannel', selectedChannel))
+      ..add(DiagnosticsProperty('defaultChannel', defaultChannel));
   }
 
   @override
@@ -228,12 +323,26 @@ class _$RegistrationStateImpl extends _RegistrationState
                 other.isLoading == isLoading) &&
             (identical(other.error, error) || other.error == error) &&
             (identical(other.lastUpdated, lastUpdated) ||
-                other.lastUpdated == lastUpdated));
+                other.lastUpdated == lastUpdated) &&
+            const DeepCollectionEquality()
+                .equals(other._availableChannels, _availableChannels) &&
+            (identical(other.selectedChannel, selectedChannel) ||
+                other.selectedChannel == selectedChannel) &&
+            (identical(other.defaultChannel, defaultChannel) ||
+                other.defaultChannel == defaultChannel));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, settings, status, isLoading, error, lastUpdated);
+  int get hashCode => Object.hash(
+      runtimeType,
+      settings,
+      status,
+      isLoading,
+      error,
+      lastUpdated,
+      const DeepCollectionEquality().hash(_availableChannels),
+      selectedChannel,
+      defaultChannel);
 
   @JsonKey(ignore: true)
   @override
@@ -249,7 +358,10 @@ abstract class _RegistrationState extends RegistrationState {
       final RegistrationStatusResponse? status,
       final bool isLoading,
       final AppError? error,
-      final DateTime? lastUpdated}) = _$RegistrationStateImpl;
+      final DateTime? lastUpdated,
+      final List<OtpChannelModel>? availableChannels,
+      final OtpChannelModel? selectedChannel,
+      final OtpChannelModel? defaultChannel}) = _$RegistrationStateImpl;
   const _RegistrationState._() : super._();
 
   @override
@@ -262,6 +374,12 @@ abstract class _RegistrationState extends RegistrationState {
   AppError? get error;
   @override
   DateTime? get lastUpdated;
+  @override // إضافة الخصائص المفقودة
+  List<OtpChannelModel>? get availableChannels;
+  @override
+  OtpChannelModel? get selectedChannel;
+  @override
+  OtpChannelModel? get defaultChannel;
   @override
   @JsonKey(ignore: true)
   _$$RegistrationStateImplCopyWith<_$RegistrationStateImpl> get copyWith =>

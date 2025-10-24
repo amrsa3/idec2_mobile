@@ -8,7 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/enhanced_auth_provider.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
@@ -37,22 +37,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Clear any previous errors
-    ref.read(authProvider.notifier).clearError();
+    ref.read(compatibleAuthProvider.notifier).clearError();
 
     try {
       final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
 
       debugPrint('LoginScreen: Attempting login for $fullPhoneNumber');
 
-      final success = await ref.read(authProvider.notifier).loginWithPhone(
-            fullPhoneNumber,
-            _passwordController.text.trim(),
-          );
+      final success =
+          await ref.read(compatibleAuthProvider.notifier).loginWithPhone(
+                fullPhoneNumber,
+                _passwordController.text.trim(),
+              );
 
       if (mounted) {
         if (success) {
+          debugPrint('LoginScreen: Login successful, checking auth state...');
+
+          // Check auth state after successful login
+          final authState = ref.read(compatibleAuthProvider);
           debugPrint(
-              'LoginScreen: Login successful, navigating to main screen');
+              'LoginScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}');
+          debugPrint(
+              'LoginScreen: Auth state - user: ${authState.user?.phone}');
+          debugPrint(
+              'LoginScreen: Auth state - isLoading: ${authState.isLoading}');
 
           // إرسال إشعار نجاح عبر النظام المركزي
           await NotificationService.showSuccess(
@@ -61,16 +70,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
 
           // Wait a moment for auth state to fully update, then navigate
-          await Future.delayed(const Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Double check auth state before navigation
+          final finalAuthState = ref.read(compatibleAuthProvider);
+          debugPrint(
+              'LoginScreen: Final auth state - isAuthenticated: ${finalAuthState.isAuthenticated}');
 
           // Navigate to main screen
           if (mounted) {
+            debugPrint(
+                'LoginScreen: Attempting navigation to ${AppRoutes.main}');
             context.go(AppRoutes.main);
             debugPrint('LoginScreen: Successfully navigated to main screen');
+
+            // Force a rebuild to ensure the router picks up the auth state change
+            await Future.delayed(const Duration(milliseconds: 100));
+            if (mounted) {
+              debugPrint('LoginScreen: Final navigation check completed');
+            }
           }
         } else {
           // Check if the error is related to unverified phone number
-          final authState = ref.read(authProvider);
+          final authState = ref.read(compatibleAuthProvider);
 
           if (authState.error == 'phone_not_verified' &&
               authState.unverifiedPhoneNumber != null) {
@@ -78,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             if (mounted) {
               // First send OTP automatically
               try {
-                await ref.read(authProvider.notifier).resendOtp(
+                await ref.read(compatibleAuthProvider.notifier).resendOtp(
                       authState.unverifiedPhoneNumber!,
                     );
 
@@ -187,7 +209,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(compatibleAuthProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,

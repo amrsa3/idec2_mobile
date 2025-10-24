@@ -27,7 +27,13 @@ mixin _$UserModel {
   List<String> get roles => throw _privateConstructorUsedError;
   DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  UserProfileModel? get profile => throw _privateConstructorUsedError;
+  UserProfileModel? get profile =>
+      throw _privateConstructorUsedError; // إضافة الخصائص المفقودة
+  String? get profilePictureUrl => throw _privateConstructorUsedError;
+  String? get fullNameAr => throw _privateConstructorUsedError;
+  String? get fullNameEn => throw _privateConstructorUsedError;
+  String? get firstName => throw _privateConstructorUsedError;
+  String? get lastName => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -48,7 +54,12 @@ abstract class $UserModelCopyWith<$Res> {
       List<String> roles,
       DateTime? createdAt,
       DateTime? updatedAt,
-      UserProfileModel? profile});
+      UserProfileModel? profile,
+      String? profilePictureUrl,
+      String? fullNameAr,
+      String? fullNameEn,
+      String? firstName,
+      String? lastName});
 
   $UserProfileModelCopyWith<$Res>? get profile;
 }
@@ -74,6 +85,11 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? profile = freezed,
+    Object? profilePictureUrl = freezed,
+    Object? fullNameAr = freezed,
+    Object? fullNameEn = freezed,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -108,6 +124,26 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
               as UserProfileModel?,
+      profilePictureUrl: freezed == profilePictureUrl
+          ? _value.profilePictureUrl
+          : profilePictureUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullNameAr: freezed == fullNameAr
+          ? _value.fullNameAr
+          : fullNameAr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullNameEn: freezed == fullNameEn
+          ? _value.fullNameEn
+          : fullNameEn // ignore: cast_nullable_to_non_nullable
+              as String?,
+      firstName: freezed == firstName
+          ? _value.firstName
+          : firstName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastName: freezed == lastName
+          ? _value.lastName
+          : lastName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -140,7 +176,12 @@ abstract class _$$UserModelImplCopyWith<$Res>
       List<String> roles,
       DateTime? createdAt,
       DateTime? updatedAt,
-      UserProfileModel? profile});
+      UserProfileModel? profile,
+      String? profilePictureUrl,
+      String? fullNameAr,
+      String? fullNameEn,
+      String? firstName,
+      String? lastName});
 
   @override
   $UserProfileModelCopyWith<$Res>? get profile;
@@ -165,6 +206,11 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? profile = freezed,
+    Object? profilePictureUrl = freezed,
+    Object? fullNameAr = freezed,
+    Object? fullNameEn = freezed,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
   }) {
     return _then(_$UserModelImpl(
       id: null == id
@@ -199,6 +245,26 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value.profile
           : profile // ignore: cast_nullable_to_non_nullable
               as UserProfileModel?,
+      profilePictureUrl: freezed == profilePictureUrl
+          ? _value.profilePictureUrl
+          : profilePictureUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullNameAr: freezed == fullNameAr
+          ? _value.fullNameAr
+          : fullNameAr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullNameEn: freezed == fullNameEn
+          ? _value.fullNameEn
+          : fullNameEn // ignore: cast_nullable_to_non_nullable
+              as String?,
+      firstName: freezed == firstName
+          ? _value.firstName
+          : firstName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastName: freezed == lastName
+          ? _value.lastName
+          : lastName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -214,7 +280,12 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       final List<String> roles = const [],
       this.createdAt,
       this.updatedAt,
-      this.profile})
+      this.profile,
+      this.profilePictureUrl,
+      this.fullNameAr,
+      this.fullNameEn,
+      this.firstName,
+      this.lastName})
       : _roles = roles;
 
   factory _$UserModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -244,10 +315,21 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
   final DateTime? updatedAt;
   @override
   final UserProfileModel? profile;
+// إضافة الخصائص المفقودة
+  @override
+  final String? profilePictureUrl;
+  @override
+  final String? fullNameAr;
+  @override
+  final String? fullNameEn;
+  @override
+  final String? firstName;
+  @override
+  final String? lastName;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'UserModel(id: $id, phone: $phone, email: $email, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profile: $profile)';
+    return 'UserModel(id: $id, phone: $phone, email: $email, phoneVerified: $phoneVerified, roles: $roles, createdAt: $createdAt, updatedAt: $updatedAt, profile: $profile, profilePictureUrl: $profilePictureUrl, fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, firstName: $firstName, lastName: $lastName)';
   }
 
   @override
@@ -262,7 +344,12 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       ..add(DiagnosticsProperty('roles', roles))
       ..add(DiagnosticsProperty('createdAt', createdAt))
       ..add(DiagnosticsProperty('updatedAt', updatedAt))
-      ..add(DiagnosticsProperty('profile', profile));
+      ..add(DiagnosticsProperty('profile', profile))
+      ..add(DiagnosticsProperty('profilePictureUrl', profilePictureUrl))
+      ..add(DiagnosticsProperty('fullNameAr', fullNameAr))
+      ..add(DiagnosticsProperty('fullNameEn', fullNameEn))
+      ..add(DiagnosticsProperty('firstName', firstName))
+      ..add(DiagnosticsProperty('lastName', lastName));
   }
 
   @override
@@ -280,7 +367,17 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
-            (identical(other.profile, profile) || other.profile == profile));
+            (identical(other.profile, profile) || other.profile == profile) &&
+            (identical(other.profilePictureUrl, profilePictureUrl) ||
+                other.profilePictureUrl == profilePictureUrl) &&
+            (identical(other.fullNameAr, fullNameAr) ||
+                other.fullNameAr == fullNameAr) &&
+            (identical(other.fullNameEn, fullNameEn) ||
+                other.fullNameEn == fullNameEn) &&
+            (identical(other.firstName, firstName) ||
+                other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName));
   }
 
   @JsonKey(ignore: true)
@@ -294,7 +391,12 @@ class _$UserModelImpl with DiagnosticableTreeMixin implements _UserModel {
       const DeepCollectionEquality().hash(_roles),
       createdAt,
       updatedAt,
-      profile);
+      profile,
+      profilePictureUrl,
+      fullNameAr,
+      fullNameEn,
+      firstName,
+      lastName);
 
   @JsonKey(ignore: true)
   @override
@@ -319,7 +421,12 @@ abstract class _UserModel implements UserModel {
       final List<String> roles,
       final DateTime? createdAt,
       final DateTime? updatedAt,
-      final UserProfileModel? profile}) = _$UserModelImpl;
+      final UserProfileModel? profile,
+      final String? profilePictureUrl,
+      final String? fullNameAr,
+      final String? fullNameEn,
+      final String? firstName,
+      final String? lastName}) = _$UserModelImpl;
 
   factory _UserModel.fromJson(Map<String, dynamic> json) =
       _$UserModelImpl.fromJson;
@@ -340,6 +447,16 @@ abstract class _UserModel implements UserModel {
   DateTime? get updatedAt;
   @override
   UserProfileModel? get profile;
+  @override // إضافة الخصائص المفقودة
+  String? get profilePictureUrl;
+  @override
+  String? get fullNameAr;
+  @override
+  String? get fullNameEn;
+  @override
+  String? get firstName;
+  @override
+  String? get lastName;
   @override
   @JsonKey(ignore: true)
   _$$UserModelImplCopyWith<_$UserModelImpl> get copyWith =>

@@ -50,7 +50,7 @@ class WebConnectivityService {
       return internetConnected;
       
     } catch (e) {
-      print('🔴 Web connectivity check failed: $e');
+      debugPrint('🔴 Web connectivity check failed: $e');
       _updateCache(false);
       return false;
     }
@@ -62,7 +62,7 @@ class WebConnectivityService {
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('🔄 Testing server connection (attempt $attempt/$maxRetries)');
+        debugPrint('🔄 Testing server connection (attempt $attempt/$maxRetries)');
         
         final response = await _dio.get(
           '${ApiConstants.baseUrl}/api/v1/health',
@@ -80,14 +80,14 @@ class WebConnectivityService {
         );
         
         if (response.statusCode == 200) {
-          print('✅ Server connection successful');
+          debugPrint('✅ Server connection successful');
           return true;
         }
         
-        print('⚠️ Server returned status: ${response.statusCode}');
+        debugPrint('⚠️ Server returned status: ${response.statusCode}');
         
       } catch (e) {
-        print('🔴 Server connection attempt $attempt failed: $e');
+        debugPrint('🔴 Server connection attempt $attempt failed: $e');
         
         if (attempt < maxRetries) {
           // انتظار قبل المحاولة التالية
@@ -108,7 +108,7 @@ class WebConnectivityService {
       'https://api.github.com/zen', // إضافة خادم آخر
     ];
 
-    print('🔄 Testing internet connectivity...');
+    debugPrint('🔄 Testing internet connectivity...');
 
     for (final url in testUrls) {
       try {
@@ -126,16 +126,16 @@ class WebConnectivityService {
         );
         
         if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 400) {
-          print('✅ Internet connection confirmed via $url');
+          debugPrint('✅ Internet connection confirmed via $url');
           return true;
         }
       } catch (e) {
-        print('🔴 Failed to connect to $url: $e');
+        debugPrint('🔴 Failed to connect to $url: $e');
         continue; // جرب الخادم التالي
       }
     }
     
-    print('🔴 All internet connectivity tests failed');
+    debugPrint('🔴 All internet connectivity tests failed');
     return false;
   }
 
@@ -174,32 +174,32 @@ class WebConnectivityService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
-          print('🔴 Dio Web Error: ${error.message}');
-          print('🔴 Error Type: ${error.type}');
-          print('🔴 Response: ${error.response?.statusCode} - ${error.response?.data}');
+          debugPrint('🔴 Dio Web Error: ${error.message}');
+          debugPrint('🔴 Error Type: ${error.type}');
+          debugPrint('🔴 Response: ${error.response?.statusCode} - ${error.response?.data}');
           
           // معالجة خاصة لأخطاء CORS
           if (error.message?.contains('CORS') == true || 
               error.message?.contains('Cross-Origin') == true) {
-            print('🔴 CORS Error detected - server configuration issue');
+            debugPrint('🔴 CORS Error detected - server configuration issue');
           }
           
           // معالجة خاصة لأخطاء الشبكة
           if (error.type == DioErrorType.connectionTimeout ||
               error.type == DioErrorType.receiveTimeout ||
               error.type == DioErrorType.sendTimeout) {
-            print('🔴 Network timeout error in web environment');
+            debugPrint('🔴 Network timeout error in web environment');
           }
           
           // معالجة خاصة لأخطاء الاتصال
           if (error.type == DioErrorType.connectionError) {
-            print('🔴 Connection error - check network and server availability');
+            debugPrint('🔴 Connection error - check network and server availability');
           }
           
           handler.next(error);
         },
         onRequest: (options, handler) {
-          print('🔄 Web Request: ${options.method} ${options.uri}');
+          debugPrint('🔄 Web Request: ${options.method} ${options.uri}');
           
           // إضافة headers إضافية للويب
           options.headers['Cache-Control'] = 'no-cache';
@@ -209,7 +209,7 @@ class WebConnectivityService {
           handler.next(options);
         },
         onResponse: (response, handler) {
-          print('✅ Web Response: ${response.statusCode} ${response.requestOptions.uri}');
+          debugPrint('✅ Web Response: ${response.statusCode} ${response.requestOptions.uri}');
           handler.next(response);
         },
       ),

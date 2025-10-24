@@ -17,6 +17,12 @@ class UserModel with _$UserModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     UserProfileModel? profile,
+    // إضافة الخصائص المفقودة
+    String? profilePictureUrl,
+    String? fullNameAr,
+    String? fullNameEn,
+    String? firstName,
+    String? lastName,
   }) = _UserModel;
 
   factory UserModel.fromJson(Map<String, dynamic> json) =>
@@ -37,17 +43,27 @@ class UserModel with _$UserModel {
       safeJson['email'] = json['email'] as String?;
       safeJson['phoneVerified'] = json['phoneVerified'] as bool? ?? false;
 
-      // Handle roles array
+      // Handle roles array - check both 'roles' and 'userType'
+      List<String> roles = <String>[];
+
       if (json['roles'] != null) {
         if (json['roles'] is List) {
-          safeJson['roles'] =
-              (json['roles'] as List).map((e) => e.toString()).toList();
-        } else {
-          safeJson['roles'] = <String>[];
+          roles = (json['roles'] as List).map((e) => e.toString()).toList();
         }
-      } else {
-        safeJson['roles'] = <String>[];
       }
+
+      // Also check for userType field
+      if (json['userType'] != null) {
+        roles.add(json['userType'].toString());
+      }
+
+      // Also check for permissions field
+      if (json['permissions'] != null && json['permissions'] is List) {
+        roles.addAll(
+            (json['permissions'] as List).map((e) => e.toString()).toList());
+      }
+
+      safeJson['roles'] = roles;
 
       // Handle optional date fields
       if (json['createdAt'] != null) {

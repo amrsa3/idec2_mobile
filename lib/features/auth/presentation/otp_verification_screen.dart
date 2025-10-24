@@ -9,8 +9,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/language_provider.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_otp_input.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -80,7 +80,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _verifyOtp() async {
     if (!_isOtpComplete) return;
 
-    final success = await ref.read(authProvider.notifier).verifyOtp(
+    final success = await ref.read(compatibleAuthProvider.notifier).verifyOtp(
           widget.phone,
           _otpValue,
         );
@@ -111,9 +111,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (!_canResend) return;
 
     final response =
-        await ref.read(authProvider.notifier).resendOtp(widget.phone);
+        await ref.read(compatibleAuthProvider.notifier).resendOtp(widget.phone);
 
-    if (response.success) {
+    if (response) {
       _startTimer();
       _clearOtp();
 
@@ -139,7 +139,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(compatibleAuthProvider);
     final isRTL = ref.watch(isRTLProvider);
 
     return Scaffold(

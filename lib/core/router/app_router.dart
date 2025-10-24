@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
-import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/connection/presentation/connection_status_screen.dart';
 import '../../features/connection/presentation/error_reporting_screen.dart';
@@ -15,11 +15,10 @@ import '../../features/main/presentation/main_screen.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/profile/presentation/screens/profile_main_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
-// Import providers
-import '../../providers/enhanced_auth_provider.dart';
-import '../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../services/compatible_auth_service.dart';
 
 // Route names
 class AppRoutes {
@@ -44,10 +43,10 @@ class AppRoutes {
 // Auth change notifier for GoRouter
 class AuthChangeNotifier extends ChangeNotifier {
   final Ref ref;
-  
+
   AuthChangeNotifier(this.ref) {
     // Listen to auth state changes
-    ref.listen(authProvider, (previous, next) {
+    ref.listen(compatibleAuthProvider, (previous, next) {
       notifyListeners();
     });
   }
@@ -56,7 +55,7 @@ class AuthChangeNotifier extends ChangeNotifier {
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = AuthChangeNotifier(ref);
-  
+
   return GoRouter(
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
@@ -64,13 +63,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: authNotifier,
     // Deep linking configuration
     redirect: (context, state) {
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       final isAuthenticated = authState.isAuthenticated;
       final isLoading = authState.isLoading;
-      final isRegistering = authState.isRegistering;
       final currentRoute = state.uri.path;
 
-      print('GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, isRegistering=$isRegistering, user=${authState.user}');
+      debugPrint(
+          'GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, user=${authState.user?.phone}');
 
       // Don't redirect while loading
       if (isLoading) return null;
@@ -90,18 +89,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         AppRoutes.errorReporting,
       ];
 
-      // Special case: If user is registering, don't redirect from register or OTP pages
-      if (isRegistering && 
-          (currentRoute == AppRoutes.register || currentRoute == AppRoutes.otpVerification)) {
-        return null; // Stay on current page during registration process
-      }
-
       // If user is not authenticated and trying to access protected route
       if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
         return AppRoutes.login;
       }
 
-      // If user is authenticated and trying to access auth routes (except OTP verification)
+      // If user is authenticated and trying to access auth routes
       if (isAuthenticated &&
           (currentRoute == AppRoutes.login ||
               currentRoute == AppRoutes.register)) {

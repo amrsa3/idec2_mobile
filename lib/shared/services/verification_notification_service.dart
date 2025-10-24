@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/enhanced_auth_provider.dart';
+import '../../services/compatible_auth_service.dart';
 import 'notification_service.dart';
 
 class VerificationNotificationService {
@@ -40,7 +40,7 @@ class VerificationNotificationService {
   /// Check if user needs verification notification and show it
   static void _checkAndShowNotification(WidgetRef ref) {
     try {
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       final user = authState.user;
 
       debugPrint(

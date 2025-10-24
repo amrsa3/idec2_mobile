@@ -2,26 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../providers/language_provider.dart';
-import '../../../providers/enhanced_auth_provider.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/language_service.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
   const LanguageSelectionScreen({super.key});
 
   @override
-  ConsumerState<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
+  ConsumerState<LanguageSelectionScreen> createState() =>
+      _LanguageSelectionScreenState();
 }
 
-class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScreen>
+class _LanguageSelectionScreenState
+    extends ConsumerState<LanguageSelectionScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   Locale? _selectedLocale;
 
   @override
@@ -68,18 +71,19 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
 
     // Save language preference
     await ref.read(languageProvider.notifier).changeLanguage(locale);
-    
+
     // Mark language selection as completed
     await LanguageService.markLanguageSelectionCompleted();
 
     // Navigate to next screen after a short delay
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (!mounted) return;
 
     // Check if user is authenticated
-    final isAuthenticated = ref.read(isAuthenticatedProvider);
-    
+    final isAuthenticated =
+        ref.read(compatibleAuthProvider.notifier).isAuthenticated;
+
     if (isAuthenticated) {
       context.go(AppRoutes.main);
     } else {
@@ -91,7 +95,7 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
   @override
   Widget build(BuildContext context) {
     final languageState = ref.watch(languageProvider);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Container(
@@ -119,7 +123,7 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
                       children: [
                         // Top spacing
                         const SizedBox(height: 20),
-                        
+
                         // Logo section
                         Container(
                           width: 100,
@@ -141,32 +145,36 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
                             fit: BoxFit.contain,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Title
                         Text(
                           'Choose Your Language',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
                           textAlign: TextAlign.center,
                         ),
-                        
+
                         const SizedBox(height: 6),
-                        
+
                         // Subtitle
                         Text(
                           'اختر لغتك المفضلة',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Language options
                         Expanded(
                           child: Column(
@@ -175,37 +183,47 @@ class _LanguageSelectionScreenState extends ConsumerState<LanguageSelectionScree
                               _LanguageOption(
                                 locale: const Locale('en'),
                                 title: 'English',
-                                subtitle: 'IDEC Dental Conference & Exhibition 2026',
+                                subtitle:
+                                    'IDEC Dental Conference & Exhibition 2026',
                                 flag: '🇺🇸',
-                                isSelected: _selectedLocale == const Locale('en'),
-                                isLoading: languageState.isLoading && _selectedLocale == const Locale('en'),
-                                onTap: () => _selectLanguage(const Locale('en')),
+                                isSelected:
+                                    _selectedLocale == const Locale('en'),
+                                isLoading: languageState.isLoading &&
+                                    _selectedLocale == const Locale('en'),
+                                onTap: () =>
+                                    _selectLanguage(const Locale('en')),
                               ),
-                              
+
                               const SizedBox(height: 16),
-                              
+
                               // Arabic option
                               _LanguageOption(
                                 locale: const Locale('ar'),
                                 title: 'العربية',
                                 subtitle: 'معرض ومؤتمر IDEC لطب الاسنان 2026',
-                                flag: '🇾🇪', // Yemeni flag instead of Saudi flag
-                                isSelected: _selectedLocale == const Locale('ar'),
-                                isLoading: languageState.isLoading && _selectedLocale == const Locale('ar'),
-                                onTap: () => _selectLanguage(const Locale('ar')),
+                                flag:
+                                    '🇾🇪', // Yemeni flag instead of Saudi flag
+                                isSelected:
+                                    _selectedLocale == const Locale('ar'),
+                                isLoading: languageState.isLoading &&
+                                    _selectedLocale == const Locale('ar'),
+                                onTap: () =>
+                                    _selectLanguage(const Locale('ar')),
                               ),
-                              
+
                               // Flexible spacing
                               const Spacer(),
                             ],
                           ),
                         ),
-                        
+
                         // Bottom spacing
                         const SizedBox(height: 16),
-                        
+
                         // Skip button (if user is already authenticated)
-                        if (ref.watch(isAuthenticatedProvider))
+                        if (ref
+                            .watch(compatibleAuthProvider.notifier)
+                            .isAuthenticated)
                           TextButton(
                             onPressed: () {
                               context.go(AppRoutes.main);
@@ -261,7 +279,9 @@ class _LanguageOption extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.white,
+              color: isSelected
+                  ? AppColors.primary.withOpacity(0.1)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected ? AppColors.primary : AppColors.border,
@@ -292,9 +312,9 @@ class _LanguageOption extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 16),
-                
+
                 // Text content
                 Expanded(
                   child: Column(
@@ -303,23 +323,25 @@ class _LanguageOption extends StatelessWidget {
                       Text(
                         title,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                              color: AppColors.textSecondary,
+                            ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Loading or check icon
                 if (isLoading)
                   const SizedBox(
@@ -327,7 +349,8 @@ class _LanguageOption extends StatelessWidget {
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.primary),
                     ),
                   )
                 else if (isSelected)

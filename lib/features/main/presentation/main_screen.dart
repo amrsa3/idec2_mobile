@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../features/profile/presentation/screens/profile_main_screen.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/language_provider.dart';
-import '../../../features/profile/presentation/screens/profile_main_screen.dart';
 import '../../../services/back_button_service.dart';
 import '../../home/presentation/home_screen.dart';
 

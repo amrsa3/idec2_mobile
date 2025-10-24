@@ -71,24 +71,24 @@ class DefaultServerConfigs {
   );
 
   static final ServerConfig localhost = ServerConfig(
-    baseUrl: 'localhost',
-    port: 3000,
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: false,
-    isSecure: false,
+    isSecure: true,
   );
 
   static final ServerConfig localDevelopment = ServerConfig(
-    baseUrl: 'localhost',
-    port: 3000,
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: false,
-    isSecure: false,
+    isSecure: true,
   );
 
   static final ServerConfig emulator = ServerConfig(
-    baseUrl: '10.0.2.2',
-    port: 3000,
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: false,
-    isSecure: false,
+    isSecure: true,
   );
 
   static List<ServerConfig> get presets => [

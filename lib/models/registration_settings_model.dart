@@ -38,7 +38,13 @@ class OtpChannelModel with _$OtpChannelModel {
     required bool enabled,
     required bool isDefault,
     required int priority,
+    String? description,
   }) = _OtpChannelModel;
+
+  const OtpChannelModel._();
+
+  /// Get friendly name for display
+  String get friendlyName => displayName.isNotEmpty ? displayName : name;
 
   factory OtpChannelModel.fromJson(Map<String, dynamic> json) =>
       _$OtpChannelModelFromJson(json);

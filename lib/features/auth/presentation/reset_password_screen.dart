@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../providers/enhanced_auth_provider.dart';
-import '../../../providers/language_provider.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_otp_input.dart';
@@ -19,7 +18,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -40,23 +40,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   bool get _isFormValid {
     return _passwordController.text.isNotEmpty &&
-           _confirmPasswordController.text.isNotEmpty &&
-           _otpValue.isNotEmpty &&
-           _passwordController.text == _confirmPasswordController.text &&
-           _passwordController.text.length >= 8;
+        _confirmPasswordController.text.isNotEmpty &&
+        _otpValue.isNotEmpty &&
+        _passwordController.text == _confirmPasswordController.text &&
+        _passwordController.text.length >= 8;
   }
 
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      await ref.read(authProvider.notifier).resetPassword(
-        widget.phone,
-        _otpValue.trim(),
-        _passwordController.text.trim(),
-      );
+      await ref.read(compatibleAuthProvider.notifier).resetPassword(
+            widget.phone,
+            _otpValue.trim(),
+            _passwordController.text.trim(),
+          );
 
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       if (authState.error != null) {
         await NotificationService.showError(
           title: 'خطأ',
@@ -120,7 +120,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(compatibleAuthProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -144,7 +144,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Logo section
                 Center(
                   child: Container(
@@ -163,9 +163,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Title
                 const Text(
                   'إعادة تعيين كلمة المرور',
@@ -176,9 +176,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Subtitle
                 const Text(
                   'أدخل رمز التحقق وكلمة المرور الجديدة',
@@ -188,9 +188,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // OTP Label
                 const Align(
                   alignment: Alignment.centerRight,
@@ -203,9 +203,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // OTP Input
                 CustomOtpInput(
                   length: 4,
@@ -216,9 +216,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     _validateOtp();
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // New Password field
                 TextFormField(
                   controller: _passwordController,
@@ -231,7 +231,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
@@ -249,7 +251,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -257,15 +260,16 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.error, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.surface,
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Confirm Password field
                 TextFormField(
                   controller: _confirmPasswordController,
@@ -278,7 +282,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
@@ -296,7 +302,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     errorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -304,24 +311,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     focusedErrorBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.error, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.surface,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Reset Password button
                 CustomButton(
                   text: 'إعادة تعيين كلمة المرور',
-                  onPressed: _isFormValid && !authState.isLoading ? _resetPassword : null,
+                  onPressed: _isFormValid && !authState.isLoading
+                      ? _resetPassword
+                      : null,
                   isLoading: authState.isLoading,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Back to login
                 Center(
                   child: TextButton(

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/constants/api_constants.dart';
 import 'core/errors/error_handler.dart';
@@ -11,13 +10,14 @@ import 'core/services/server_settings_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/profile/presentation/widgets/verification_notification_banner.dart';
 import 'l10n/app_localizations.dart';
-import 'providers/enhanced_auth_provider.dart';
+import 'providers/enhanced_auth_provider_v2.dart';
 import 'providers/language_provider.dart';
 import 'services/enhanced_dio_service_v2.dart';
+import 'services/enhanced_storage_service.dart';
 import 'services/notification_service.dart';
+import 'services/platform_storage_service.dart';
 import 'services/registration_settings_service.dart';
 import 'services/retry_service.dart';
-import 'services/platform_storage_service.dart';
 import 'services/storage_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
@@ -106,11 +106,13 @@ void main() async {
         '🏭 [PRODUCTION] Post-update ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
     debugPrint(
         '🏭 [PRODUCTION] Checking if HTTPS is used: ${ApiConstants.baseUrl.startsWith("https://")}');
-    if (ApiConstants.baseUrl.contains('api.idec-ye.com') && !ApiConstants.baseUrl.startsWith("https://")) {
+    if (ApiConstants.baseUrl.contains('api.idec-ye.com') &&
+        !ApiConstants.baseUrl.startsWith("https://")) {
       debugPrint('❌ [PRODUCTION] CRITICAL: HTTPS missing for production API!');
       debugPrint('❌ [PRODUCTION] This will cause connection failures!');
     } else {
-      debugPrint('✅ [PRODUCTION] HTTPS correctly configured for production API');
+      debugPrint(
+          '✅ [PRODUCTION] HTTPS correctly configured for production API');
     }
   }
 
@@ -140,7 +142,8 @@ void main() async {
   debugPrint('🚀 Registration settings will be initialized only when needed');
 
   // Initialize SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
+  // Initialize enhanced storage service
+  await EnhancedStorageService.instance.init();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -221,7 +224,7 @@ class _IDECAppState extends ConsumerState<IDECApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(currentLocaleProvider);
-    final authState = ref.watch(authProvider);
+    final authProvider = ref.watch(enhancedAuthProvider.notifier);
 
     return MaterialApp.router(
       title: 'IDEC',
@@ -255,8 +258,8 @@ class _IDECAppState extends ConsumerState<IDECApp> {
               children: [
                 child ?? const SizedBox.shrink(),
                 // Show verification notification banner for unverified users
-                if (authState.user != null &&
-                    !authState.user!
+                if (authProvider.user != null &&
+                    !authProvider.user!
                         .phoneVerified) // Use phoneVerified instead of isVerified
                   const Positioned(
                     top: 0,
@@ -272,5 +275,3 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     );
   }
 }
-
-

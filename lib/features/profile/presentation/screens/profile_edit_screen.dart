@@ -9,6 +9,7 @@ import '../../../../providers/profile_rules_provider.dart';
 import '../../../../shared/widgets/custom_dropdown.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/loading_button.dart';
+import '../../../../shared/widgets/upload_progress_dialog.dart';
 import '../../../../widgets/profile/document_picker_widget.dart';
 import '../../providers/profile_provider.dart';
 
@@ -48,6 +49,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Map<String, String> _fieldErrors = {};
   Map<String, bool> _fieldEditability = {};
 
+  // متغيرات لتتبع حالة رفع الملفات
+  Map<int, double> _uploadProgress = {}; // تقدم رفع كل ملف
+  Map<int, bool> _uploadSuccess = {}; // نجاح رفع كل ملف
+  Map<int, String> _uploadErrors = {}; // أخطاء رفع كل ملف
+  bool _isUploadingFiles = false;
+
   List<String> _missingRequiredFields = [];
 
   // قائمة الملفات المختارة للرفع
@@ -77,7 +84,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
-  bool _hasDocumentRequiringChanges() {
+  bool _hasDocumentRequiringChanges(WidgetRef ref) {
     try {
       // التحقق من صحة البيانات الأساسية
       if (widget.profile == null) {
@@ -159,7 +166,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             debugPrint('📝 تم اكتشاف تغيير في الحقل: $fieldName');
 
             // التحقق من الحاجة للوثيقة مع معالجة الأخطاء
-            final requiresDoc = _requiresDocument(fieldName);
+            final requiresDoc = _requiresDocument(fieldName, ref);
             if (requiresDoc) {
               debugPrint('📄 الحقل $fieldName يتطلب وثيقة');
               return true;
@@ -472,6 +479,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
             const SizedBox(height: 24),
 
+            // مؤشر تقدم رفع الملفات
+            _buildUploadProgressWidget(),
+
+            const SizedBox(height: 24),
+
             // أزرار الحفظ والإلغاء
             _buildActionButtons(),
 
@@ -769,10 +781,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         const SizedBox(height: 16),
 
         // زر إرفاق وثيقة (يظهر فقط عند وجود تغييرات تتطلب وثائق)
-        if (_hasDocumentRequiringChanges()) ...[
-          _buildDocumentUploadSection(),
-          const SizedBox(height: 16),
-        ],
+        Consumer(
+          builder: (context, ref, child) {
+            final hasDocumentChanges = _hasDocumentRequiringChanges(ref);
+            if (hasDocumentChanges) {
+              return Column(
+                children: [
+                  _buildDocumentUploadSection(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
 
         // سنة التخرج (اختياري)
         Consumer(
@@ -1247,6 +1269,493 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _showValidationResults(validationResult);
   }
 
+  /// Widget لعرض تقدم رفع الملفات
+  Widget _buildUploadProgressWidget() {
+    if (!_isUploadingFiles && _selectedDocuments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isUploadingFiles ? Icons.upload : Icons.attach_file,
+                  color:
+                      _isUploadingFiles ? AppColors.primary : AppColors.success,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _isUploadingFiles ? 'جاري رفع الملفات...' : 'الملفات المرفقة',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: _isUploadingFiles
+                        ? AppColors.primary
+                        : AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // عرض تقدم كل ملف
+            for (int i = 0; i < _selectedDocuments.length; i++) ...[
+              _buildFileProgressItem(i),
+              if (i < _selectedDocuments.length - 1) const SizedBox(height: 12),
+            ],
+
+            // إجمالي التقدم
+            if (_isUploadingFiles) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'إجمالي التقدم:',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                  Text(
+                    '${_uploadProgress.values.isNotEmpty ? (_uploadProgress.values.reduce((a, b) => a + b) / _uploadProgress.length * 100).toStringAsFixed(1) : '0.0'}%',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Widget لعرض تقدم ملف واحد
+  Widget _buildFileProgressItem(int index) {
+    final progress = _uploadProgress[index] ?? 0.0;
+    final isSuccess = _uploadSuccess[index] ?? false;
+    final error = _uploadErrors[index] ?? '';
+    final fileName = _selectedDocuments[index].file.path.split('/').last;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              isSuccess
+                  ? Icons.check_circle
+                  : error.isNotEmpty
+                      ? Icons.error
+                      : _isUploadingFiles
+                          ? Icons.upload
+                          : Icons.attach_file,
+              color: isSuccess
+                  ? AppColors.success
+                  : error.isNotEmpty
+                      ? AppColors.error
+                      : AppColors.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                fileName,
+                style: AppTextStyles.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isSuccess)
+              Text(
+                '100%',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else if (error.isNotEmpty)
+              Text(
+                'فشل',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              Text(
+                '${(progress * 100).toStringAsFixed(1)}%',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
+
+        // شريط التقدم
+        if (_isUploadingFiles || isSuccess) ...[
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: AppColors.lightGray,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isSuccess
+                  ? AppColors.success
+                  : error.isNotEmpty
+                      ? AppColors.error
+                      : AppColors.primary,
+            ),
+          ),
+        ],
+
+        // رسالة الخطأ
+        if (error.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            error,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.error,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// متابعة الحفظ بعد التحقق من القواعد - مع الرسالة المنبثقة الاحترافية
+  Future<void> _proceedWithSaveProfessional() async {
+    await showUploadProgressDialog(
+      context: context,
+      uploadFunction: _performUploadAndSave,
+      onSuccess: () {
+        Navigator.pop(context, true); // العودة لصفحة الملف الشخصي
+      },
+    );
+  }
+
+  /// تنفيذ عملية الرفع والحفظ مع تحديث التقدم
+  Future<void> _performUploadAndSave() async {
+    final uploadNotifier = ref.read(uploadProgressProvider.notifier);
+
+    try {
+      // الخطوة 1: التحضير
+      uploadNotifier.setPreparing();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // الخطوة 2: رفع الملفات (إذا وجدت) - إجبارية إذا كانت مطلوبة
+      List<String> uploadedDocumentIds = [];
+      bool allUploadsSuccessful = true;
+
+      if (_selectedDocuments.isNotEmpty) {
+        // تهيئة بيانات الملفات
+        final filesData = _selectedDocuments
+            .map((doc) => FileProgressData(
+                  fileName: doc.file.path.split('/').last,
+                ))
+            .toList();
+
+        uploadNotifier.setUploading(filesData);
+
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          final selectedDoc = _selectedDocuments[i];
+          try {
+            // تحديث حالة الملف إلى "جاري الرفع"
+            uploadNotifier.updateFileProgress(
+                i,
+                filesData[i].copyWith(
+                  progress: 0.1,
+                ));
+
+            // رفع الملف مع تتبع التقدم
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
+                  fieldName: 'documents_${i + 1}',
+                  documentType: 'general',
+                  file: selectedDoc.file,
+                  fileBytes: selectedDoc.bytes,
+                  maxRetries: 3,
+                  onProgress: (progress) {
+                    // تحديث التقدم في الرسالة المنبثقة
+                    uploadNotifier.updateFileProgress(
+                        i,
+                        filesData[i].copyWith(
+                          progress: progress,
+                        ));
+                  },
+                );
+
+            if (uploadSuccess) {
+              uploadNotifier.updateFileProgress(
+                  i,
+                  filesData[i].copyWith(
+                    progress: 1.0,
+                    isSuccess: true,
+                  ));
+              uploadedDocumentIds.add('documents_${i + 1}');
+            } else {
+              uploadNotifier.updateFileProgress(
+                  i,
+                  filesData[i].copyWith(
+                    errorMessage: 'فشل في رفع الملف',
+                  ));
+              allUploadsSuccessful = false;
+            }
+          } catch (e) {
+            uploadNotifier.updateFileProgress(
+                i,
+                filesData[i].copyWith(
+                  errorMessage: e.toString(),
+                ));
+            allUploadsSuccessful = false;
+          }
+        }
+
+        // إذا فشل رفع أي ملف، لا نكمل عملية الحفظ
+        if (!allUploadsSuccessful) {
+          uploadNotifier
+              .setError('فشل في رفع بعض الملفات. يرجى المحاولة مرة أخرى.');
+          return;
+        }
+      }
+
+      // الخطوة 3: حفظ البيانات (فقط إذا نجح رفع جميع الملفات)
+      uploadNotifier.setSaving();
+
+      final updatedProfile = widget.profile.copyWith(
+        fullNameAr: _fullNameArController.text.trim(),
+        fullNameEn: _fullNameEnController.text.trim(),
+        email: _emailController.text.trim(),
+        birthDate: _selectedBirthDate,
+        governorateId: _selectedGovernorateId,
+        qualificationId: _selectedQualificationId,
+        graduationYear: _selectedGraduationYear,
+        university: _universityController.text.trim().isEmpty
+            ? ''
+            : _universityController.text.trim(),
+        workplace: _workplaceController.text.trim(),
+      );
+
+      final updateRequest = ProfileUpdateRequest(
+        fullNameAr: updatedProfile.fullNameAr,
+        fullNameEn: updatedProfile.fullNameEn,
+        email: updatedProfile.email.isEmpty ? null : updatedProfile.email,
+        birthDate: updatedProfile.birthDate,
+        governorateId: updatedProfile.governorateId,
+        qualificationId: updatedProfile.qualificationId,
+        graduationYear: updatedProfile.graduationYear,
+        university: updatedProfile.university?.isEmpty == true
+            ? null
+            : updatedProfile.university,
+        workplace: updatedProfile.workplace?.isEmpty == true
+            ? null
+            : updatedProfile.workplace,
+      );
+
+      final updateResult =
+          await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+
+      if (updateResult) {
+        // الخطوة 4: النجاح
+        uploadNotifier.setSuccess();
+        await Future.delayed(
+            const Duration(milliseconds: 1000)); // عرض رسالة النجاح
+      } else {
+        throw Exception('فشل في حفظ البيانات');
+      }
+    } catch (e) {
+      uploadNotifier.setError(e.toString());
+    }
+  }
+
+  /// متابعة الحفظ بعد التحقق من القواعد - الآلية الجديدة
+  Future<void> _proceedWithSaveNew() async {
+    setState(() => _isSaving = true);
+
+    try {
+      // الخطوة 1: رفع الملفات أولاً (إذا وجدت)
+      List<String> uploadedDocumentIds = [];
+
+      if (_selectedDocuments.isNotEmpty) {
+        setState(() => _isUploadingFiles = true);
+
+        // تهيئة متغيرات التتبع
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          _uploadProgress[i] = 0.0;
+          _uploadSuccess[i] = false;
+          _uploadErrors[i] = '';
+        }
+
+        debugPrint('📄 ProfileEditScreen: Starting file uploads...');
+
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          final selectedDoc = _selectedDocuments[i];
+          try {
+            debugPrint(
+                '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
+
+            // رفع الملف مع تتبع التقدم
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
+                  fieldName: 'documents_${i + 1}',
+                  documentType: 'general',
+                  file: selectedDoc.file,
+                  fileBytes: selectedDoc.bytes,
+                  maxRetries: 3,
+                  onProgress: (progress) {
+                    // تحديث التقدم في الواجهة
+                    setState(() {
+                      _uploadProgress[i] = progress;
+                    });
+                  },
+                );
+
+            if (uploadSuccess) {
+              setState(() {
+                _uploadSuccess[i] = true;
+                _uploadProgress[i] = 1.0;
+              });
+              uploadedDocumentIds.add('documents_${i + 1}');
+              debugPrint(
+                  '✅ ProfileEditScreen: Document ${i + 1} uploaded successfully');
+            } else {
+              setState(() {
+                _uploadSuccess[i] = false;
+                _uploadErrors[i] = 'فشل في رفع الملف';
+              });
+              debugPrint(
+                  '❌ ProfileEditScreen: Document ${i + 1} upload failed');
+            }
+          } catch (e) {
+            setState(() {
+              _uploadSuccess[i] = false;
+              _uploadErrors[i] = e.toString();
+            });
+            debugPrint(
+                '❌ ProfileEditScreen: Failed to upload document ${i + 1}: $e');
+          }
+        }
+
+        setState(() => _isUploadingFiles = false);
+      }
+
+      // الخطوة 2: إنشاء البيانات المحدثة مع مراجع الملفات المرفقة
+      final updatedProfile = widget.profile.copyWith(
+        fullNameAr: _fullNameArController.text.trim(),
+        fullNameEn: _fullNameEnController.text.trim(),
+        email: _emailController.text.trim(),
+        birthDate: _selectedBirthDate,
+        governorateId: _selectedGovernorateId,
+        qualificationId: _selectedQualificationId,
+        graduationYear: _selectedGraduationYear,
+        university: _universityController.text.trim().isEmpty
+            ? ''
+            : _universityController.text.trim(),
+        workplace: _workplaceController.text.trim(),
+      );
+
+      // تحويل البيانات إلى ProfileUpdateRequest مع مراجع الملفات
+      final updateRequest = ProfileUpdateRequest(
+        fullNameAr: updatedProfile.fullNameAr,
+        fullNameEn: updatedProfile.fullNameEn,
+        email: updatedProfile.email.isEmpty ? null : updatedProfile.email,
+        birthDate: updatedProfile.birthDate,
+        governorateId: updatedProfile.governorateId,
+        qualificationId: updatedProfile.qualificationId,
+        graduationYear: updatedProfile.graduationYear,
+        university: updatedProfile.university?.isEmpty == true
+            ? null
+            : updatedProfile.university,
+        workplace: updatedProfile.workplace?.isEmpty == true
+            ? null
+            : updatedProfile.workplace,
+        // لا نرسل attached_documents لأن الخادم لا يدعمها في هذا endpoint
+      );
+
+      // الخطوة 3: حفظ البيانات مع مراجع الملفات
+      debugPrint(
+          '📄 ProfileEditScreen: Saving profile data with ${uploadedDocumentIds.length} attached documents');
+      final updateResult =
+          await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+
+      // الخطوة 4: عرض النتائج للمستخدم
+      if (mounted) {
+        String message;
+        Color backgroundColor;
+
+        if (_selectedDocuments.isEmpty) {
+          // لا توجد وثائق للرفع
+          message =
+              updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات';
+          backgroundColor = updateResult ? AppColors.success : AppColors.error;
+        } else {
+          // حساب النتائج
+          int successfulUploads =
+              _uploadSuccess.values.where((success) => success).length;
+          int totalUploads = _selectedDocuments.length;
+
+          if (updateResult && successfulUploads == totalUploads) {
+            // تم حفظ البيانات ورفع جميع الوثائق بنجاح
+            message = 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
+            backgroundColor = AppColors.success;
+          } else if (updateResult && successfulUploads > 0) {
+            // تم حفظ البيانات ورفع بعض الوثائق
+            message =
+                'تم حفظ البيانات ورفع $successfulUploads من $totalUploads وثائق';
+            backgroundColor = AppColors.warning;
+          } else if (updateResult) {
+            // تم حفظ البيانات لكن فشل في رفع جميع الوثائق
+            message = 'تم حفظ البيانات لكن فشل في رفع الوثائق';
+            backgroundColor = AppColors.warning;
+          } else {
+            // فشل في حفظ البيانات
+            message = 'فشل في حفظ البيانات';
+            backgroundColor = AppColors.error;
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: backgroundColor,
+            action: backgroundColor == AppColors.warning
+                ? SnackBarAction(
+                    label: 'إعادة المحاولة',
+                    textColor: Colors.white,
+                    onPressed: () => _proceedWithSaveNew(),
+                  )
+                : null,
+          ),
+        );
+
+        if (updateResult) {
+          Navigator.pop(context, true); // إرجاع true للإشارة إلى أن هناك تحديث
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ أثناء حفظ البيانات: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isSaving = false;
+        _isUploadingFiles = false;
+      });
+    }
+  }
+
   /// متابعة الحفظ بعد التحقق من القواعد
   Future<void> _proceedWithSave() async {
     setState(() => _isSaving = true);
@@ -1305,22 +1814,44 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // إذا نجح تحديث البيانات، نتابع لرفع الوثائق
       bool documentsUploadSuccess = true;
       int uploadedDocuments = 0;
+      List<String> failedDocuments = [];
 
       if (_selectedDocuments.isNotEmpty) {
+        // فحص الاتصال قبل رفع الملفات
+        debugPrint(
+            '📄 ProfileEditScreen: Checking connection before uploading documents...');
+
         for (int i = 0; i < _selectedDocuments.length; i++) {
           final selectedDoc = _selectedDocuments[i];
           try {
-            // رفع كل ملف كوثيقة عامة
-            await ref.read(profileProvider.notifier).uploadDocumentForField(
+            debugPrint(
+                '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
+
+            // رفع كل ملف كوثيقة عامة مع آلية إعادة المحاولة
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
                   fieldName: 'documents_${i + 1}', // اسم فريد لكل ملف
                   documentType: 'general', // نوع عام للوثائق
                   file: selectedDoc.file,
                   fileBytes: selectedDoc.bytes, // تمرير البيانات للويب
+                  maxRetries: 3, // 3 محاولات لكل ملف
                 );
-            uploadedDocuments++;
+
+            if (uploadSuccess) {
+              uploadedDocuments++;
+              debugPrint(
+                  '✅ ProfileEditScreen: Document ${i + 1} uploaded successfully');
+            } else {
+              failedDocuments.add('الوثيقة ${i + 1}');
+              debugPrint(
+                  '❌ ProfileEditScreen: Document ${i + 1} upload failed');
+            }
           } catch (e) {
             // في حالة فشل رفع ملف معين، نستمر مع باقي الملفات
-            debugPrint('فشل في رفع الملف ${selectedDoc.file.path}: $e');
+            failedDocuments.add('الوثيقة ${i + 1}');
+            debugPrint(
+                '❌ ProfileEditScreen: Failed to upload document ${i + 1}: $e');
             documentsUploadSuccess = false;
           }
         }
@@ -1501,7 +2032,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Widget? _buildDocumentIcon(String fieldName) {
-    final requiresDoc = _requiresDocument(fieldName);
+    final requiresDoc = _requiresDocument(fieldName, ref);
     final isEditable = _isFieldEditable(fieldName);
 
     if (!requiresDoc && isEditable) return null;
@@ -1612,7 +2143,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
-  bool _requiresDocument(String fieldName) {
+  bool _requiresDocument(String fieldName, WidgetRef ref) {
     try {
       // التحقق من صحة المدخلات
       if (fieldName.isEmpty) {
@@ -1953,7 +2484,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         onPressed: () {
                           Navigator.pop(context,
                               true); // إرجاع true للإشارة إلى أن هناك تحديث
-                          _proceedWithSave();
+                          _proceedWithSaveProfessional();
                         },
                         icon: const Icon(
                           Icons.verified_user,
@@ -2015,7 +2546,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         );
       } else {
         // لا توجد تحذيرات أو متطلبات إضافية، حفظ مباشرة
-        _proceedWithSave();
+        _proceedWithSaveProfessional();
       }
     }
   }

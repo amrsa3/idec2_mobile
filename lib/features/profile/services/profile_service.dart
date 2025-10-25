@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
-import '../../../services/auth_service.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/enhanced_dio_service_v2.dart';
 import '../../../services/platform_storage_service.dart';
 import '../../../services/profile_rules_service.dart';
@@ -786,9 +786,9 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
         debugPrint('❌ ProfileService: No current user found');
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
@@ -811,6 +811,8 @@ class LocalProfileService {
 
       debugPrint('📸 ProfileService: Detected content type: $contentType');
 
+      // User ID is already available from authService.getCurrentUser() above
+
       // Create form data with correct content type and user ID
       MultipartFile multipartFile;
       if (kIsWeb) {
@@ -830,18 +832,36 @@ class LocalProfileService {
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': 'profile_picture',
+        'entityType': 'profile',
+        'entityId': userId,
+        'fileCategory': 'profile_picture',
         'description': 'صورة الملف الشخصي',
       });
 
       // Use the correct endpoint that matches the backend
+      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
+      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
+      debugPrint('📁 File info: ${imageFile.path}');
+      debugPrint('👤 User ID: $userId');
+      debugPrint('📦 Form data fields count: ${formData.fields.length}');
+      debugPrint('📦 Form data files count: ${formData.files.length}');
+      debugPrint(
+          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
+      debugPrint('🔑 Token length: ${token.length}');
+      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
+
       final response = await _dio.post(
         '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
         ),
       );
@@ -849,6 +869,7 @@ class LocalProfileService {
       debugPrint(
           '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
       debugPrint('📸 ProfileService: Response data: ${response.data}');
+      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
@@ -955,9 +976,9 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
         debugPrint('❌ ProfileService: No current user found');
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
@@ -981,26 +1002,48 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Detected content type: $contentType');
 
       // Create form data for web platform
+      final bytes = await imageFile.readAsBytes();
       final multipartFile = MultipartFile.fromBytes(
-        await imageFile.readAsBytes(),
-        filename: imageFile.name,
+        bytes,
+        filename: 'profile_picture.jpg', // Use a fixed filename for web
         contentType: MediaType.parse(contentType),
       );
 
+      debugPrint('📸 ProfileService: File bytes length: ${bytes.length}');
+      debugPrint('📸 ProfileService: MultipartFile created successfully');
+
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': 'profile_picture',
+        'entityType': 'profile',
+        'entityId': userId,
+        'fileCategory': 'profile_picture',
         'description': 'صورة الملف الشخصي',
       });
 
       // Use the correct endpoint that matches the backend
+      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
+      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
+      debugPrint('📁 File info: ${imageFile.path}');
+      debugPrint('👤 User ID: $userId');
+      debugPrint('📦 Form data fields count: ${formData.fields.length}');
+      debugPrint('📦 Form data files count: ${formData.files.length}');
+      debugPrint(
+          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
+      debugPrint('🔑 Token length: ${token.length}');
+      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
+
       final response = await _dio.post(
         '${ApiConstants.baseUrl}/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
         ),
       );
@@ -1008,6 +1051,7 @@ class LocalProfileService {
       debugPrint(
           '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
       debugPrint('📸 ProfileService: Response data: ${response.data}');
+      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
@@ -1107,9 +1151,9 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
         debugPrint('❌ ProfileService: No current user found');
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
@@ -1243,6 +1287,41 @@ class LocalProfileService {
   static Future<ProfileModel?> getCurrentProfile(
       {bool forceRefresh = false}) async {
     return getProfile(forceRefresh: forceRefresh, useRecentCache: true);
+  }
+
+  /// Update profile picture URL locally without server call
+  static Future<void> updateProfilePictureUrlLocally(String imageUrl) async {
+    try {
+      debugPrint(
+          '🔄 ProfileService: Updating profile picture URL locally: $imageUrl');
+
+      // تحديث URL الصورة في التخزين المحلي
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profile_picture_url', imageUrl);
+
+      // تحديث الملف الشخصي المحفوظ محلياً
+      final cachedData = prefs.getString(_cacheKey);
+      if (cachedData != null) {
+        try {
+          final profileJson = json.decode(cachedData);
+          profileJson['profilePictureUrl'] = imageUrl;
+          profileJson['profilePhotoUrl'] = imageUrl; // للتوافق مع الباك إند
+
+          // حفظ الملف الشخصي المحدث
+          await prefs.setString(_cacheKey, json.encode(profileJson));
+          debugPrint(
+              '✅ ProfileService: Cached profile updated with new image URL');
+        } catch (e) {
+          debugPrint('⚠️ ProfileService: Error updating cached profile: $e');
+        }
+      }
+
+      debugPrint('✅ ProfileService: Profile picture URL updated locally');
+    } catch (e) {
+      debugPrint(
+          '❌ ProfileService: Error updating profile picture URL locally: $e');
+      // لا نريد أن يفشل العملية بسبب فشل التحديث المحلي
+    }
   }
 
   /// Update profile picture URL in user profile
@@ -1394,24 +1473,29 @@ class LocalProfileService {
         String fileName;
 
         if (kIsWeb) {
-          // في بيئة الويب، استخدم البيانات المرسلة مباشرة
-          fileName = file.path.isNotEmpty
-              ? file.path
-              : 'document_${DateTime.now().millisecondsSinceEpoch}';
+          // في بيئة الويب، استخدم اسم ملف مع الحفاظ على الامتداد الأصلي
+          final originalFileName = file.path.split('/').last;
+          final fileExtension = originalFileName.contains('.')
+              ? originalFileName.split('.').last
+              : 'pdf';
+          fileName =
+              'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
           if (fileBytes != null) {
-            // استخدام البيانات المرسلة مباشرة
+            // استخدام البيانات المرسلة مباشرة مع الحفاظ على نوع الملف الأصلي
             multipartFile = MultipartFile.fromBytes(
               fileBytes,
               filename: fileName,
             );
+            debugPrint(
+                '📄 ProfileService: Document bytes length: ${fileBytes.length}');
           } else {
             debugPrint(
                 '❌ ProfileService: No file bytes provided for web upload');
             throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
           }
         } else {
-          // في بيئة الموبايل، استخدم path
+          // في بيئة الموبايل، استخدم path مع الحفاظ على الامتداد الأصلي
           fileName = file.path.split('/').last;
           multipartFile = await MultipartFile.fromFile(
             file.path,
@@ -1419,52 +1503,23 @@ class LocalProfileService {
           );
         }
 
-        // الحصول على معرف المستخدم الحقيقي من التوكن
-        String userId = 'current_user'; // قيمة افتراضية
-        try {
-          // محاولة الحصول على معرف المستخدم من التوكن
-          final token = await EnhancedDioServiceV2.instance.getAccessToken();
-          if (token != null && token.isNotEmpty) {
-            // فك تشفير التوكن للحصول على معرف المستخدم
-            final parts = token.split('.');
-            if (parts.length == 3) {
-              final payload = parts[1];
-              final normalized = base64Url.normalize(payload);
-              final resp = utf8.decode(base64Url.decode(normalized));
-              final payloadMap = jsonDecode(resp) as Map<String, dynamic>;
-              userId = payloadMap['sub']?.toString() ??
-                  payloadMap['id']?.toString() ??
-                  'current_user';
-              debugPrint(
-                  '🔐 ProfileService: Extracted user ID from token: $userId');
-            }
-          }
-
-          // إذا فشل فك تشفير التوكن، جرب التخزين الآمن
-          if (userId == 'current_user') {
-            final storage = PlatformStorageService.instance;
-            final user = await storage.readSecure('current_user');
-            if (user != null) {
-              try {
-                final userData = jsonDecode(user) as Map<String, dynamic>;
-                userId = userData['id']?.toString() ?? 'current_user';
-                debugPrint(
-                    '🔐 ProfileService: Got user ID from storage: $userId');
-              } catch (e) {
-                debugPrint('❌ ProfileService: Error parsing user data: $e');
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('❌ ProfileService: Error getting user ID: $e');
+        // الحصول على معرف المستخدم من CompatibleAuthService
+        final compatibleAuthService = CompatibleAuthService.instance;
+        final currentUser = compatibleAuthService.user;
+        if (currentUser == null || currentUser.id.isEmpty) {
+          debugPrint('❌ ProfileService: No current user found');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
         }
+        final userId = currentUser.id;
+        debugPrint('👤 ProfileService: Current user ID: $userId');
 
         final formData = FormData.fromMap({
           'file': multipartFile,
           'entityType': 'profile', // نوع الكيان
           'entityId': userId, // معرف المستخدم الحقيقي
           'fileCategory': fieldName, // فئة الملف
-          'description': 'Document uploaded from mobile app', // وصف الملف
+          'description':
+              'Document uploaded from mobile app for profile review', // وصف الملف
         });
 
         final response = await _dio.post(
@@ -1603,13 +1658,18 @@ class LocalProfileService {
       String fileName;
 
       if (kIsWeb) {
-        // في بيئة الويب، استخدم البيانات المرسلة مباشرة
-        fileName = file.path.isNotEmpty
-            ? file.path
+        // في بيئة الويب، استخدم البيانات المرسلة مباشرة مع الحفاظ على الامتداد الأصلي
+        final originalFileName = file.path.isNotEmpty
+            ? file.path.split('/').last
             : 'document_${DateTime.now().millisecondsSinceEpoch}';
+        final fileExtension = originalFileName.contains('.')
+            ? originalFileName.split('.').last
+            : 'pdf';
+        fileName =
+            'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
         if (fileBytes != null) {
-          // استخدام البيانات المرسلة مباشرة
+          // استخدام البيانات المرسلة مباشرة مع الحفاظ على نوع الملف الأصلي
           multipartFile = MultipartFile.fromBytes(
             fileBytes,
             filename: fileName,
@@ -1619,7 +1679,7 @@ class LocalProfileService {
           throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
         }
       } else {
-        // في بيئة الموبايل، استخدم path
+        // في بيئة الموبايل، استخدم path مع الحفاظ على الامتداد الأصلي
         fileName = file.path.split('/').last;
         multipartFile = await MultipartFile.fromFile(
           file.path,
@@ -1672,7 +1732,8 @@ class LocalProfileService {
         'entityType': 'profile', // نوع الكيان
         'entityId': userId, // معرف المستخدم الحقيقي
         'fileCategory': fieldName, // فئة الملف
-        'description': 'Document uploaded from mobile app', // وصف الملف
+        'description':
+            'Document uploaded from mobile app for profile review', // وصف الملف
       });
 
       final response = await _dio.post(
@@ -1681,7 +1742,7 @@ class LocalProfileService {
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
         ),
       );

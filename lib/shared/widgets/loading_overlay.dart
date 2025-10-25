@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 
+import '../theme/app_colors.dart';
+
+/// Loading overlay widget with transparent background
+/// Prevents user interaction while showing loading indicator
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
   final String? loadingText;
-  final Color? overlayColor;
+  final Color? backgroundColor;
   final Color? indicatorColor;
 
   const LoadingOverlay({
@@ -13,7 +16,7 @@ class LoadingOverlay extends StatelessWidget {
     required this.isLoading,
     required this.child,
     this.loadingText,
-    this.overlayColor,
+    this.backgroundColor,
     this.indicatorColor,
   });
 
@@ -24,18 +27,18 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: overlayColor ?? Colors.black.withOpacity(0.3),
+            color: backgroundColor ?? Colors.black.withOpacity(0.5),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
                       blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -46,6 +49,7 @@ class LoadingOverlay extends StatelessWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         indicatorColor ?? AppColors.primary,
                       ),
+                      strokeWidth: 3,
                     ),
                     if (loadingText != null) ...[
                       const SizedBox(height: 16),
@@ -53,7 +57,8 @@ class LoadingOverlay extends StatelessWidget {
                         loadingText!,
                         style: const TextStyle(
                           fontSize: 16,
-                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -64,6 +69,106 @@ class LoadingOverlay extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Loading overlay with custom content
+class CustomLoadingOverlay extends StatelessWidget {
+  final bool isLoading;
+  final Widget child;
+  final Widget loadingContent;
+  final Color? backgroundColor;
+
+  const CustomLoadingOverlay({
+    super.key,
+    required this.isLoading,
+    required this.child,
+    required this.loadingContent,
+    this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isLoading)
+          Container(
+            color: backgroundColor ?? Colors.black.withOpacity(0.5),
+            child: Center(
+              child: loadingContent,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Simple loading indicator for buttons
+class LoadingButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback? onPressed;
+  final Widget child;
+  final ButtonStyle? style;
+  final String? loadingText;
+
+  const LoadingButton({
+    super.key,
+    required this.isLoading,
+    required this.onPressed,
+    required this.child,
+    this.style,
+    this.loadingText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: style,
+      child: isLoading
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                if (loadingText != null) ...[
+                  const SizedBox(width: 8),
+                  Text(loadingText!),
+                ],
+              ],
+            )
+          : child,
+    );
+  }
+}
+
+/// Loading overlay for forms
+class FormLoadingOverlay extends StatelessWidget {
+  final bool isLoading;
+  final Widget child;
+  final String? loadingText;
+
+  const FormLoadingOverlay({
+    super.key,
+    required this.isLoading,
+    required this.child,
+    this.loadingText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LoadingOverlay(
+      isLoading: isLoading,
+      loadingText: loadingText ?? 'جاري المعالجة...',
+      child: child,
     );
   }
 }

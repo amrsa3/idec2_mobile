@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/messages/smart_message_handler.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../models/profile_model.dart';
@@ -294,6 +295,116 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _workplaceController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// النظام الهرمي الجديد لتصنيف الملفات
+  /// المستوى الأول: الفئات الرئيسية (profile, documents, attachments, certificates)
+  /// المستوى الثاني: أنواع الملفات (image, pdf, word, excel, text)
+  /// المستوى الثالث: الترقيم (1, 2, 3...)
+  String _getSmartFileCategory(int index, String fileName) {
+    final extension = fileName.toLowerCase().split('.').last;
+
+    // تحديد الفئة الرئيسية
+    String mainCategory;
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+      mainCategory = 'profile_image'; // الصور الشخصية
+    } else {
+      mainCategory = 'documents'; // الوثائق المطلوبة
+    }
+
+    // تحديد نوع الملف
+    String fileType;
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+      fileType = 'image';
+    } else if (extension == 'pdf') {
+      fileType = 'pdf';
+    } else if (['doc', 'docx'].contains(extension)) {
+      fileType = 'word';
+    } else if (['xls', 'xlsx'].contains(extension)) {
+      fileType = 'excel';
+    } else if (['txt', 'rtf'].contains(extension)) {
+      fileType = 'text';
+    } else {
+      fileType = 'other'; // أنواع أخرى
+    }
+
+    return '${mainCategory}_${fileType}_${index + 1}';
+  }
+
+  /// الحصول على اسم عرضي للملف حسب فئته الذكية
+  String _getSmartFileDisplayName(String category) {
+    if (category.startsWith('profile_image_')) {
+      return 'صورة شخصية';
+    } else if (category.startsWith('documents_pdf_')) {
+      return 'وثيقة PDF';
+    } else if (category.startsWith('documents_word_')) {
+      return 'وثيقة Word';
+    } else if (category.startsWith('documents_excel_')) {
+      return 'ملف Excel';
+    } else if (category.startsWith('documents_text_')) {
+      return 'ملف نصي';
+    } else if (category.startsWith('documents_')) {
+      return 'وثيقة';
+    } else {
+      return 'ملف';
+    }
+  }
+
+  /// الحصول على أيقونة الملف حسب فئته الذكية
+  IconData _getSmartFileIcon(String category) {
+    if (category.startsWith('profile_image_')) {
+      return Icons.person;
+    } else if (category.startsWith('documents_pdf_')) {
+      return Icons.picture_as_pdf;
+    } else if (category.startsWith('documents_word_')) {
+      return Icons.description;
+    } else if (category.startsWith('documents_excel_')) {
+      return Icons.table_chart;
+    } else if (category.startsWith('documents_text_')) {
+      return Icons.text_snippet;
+    } else if (category.startsWith('documents_')) {
+      return Icons.attach_file;
+    } else {
+      return Icons.insert_drive_file;
+    }
+  }
+
+  /// الحصول على الرسالة باللغة العربية حسب الكود
+  String _getMessageByCode(
+      String code, int successfulUploads, int totalUploads) {
+    switch (code) {
+      case 'PROFILE_EDIT_WITH_DOCS_SUCCESS':
+        return 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
+      case 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS':
+        return 'تم حفظ البيانات ورفع $successfulUploads من $totalUploads وثائق';
+      case 'PROFILE_EDIT_DOCS_FAILED':
+        return 'تم حفظ البيانات لكن فشل في رفع الوثائق';
+      case 'PROFILE_EDIT_FAILED':
+        return 'فشل في حفظ البيانات';
+      case 'PROFILE_EDIT_SUCCESS':
+        return 'تم حفظ البيانات بنجاح';
+      default:
+        return 'تم حفظ البيانات بنجاح';
+    }
+  }
+
+  /// الحصول على الرسالة باللغة الإنجليزية حسب الكود
+  String _getMessageByCodeEn(
+      String code, int successfulUploads, int totalUploads) {
+    switch (code) {
+      case 'PROFILE_EDIT_WITH_DOCS_SUCCESS':
+        return 'Data saved and all documents uploaded successfully';
+      case 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS':
+        return 'Data saved and $successfulUploads of $totalUploads documents uploaded';
+      case 'PROFILE_EDIT_DOCS_FAILED':
+        return 'Data saved but failed to upload documents';
+      case 'PROFILE_EDIT_FAILED':
+        return 'Failed to save data';
+      case 'PROFILE_EDIT_SUCCESS':
+        return 'Data saved successfully';
+      default:
+        return 'Data saved successfully';
+    }
   }
 
   @override
@@ -1472,11 +1583,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   progress: 0.1,
                 ));
 
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
             // رفع الملف مع تتبع التقدم
             final uploadSuccess = await ref
                 .read(profileProvider.notifier)
                 .uploadDocumentForFieldWithRetry(
-                  fieldName: 'documents_${i + 1}',
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
                   documentType: 'general',
                   file: selectedDoc.file,
                   fileBytes: selectedDoc.bytes,
@@ -1498,7 +1618,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     progress: 1.0,
                     isSuccess: true,
                   ));
-              uploadedDocumentIds.add('documents_${i + 1}');
+              // إضافة معرف الملف المرفوع بنجاح إلى القائمة مع الفئة الذكية
+              final fileName = selectedDoc.file.path.split('/').last;
+              final smartCategory = _getSmartFileCategory(i, fileName);
+              uploadedDocumentIds.add(smartCategory);
             } else {
               uploadNotifier.updateFileProgress(
                   i,
@@ -1600,11 +1723,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             debugPrint(
                 '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
 
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
             // رفع الملف مع تتبع التقدم
             final uploadSuccess = await ref
                 .read(profileProvider.notifier)
                 .uploadDocumentForFieldWithRetry(
-                  fieldName: 'documents_${i + 1}',
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
                   documentType: 'general',
                   file: selectedDoc.file,
                   fileBytes: selectedDoc.bytes,
@@ -1622,7 +1754,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 _uploadSuccess[i] = true;
                 _uploadProgress[i] = 1.0;
               });
-              uploadedDocumentIds.add('documents_${i + 1}');
+              // إضافة معرف الملف المرفوع بنجاح إلى القائمة مع الفئة الذكية
+              final fileName = selectedDoc.file.path.split('/').last;
+              final smartCategory = _getSmartFileCategory(i, fileName);
+              uploadedDocumentIds.add(smartCategory);
               debugPrint(
                   '✅ ProfileEditScreen: Document ${i + 1} uploaded successfully');
             } else {
@@ -1692,8 +1827,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
         if (_selectedDocuments.isEmpty) {
           // لا توجد وثائق للرفع
-          message =
-              updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات';
+          final messageCode =
+              updateResult ? 'PROFILE_EDIT_SUCCESS' : 'PROFILE_EDIT_FAILED';
+          final smartMessage = SmartMessageHandler.instance.handleApiResponse({
+            'success': updateResult,
+            'code': messageCode,
+            'messageAr':
+                updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات',
+            'messageEn': updateResult
+                ? 'Data saved successfully'
+                : 'Failed to save data',
+          }, 'ar');
+          message = smartMessage['message'] ??
+              (updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات');
           backgroundColor = updateResult ? AppColors.success : AppColors.error;
         } else {
           // حساب النتائج
@@ -1701,24 +1847,36 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               _uploadSuccess.values.where((success) => success).length;
           int totalUploads = _selectedDocuments.length;
 
+          String messageCode;
           if (updateResult && successfulUploads == totalUploads) {
             // تم حفظ البيانات ورفع جميع الوثائق بنجاح
-            message = 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
-            backgroundColor = AppColors.success;
+            messageCode = 'PROFILE_EDIT_WITH_DOCS_SUCCESS';
           } else if (updateResult && successfulUploads > 0) {
             // تم حفظ البيانات ورفع بعض الوثائق
-            message =
-                'تم حفظ البيانات ورفع $successfulUploads من $totalUploads وثائق';
-            backgroundColor = AppColors.warning;
+            messageCode = 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS';
           } else if (updateResult) {
             // تم حفظ البيانات لكن فشل في رفع جميع الوثائق
-            message = 'تم حفظ البيانات لكن فشل في رفع الوثائق';
-            backgroundColor = AppColors.warning;
+            messageCode = 'PROFILE_EDIT_DOCS_FAILED';
           } else {
             // فشل في حفظ البيانات
-            message = 'فشل في حفظ البيانات';
-            backgroundColor = AppColors.error;
+            messageCode = 'PROFILE_EDIT_FAILED';
           }
+
+          final smartMessage = SmartMessageHandler.instance.handleApiResponse({
+            'success': updateResult,
+            'code': messageCode,
+            'messageAr':
+                _getMessageByCode(messageCode, successfulUploads, totalUploads),
+            'messageEn': _getMessageByCodeEn(
+                messageCode, successfulUploads, totalUploads),
+          }, 'ar');
+          message = smartMessage['message'] ??
+              _getMessageByCode(messageCode, successfulUploads, totalUploads);
+          backgroundColor = updateResult
+              ? (successfulUploads == totalUploads
+                  ? AppColors.success
+                  : AppColors.warning)
+              : AppColors.error;
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1802,8 +1960,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         // فشل في تحديث البيانات
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('فشل في حفظ البيانات. يرجى المحاولة مرة أخرى'),
+            SnackBar(
+              content: Text(SmartMessageHandler.instance.handleApiResponse({
+                    'success': false,
+                    'code': 'PROFILE_EDIT_FAILED',
+                    'messageAr': 'فشل في حفظ البيانات. يرجى المحاولة مرة أخرى',
+                    'messageEn': 'Failed to save data. Please try again',
+                  }, 'ar')['message'] ??
+                  'فشل في حفظ البيانات. يرجى المحاولة مرة أخرى'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -1827,11 +1991,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             debugPrint(
                 '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
 
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
             // رفع كل ملف كوثيقة عامة مع آلية إعادة المحاولة
             final uploadSuccess = await ref
                 .read(profileProvider.notifier)
                 .uploadDocumentForFieldWithRetry(
-                  fieldName: 'documents_${i + 1}', // اسم فريد لكل ملف
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
                   documentType: 'general', // نوع عام للوثائق
                   file: selectedDoc.file,
                   fileBytes: selectedDoc.bytes, // تمرير البيانات للويب

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/custom_otp_input.dart';
+import '../../../shared/widgets/loading_overlay.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -24,328 +27,449 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _otpValue = '';
-  String? _otpError;
+  bool _isResendingOtp = false;
 
   @override
   void dispose() {
+    _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  bool get _isFormValid {
-    return _passwordController.text.isNotEmpty &&
-        _confirmPasswordController.text.isNotEmpty &&
-        _otpValue.isNotEmpty &&
-        _passwordController.text == _confirmPasswordController.text &&
-        _passwordController.text.length >= 8;
-  }
-
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Clear any previous errors
+    ref.read(compatibleAuthProvider.notifier).clearError();
+
     try {
-      await ref.read(compatibleAuthProvider.notifier).resetPassword(
-            widget.phone,
-            _otpValue.trim(),
-            _passwordController.text.trim(),
-          );
+      debugPrint('ResetPasswordScreen: Resetting password for ${widget.phone}');
 
-      final authState = ref.read(compatibleAuthProvider);
-      if (authState.error != null) {
-        await NotificationService.showError(
-          title: 'خطأ',
-          message: authState.error!,
-        );
-        return;
-      }
-
-      await NotificationService.showSuccess(
-        title: 'نجح',
-        message: 'تم إعادة تعيين كلمة المرور بنجاح',
-      );
+      final success =
+          await ref.read(compatibleAuthProvider.notifier).resetPassword(
+                widget.phone,
+                _otpController.text,
+                _passwordController.text,
+              );
 
       if (mounted) {
-        context.go(AppRoutes.login);
+        if (success) {
+          debugPrint('ResetPasswordScreen: Password reset successful');
+
+          await NotificationService.showSuccess(
+            title: 'إعادة تعيين كلمة المرور',
+            message: 'تم إعادة تعيين كلمة المرور بنجاح',
+          );
+
+          // Navigate to login screen
+          context.go(AppRoutes.login);
+        } else {
+          final authState = ref.read(compatibleAuthProvider);
+          String errorMessage = 'فشل في إعادة تعيين كلمة المرور';
+
+          if (authState.error != null && authState.error!.isNotEmpty) {
+            errorMessage = authState.error!;
+          }
+
+          await NotificationService.showError(
+            title: 'خطأ في إعادة تعيين كلمة المرور',
+            message: errorMessage,
+          );
+        }
       }
     } catch (e) {
-      await NotificationService.showError(
-        title: 'خطأ',
-        message: 'حدث خطأ أثناء إعادة تعيين كلمة المرور',
-      );
+      if (mounted) {
+        debugPrint('❌ [RESET_PASSWORD_SCREEN] Unexpected error: $e');
+
+        await NotificationService.showError(
+          title: 'خطأ في إعادة تعيين كلمة المرور',
+          message: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
+        );
+      }
     }
+  }
+
+  Future<void> _resendOtp() async {
+    if (_isResendingOtp) return;
+
+    setState(() {
+      _isResendingOtp = true;
+    });
+
+    try {
+      await ref.read(compatibleAuthProvider.notifier).resendOtp(widget.phone);
+
+      if (mounted) {
+        await NotificationService.showSuccess(
+          title: 'إعادة الإرسال',
+          message: 'تم إرسال رمز التحقق مرة أخرى',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        await NotificationService.showError(
+          title: 'خطأ في الإرسال',
+          message: 'فشل في إرسال رمز التحقق مرة أخرى',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResendingOtp = false;
+        });
+      }
+    }
+  }
+
+  String? _validateOtp(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'يرجى إدخال رمز التحقق';
+    }
+
+    if (value.length != 6) {
+      return 'رمز التحقق يجب أن يكون 6 أرقام';
+    }
+
+    return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'يرجى إدخال كلمة المرور';
+      return 'يرجى إدخال كلمة المرور الجديدة';
     }
-    if (value.length < 8) {
-      return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+
+    if (value.length < 6) {
+      return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
     }
+
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'يرجى تأكيد كلمة المرور';
-    }
     if (value != _passwordController.text) {
       return 'كلمة المرور غير متطابقة';
     }
     return null;
   }
 
-  void _onOtpChanged(String value) {
-    setState(() {
-      _otpValue = value;
-      _otpError = null; // Clear error when user types
-    });
-  }
-
-  void _validateOtp() {
-    setState(() {
-      if (_otpValue.isEmpty) {
-        _otpError = 'يرجى إدخال رمز التحقق';
-      } else {
-        _otpError = null;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: AppColors.textPrimary,
+    return FormLoadingOverlay(
+      isLoading: authState.isLoading,
+      loadingText: 'جاري إعادة تعيين كلمة المرور...',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () => context.pop(),
           ),
-          onPressed: () => context.pop(),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
 
-                // Logo section
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
+                  // Logo section
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 20,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: SvgPicture.asset(
+                        AppImages.logo,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Title
+                  Text(
+                    'إعادة تعيين كلمة المرور',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  Text(
+                    'أدخل رمز التحقق المرسل إلى\n${widget.phone} وكلمة المرور الجديدة',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // OTP Input Field
+                  PinCodeTextField(
+                    appContext: context,
+                    length: 6,
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    animationType: AnimationType.fade,
+                    animationDuration: const Duration(milliseconds: 300),
+                    enableActiveFill: true,
+                    validator: _validateOtp,
+                    pinTheme: PinTheme(
+                      shape: PinCodeFieldShape.box,
+                      borderRadius: BorderRadius.circular(12),
+                      fieldHeight: 60,
+                      fieldWidth: 50,
+                      activeFillColor: Colors.white,
+                      inactiveFillColor: Colors.white,
+                      selectedFillColor: Colors.white,
+                      activeColor: AppColors.primary,
+                      inactiveColor: AppColors.border,
+                      selectedColor: AppColors.primary,
+                    ),
+                    onChanged: (value) {},
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Password field
+                  Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.lock_reset,
-                        size: 40,
-                        color: AppColors.primary,
+                    child: TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.next,
+                      validator: _validatePassword,
+                      decoration: InputDecoration(
+                        hintText: 'كلمة المرور الجديدة',
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        hintStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: AppColors.textSecondary,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: AppColors.textSecondary,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                // Title
-                const Text(
-                  'إعادة تعيين كلمة المرور',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 8),
-
-                // Subtitle
-                const Text(
-                  'أدخل رمز التحقق وكلمة المرور الجديدة',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 40),
-
-                // OTP Label
-                const Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    'رمز التحقق',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
+                  // Confirm Password field
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      textInputAction: TextInputAction.done,
+                      validator: _validateConfirmPassword,
+                      decoration: InputDecoration(
+                        hintText: 'تأكيد كلمة المرور الجديدة',
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        hintStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: AppColors.textSecondary,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: AppColors.textSecondary,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                      ),
+                      onFieldSubmitted: (_) => _resetPassword(),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 32),
 
-                // OTP Input
-                CustomOtpInput(
-                  length: 4,
-                  autoFocus: true,
-                  errorText: _otpError,
-                  onChanged: _onOtpChanged,
-                  onCompleted: (value) {
-                    _validateOtp();
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // New Password field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  validator: _validatePassword,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'كلمة المرور الجديدة',
-                    hintText: 'أدخل كلمة المرور الجديدة',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                  // Reset Password button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: authState.isLoading ? null : _resetPassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: authState.isLoading
+                            ? AppColors.primary.withOpacity(0.6)
+                            : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: authState.isLoading ? 0 : 2,
                       ),
+                      child: authState.isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'جاري إعادة التعيين...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'إعادة تعيين كلمة المرور',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Resend OTP button
+                  Center(
+                    child: TextButton(
+                      onPressed: _isResendingOtp ? null : _resendOtp,
+                      child: _isResendingOtp
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'جاري الإرسال...',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'إعادة إرسال رمز التحقق',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Back to login
+                  Center(
+                    child: TextButton(
                       onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                        context.go(AppRoutes.login);
                       },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.error, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.surface,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Confirm Password field
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  validator: _validateConfirmPassword,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'تأكيد كلمة المرور',
-                    hintText: 'أعد إدخال كلمة المرور',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.error),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.error, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.surface,
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Reset Password button
-                CustomButton(
-                  text: 'إعادة تعيين كلمة المرور',
-                  onPressed: _isFormValid && !authState.isLoading
-                      ? _resetPassword
-                      : null,
-                  isLoading: authState.isLoading,
-                ),
-
-                const SizedBox(height: 24),
-
-                // Back to login
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.go(AppRoutes.login),
-                    child: const Text(
-                      'العودة إلى تسجيل الدخول',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
+                      child: Text(
+                        'العودة لتسجيل الدخول',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

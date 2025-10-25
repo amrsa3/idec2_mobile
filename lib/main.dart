@@ -26,6 +26,15 @@ import 'shared/widgets/service_status_banner.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Block Google Fonts loading immediately for web
+  if (kIsWeb) {
+    // Force system fonts only - no external font loading
+    SystemChannels.platform.invokeMethod('SystemChrome.setSystemUIOverlayStyle', {
+      'statusBarColor': 0xFF2196F3,
+      'statusBarIconBrightness': 'dark',
+    });
+  }
+
   // Initialize error handling system
   ErrorHandler.instance.initialize();
   debugPrint('✅ Error handling system initialized');

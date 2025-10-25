@@ -6,11 +6,70 @@ import 'dio_service.dart';
 
 /// خدمة لتحميل الصور مع المصادقة
 class AuthenticatedImageService {
+  // Cache للصور المحملة
+  static final Map<String, Uint8List> _imageCache = {};
+  
+  /// مسح cache صورة معينة
+  static void clearImageCache(String imageUrl) {
+    final fullUrl = getFullImageUrl(imageUrl);
+    
+    // مسح جميع الإصدارات المختلفة من نفس URL
+    final keysToRemove = <String>[];
+    for (final key in _imageCache.keys) {
+      if (key.contains(fullUrl) || key.contains(imageUrl)) {
+        keysToRemove.add(key);
+      }
+    }
+    
+    for (final key in keysToRemove) {
+      _imageCache.remove(key);
+      debugPrint('🗑️ AuthenticatedImageService: Cleared cache for: $key');
+    }
+    
+    if (keysToRemove.isEmpty) {
+      debugPrint('🗑️ AuthenticatedImageService: No cache found for: $fullUrl');
+    }
+  }
+  
+  /// مسح cache لجميع الصور المرتبطة بـ URL معين (بما في ذلك الإصدارات المختلفة)
+  static void clearImageCacheCompletely(String imageUrl) {
+    final baseUrl = imageUrl.split('?')[0]; // إزالة query parameters
+    final keysToRemove = <String>[];
+    
+    for (final key in _imageCache.keys) {
+      if (key.contains(baseUrl)) {
+        keysToRemove.add(key);
+      }
+    }
+    
+    for (final key in keysToRemove) {
+      _imageCache.remove(key);
+      debugPrint('🗑️ AuthenticatedImageService: Completely cleared cache for: $key');
+    }
+    
+    debugPrint('🗑️ AuthenticatedImageService: Completely cleared ${keysToRemove.length} cache entries for: $baseUrl');
+  }
+  
+  /// مسح جميع cache الصور
+  static void clearAllImageCache() {
+    final count = _imageCache.length;
+    _imageCache.clear();
+    debugPrint('🗑️ AuthenticatedImageService: Cleared all image cache ($count entries)');
+  }
+
   /// تحميل الصورة مع رؤوس المصادقة
   static Future<Uint8List?> loadImageWithAuth(String imageUrl) async {
     try {
       debugPrint(
           '🖼️ AuthenticatedImageService: Loading image with auth: $imageUrl');
+
+      final fullUrl = getFullImageUrl(imageUrl);
+      
+      // فحص cache أولاً (فقط إذا لم يكن URL يحتوي على timestamp أو reload)
+      if (!imageUrl.contains('t=') && !imageUrl.contains('reload=') && !imageUrl.contains('key=') && _imageCache.containsKey(fullUrl)) {
+        debugPrint('📦 AuthenticatedImageService: Returning cached image for: $fullUrl');
+        return _imageCache[fullUrl];
+      }
 
       // الحصول على رمز المصادقة
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
@@ -38,15 +97,18 @@ class AuthenticatedImageService {
         throw Exception('Invalid file URL format');
       }
 
-      // استخدام endpoint الملفات الشخصية الجديد
+      // استخدام endpoint الملفات العام الصحيح
       final profileFileUrl =
-          '${ApiConstants.baseUrl}/api/v1/profiles/me/files/$fileId/download';
+          '${ApiConstants.baseUrl}/api/v1/files/$fileId/download';
 
       final response = await EnhancedDioServiceV2.instance.dio.get(
         profileFileUrl,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
+            'Cache-Control': 'no-cache, no-store, must-revalidate', // منع cache
+            'Pragma': 'no-cache', // منع cache للمتصفحات القديمة
+            'Expires': '0', // انتهاء فوري للـ cache
           },
           responseType: ResponseType.bytes,
         ),
@@ -54,7 +116,17 @@ class AuthenticatedImageService {
 
       if (response.statusCode == 200) {
         debugPrint('✅ AuthenticatedImageService: Image loaded successfully');
-        return Uint8List.fromList(response.data);
+        final imageData = Uint8List.fromList(response.data);
+        
+        // حفظ في cache فقط إذا لم يكن URL يحتوي على timestamp أو reload أو key
+        if (!imageUrl.contains('t=') && !imageUrl.contains('reload=') && !imageUrl.contains('key=')) {
+          _imageCache[fullUrl] = imageData;
+          debugPrint('📦 AuthenticatedImageService: Cached image for: $fullUrl');
+        } else {
+          debugPrint('🔄 AuthenticatedImageService: Skipped caching for timestamped/reload URL');
+        }
+        
+        return imageData;
       } else {
         debugPrint(
             '❌ AuthenticatedImageService: Failed to load image: ${response.statusCode}');

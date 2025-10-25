@@ -5,8 +5,8 @@ class ApiConstants {
   static const String productionUrl = 'https://api.idec-ye.com';
 
   // Development URLs for local testing
-  static const String devUrl = 'https://api.idec-ye.com';
-  static const String localhostUrl = 'https://api.idec-ye.com';
+  static const String devUrl = 'http://localhost:3000';
+  static const String localhostUrl = 'http://localhost:3000';
 
   // Default base URL - Using production server
   static const String defaultBaseUrl = productionUrl;
@@ -16,6 +16,10 @@ class ApiConstants {
 
   /// Get current base URL with validation
   static String get baseUrl {
+    debugPrint('🔍 [API_CONSTANTS] Getting baseUrl - _baseUrl: $_baseUrl');
+    debugPrint('🔍 [API_CONSTANTS] defaultBaseUrl: $defaultBaseUrl');
+    debugPrint('🔍 [API_CONSTANTS] productionUrl: $productionUrl');
+
     // Validate current URL
     if (_baseUrl.isEmpty || !_baseUrl.contains(':')) {
       debugPrint(
@@ -38,7 +42,7 @@ class ApiConstants {
       _baseUrl = _baseUrl.replaceFirst('http://', 'https://');
     }
 
-    debugPrint('🔗 [API_CONSTANTS] Current baseUrl: $_baseUrl');
+    debugPrint('🔗 [API_CONSTANTS] Final baseUrl: $_baseUrl');
     return _baseUrl;
   }
 
@@ -156,7 +160,7 @@ class ApiConstants {
   static const String registerEndpoint = '$authEndpoint/register';
   static const String refreshTokenEndpoint = '$authEndpoint/refresh';
   static const String logoutEndpoint = '$authEndpoint/logout';
-  static const String verifyPhoneEndpoint = '$authEndpoint/verify-phone';
+  static const String verifyPhoneEndpoint = '$authEndpoint/verify-otp';
   static const String resendOtpEndpoint = '$authEndpoint/resend-otp';
   static const String forgotPasswordEndpoint = '$authEndpoint/forgot-password';
   static const String resetPasswordEndpoint = '$authEndpoint/reset-password';

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Unified storage service that handles secure storage across all platforms
 /// Uses FlutterSecureStorage for mobile and WebCompatibleStorage for web
@@ -20,7 +21,8 @@ class PlatformStorageService {
   Future<void> init() async {
     // No initialization needed for current implementation
     if (kDebugMode) {
-      debugPrint('🔐 [PLATFORM_STORAGE] Storage service initialized with caching');
+      debugPrint(
+          '🔐 [PLATFORM_STORAGE] Storage service initialized with caching');
     }
   }
 
@@ -74,11 +76,13 @@ class PlatformStorageService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(key, value);
           if (kDebugMode) {
-            debugPrint('🔐 [PLATFORM_STORAGE] Fallback to SharedPreferences: $key');
+            debugPrint(
+                '🔐 [PLATFORM_STORAGE] Fallback to SharedPreferences: $key');
           }
         } catch (fallbackError) {
           if (kDebugMode) {
-            debugPrint('🔐 [PLATFORM_STORAGE] Fallback also failed: $fallbackError');
+            debugPrint(
+                '🔐 [PLATFORM_STORAGE] Fallback also failed: $fallbackError');
           }
           rethrow;
         }
@@ -114,7 +118,8 @@ class PlatformStorageService {
       }
 
       if (kDebugMode) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Retrieved from storage: $key = ${value != null ? "found" : "null"}');
+        debugPrint(
+            '🔐 [PLATFORM_STORAGE] Retrieved from storage: $key = ${value != null ? "found" : "null"}');
       }
       return value;
     } catch (e) {
@@ -131,12 +136,14 @@ class PlatformStorageService {
             _cacheTimestamps[key] = DateTime.now();
           }
           if (kDebugMode) {
-            debugPrint('🔐 [PLATFORM_STORAGE] Fallback read from SharedPreferences: $key');
+            debugPrint(
+                '🔐 [PLATFORM_STORAGE] Fallback read from SharedPreferences: $key');
           }
           return value;
         } catch (fallbackError) {
           if (kDebugMode) {
-            debugPrint('🔐 [PLATFORM_STORAGE] Fallback read also failed: $fallbackError');
+            debugPrint(
+                '🔐 [PLATFORM_STORAGE] Fallback read also failed: $fallbackError');
           }
           return null;
         }
@@ -163,7 +170,8 @@ class PlatformStorageService {
       // For mobile, use FlutterSecureStorage
       await _secureStorage.delete(key: key);
       if (kDebugMode) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Successfully deleted from secure storage: $key');
+        debugPrint(
+            '🔐 [PLATFORM_STORAGE] Successfully deleted from secure storage: $key');
       }
     } catch (e) {
       debugPrint('🔐 [PLATFORM_STORAGE] Error deleting $key: $e');
@@ -173,10 +181,12 @@ class PlatformStorageService {
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove(key);
           if (kDebugMode) {
-            debugPrint('🔐 [PLATFORM_STORAGE] Fallback delete from SharedPreferences: $key');
+            debugPrint(
+                '🔐 [PLATFORM_STORAGE] Fallback delete from SharedPreferences: $key');
           }
         } catch (fallbackError) {
-          debugPrint('🔐 [PLATFORM_STORAGE] Fallback delete also failed: $fallbackError');
+          debugPrint(
+              '🔐 [PLATFORM_STORAGE] Fallback delete also failed: $fallbackError');
         }
       }
     }
@@ -204,7 +214,8 @@ class PlatformStorageService {
           await prefs.clear();
           debugPrint('🔐 [PLATFORM_STORAGE] Fallback clear SharedPreferences');
         } catch (fallbackError) {
-          debugPrint('🔐 [PLATFORM_STORAGE] Fallback clear also failed: $fallbackError');
+          debugPrint(
+              '🔐 [PLATFORM_STORAGE] Fallback clear also failed: $fallbackError');
         }
       }
     }
@@ -223,7 +234,8 @@ class PlatformStorageService {
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, value);
-      debugPrint('📝 [PLATFORM_STORAGE] Successfully stored in SharedPreferences: $key');
+      debugPrint(
+          '📝 [PLATFORM_STORAGE] Successfully stored in SharedPreferences: $key');
     } catch (e) {
       debugPrint('📝 [PLATFORM_STORAGE] Error writing $key: $e');
       rethrow;
@@ -236,14 +248,16 @@ class PlatformStorageService {
       if (kIsWeb) {
         debugPrint('📝 [PLATFORM_STORAGE] Reading from web storage: $key');
         final value = _webStorage[key];
-        debugPrint('📝 [PLATFORM_STORAGE] Retrieved: $key = ${value != null ? "found" : "null"}');
+        debugPrint(
+            '📝 [PLATFORM_STORAGE] Retrieved: $key = ${value != null ? "found" : "null"}');
         return value;
       }
 
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final value = prefs.getString(key);
-      debugPrint('📝 [PLATFORM_STORAGE] Retrieved from SharedPreferences: $key = ${value != null ? "found" : "null"}');
+      debugPrint(
+          '📝 [PLATFORM_STORAGE] Retrieved from SharedPreferences: $key = ${value != null ? "found" : "null"}');
       return value;
     } catch (e) {
       debugPrint('📝 [PLATFORM_STORAGE] Error reading $key: $e');
@@ -264,7 +278,8 @@ class PlatformStorageService {
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(key);
-      debugPrint('📝 [PLATFORM_STORAGE] Successfully deleted from SharedPreferences: $key');
+      debugPrint(
+          '📝 [PLATFORM_STORAGE] Successfully deleted from SharedPreferences: $key');
     } catch (e) {
       debugPrint('📝 [PLATFORM_STORAGE] Error deleting $key: $e');
     }
@@ -283,7 +298,8 @@ class PlatformStorageService {
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      debugPrint('📝 [PLATFORM_STORAGE] Successfully cleared SharedPreferences');
+      debugPrint(
+          '📝 [PLATFORM_STORAGE] Successfully cleared SharedPreferences');
     } catch (e) {
       debugPrint('📝 [PLATFORM_STORAGE] Error clearing storage: $e');
     }
@@ -407,6 +423,20 @@ class PlatformStorageService {
   Future<void> writeBatch(Map<String, String> data) async {
     for (final entry in data.entries) {
       await setString(entry.key, entry.value);
+    }
+  }
+
+  /// Get current locale from storage
+  Locale? getCurrentLocale() {
+    try {
+      final languageCode = _cache['selected_language'];
+      if (languageCode != null && languageCode.isNotEmpty) {
+        return Locale(languageCode);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ [PLATFORM_STORAGE] Error getting current locale: $e');
+      return null;
     }
   }
 }

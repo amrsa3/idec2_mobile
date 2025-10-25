@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
-import '../../core/theme/app_colors.dart';
 import '../../providers/enhanced_auth_provider.dart';
 
 class VerificationNotificationBanner extends ConsumerStatefulWidget {
@@ -49,10 +48,14 @@ class _VerificationNotificationBannerState
   }
 
   void _showNotification() {
-    final user = ref.read(authProvider).user;
+    final authState = ref.read(enhancedAuthProvider);
+    final user = authState.maybeWhen(
+      authenticated: (user) => user,
+      orElse: () => null,
+    );
     
     // Only show for unverified users
-    if (user != null && !user.isVerified) {
+    if (user != null && !user.phoneVerified) {
       setState(() {
         _isVisible = true;
       });
@@ -85,10 +88,14 @@ class _VerificationNotificationBannerState
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
+    final authState = ref.watch(enhancedAuthProvider);
+    final user = authState.maybeWhen(
+      authenticated: (user) => user,
+      orElse: () => null,
+    );
 
     // Don't show if user is verified or not logged in
-    if (user == null || user.isVerified || !_isVisible) {
+    if (user == null || user.phoneVerified || !_isVisible) {
       return const SizedBox.shrink();
     }
 

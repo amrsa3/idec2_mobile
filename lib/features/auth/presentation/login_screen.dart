@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
+import '../../../shared/widgets/loading_overlay.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -211,352 +212,356 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
+    return FormLoadingOverlay(
+      isLoading: authState.isLoading,
+      loadingText: 'جاري تسجيل الدخول...',
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
 
-                // Logo section
-                Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
+                  // Logo section
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 20,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: SvgPicture.asset(
+                        AppImages.logo,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Title
+                  Text(
+                    l10n.login,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Subtitle
+                  Text(
+                    l10n.welcome,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Phone number field with country code
+                  Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: AppColors.shadow,
-                          blurRadius: 20,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
                     ),
-                    padding: const EdgeInsets.all(16),
-                    child: SvgPicture.asset(
-                      AppImages.logo,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Title
-                Text(
-                  l10n.login,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 8),
-
-                // Subtitle
-                Text(
-                  l10n.welcome,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 48),
-
-                // Phone number field with country code
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      // Country code picker
-                      CountryCodePicker(
-                        onChanged: (country) {
-                          setState(() {
-                            _countryCode = country.dialCode!;
-                          });
-                        },
-                        initialSelection: 'YE', // Yemen
-                        favorite: const ['+967', 'YE'],
-                        showCountryOnly: false,
-                        showOnlyCountryWhenClosed: false,
-                        alignLeft: false,
-                        textStyle: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                        ),
-                        dialogTextStyle: const TextStyle(
-                          color: AppColors.textPrimary,
-                        ),
-                        searchStyle: const TextStyle(
-                          color: AppColors.textPrimary,
-                        ),
-                        flagWidth: 25,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-
-                      // Divider
-                      Container(
-                        height: 30,
-                        width: 1,
-                        color: AppColors.border,
-                      ),
-
-                      // Phone number input
-                      Expanded(
-                        child: TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          validator: _validatePhone,
-                          decoration: const InputDecoration(
-                            hintText: 'رقم الهاتف',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          style: const TextStyle(
+                    child: Row(
+                      children: [
+                        // Country code picker
+                        CountryCodePicker(
+                          onChanged: (country) {
+                            setState(() {
+                              _countryCode = country.dialCode!;
+                            });
+                          },
+                          initialSelection: 'YE', // Yemen
+                          favorite: const ['+967', 'YE'],
+                          showCountryOnly: false,
+                          showOnlyCountryWhenClosed: false,
+                          alignLeft: false,
+                          textStyle: const TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 16,
                           ),
+                          dialogTextStyle: const TextStyle(
+                            color: AppColors.textPrimary,
+                          ),
+                          searchStyle: const TextStyle(
+                            color: AppColors.textPrimary,
+                          ),
+                          flagWidth: 25,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),
+
+                        // Divider
+                        Container(
+                          height: 30,
+                          width: 1,
+                          color: AppColors.border,
+                        ),
+
+                        // Phone number input
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            validator: _validatePhone,
+                            decoration: const InputDecoration(
+                              hintText: 'رقم الهاتف',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              hintStyle: TextStyle(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Password field without label
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      validator: _validatePassword,
+                      decoration: InputDecoration(
+                        hintText: 'أدخل كلمة المرور',
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        hintStyle: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: AppColors.textSecondary,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: AppColors.textSecondary,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                      ),
+                      onFieldSubmitted: (_) => _login(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Login button with enhanced loading state
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: authState.isLoading ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: authState.isLoading
+                            ? AppColors.primary.withOpacity(0.6)
+                            : AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: authState.isLoading ? 0 : 2,
+                      ),
+                      child: authState.isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'جاري تسجيل الدخول...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              l10n.login,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Forgot password
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        context.push(AppRoutes.forgotPassword);
+                      },
+                      child: Text(
+                        l10n.forgotPassword,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Divider
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Divider(color: AppColors.border),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          l10n.or,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Divider(color: AppColors.border),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                // Password field without label
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.done,
-                    validator: _validatePassword,
-                    decoration: InputDecoration(
-                      hintText: 'أدخل كلمة المرور',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      hintStyle: const TextStyle(
-                        color: AppColors.textSecondary,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
-                        color: AppColors.textSecondary,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: AppColors.textSecondary,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                    ),
-                    onFieldSubmitted: (_) => _login(),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Login button with enhanced loading state
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: authState.isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: authState.isLoading
-                          ? AppColors.primary.withOpacity(0.6)
-                          : AppColors.primary,
-                      foregroundColor: Colors.white,
+                  // Register button
+                  OutlinedButton(
+                    onPressed: () {
+                      context.go(AppRoutes.register);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppColors.primary),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: authState.isLoading ? 0 : 2,
                     ),
-                    child: authState.isLoading
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'جاري تسجيل الدخول...',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            l10n.login,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Forgot password
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      context.push(AppRoutes.forgotPassword);
-                    },
                     child: Text(
-                      l10n.forgotPassword,
+                      l10n.register,
                       style: const TextStyle(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Divider(color: AppColors.border),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        l10n.or,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
+                  // Check Connection button
+                  OutlinedButton.icon(
+                    onPressed: _checkConnection,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppColors.secondary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    const Expanded(
-                      child: Divider(color: AppColors.border),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Register button
-                OutlinedButton(
-                  onPressed: () {
-                    context.go(AppRoutes.register);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    l10n.register,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Check Connection button
-                OutlinedButton.icon(
-                  onPressed: _checkConnection,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.secondary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(
-                    Icons.wifi_find,
-                    color: AppColors.secondary,
-                    size: 20,
-                  ),
-                  label: Text(
-                    'فحص الاتصال',
-                    style: const TextStyle(
-                      color: AppColors.secondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Language selection
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      context.go(AppRoutes.languageSelection);
-                    },
                     icon: const Icon(
-                      Icons.language,
-                      color: AppColors.textSecondary,
+                      Icons.wifi_find,
+                      color: AppColors.secondary,
                       size: 20,
                     ),
                     label: Text(
-                      l10n.selectLanguage,
+                      'فحص الاتصال',
                       style: const TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 24),
+
+                  // Language selection
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        context.go(AppRoutes.languageSelection);
+                      },
+                      icon: const Icon(
+                        Icons.language,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      label: Text(
+                        l10n.selectLanguage,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

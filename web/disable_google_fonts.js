@@ -1,44 +1,56 @@
-// Disable Google Fonts completely for Flutter Web - Silent Mode
-(function() {
+// Fast Google Fonts blocking for Flutter Web - PERFORMANCE MODE
+(function () {
   'use strict';
-  
-  // Silent blocking - no console logs to reduce noise
+
+  // Fast blocking - block Google services immediately
   let blockedCount = 0;
-  
-  // Override Flutter's font loading
+
+  // Override Flutter's font loading IMMEDIATELY
   if (typeof window !== 'undefined') {
-    // Block all requests to Google Fonts - SILENT MODE
+    // Block Google services - PERFORMANCE MODE
+    const blockGoogleServices = function (url) {
+      return (
+        url &&
+        (url.includes('fonts.googleapis.com') ||
+          url.includes('fonts.gstatic.com') ||
+          url.includes('googleapis.com') ||
+          url.includes('gstatic.com') ||
+          url.includes('google.com/fonts') ||
+          url.includes('googleusercontent.com'))
+      );
+    };
+
+    // Override fetch IMMEDIATELY
     const originalFetch = window.fetch;
-    window.fetch = function(input, init) {
-      const url = typeof input === 'string' ? input : input.url;
-      if (url && (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com'))) {
+    window.fetch = function (input, init) {
+      const url = typeof input === 'string' ? input : input && input.url;
+      if (blockGoogleServices(url)) {
         blockedCount++;
         // Silent rejection - no console logs
         return Promise.reject(new Error('Google Fonts blocked'));
       }
       return originalFetch.apply(this, arguments);
     };
-    
-    // Override XMLHttpRequest for older browsers - SILENT MODE
+
+    // Override XMLHttpRequest for older browsers - AGGRESSIVE MODE
     const originalXHROpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url) {
-      if (url && (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com'))) {
+    XMLHttpRequest.prototype.open = function (method, url) {
+      if (blockGoogleServices(url)) {
         blockedCount++;
         // Silent blocking - no console logs
         throw new Error('Google Fonts blocked');
       }
       return originalXHROpen.apply(this, arguments);
     };
-    
-    // Block CSS imports for Google Fonts - SILENT MODE
+
+    // Block CSS imports for Google Fonts - AGGRESSIVE MODE
     const originalCreateElement = document.createElement;
-    document.createElement = function(tagName) {
+    document.createElement = function (tagName) {
       const element = originalCreateElement.call(this, tagName);
       if (tagName.toLowerCase() === 'link') {
         const originalSetAttribute = element.setAttribute;
-        element.setAttribute = function(name, value) {
-          if (name === 'href' && typeof value === 'string' && 
-              (value.includes('fonts.googleapis.com') || value.includes('fonts.gstatic.com'))) {
+        element.setAttribute = function (name, value) {
+          if (name === 'href' && blockGoogleServices(value)) {
             blockedCount++;
             // Silent blocking - no console logs
             return;
@@ -48,7 +60,7 @@
       }
       return element;
     };
-    
+
     // Force system fonts with better Arabic support
     const style = document.createElement('style');
     style.textContent = `
@@ -108,15 +120,55 @@
       }
     `;
     document.head.appendChild(style);
-    
+
+    // Additional aggressive blocking for Flutter Web
+    const blockAllGoogleRequests = function () {
+      // Block any remaining Google requests
+      const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          mutation.addedNodes.forEach(function (node) {
+            if (node.nodeType === 1) {
+              // Element node
+              if (node.tagName === 'LINK' && node.href) {
+                if (blockGoogleServices(node.href)) {
+                  node.remove();
+                  blockedCount++;
+                }
+              }
+              if (node.tagName === 'SCRIPT' && node.src) {
+                if (blockGoogleServices(node.src)) {
+                  node.remove();
+                  blockedCount++;
+                }
+              }
+            }
+          });
+        });
+      });
+
+      observer.observe(document, {
+        childList: true,
+        subtree: true,
+      });
+    };
+
+    // Start aggressive blocking immediately
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', blockAllGoogleRequests);
+    } else {
+      blockAllGoogleRequests();
+    }
+
     // Single success message only
-    console.log('✅ Google Fonts disabled - using system fonts only');
-    
-    // Report blocked count after 5 seconds (one time only)
+    console.log('✅ Google Fonts disabled for PERFORMANCE - using system fonts only');
+
+    // Report blocked count after 3 seconds (one time only)
     setTimeout(() => {
       if (blockedCount > 0) {
-        console.log(`🚫 Blocked ${blockedCount} Google Fonts requests - using system fonts instead`);
+        console.log(
+          `🚫 Blocked ${blockedCount} Google Fonts requests - using system fonts instead`,
+        );
       }
-    }, 5000);
+    }, 3000);
   }
 })();

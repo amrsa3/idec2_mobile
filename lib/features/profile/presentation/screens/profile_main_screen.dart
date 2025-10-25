@@ -52,7 +52,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     try {
       // تحديث حالة المصادقة أولاً
       ref.read(compatibleAuthProvider.notifier).refreshAuthState();
-      
+
       // Check if user is authenticated before loading profile
       final authState = ref.read(compatibleAuthProvider);
       debugPrint(
@@ -63,10 +63,21 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           !authState.isLoading) {
         debugPrint(
             'ProfileMainScreen: Loading profile data (attempt ${retryCount + 1})');
+        debugPrint(
+            'ProfileMainScreen: Auth state confirmed - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
         // تحميل بيانات الملف الشخصي مع البيانات المرجعية (المحافظات والمؤهلات)
-        ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
+        // استخدام forceRefresh: false لتجنب إعادة تحميل غير ضرورية بعد رفع الصورة
+        final profileState = ref.read(profileProvider);
+        if (profileState.currentProfile == null) {
+          debugPrint('ProfileMainScreen: No profile data, loading fresh data');
+          ref.read(profileProvider.notifier).loadProfile(forceRefresh: false);
+        } else {
+          debugPrint(
+              'ProfileMainScreen: Profile data exists, skipping reload to preserve state');
+        }
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
+        debugPrint('ProfileMainScreen: Profile loading completed successfully');
       } else if (authState.isLoading && retryCount < maxRetries) {
         // Auth is still loading, wait and retry
         debugPrint(
@@ -85,25 +96,33 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             'ProfileMainScreen: User not authenticated or session expired');
         debugPrint(
             'ProfileMainScreen: Auth details - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, user: ${authState.user?.phone}');
+        debugPrint('ProfileMainScreen: Error: ${authState.error}');
         debugPrint(
-            'ProfileMainScreen: Error: ${authState.error}');
-        
-        debugPrint(
-            'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
-        // Show error message or redirect to login
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                  'انتهاء صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى.'),
-              backgroundColor: AppColors.error,
-              action: SnackBarAction(
-                label: 'تسجيل الدخول',
-                textColor: Colors.white,
-                onPressed: () => context.go(AppRoutes.login),
+            'ProfileMainScreen: Retry count: $retryCount, Max retries: $maxRetries');
+
+        if (retryCount >= maxRetries) {
+          debugPrint(
+              'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
+          // Show error message or redirect to login
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'انتهاء صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى.'),
+                backgroundColor: AppColors.error,
+                action: SnackBarAction(
+                  label: 'تسجيل الدخول',
+                  textColor: Colors.white,
+                  onPressed: () => context.go(AppRoutes.login),
+                ),
               ),
-            ),
-          );
+            );
+          }
+        } else {
+          debugPrint(
+              'ProfileMainScreen: Retrying authentication check (attempt ${retryCount + 1})');
+          await Future.delayed(retryDelay);
+          return _loadProfileData(retryCount: retryCount + 1);
         }
       }
     } catch (e) {
@@ -581,10 +600,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     const SizedBox(height: 4),
 
                     // المؤهل العلمي (يظهر فقط للحسابات الموثقة)
-                    if (profile.verificationStatus == VerificationStatus.verified && 
+                    if (profile.verificationStatus ==
+                            VerificationStatus.verified &&
                         profile.qualificationId != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -594,7 +615,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                           ),
                         ),
                         child: Text(
-                          _getQualificationDisplayName(profile.qualificationId, ref),
+                          _getQualificationDisplayName(
+                              profile.qualificationId, ref),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
@@ -1046,14 +1068,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       if (result == true) {
         debugPrint(
             'ProfileMainScreen: Profile was updated, refreshing data...');
-        _loadProfileData();
+        // استخدام forceRefresh: false لتجنب إعادة تحميل غير ضرورية بعد رفع الصورة
+        ref.read(profileProvider.notifier).loadProfile(forceRefresh: false);
         // تحديث قواعد التعديل أيضاً
         ref.read(profileRulesProvider.notifier).loadRules();
       } else {
-        debugPrint(
-            'ProfileMainScreen: No profile update, skipping refresh...');
+        debugPrint('ProfileMainScreen: No profile update, skipping refresh...');
         // فقط تحديث خفيف للحالة دون إعادة تحميل من الخادم
-         ref.read(profileProvider.notifier).lightRefresh();
+        ref.read(profileProvider.notifier).lightRefresh();
       }
     });
   }

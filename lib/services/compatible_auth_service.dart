@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/api_constants.dart';
@@ -67,6 +67,27 @@ class CompatibleAuthService {
     }
   }
 
+  /// اختيار الرسالة المناسبة حسب لغة التطبيق
+  String _selectMessageByLanguage(
+      String messageAr, String messageEn, Locale? locale) {
+    // الحصول على اللغة الحالية من النظام
+    final currentLocale =
+        locale ?? PlatformStorageService.instance.getCurrentLocale();
+
+    // إذا كانت اللغة العربية، استخدم العربية
+    if (currentLocale != null && currentLocale.languageCode == 'ar') {
+      return messageAr.isNotEmpty ? messageAr : messageEn;
+    }
+    // إذا كانت اللغة الإنجليزية أو لم يتم تحديد اللغة، استخدم الإنجليزية
+    else if (currentLocale == null || currentLocale.languageCode == 'en') {
+      return messageEn.isNotEmpty ? messageEn : messageAr;
+    }
+    // افتراضي: استخدم العربية إذا كانت متوفرة، وإلا الإنجليزية
+    else {
+      return messageAr.isNotEmpty ? messageAr : messageEn;
+    }
+  }
+
   /// تسجيل الدخول بالهاتف
   Future<bool> loginWithPhone(String phone, String password) async {
     try {
@@ -83,7 +104,81 @@ class CompatibleAuthService {
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
 
-        // Extract user data - check both possible structures
+        // 🔥 NEW: Handle Smart Messages System
+        if (responseData.containsKey('success') &&
+            responseData.containsKey('data')) {
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Detected Smart Messages System response');
+
+          final bool success = responseData['success'] as bool;
+          final String messageAr = responseData['messageAr'] ?? '';
+          final String messageEn = responseData['messageEn'] ?? '';
+          final String code = responseData['code'] ?? '';
+
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Smart Message - Success: $success, Code: $code');
+          debugPrint('🔍 [COMPATIBLE_AUTH] MessageAr: $messageAr');
+          debugPrint('🔍 [COMPATIBLE_AUTH] MessageEn: $messageEn');
+
+          if (success && responseData['data'] != null) {
+            final data = responseData['data'] as Map<String, dynamic>;
+
+            // Extract user data from new structure
+            Map<String, dynamic>? userData;
+            if (data.containsKey('user')) {
+              userData = data['user'] as Map<String, dynamic>;
+            } else {
+              userData = data;
+            }
+
+            if (userData != null) {
+              debugPrint(
+                  '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages data');
+              _currentUser = UserModel.fromJsonSafe(userData);
+
+              // Extract tokens from new structure
+              String? accessToken;
+              String? refreshToken;
+
+              if (data.containsKey('tokens')) {
+                final tokens = data['tokens'] as Map<String, dynamic>;
+                accessToken = tokens['accessToken'] as String?;
+                refreshToken = tokens['refreshToken'] as String?;
+              }
+
+              // Save tokens using existing method
+              if (accessToken != null) {
+                await _tokenManager.saveTokens(
+                  accessToken: accessToken,
+                  refreshToken: refreshToken ?? '',
+                  expiresIn: 900,
+                );
+                await _storage.setString('access_token', accessToken);
+                debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved');
+              }
+              if (refreshToken != null) {
+                await _storage.setString('refresh_token', refreshToken);
+              }
+
+              await _storage.writeSecure(
+                  'current_user', _currentUser!.toJson().toString());
+              await _storage.setString(
+                  'user_data', _currentUser!.toJson().toString());
+
+              _isLoading = false;
+              debugPrint('✅ [COMPATIBLE_AUTH] Smart Messages login successful');
+              return true;
+            }
+          } else {
+            // Handle error from Smart Messages System
+            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            _isLoading = false;
+            debugPrint('❌ [COMPATIBLE_AUTH] Smart Messages error: $_error');
+            return false;
+          }
+        }
+
+        // Extract user data - check both possible structures (LEGACY SUPPORT)
         Map<String, dynamic>? userData;
         if (responseData.containsKey('user')) {
           userData = responseData['user'] as Map<String, dynamic>;
@@ -157,7 +252,45 @@ class CompatibleAuthService {
       }
     } catch (e) {
       debugPrint('❌ [COMPATIBLE_AUTH] Login error: $e');
-      _error = 'خطأ في تسجيل الدخول: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final message = errorData['message'] as String? ?? 'خطأ غير معروف';
+
+            // Check if it's a validation error for phone number
+            if (message.contains('phone number') ||
+                message.contains('رقم الهاتف')) {
+              _error =
+                  'رقم الهاتف غير صحيح. يرجى التأكد من الرقم وإعادة المحاولة';
+            } else if (message.contains('password') ||
+                message.contains('كلمة المرور')) {
+              _error = 'كلمة المرور غير صحيحة';
+            } else if (message.contains('not found') ||
+                message.contains('غير موجود')) {
+              _error = 'رقم الهاتف غير مسجل في النظام';
+            } else {
+              _error = message;
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في تسجيل الدخول. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error =
+              'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }
@@ -173,26 +306,147 @@ class CompatibleAuthService {
       debugPrint('🔐 [COMPATIBLE_AUTH] Attempting registration for: $phone');
 
       final response = await _dio.post(ApiConstants.registerEndpoint, data: {
+        'name': '$firstName $lastName', // Combine first and last name
         'phone': phone,
         'password': password,
-        'firstName': firstName,
-        'lastName': lastName,
+        'confirmPassword': password, // Use same password for confirmation
       });
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        // 🔥 NEW: Handle Smart Messages System for Registration
+        if (responseData.containsKey('success') &&
+            responseData.containsKey('data')) {
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Detected Smart Messages System registration response');
+
+          final bool success = responseData['success'] as bool;
+          final String messageAr = responseData['messageAr'] ?? '';
+          final String messageEn = responseData['messageEn'] ?? '';
+          final String code = responseData['code'] ?? '';
+
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Smart Registration Message - Success: $success, Code: $code');
+
+          if (success) {
+            _isLoading = false;
+            debugPrint(
+                '✅ [COMPATIBLE_AUTH] Smart Messages registration successful');
+            return true;
+          } else {
+            // Handle error from Smart Messages System
+            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            _isLoading = false;
+            debugPrint(
+                '❌ [COMPATIBLE_AUTH] Smart Messages registration error: $_error');
+            return false;
+          }
+        }
+
+        // LEGACY SUPPORT for registration
         _isLoading = false;
         debugPrint('✅ [COMPATIBLE_AUTH] Registration successful for: $phone');
         return true;
+      } else if (response.statusCode == 409) {
+        // Handle 409 Conflict (phone already exists) with Smart Messages
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData.containsKey('success') &&
+            responseData.containsKey('messageAr')) {
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Detected Smart Messages System 409 response');
+
+          final bool success = responseData['success'] as bool;
+          final String messageAr = responseData['messageAr'] ?? '';
+          final String messageEn = responseData['messageEn'] ?? '';
+          final String code = responseData['code'] ?? '';
+
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Smart 409 Message - Success: $success, Code: $code');
+
+          _error = _selectMessageByLanguage(messageAr, messageEn, null);
+          _isLoading = false;
+          debugPrint('❌ [COMPATIBLE_AUTH] Smart Messages 409 error: $_error');
+          return false;
+        } else {
+          // Fallback for non-smart message 409 responses
+          _error = 'رقم الهاتف مستخدم بالفعل. جرب تسجيل الدخول';
+          _isLoading = false;
+          debugPrint('❌ [COMPATIBLE_AUTH] Registration failed - phone exists');
+          return false;
+        }
       } else {
-        _error = 'فشل في إنشاء الحساب';
-        _isLoading = false;
-        debugPrint(
-            '❌ [COMPATIBLE_AUTH] Registration failed with status: ${response.statusCode}');
-        return false;
+        // Handle other error status codes with Smart Messages
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData.containsKey('success') &&
+            responseData.containsKey('messageAr')) {
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Detected Smart Messages System error response');
+
+          final bool success = responseData['success'] as bool;
+          final String messageAr = responseData['messageAr'] ?? '';
+          final String messageEn = responseData['messageEn'] ?? '';
+          final String code = responseData['code'] ?? '';
+
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Smart Error Message - Success: $success, Code: $code');
+
+          _error = _selectMessageByLanguage(messageAr, messageEn, null);
+          _isLoading = false;
+          debugPrint('❌ [COMPATIBLE_AUTH] Smart Messages error: $_error');
+          return false;
+        } else {
+          // Fallback for non-smart message error responses
+          _error = 'فشل في إنشاء الحساب';
+          _isLoading = false;
+          debugPrint(
+              '❌ [COMPATIBLE_AUTH] Registration failed with status: ${response.statusCode}');
+          return false;
+        }
       }
     } catch (e) {
       debugPrint('❌ [COMPATIBLE_AUTH] Registration error: $e');
-      _error = 'خطأ في إنشاء الحساب: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final message = errorData['message'] as String? ?? 'خطأ غير معروف';
+
+            // Check if it's a validation error for phone number
+            if (message.contains('phone number') ||
+                message.contains('رقم الهاتف')) {
+              _error =
+                  'رقم الهاتف غير صحيح. يرجى التأكد من الرقم وإعادة المحاولة';
+            } else if (message.contains('password') ||
+                message.contains('كلمة المرور')) {
+              _error = 'كلمة المرور غير صحيحة';
+            } else if (message.contains('already exists') ||
+                message.contains('مستخدم بالفعل')) {
+              _error = 'رقم الهاتف مستخدم بالفعل. جرب تسجيل الدخول';
+            } else {
+              _error = message;
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في إنشاء الحساب. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error =
+              'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }
@@ -210,10 +464,86 @@ class CompatibleAuthService {
       final response = await _dio.post(ApiConstants.verifyPhoneEndpoint, data: {
         'phone': phone,
         'otp': otp,
-        'isLogin': isLogin,
       });
 
       if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        // 🔥 NEW: Handle Smart Messages System for OTP
+        if (responseData.containsKey('success') &&
+            responseData.containsKey('data')) {
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Detected Smart Messages System OTP response');
+
+          final bool success = responseData['success'] as bool;
+          final String messageAr = responseData['messageAr'] ?? '';
+          final String messageEn = responseData['messageEn'] ?? '';
+          final String code = responseData['code'] ?? '';
+
+          debugPrint(
+              '🔍 [COMPATIBLE_AUTH] Smart OTP Message - Success: $success, Code: $code');
+
+          if (success && responseData['data'] != null) {
+            final data = responseData['data'] as Map<String, dynamic>;
+
+            // Extract user data from new structure
+            Map<String, dynamic>? userData;
+            if (data.containsKey('user')) {
+              userData = data['user'] as Map<String, dynamic>;
+            } else {
+              userData = data;
+            }
+
+            if (userData != null) {
+              debugPrint(
+                  '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages OTP data');
+              _currentUser = UserModel.fromJsonSafe(userData);
+
+              // Extract tokens from new structure
+              String? accessToken;
+              String? refreshToken;
+
+              if (data.containsKey('tokens')) {
+                final tokens = data['tokens'] as Map<String, dynamic>;
+                accessToken = tokens['accessToken'] as String?;
+                refreshToken = tokens['refreshToken'] as String?;
+              }
+
+              // Save tokens using existing method
+              if (accessToken != null) {
+                await _tokenManager.saveTokens(
+                  accessToken: accessToken,
+                  refreshToken: refreshToken ?? '',
+                  expiresIn: 900,
+                );
+                await _storage.setString('access_token', accessToken);
+                debugPrint(
+                    '🔐 [COMPATIBLE_AUTH] Smart Messages OTP tokens saved');
+              }
+              if (refreshToken != null) {
+                await _storage.setString('refresh_token', refreshToken);
+              }
+
+              await _storage.writeSecure(
+                  'current_user', _currentUser!.toJson().toString());
+              await _storage.setString(
+                  'user_data', _currentUser!.toJson().toString());
+            }
+          } else if (!success) {
+            // Handle error from Smart Messages System
+            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            _isLoading = false;
+            debugPrint('❌ [COMPATIBLE_AUTH] Smart Messages OTP error: $_error');
+            return false;
+          }
+
+          _isLoading = false;
+          debugPrint(
+              '✅ [COMPATIBLE_AUTH] Smart Messages OTP verification successful');
+          return true;
+        }
+
+        // LEGACY SUPPORT for OTP verification
         if (isLogin) {
           // تسجيل دخول بعد التحقق
           final userData = response.data['data'];
@@ -253,7 +583,44 @@ class CompatibleAuthService {
       }
     } catch (e) {
       debugPrint('❌ [COMPATIBLE_AUTH] OTP verification error: $e');
-      _error = 'خطأ في التحقق من الرمز: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final message = errorData['message'] as String? ?? 'خطأ غير معروف';
+
+            // Check if it's a validation error for OTP
+            if (message.contains('OTP') || message.contains('رمز التحقق')) {
+              _error =
+                  'رمز التحقق غير صحيح. يرجى التأكد من الرمز وإعادة المحاولة';
+            } else if (message.contains('expired') ||
+                message.contains('منتهي الصلاحية')) {
+              _error = 'رمز التحقق منتهي الصلاحية. يرجى طلب رمز جديد';
+            } else if (message.contains('invalid') ||
+                message.contains('غير صحيح')) {
+              _error = 'رمز التحقق غير صحيح';
+            } else {
+              _error = message;
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في التحقق من الرمز. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error =
+              'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }
@@ -284,7 +651,42 @@ class CompatibleAuthService {
       }
     } catch (e) {
       debugPrint('❌ [COMPATIBLE_AUTH] OTP resend error: $e');
-      _error = 'خطأ في إرسال رمز التحقق: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final message = errorData['message'] as String? ?? 'خطأ غير معروف';
+
+            // Check if it's a rate limiting error
+            if (message.contains('rate limit') ||
+                message.contains('محاولات كثيرة')) {
+              _error =
+                  'تم تجاوز عدد المحاولات المسموح. يرجى الانتظار قليلاً والمحاولة مرة أخرى';
+            } else if (message.contains('not found') ||
+                message.contains('غير موجود')) {
+              _error = 'رقم الهاتف غير مسجل في النظام';
+            } else {
+              _error = message;
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في إرسال رمز التحقق. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error =
+              'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }
@@ -296,7 +698,8 @@ class CompatibleAuthService {
       _isLoading = true;
       _error = null;
 
-      final response = await _dio.post('/auth/forgot-password', data: {
+      final response =
+          await _dio.post('/api/v1/auth/request-password-reset', data: {
         'phone': phone,
       });
 
@@ -323,7 +726,7 @@ class CompatibleAuthService {
       _isLoading = true;
       _error = null;
 
-      final response = await _dio.post('/auth/reset-password', data: {
+      final response = await _dio.post('/api/v1/auth/reset-password', data: {
         'phone': phone,
         'otp': otp,
         'newPassword': newPassword,
@@ -542,6 +945,12 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
   /// تسجيل المستخدم الجديد
   Future<bool> registerWithPhone(
       String phone, String password, String firstName, String lastName) async {
+    // بدء الـ loading في الخدمة أولاً
+    _authService._isLoading = true;
+    _authService._error = null;
+    // تحديث الحالة لبدء الـ loading
+    _updateState();
+
     final result = await _authService.registerWithPhone(
         phone, password, firstName, lastName);
     _updateState();
@@ -551,6 +960,12 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
   /// التحقق من رمز OTP
   Future<bool> verifyOtp(String phone, String otp,
       {bool isLogin = false}) async {
+    // بدء الـ loading في الخدمة أولاً
+    _authService._isLoading = true;
+    _authService._error = null;
+    // تحديث الحالة لبدء الـ loading
+    _updateState();
+
     final result = await _authService.verifyOtp(phone, otp, isLogin: isLogin);
     _updateState();
     return result;

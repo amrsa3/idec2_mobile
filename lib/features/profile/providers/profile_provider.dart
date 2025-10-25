@@ -9,8 +9,9 @@ import '../../../models/governorate_model.dart';
 import '../../../models/profile_data_models.dart';
 import '../../../models/profile_model.dart';
 import '../../../models/verification_request_model.dart';
-import '../../../providers/enhanced_auth_provider.dart';
 import '../../../providers/profile_rules_provider.dart';
+import '../../../services/authenticated_image_service.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/image_cache_service.dart';
 import '../../../shared/services/notification_service.dart';
 import '../services/profile_service.dart';
@@ -117,6 +118,29 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   void _safeUpdateState(ProfileState Function() updateFunction) {
     if (mounted) {
       state = updateFunction();
+    }
+  }
+
+  /// تحديث الحالة مع الحفاظ على الملف الشخصي الحالي
+  void _safeUpdateStatePreservingProfile(
+      ProfileState Function() updateFunction) {
+    if (mounted) {
+      final currentProfile = state.currentProfile;
+      debugPrint(
+          '🔄 ProfileProvider: Before update - currentProfile exists: ${currentProfile != null}');
+
+      state = updateFunction();
+
+      // إذا فقد الملف الشخصي، استرده
+      if (state.currentProfile == null && currentProfile != null) {
+        state = state.copyWith(currentProfile: currentProfile);
+        debugPrint(
+            '🔄 ProfileProvider: Restored currentProfile after state update');
+      } else if (state.currentProfile != null) {
+        debugPrint('🔄 ProfileProvider: Profile preserved successfully');
+      } else {
+        debugPrint('⚠️ ProfileProvider: No profile to preserve');
+      }
     }
   }
 
@@ -557,16 +581,25 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         await Future.delayed(authCheckDelay);
       }
 
-      // Initial authentication check
-      var authProvider = ref.read(enhancedAuthProvider.notifier);
+      // Initial authentication check - استخدام compatibleAuthProvider بدلاً من enhancedAuthProvider
+      final authState = ref.read(compatibleAuthProvider);
 
       // If AuthProvider is still loading, wait a bit more
-      if (authProvider.isLoading && retryCount < maxRetries) {
+      if (authState.isLoading && retryCount < maxRetries) {
         await Future.delayed(const Duration(milliseconds: 1000));
-        authProvider = ref.read(enhancedAuthProvider.notifier);
+        final updatedAuthState = ref.read(compatibleAuthProvider);
+        if (!updatedAuthState.isAuthenticated) {
+          debugPrint(
+              '❌ ProfileProvider: User not authenticated after loading, cannot load profile');
+          _safeUpdateState(() => state.copyWith(
+                isLoading: false,
+                error: 'يجب تسجيل الدخول أولاً للوصول للملف الشخصي',
+              ));
+          return;
+        }
       }
 
-      if (!authProvider.isAuthenticated) {
+      if (!authState.isAuthenticated) {
         debugPrint(
             '❌ ProfileProvider: User not authenticated, cannot load profile');
         _safeUpdateState(() => state.copyWith(
@@ -577,12 +610,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
 
       // Check if session has expired
-      if (authProvider.sessionExpired) {
+      if (authState.sessionExpired) {
         debugPrint('❌ ProfileProvider: Session expired, cannot load profile');
         _safeUpdateState(() => state.copyWith(
               isLoading: false,
-              error: authProvider.sessionExpiredReason ??
-                  'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
+              error: 'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
             ));
         return;
       }
@@ -654,13 +686,13 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         await Future.delayed(const Duration(milliseconds: 300));
 
         // Re-check authentication status after delay
-        final updatedAuthProvider = ref.read(enhancedAuthProvider.notifier);
+        final updatedAuthState = ref.read(compatibleAuthProvider);
         debugPrint(
-            '👤 ProfileProvider: Updated auth state - isAuthenticated: ${updatedAuthProvider.isAuthenticated}, sessionExpired: ${updatedAuthProvider.sessionExpired}');
+            '👤 ProfileProvider: Updated auth state - isAuthenticated: ${updatedAuthState.isAuthenticated}, sessionExpired: ${updatedAuthState.sessionExpired}');
 
         // If still authenticated and we haven't exceeded retry limit, try again
-        if (updatedAuthProvider.isAuthenticated &&
-            !updatedAuthProvider.sessionExpired &&
+        if (updatedAuthState.isAuthenticated &&
+            !updatedAuthState.sessionExpired &&
             retryCount < maxRetries) {
           debugPrint(
               '🔄 ProfileProvider: Retrying profile load after auth error (attempt ${retryCount + 1})');
@@ -670,15 +702,14 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         }
 
         // If session is actually expired or max retries reached
-        if (updatedAuthProvider.sessionExpired) {
+        if (updatedAuthState.sessionExpired) {
           debugPrint(
               '❌ ProfileProvider: Session confirmed expired after retry');
           state = state.copyWith(
             isLoading: false,
-            error: updatedAuthProvider.sessionExpiredReason ??
-                'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
+            error: 'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
           );
-        } else if (!updatedAuthProvider.isAuthenticated) {
+        } else if (!updatedAuthState.isAuthenticated) {
           debugPrint(
               '❌ ProfileProvider: User no longer authenticated after retry');
           state = state.copyWith(
@@ -689,7 +720,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           // Clear session expiration state and show generic auth error
           debugPrint(
               '🔄 ProfileProvider: Clearing session expiration and showing auth error');
-          ref.read(enhancedAuthProvider.notifier).clearSessionExpiration();
+          ref.read(compatibleAuthProvider.notifier).clearError();
 
           state = state.copyWith(
             isLoading: false,
@@ -773,23 +804,40 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       // Extract the new image URL from the response
       String? newImageUrl;
       if (response != null) {
-        // Handle response from backend
-        newImageUrl = response['url'] ?? response['file']?['url'];
-        debugPrint(
-            '🖼️ ProfileProvider: New image URL from upload response: $newImageUrl');
+        debugPrint('🔍 ProfileProvider: Full response data: $response');
+
+        // Backend returns FileResponseDto directly, URL is in response.url
+        newImageUrl = response['url'];
+
+        debugPrint('🔍 ProfileProvider: Extracting URL from response:');
+        debugPrint('  - response["url"]: ${response['url']}');
+        debugPrint('  - response["id"]: ${response['id']}');
+        debugPrint('  - response["filename"]: ${response['filename']}');
+        debugPrint('🖼️ ProfileProvider: Final extracted URL: $newImageUrl');
 
         // مسح الـ cache للصور القديمة والجديدة فوراً
         try {
           if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
             await ImageCacheService.evictImage(oldImageUrl);
+            // مسح cache شامل من AuthenticatedImageService
+            AuthenticatedImageService.clearImageCacheCompletely(oldImageUrl);
             debugPrint(
-                '🗑️ ProfileProvider: Cleared cache for old image: $oldImageUrl');
+                '🗑️ ProfileProvider: Completely cleared cache for old image: $oldImageUrl');
           }
 
-          if (newImageUrl != null) {
+          if (newImageUrl != null && newImageUrl.isNotEmpty) {
             await ImageCacheService.evictImage(newImageUrl);
+            // مسح cache شامل من AuthenticatedImageService
+            AuthenticatedImageService.clearImageCacheCompletely(newImageUrl);
             debugPrint(
-                '🗑️ ProfileProvider: Cleared cache for new image: $newImageUrl');
+                '🗑️ ProfileProvider: Completely cleared cache for new image: $newImageUrl');
+
+            // مسح cache إضافي للتأكد
+            await Future.delayed(const Duration(milliseconds: 100));
+            await ImageCacheService.evictImage(newImageUrl);
+            AuthenticatedImageService.clearImageCacheCompletely(newImageUrl);
+            debugPrint(
+                '🗑️ ProfileProvider: Double-cleared cache completely for new image');
           }
         } catch (e) {
           debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
@@ -797,37 +845,142 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         // Update the current profile immediately with the new image URL
         if (state.currentProfile != null) {
+          // If newImageUrl is null or empty, create a temporary URL or keep the old one
+          String? finalImageUrl;
+
+          if (newImageUrl?.isNotEmpty == true) {
+            finalImageUrl = newImageUrl;
+            debugPrint(
+                '✅ ProfileProvider: Using new image URL: $finalImageUrl');
+          } else if (oldImageUrl?.isNotEmpty == true) {
+            finalImageUrl = oldImageUrl;
+            debugPrint(
+                '⚠️ ProfileProvider: Using old image URL as fallback: $finalImageUrl');
+          } else {
+            // Create a temporary URL to trigger UI update
+            finalImageUrl = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+            debugPrint(
+                '⚠️ ProfileProvider: Created temporary URL: $finalImageUrl');
+          }
+
           final updatedProfile = state.currentProfile!.copyWith(
-            profilePictureUrl: newImageUrl,
+            profilePictureUrl: finalImageUrl,
           );
 
-          state = state.copyWith(
-            currentProfile: updatedProfile,
-            isUploadingProfilePicture: false,
-            successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
-          );
+          // إشعار فوري للواجهة بالتحديث
+          _safeUpdateStatePreservingProfile(() => state.copyWith(
+                currentProfile: updatedProfile,
+                isUploadingProfilePicture: false,
+                successMessage: newImageUrl?.isNotEmpty == true
+                    ? 'تم تحديث صورة الملف الشخصي بنجاح'
+                    : 'تم رفع الصورة بنجاح - جاري معالجة الرابط',
+                error: null, // Clear any previous errors
+              ));
 
           debugPrint(
-              '🔄 ProfileProvider: Profile updated immediately with new image URL');
+              '🔄 ProfileProvider: Profile updated immediately with image URL: $finalImageUrl');
+
+          // إشعار إضافي للتأكد من تحديث الواجهة (Riverpod يتولى هذا تلقائياً)
+          debugPrint(
+              '🔔 ProfileProvider: State updated, Riverpod will notify listeners automatically');
+
+          if (newImageUrl?.isEmpty == true) {
+            debugPrint(
+                '⚠️ ProfileProvider: Warning - newImageUrl is empty, using fallback: $finalImageUrl');
+          }
+        } else {
+          // If currentProfile is null, just update the uploading state
+          debugPrint(
+              '⚠️ ProfileProvider: currentProfile is null, updating state only');
+          state = state.copyWith(
+            isUploadingProfilePicture: false,
+            successMessage: newImageUrl?.isNotEmpty == true
+                ? 'تم تحديث صورة الملف الشخصي بنجاح'
+                : 'تم رفع الصورة بنجاح - جاري معالجة الرابط',
+            error: null, // Clear any previous errors
+          );
+
+          // إشعار للواجهة حتى لو كان currentProfile فارغ (Riverpod يتولى هذا تلقائياً)
+          debugPrint(
+              '🔔 ProfileProvider: State updated, Riverpod will notify listeners automatically');
         }
 
-        // انتظار قصير للتأكد من تحديث الخادم
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Reload profile data to ensure consistency
-        await loadCurrentProfile(forceRefresh: true);
-        debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
-
-        // مسح الـ cache مرة أخرى بعد إعادة التحميل للتأكد
+        // تحديث محلي فوري بدون إعادة تحميل من الخادم لتجنب مشاكل المصادقة
         try {
-          final finalImageUrl = state.currentProfile?.profilePictureUrl;
-          if (finalImageUrl != null && finalImageUrl.isNotEmpty) {
-            await ImageCacheService.evictImage(finalImageUrl);
+          final urlToSave = newImageUrl?.isNotEmpty == true
+              ? newImageUrl!
+              : oldImageUrl ?? '';
+          await LocalProfileService.updateProfilePictureUrlLocally(urlToSave);
+          debugPrint(
+              '🔄 ProfileProvider: Profile picture URL updated locally: $urlToSave');
+
+          // تحديث الحالة مرة أخرى للتأكد من أن URL الجديد محفوظ
+          if (state.currentProfile != null) {
+            final finalUpdatedProfile = state.currentProfile!.copyWith(
+              profilePictureUrl: urlToSave,
+            );
+
+            _safeUpdateStatePreservingProfile(() => state.copyWith(
+                  currentProfile: finalUpdatedProfile,
+                  successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
+                ));
+
             debugPrint(
-                '🗑️ ProfileProvider: Final cache clear for image: $finalImageUrl');
+                '🔄 ProfileProvider: Profile state updated with final URL: $urlToSave');
           }
         } catch (e) {
-          debugPrint('⚠️ ProfileProvider: Error in final cache clear: $e');
+          debugPrint(
+              '⚠️ ProfileProvider: Failed to update local profile picture URL: $e');
+        }
+
+        // إضافة تأخير قصير ثم إعادة تحميل الملف الشخصي لضمان التحديث
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          try {
+            debugPrint(
+                '🔄 ProfileProvider: Refreshing profile after image upload...');
+            await loadCurrentProfile(forceRefresh: true);
+            debugPrint(
+                '✅ ProfileProvider: Profile refreshed successfully after image upload');
+          } catch (e) {
+            debugPrint(
+                '⚠️ ProfileProvider: Error refreshing profile after upload: $e');
+          }
+        });
+
+        // مسح الـ cache للصورة الجديدة فقط
+        try {
+          if (newImageUrl != null && newImageUrl.isNotEmpty) {
+            await ImageCacheService.evictImage(newImageUrl);
+            AuthenticatedImageService.clearImageCache(newImageUrl);
+            debugPrint(
+                '🗑️ ProfileProvider: Cache cleared for new image: $newImageUrl');
+          }
+        } catch (e) {
+          debugPrint(
+              '⚠️ ProfileProvider: Error clearing cache for new image: $e');
+        }
+
+        // تأكيد إضافي أن الملف الشخصي لا يزال موجوداً
+        if (state.currentProfile == null) {
+          debugPrint(
+              '❌ ProfileProvider: CRITICAL - Profile lost after upload! Attempting recovery...');
+          // محاولة استرداد الملف الشخصي من التخزين المحلي
+          try {
+            final cachedProfile = await LocalProfileService.getCurrentProfile();
+            if (cachedProfile != null) {
+              state = state.copyWith(currentProfile: cachedProfile);
+              debugPrint('✅ ProfileProvider: Profile recovered from cache');
+            } else {
+              debugPrint(
+                  '❌ ProfileProvider: No cached profile available for recovery');
+            }
+          } catch (e) {
+            debugPrint(
+                '❌ ProfileProvider: Failed to recover profile from cache: $e');
+          }
+        } else {
+          debugPrint(
+              '✅ ProfileProvider: Profile state confirmed - still exists after upload');
         }
       }
 
@@ -851,10 +1004,42 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         errorMessage = 'خطأ في الاتصال بالخادم';
       }
 
-      state = state.copyWith(
-        isUploadingProfilePicture: false,
-        error: errorMessage,
-      );
+      // استرداد الملف الشخصي في حالة فشل العملية
+      if (state.currentProfile == null) {
+        debugPrint(
+            '🔄 ProfileProvider: Profile lost after upload failure, attempting recovery...');
+        try {
+          final cachedProfile = await LocalProfileService.getCurrentProfile();
+          if (cachedProfile != null) {
+            state = state.copyWith(
+              currentProfile: cachedProfile,
+              isUploadingProfilePicture: false,
+              error: errorMessage,
+            );
+            debugPrint(
+                '✅ ProfileProvider: Profile restored from cache after upload failure');
+          } else {
+            state = state.copyWith(
+              isUploadingProfilePicture: false,
+              error: errorMessage,
+            );
+            debugPrint(
+                '❌ ProfileProvider: No cached profile available for recovery');
+          }
+        } catch (e) {
+          state = state.copyWith(
+            isUploadingProfilePicture: false,
+            error: errorMessage,
+          );
+          debugPrint(
+              '❌ ProfileProvider: Failed to recover profile from cache: $e');
+        }
+      } else {
+        state = state.copyWith(
+          isUploadingProfilePicture: false,
+          error: errorMessage,
+        );
+      }
 
       debugPrint(
           '❌ ProfileProvider: Error uploading profile picture: $errorMessage');
@@ -900,22 +1085,29 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           profilePictureUrl: null,
         );
 
-        state = state.copyWith(
-          currentProfile: updatedProfile,
-          isUploadingProfilePicture: false,
-          successMessage: 'تم حذف صورة الملف الشخصي بنجاح',
-        );
+        _safeUpdateStatePreservingProfile(() => state.copyWith(
+              currentProfile: updatedProfile,
+              isUploadingProfilePicture: false,
+              successMessage: 'تم حذف صورة الملف الشخصي بنجاح',
+              error: null, // Clear any previous errors
+            ));
 
         debugPrint(
             '🔄 ProfileProvider: Profile updated immediately with removed image');
+      } else {
+        // If currentProfile is null, just update the uploading state
+        debugPrint(
+            '⚠️ ProfileProvider: currentProfile is null, updating state only');
+        state = state.copyWith(
+          isUploadingProfilePicture: false,
+          successMessage: 'تم حذف صورة الملف الشخصي بنجاح',
+          error: null, // Clear any previous errors
+        );
       }
 
-      // انتظار قصير للتأكد من تحديث الخادم
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Reload profile data to ensure consistency
-      await loadCurrentProfile(forceRefresh: true);
-      debugPrint('🔄 ProfileProvider: Profile data reloaded from server');
+      // تحديث الملف الشخصي محلياً فقط - لا نحتاج إعادة تحميل من الخادم
+      debugPrint(
+          '🔄 ProfileProvider: Profile updated locally - no server reload needed');
 
       debugPrint('✅ ProfileProvider: Profile picture removed successfully');
 

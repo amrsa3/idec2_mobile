@@ -9,6 +9,7 @@ import '../../../providers/enhanced_auth_provider.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/loading_overlay.dart';
 
 /// صفحة تسجيل مبسطة ومحسنة
 class SimplifiedRegisterScreen extends ConsumerStatefulWidget {
@@ -89,7 +90,10 @@ class _SimplifiedRegisterScreenState
       error: (message) => false,
     );
 
-    return Scaffold(
+    return FormLoadingOverlay(
+      isLoading: isLoading,
+      loadingText: 'جاري إنشاء الحساب...',
+      child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('إنشاء حساب جديد'),
@@ -299,6 +303,7 @@ class _SimplifiedRegisterScreenState
     );
   }
 }
+
 
 
 

@@ -26,6 +26,7 @@ class CompatibleAuthService {
   bool _isLoading = false;
   String? _error;
   String? _unverifiedPhoneNumber;
+  Map<String, dynamic>? _lastResponse;
 
   CompatibleAuthService._internal() {
     // Initialize core services synchronously
@@ -103,6 +104,9 @@ class CompatibleAuthService {
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
+
+        // حفظ آخر استجابة من الخادم
+        _lastResponse = responseData;
 
         // 🔥 NEW: Handle Smart Messages System
         if (responseData.containsKey('success') &&
@@ -298,7 +302,7 @@ class CompatibleAuthService {
 
   /// تسجيل المستخدم الجديد
   Future<bool> registerWithPhone(
-      String phone, String password, String firstName, String lastName) async {
+      String phone, String password, String fullName, String email) async {
     try {
       _isLoading = true;
       _error = null;
@@ -306,14 +310,18 @@ class CompatibleAuthService {
       debugPrint('🔐 [COMPATIBLE_AUTH] Attempting registration for: $phone');
 
       final response = await _dio.post(ApiConstants.registerEndpoint, data: {
-        'name': '$firstName $lastName', // Combine first and last name
+        'name': fullName, // Send full name as 'name'
         'phone': phone,
         'password': password,
         'confirmPassword': password, // Use same password for confirmation
+        'email': email.isNotEmpty ? email : null, // Send email if provided
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
+
+        // حفظ آخر استجابة من الخادم
+        _lastResponse = responseData;
 
         // 🔥 NEW: Handle Smart Messages System for Registration
         if (responseData.containsKey('success') &&
@@ -468,6 +476,9 @@ class CompatibleAuthService {
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
+
+        // حفظ آخر استجابة من الخادم
+        _lastResponse = responseData;
 
         // 🔥 NEW: Handle Smart Messages System for OTP
         if (responseData.containsKey('success') &&
@@ -639,6 +650,11 @@ class CompatibleAuthService {
       });
 
       if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        // حفظ آخر استجابة من الخادم
+        _lastResponse = responseData;
+
         _isLoading = false;
         debugPrint('✅ [COMPATIBLE_AUTH] OTP resent successfully for: $phone');
         return true;
@@ -795,6 +811,9 @@ class CompatibleAuthService {
   /// الحصول على الخطأ
   String? get error => _error;
 
+  /// الحصول على آخر استجابة من الخادم
+  Map<String, dynamic>? get lastResponse => _lastResponse;
+
   /// التحقق من حالة المصادقة
   bool get isAuthenticated => _currentUser != null;
 
@@ -876,6 +895,7 @@ class CompatibleAuthState {
   final bool isAuthenticated;
   final bool sessionExpired;
   final String? unverifiedPhoneNumber;
+  final Map<String, dynamic>? lastResponse;
 
   CompatibleAuthState({
     this.user,
@@ -884,6 +904,7 @@ class CompatibleAuthState {
     this.isAuthenticated = false,
     this.sessionExpired = false,
     this.unverifiedPhoneNumber,
+    this.lastResponse,
   });
 
   CompatibleAuthState copyWith({
@@ -893,6 +914,7 @@ class CompatibleAuthState {
     bool? isAuthenticated,
     bool? sessionExpired,
     String? unverifiedPhoneNumber,
+    Map<String, dynamic>? lastResponse,
   }) {
     return CompatibleAuthState(
       user: user ?? this.user,
@@ -902,6 +924,7 @@ class CompatibleAuthState {
       sessionExpired: sessionExpired ?? this.sessionExpired,
       unverifiedPhoneNumber:
           unverifiedPhoneNumber ?? this.unverifiedPhoneNumber,
+      lastResponse: lastResponse ?? this.lastResponse,
     );
   }
 }
@@ -932,6 +955,7 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
       isAuthenticated: _authService.isAuthenticated,
       sessionExpired: _authService.sessionExpired,
       unverifiedPhoneNumber: _authService.unverifiedPhoneNumber,
+      lastResponse: _authService.lastResponse,
     );
   }
 
@@ -944,15 +968,15 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// تسجيل المستخدم الجديد
   Future<bool> registerWithPhone(
-      String phone, String password, String firstName, String lastName) async {
+      String phone, String password, String fullName, String email) async {
     // بدء الـ loading في الخدمة أولاً
     _authService._isLoading = true;
     _authService._error = null;
     // تحديث الحالة لبدء الـ loading
     _updateState();
 
-    final result = await _authService.registerWithPhone(
-        phone, password, firstName, lastName);
+    final result =
+        await _authService.registerWithPhone(phone, password, fullName, email);
     _updateState();
     return result;
   }
@@ -1019,6 +1043,9 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// الحصول على الخطأ
   String? get error => _authService.error;
+
+  /// الحصول على آخر استجابة من الخادم
+  Map<String, dynamic>? get lastResponse => _authService.lastResponse;
 
   /// الحصول على المستخدم الحالي
   UserModel? get user => _authService.user;

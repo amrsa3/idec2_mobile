@@ -10,7 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/professional_loading_overlay.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -65,9 +65,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               'LoginScreen: Auth state - isLoading: ${authState.isLoading}');
 
           // إرسال إشعار نجاح عبر النظام المركزي
+          // استخدام الرسالة من الخادم إذا كانت متوفرة
+          String successTitle = 'تسجيل الدخول';
+          String successMessage = 'تم تسجيل الدخول بنجاح';
+          
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+              
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+                successMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                successMessage = messageEn;
+              }
+            }
+          }
+          
           await NotificationService.showSuccess(
-            title: 'تسجيل الدخول',
-            message: 'تم تسجيل الدخول بنجاح',
+            title: successTitle,
+            message: successMessage,
           );
 
           // Wait a moment for auth state to fully update, then navigate
@@ -127,13 +148,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
 
           // Show error message using central notification system
+          String errorTitle = 'خطأ في تسجيل الدخول';
           String errorMessage = 'فشل في تسجيل الدخول';
 
-          if (authState.error != null && authState.error!.isNotEmpty) {
-            // Use the actual error message from the server
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+              
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+                errorMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                errorMessage = messageEn;
+              }
+            }
+          } else if (authState.error != null && authState.error!.isNotEmpty) {
+            // استخدام رسالة الخطأ من الحالة إذا لم تكن هناك استجابة من الخادم
             errorMessage = authState.error!;
 
-            // Only apply fallback messages for specific network/connection errors
+            // تطبيق رسائل احتياطية لأخطاء الشبكة
             if (authState.error!.contains('Network error') ||
                 authState.error!.contains('SocketException') ||
                 authState.error!.contains('connection refused') ||
@@ -143,14 +180,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 authState.error!.contains('TimeoutException')) {
               errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
             }
-            // For all other errors (including server messages), use the original message
-
-            debugPrint(
-                '🔍 [LOGIN_SCREEN] Displaying error message: $errorMessage');
           }
 
+          debugPrint('🔍 [LOGIN_SCREEN] Displaying error message: $errorMessage');
+
           await NotificationService.showError(
-            title: 'خطأ في تسجيل الدخول',
+            title: errorTitle,
             message: errorMessage,
           );
         }
@@ -212,9 +247,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return FormLoadingOverlay(
+    return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading,
-      loadingText: 'جاري تسجيل الدخول...',
+      message: 'جاري تسجيل الدخول...',
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(

@@ -56,20 +56,58 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             '${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}',
           );
 
+          // استخدام الرسالة من الخادم إذا كانت متوفرة
+          final authState = ref.read(compatibleAuthProvider);
+          String successTitle = 'إعادة تعيين كلمة المرور';
+          String successMessage = 'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber';
+          
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+              
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+                successMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                successMessage = messageEn;
+              }
+            }
+          }
+
           await NotificationService.showSuccess(
-            title: 'إعادة تعيين كلمة المرور',
-            message: 'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber',
+            title: successTitle,
+            message: successMessage,
           );
         } else {
           final authState = ref.read(compatibleAuthProvider);
+          String errorTitle = 'خطأ في إعادة تعيين كلمة المرور';
           String errorMessage = 'فشل في إرسال رمز التحقق';
 
-          if (authState.error != null && authState.error!.isNotEmpty) {
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+              
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+                errorMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                errorMessage = messageEn;
+              }
+            }
+          } else if (authState.error != null && authState.error!.isNotEmpty) {
             errorMessage = authState.error!;
           }
 
           await NotificationService.showError(
-            title: 'خطأ في إعادة تعيين كلمة المرور',
+            title: errorTitle,
             message: errorMessage,
           );
         }

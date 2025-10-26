@@ -8,9 +8,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../providers/language_provider.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/professional_loading_overlay.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -21,80 +24,277 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _acceptTerms = false;
   String _countryCode = '+967'; // Default to Yemen
+  bool _isCheckingRegistrationSettings = false;
+  bool _registrationEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRegistrationSettings();
+  }
 
   @override
   void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  Future<void> _checkRegistrationSettings() async {
+    setState(() {
+      _isCheckingRegistrationSettings = true;
+    });
+
+    try {
+      // TODO: Implement API call to check registration settings
+      // For now, assume registration is enabled
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (mounted) {
+        setState(() {
+          _registrationEnabled = true; // This should come from API
+          _isCheckingRegistrationSettings = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _registrationEnabled = false;
+          _isCheckingRegistrationSettings = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في فحص إعدادات التسجيل: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Additional validation before sending
+    if (_fullNameController.text.trim().isEmpty) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'يرجى إدخال الاسم الكامل',
+      );
+      return;
+    }
+
+    if (_phoneController.text.trim().isEmpty) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'يرجى إدخال رقم الهاتف',
+      );
+      return;
+    }
+
+    // Validate phone number format
+    final phoneDigits = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'رقم الهاتف غير صحيح، يرجى إدخال رقم صحيح',
+      );
+      return;
+    }
+
+    if (_passwordController.text.isEmpty) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'يرجى إدخال كلمة المرور',
+      );
+      return;
+    }
+
+    if (_passwordController.text.length < 8) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+      );
+      return;
+    }
+
+    if (!_acceptTerms) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'يجب الموافقة على الشروط والأحكام',
+      );
+      return;
+    }
+
+    if (!_registrationEnabled) {
+      await NotificationService.showError(
+        title: 'التسجيل مغلق',
+        message: 'التسجيل مغلق حالياً، يرجى المحاولة لاحقاً',
+      );
+      return;
+    }
+
+    final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
 
     // Clear any previous errors
     ref.read(compatibleAuthProvider.notifier).clearError();
 
-    try {
-      final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
+    final success =
+        await ref.read(compatibleAuthProvider.notifier).registerWithPhone(
+              fullPhoneNumber,
+              _passwordController.text,
+              _fullNameController.text.trim(),
+              _emailController.text.trim().isEmpty
+                  ? ''
+                  : _emailController.text.trim(),
+            );
 
-      debugPrint(
-          'RegisterScreen: Attempting registration for $fullPhoneNumber');
+    if (!mounted) return;
 
-      final success =
-          await ref.read(compatibleAuthProvider.notifier).registerWithPhone(
-                fullPhoneNumber,
-                _passwordController.text.trim(),
-                'User', // firstName
-                'Name', // lastName
-              );
+    if (success) {
+      // Registration successful - show success message and navigate to OTP verification
+      // استخدام الرسالة من الخادم إذا كانت متوفرة
+      final authState = ref.read(compatibleAuthProvider);
+      String successTitle = 'تم التسجيل بنجاح';
+      String successMessage =
+          'تم إنشاء الحساب بنجاح، يرجى التحقق من رمز التأكيد';
 
-      if (mounted) {
-        if (success) {
-          debugPrint(
-              'RegisterScreen: Registration successful, navigating to OTP verification...');
+      // محاولة استخراج الرسالة من استجابة الخادم
+      if (authState.lastResponse != null) {
+        final response = authState.lastResponse!;
+        if (response.containsKey('messageAr') &&
+            response.containsKey('messageEn')) {
+          final messageAr = response['messageAr'] as String?;
+          final messageEn = response['messageEn'] as String?;
 
-          // Navigate to OTP verification screen
-          context.go(
-            '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}&isLogin=false',
-          );
-
-          await NotificationService.showSuccess(
-            title: 'التسجيل',
-            message: 'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber',
-          );
-        } else {
-          // Show error message using central notification system
-          String errorMessage = 'فشل في التسجيل';
-
-          final authState = ref.read(compatibleAuthProvider);
-          if (authState.error != null && authState.error!.isNotEmpty) {
-            errorMessage = authState.error!;
+          // اختيار الرسالة حسب لغة التطبيق
+          final locale = Localizations.localeOf(context);
+          if (locale.languageCode == 'ar' &&
+              messageAr != null &&
+              messageAr.isNotEmpty) {
+            successMessage = messageAr;
+          } else if (messageEn != null && messageEn.isNotEmpty) {
+            successMessage = messageEn;
           }
-
-          await NotificationService.showError(
-            title: 'خطأ في التسجيل',
-            message: errorMessage,
-          );
         }
       }
-    } catch (e) {
-      if (mounted) {
-        debugPrint('❌ [REGISTER_SCREEN] Unexpected error: $e');
 
-        await NotificationService.showError(
-          title: 'خطأ في التسجيل',
-          message: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
-        );
+      await NotificationService.showSuccess(
+        title: successTitle,
+        message: successMessage,
+      );
+
+      print(
+          'Registration successful, navigating to OTP verification with phone: $fullPhoneNumber');
+      // Use push instead of go to avoid GoRouter redirects
+      if (mounted) {
+        context.push(
+            '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(fullPhoneNumber)}');
       }
+    } else {
+      // Registration failed - show enhanced error message
+      final authState = ref.read(compatibleAuthProvider);
+      String errorTitle = 'خطأ في التسجيل';
+      String errorMessage = 'فشل في التسجيل. يرجى المحاولة مرة أخرى.';
+
+      // محاولة استخراج الرسالة من استجابة الخادم
+      if (authState.lastResponse != null) {
+        final response = authState.lastResponse!;
+        if (response.containsKey('messageAr') &&
+            response.containsKey('messageEn')) {
+          final messageAr = response['messageAr'] as String?;
+          final messageEn = response['messageEn'] as String?;
+
+          // اختيار الرسالة حسب لغة التطبيق
+          final locale = Localizations.localeOf(context);
+          if (locale.languageCode == 'ar' &&
+              messageAr != null &&
+              messageAr.isNotEmpty) {
+            errorMessage = messageAr;
+          } else if (messageEn != null && messageEn.isNotEmpty) {
+            errorMessage = messageEn;
+          }
+        }
+      } else if (authState.error != null) {
+        // استخدام رسالة الخطأ من الحالة إذا لم تكن هناك استجابة من الخادم
+        errorMessage = authState.error!;
+
+        // تطبيق رسائل احتياطية لأخطاء محددة
+        if (authState.error!.contains('already exists') ||
+            authState.error!.contains('duplicate') ||
+            authState.error!.contains('phone already registered')) {
+          errorMessage =
+              'رقم الهاتف مسجل مسبقاً، يرجى استخدام رقم آخر أو تسجيل الدخول';
+        } else if (authState.error!.contains('invalid phone') ||
+            authState.error!.contains('phone format')) {
+          errorMessage = 'رقم الهاتف غير صحيح، يرجى التحقق من الرقم';
+        } else if (authState.error!.contains('weak password') ||
+            authState.error!.contains('password too short')) {
+          errorMessage = 'كلمة المرور ضعيفة، يرجى استخدام كلمة مرور أقوى';
+        } else if (authState.error!.contains('Network error') ||
+            authState.error!.contains('connection')) {
+          errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
+        } else if (authState.error!.contains('timeout')) {
+          errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
+        } else if (authState.error!.contains('server error') ||
+            authState.error!.contains('500')) {
+          errorMessage = 'خطأ في الخادم، يرجى المحاولة لاحقاً';
+        }
+      }
+
+      await NotificationService.showError(
+        title: errorTitle,
+        message: errorMessage,
+      );
+
+      // Also trigger a rebuild to show the error in the UI
+      setState(() {});
     }
+  }
+
+  String? _validateFullName(String? value) {
+    final l10n = AppLocalizations.of(context);
+
+    if (value == null || value.isEmpty) {
+      return l10n.fieldRequired;
+    }
+
+    if (value.trim().length < 2) {
+      return 'الاسم قصير جداً';
+    }
+
+    if (value.trim().length > 50) {
+      return 'الاسم طويل جداً';
+    }
+
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    // Email is optional now
+    if (value == null || value.isEmpty) {
+      return null; // Optional field
+    }
+
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    if (!emailRegex.hasMatch(value)) {
+      return 'البريد الإلكتروني غير صحيح';
+    }
+
+    return null;
   }
 
   String? _validatePhone(String? value) {
@@ -125,17 +325,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return l10n.fieldRequired;
     }
 
-    if (value.length < 6) {
-      return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    if (value.length < 8) {
+      return l10n.passwordTooShort;
     }
 
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
-    if (value != _passwordController.text) {
-      return 'كلمة المرور غير متطابقة';
+    final l10n = AppLocalizations.of(context);
+
+    if (value == null || value.isEmpty) {
+      return l10n.fieldRequired;
     }
+
+    if (value != _passwordController.text) {
+      return l10n.passwordsDoNotMatch;
+    }
+
     return null;
   }
 
@@ -143,142 +350,389 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
+    final isRTL = ref.watch(isRTLProvider);
 
-    return FormLoadingOverlay(
+    return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading,
-      loadingText: 'جاري التسجيل...',
+      message: 'جاري إنشاء الحساب...',
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => context.pop(),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            isRTL ? Icons.arrow_forward : Icons.arrow_back,
+            color: AppColors.textPrimary,
           ),
+          onPressed: () => context.pop(),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 20),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
 
-                  // Logo section
-                  Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.shadow,
-                            blurRadius: 20,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: SvgPicture.asset(
-                        AppImages.logo,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Title
-                  Text(
-                    l10n.register,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Subtitle
-                  Text(
-                    'إنشاء حساب جديد',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Phone number field with country code
-                  Container(
+                // Logo section
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 20,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: Row(
+                    padding: const EdgeInsets.all(12),
+                    child: SvgPicture.asset(
+                      AppImages.logo,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  l10n.register,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle
+                Text(
+                  l10n.createAccount,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Registration status check
+                if (_isCheckingRegistrationSettings)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    ),
+                    child: const Row(
                       children: [
-                        // Country code picker
-                        CountryCodePicker(
-                          onChanged: (country) {
-                            setState(() {
-                              _countryCode = country.dialCode!;
-                            });
-                          },
-                          initialSelection: 'YE', // Yemen
-                          favorite: const ['+967', 'YE'],
-                          showCountryOnly: false,
-                          showOnlyCountryWhenClosed: false,
-                          alignLeft: false,
-                          textStyle: const TextStyle(
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text('جاري فحص إعدادات التسجيل...'),
+                      ],
+                    ),
+                  ),
+
+                // Registration disabled warning
+                if (!_registrationEnabled && !_isCheckingRegistrationSettings)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_outlined,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'التسجيل مغلق حالياً. يرجى المحاولة لاحقاً.',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Full Name field (single field instead of first/last name)
+                CustomTextField(
+                  controller: _fullNameController,
+                  label: 'الاسم الكامل',
+                  hint: 'أدخل الاسم الكامل',
+                  textInputAction: TextInputAction.next,
+                  validator: _validateFullName,
+                  prefixIcon: const Icon(Icons.person_outline),
+                  enabled:
+                      _registrationEnabled && !_isCheckingRegistrationSettings,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Email field (optional)
+                CustomTextField(
+                  controller: _emailController,
+                  label: 'البريد الإلكتروني (اختياري)',
+                  hint: 'أدخل البريد الإلكتروني',
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  validator: _validateEmail,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  enabled:
+                      _registrationEnabled && !_isCheckingRegistrationSettings,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Phone number field with country code
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      // Country code picker
+                      CountryCodePicker(
+                        onChanged: (country) {
+                          setState(() {
+                            _countryCode = country.dialCode!;
+                          });
+                        },
+                        initialSelection: 'YE', // Yemen
+                        favorite: const ['+967', 'YE'],
+                        showCountryOnly: false,
+                        showOnlyCountryWhenClosed: false,
+                        alignLeft: false,
+                        textStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                        ),
+                        dialogTextStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                        ),
+                        searchStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                        ),
+                        flagWidth: 25,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        enabled: _registrationEnabled &&
+                            !_isCheckingRegistrationSettings,
+                      ),
+
+                      // Divider
+                      Container(
+                        height: 30,
+                        width: 1,
+                        color: AppColors.border,
+                      ),
+
+                      // Phone number input
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                          validator: _validatePhone,
+                          enabled: _registrationEnabled &&
+                              !_isCheckingRegistrationSettings,
+                          decoration: const InputDecoration(
+                            hintText: 'رقم الهاتف',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            hintStyle: TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          style: const TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 16,
                           ),
-                          dialogTextStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                          searchStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                          flagWidth: 25,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                        // Divider
-                        Container(
-                          height: 30,
-                          width: 1,
-                          color: AppColors.border,
-                        ),
+                const SizedBox(height: 16),
 
-                        // Phone number input
-                        Expanded(
-                          child: TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            validator: _validatePhone,
-                            decoration: const InputDecoration(
-                              hintText: 'رقم الهاتف',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                              hintStyle: TextStyle(
+                // Password field
+                CustomTextField(
+                  controller: _passwordController,
+                  label: l10n.password,
+                  hint: l10n.password,
+                  obscureText: _obscurePassword,
+                  textInputAction: TextInputAction.next,
+                  validator: _validatePassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  enabled:
+                      _registrationEnabled && !_isCheckingRegistrationSettings,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Confirm Password field
+                CustomTextField(
+                  controller: _confirmPasswordController,
+                  label: l10n.confirmPassword,
+                  hint: l10n.confirmYourPassword,
+                  obscureText: _obscureConfirmPassword,
+                  textInputAction: TextInputAction.done,
+                  validator: _validateConfirmPassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  enabled:
+                      _registrationEnabled && !_isCheckingRegistrationSettings,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                  onSubmitted: (_) => _register(),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Terms and conditions checkbox
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _acceptTerms,
+                      onChanged: (_registrationEnabled &&
+                              !_isCheckingRegistrationSettings)
+                          ? (value) {
+                              setState(() {
+                                _acceptTerms = value ?? false;
+                              });
+                            }
+                          : null,
+                      activeColor: AppColors.primary,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: (_registrationEnabled &&
+                                !_isCheckingRegistrationSettings)
+                            ? () {
+                                setState(() {
+                                  _acceptTerms = !_acceptTerms;
+                                });
+                              }
+                            : null,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
                                 color: AppColors.textSecondary,
+                                fontSize: 14,
                               ),
+                              children: [
+                                const TextSpan(text: 'أوافق على '),
+                                TextSpan(
+                                  text: l10n.termsAndConditions,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                TextSpan(text: ' ${l10n.and} '),
+                                TextSpan(
+                                  text: l10n.privacyPolicy,
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Error message
+                if (authState.error != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authState.error!,
                             style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
+                              color: AppColors.error,
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -286,180 +740,48 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                // Register button
+                CustomButton(
+                  text: l10n.register,
+                  onPressed: (authState.isLoading ||
+                          !_registrationEnabled ||
+                          _isCheckingRegistrationSettings)
+                      ? null
+                      : _register,
+                  isLoading: authState.isLoading,
+                ),
 
-                  // Password field
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.next,
-                      validator: _validatePassword,
-                      decoration: InputDecoration(
-                        hintText: 'كلمة المرور',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        hintStyle: const TextStyle(
-                          color: AppColors.textSecondary,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: AppColors.textSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
+                const SizedBox(height: 24),
+
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${l10n.alreadyHaveAccount} ',
                       style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Confirm Password field
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: TextFormField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      textInputAction: TextInputAction.done,
-                      validator: _validateConfirmPassword,
-                      decoration: InputDecoration(
-                        hintText: 'تأكيد كلمة المرور',
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        hintStyle: const TextStyle(
-                          color: AppColors.textSecondary,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: AppColors.textSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: AppColors.textSecondary,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
-                            });
-                          },
-                        ),
-                      ),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                      ),
-                      onFieldSubmitted: (_) => _register(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Register button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: authState.isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: authState.isLoading
-                            ? AppColors.primary.withOpacity(0.6)
-                            : AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: authState.isLoading ? 0 : 2,
-                      ),
-                      child: authState.isLoading
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'جاري التسجيل...',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              l10n.register,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Login link
-                  Center(
-                    child: TextButton(
+                    TextButton(
                       onPressed: () {
                         context.go(AppRoutes.login);
                       },
                       child: Text(
-                        'لديك حساب بالفعل؟ تسجيل الدخول',
+                        l10n.login,
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
+      ),
       ),
     );
   }

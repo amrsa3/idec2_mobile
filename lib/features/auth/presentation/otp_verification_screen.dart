@@ -1,16 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/professional_loading_overlay.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -28,20 +29,54 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
-  final _otpController = TextEditingController();
+  // 4 Text controllers for 4 OTP digits
+  final List<TextEditingController> _otpControllers = List.generate(
+    4,
+    (index) => TextEditingController(),
+  );
+
+  // 4 Focus nodes for 4 OTP fields
+  final List<FocusNode> _focusNodes = List.generate(
+    4,
+    (index) => FocusNode(),
+  );
+
   bool _isResendingOtp = false;
+  Timer? _resendTimer;
+  int _resendCountdown = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto focus on first field
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNodes[0].requestFocus();
+    });
+  }
 
   @override
   void dispose() {
-    _otpController.dispose();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
+    _resendTimer?.cancel();
     super.dispose();
   }
 
+  String get _otpCode {
+    return _otpControllers.map((c) => c.text).join();
+  }
+
   Future<void> _verifyOtp() async {
-    if (_otpController.text.length != 6) {
+    final otp = _otpCode;
+
+    if (otp.length != 4) {
       await NotificationService.showError(
         title: 'خطأ في التحقق',
-        message: 'يرجى إدخال رمز التحقق المكون من 6 أرقام',
+        message: 'يرجى إدخال رمز التحقق المكون من 4 أرقام',
       );
       return;
     }
@@ -54,36 +89,85 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
       final success = await ref.read(compatibleAuthProvider.notifier).verifyOtp(
             widget.phone,
-            _otpController.text,
+            otp,
           );
 
       if (mounted) {
         if (success) {
           debugPrint('OtpVerificationScreen: OTP verification successful');
 
+          // استخدام الرسالة من الخادم إذا كانت متوفرة
+          final authState = ref.read(compatibleAuthProvider);
+          String successTitle = 'التحقق';
+          String successMessage = 'تم التحقق بنجاح';
+
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
+                successMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                successMessage = messageEn;
+              }
+            }
+          }
+
           await NotificationService.showSuccess(
-            title: 'التحقق',
-            message: 'تم التحقق بنجاح',
+            title: successTitle,
+            message: successMessage,
           );
 
-          // Navigate based on whether this is login or registration
-          if (widget.isLogin) {
-            context.go(AppRoutes.main);
-          } else {
+          // Navigate to main screen automatically
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
             context.go(AppRoutes.main);
           }
         } else {
           final authState = ref.read(compatibleAuthProvider);
+          String errorTitle = 'خطأ في التحقق';
           String errorMessage = 'رمز التحقق غير صحيح';
 
-          if (authState.error != null && authState.error!.isNotEmpty) {
+          // محاولة استخراج الرسالة من استجابة الخادم
+          if (authState.lastResponse != null) {
+            final response = authState.lastResponse!;
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
+              final messageAr = response['messageAr'] as String?;
+              final messageEn = response['messageEn'] as String?;
+
+              // اختيار الرسالة حسب لغة التطبيق
+              final locale = Localizations.localeOf(context);
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
+                errorMessage = messageAr;
+              } else if (messageEn != null && messageEn.isNotEmpty) {
+                errorMessage = messageEn;
+              }
+            }
+          } else if (authState.error != null && authState.error!.isNotEmpty) {
             errorMessage = authState.error!;
           }
 
           await NotificationService.showError(
-            title: 'خطأ في التحقق',
+            title: errorTitle,
             message: errorMessage,
           );
+
+          // Clear OTP fields on error
+          for (var controller in _otpControllers) {
+            controller.clear();
+          }
+          _focusNodes[0].requestFocus();
         }
       }
     } catch (e) {
@@ -99,7 +183,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   Future<void> _resendOtp() async {
-    if (_isResendingOtp) return;
+    if (_isResendingOtp || _resendCountdown > 0) return;
 
     setState(() {
       _isResendingOtp = true;
@@ -109,10 +193,50 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       await ref.read(compatibleAuthProvider.notifier).resendOtp(widget.phone);
 
       if (mounted) {
+        // استخدام الرسالة من الخادم إذا كانت متوفرة
+        final authState = ref.read(compatibleAuthProvider);
+        String successTitle = 'إعادة الإرسال';
+        String successMessage = 'تم إرسال رمز التحقق مرة أخرى';
+
+        // محاولة استخراج الرسالة من استجابة الخادم
+        if (authState.lastResponse != null) {
+          final response = authState.lastResponse!;
+          if (response.containsKey('messageAr') &&
+              response.containsKey('messageEn')) {
+            final messageAr = response['messageAr'] as String?;
+            final messageEn = response['messageEn'] as String?;
+
+            // اختيار الرسالة حسب لغة التطبيق
+            final locale = Localizations.localeOf(context);
+            if (locale.languageCode == 'ar' &&
+                messageAr != null &&
+                messageAr.isNotEmpty) {
+              successMessage = messageAr;
+            } else if (messageEn != null && messageEn.isNotEmpty) {
+              successMessage = messageEn;
+            }
+          }
+        }
+
         await NotificationService.showSuccess(
-          title: 'إعادة الإرسال',
-          message: 'تم إرسال رمز التحقق مرة أخرى',
+          title: successTitle,
+          message: successMessage,
         );
+
+        // Start countdown timer
+        setState(() {
+          _resendCountdown = 60;
+        });
+
+        _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (_resendCountdown > 0) {
+            setState(() {
+              _resendCountdown--;
+            });
+          } else {
+            timer.cancel();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -130,14 +254,81 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
   }
 
+  Widget _buildOtpField(int index) {
+    return Container(
+      width: 60,
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _focusNodes[index].hasFocus
+              ? AppColors.primary
+              : AppColors.border,
+          width: _focusNodes[index].hasFocus ? 2 : 1,
+        ),
+        boxShadow: _focusNodes[index].hasFocus
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : [],
+      ),
+      child: TextFormField(
+        controller: _otpControllers[index],
+        focusNode: _focusNodes[index],
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+        ),
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+        ],
+        decoration: const InputDecoration(
+          counterText: '',
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            // Move to next field
+            if (index < 3) {
+              _focusNodes[index + 1].requestFocus();
+            } else {
+              // All fields filled, verify automatically
+              _focusNodes[index].unfocus();
+              _verifyOtp();
+            }
+          }
+        },
+        onTap: () {
+          // Select all text when tapped
+          _otpControllers[index].selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: _otpControllers[index].text.length,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return FormLoadingOverlay(
-      isLoading: authState.isLoading,
-      loadingText: 'جاري التحقق...',
+    return ProfessionalLoadingOverlay(
+      isLoading: authState.isLoading || _isResendingOtp,
+      message: authState.isLoading
+          ? 'جاري التحقق من الكود...'
+          : 'جاري إعادة إرسال الكود...',
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -196,7 +387,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                 // Subtitle
                 Text(
-                  'أدخل رمز التحقق المرسل إلى\n${widget.phone}',
+                  'أدخل رمز التحقق المكون من 4 أرقام\nالمرسل إلى ${widget.phone}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -205,29 +396,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                 const SizedBox(height: 48),
 
-                // OTP Input Field
-                PinCodeTextField(
-                  appContext: context,
-                  length: 6,
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  animationType: AnimationType.fade,
-                  animationDuration: const Duration(milliseconds: 300),
-                  enableActiveFill: true,
-                  pinTheme: PinTheme(
-                    shape: PinCodeFieldShape.box,
-                    borderRadius: BorderRadius.circular(12),
-                    fieldHeight: 60,
-                    fieldWidth: 50,
-                    activeFillColor: Colors.white,
-                    inactiveFillColor: Colors.white,
-                    selectedFillColor: Colors.white,
-                    activeColor: AppColors.primary,
-                    inactiveColor: AppColors.border,
-                    selectedColor: AppColors.primary,
+                // OTP Input Fields (4 boxes, LTR)
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 0; i < 4; i++) ...[
+                        _buildOtpField(i),
+                        if (i < 3) const SizedBox(width: 12),
+                      ],
+                    ],
                   ),
-                  onCompleted: (value) => _verifyOtp(),
-                  onChanged: (value) {},
                 ),
 
                 const SizedBox(height: 32),
@@ -237,48 +417,27 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: authState.isLoading ? null : _verifyOtp,
+                    onPressed: (authState.isLoading || _isResendingOtp)
+                        ? null
+                        : _verifyOtp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: authState.isLoading
+                      backgroundColor: (authState.isLoading || _isResendingOtp)
                           ? AppColors.primary.withOpacity(0.6)
                           : AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: authState.isLoading ? 0 : 2,
+                      elevation:
+                          (authState.isLoading || _isResendingOtp) ? 0 : 2,
                     ),
-                    child: authState.isLoading
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'جاري التحقق...',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            'تحقق',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                    child: const Text(
+                      'تحقق',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
 
@@ -287,38 +446,24 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 // Resend OTP button
                 Center(
                   child: TextButton(
-                    onPressed: _isResendingOtp ? null : _resendOtp,
-                    child: _isResendingOtp
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'جاري الإرسال...',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            'إعادة إرسال رمز التحقق',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                    onPressed: (_isResendingOtp ||
+                            _resendCountdown > 0 ||
+                            authState.isLoading)
+                        ? null
+                        : _resendOtp,
+                    child: Text(
+                      _resendCountdown > 0
+                          ? 'إعادة الإرسال بعد $_resendCountdown ثانية'
+                          : 'إعادة إرسال رمز التحقق',
+                      style: TextStyle(
+                        color: (_resendCountdown > 0 ||
+                                _isResendingOtp ||
+                                authState.isLoading)
+                            ? AppColors.textSecondary
+                            : AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
 

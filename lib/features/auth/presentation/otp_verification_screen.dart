@@ -257,7 +257,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Widget _buildOtpField(int index) {
     return Container(
       width: 60,
-      height: 70,
+      height: 60,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -265,7 +265,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           color: _focusNodes[index].hasFocus
               ? AppColors.primary
               : AppColors.border,
-          width: _focusNodes[index].hasFocus ? 2 : 1,
+          width: _focusNodes[index].hasFocus ? 2.5 : 1.5,
         ),
         boxShadow: _focusNodes[index].hasFocus
             ? [
@@ -275,47 +275,52 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   offset: const Offset(0, 2),
                 ),
               ]
-            : [],
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
       ),
-      child: TextFormField(
-        controller: _otpControllers[index],
-        focusNode: _focusNodes[index],
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-        ],
-        decoration: const InputDecoration(
-          counterText: '',
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onChanged: (value) {
-          if (value.isNotEmpty) {
-            // Move to next field
-            if (index < 3) {
+      child: Center(
+        child: TextFormField(
+          controller: _otpControllers[index],
+          focusNode: _focusNodes[index],
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            height: 1.5,
+          ),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(1),
+          ],
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+            counterText: '',
+          ),
+          onChanged: (value) {
+            if (value.isNotEmpty && index < 3) {
               _focusNodes[index + 1].requestFocus();
-            } else {
-              // All fields filled, verify automatically
+            } else if (value.isNotEmpty && index == 3) {
               _focusNodes[index].unfocus();
               _verifyOtp();
             }
-          }
-        },
-        onTap: () {
-          // Select all text when tapped
-          _otpControllers[index].selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: _otpControllers[index].text.length,
-          );
-        },
+          },
+          onTap: () {
+            _otpControllers[index].selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: _otpControllers[index].text.length,
+            );
+          },
+        ),
       ),
     );
   }
@@ -404,7 +409,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     children: [
                       for (int i = 0; i < 4; i++) ...[
                         _buildOtpField(i),
-                        if (i < 3) const SizedBox(width: 12),
+                        if (i < 3) const SizedBox(width: 20),
                       ],
                     ],
                   ),

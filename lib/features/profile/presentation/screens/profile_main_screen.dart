@@ -21,6 +21,7 @@ import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../providers/profile_provider.dart';
 import '../widgets/verification_status_badge.dart';
 import 'profile_edit_screen.dart';
+import 'user_documents_viewer_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
@@ -265,6 +266,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                       _navigateToEditProfile(context, profile);
                     },
                   ),
+
+                // عرض المستندات
+                ListTile(
+                  leading:
+                      Icon(Icons.folder_outlined, color: AppColors.primary),
+                  title: const Text('مستنداتي'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserDocumentsViewerScreen(),
+                      ),
+                    );
+                  },
+                ),
 
                 const Divider(),
 

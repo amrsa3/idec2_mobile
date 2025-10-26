@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -27,7 +25,14 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _otpController = TextEditingController();
+  final List<TextEditingController> _otpControllers = List.generate(
+    4,
+    (index) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(
+    4,
+    (index) => FocusNode(),
+  );
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -35,11 +40,29 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _isResendingOtp = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto focus on first field
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNodes[0].requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
-    _otpController.dispose();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String get _otpCode {
+    return _otpControllers.map((c) => c.text).join();
   }
 
   Future<void> _resetPassword() async {
@@ -54,7 +77,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       final success =
           await ref.read(compatibleAuthProvider.notifier).resetPassword(
                 widget.phone,
-                _otpController.text,
+                _otpCode,
                 _passwordController.text,
               );
 
@@ -127,15 +150,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     }
   }
 
-  String? _validateOtp(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'يرجى إدخال رمز التحقق';
+  String? _validateOtp() {
+    if (_otpCode.length != 4) {
+      return 'رمز التحقق يجب أن يكون 4 أرقام';
     }
-
-    if (value.length != 6) {
-      return 'رمز التحقق يجب أن يكون 6 أرقام';
-    }
-
     return null;
   }
 
@@ -158,22 +176,86 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(compatibleAuthProvider);
+  Widget _buildOtpField(int index) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _focusNodes[index].hasFocus
+              ? AppColors.primary
+              : AppColors.border,
+          width: _focusNodes[index].hasFocus ? 2.5 : 1.5,
+        ),
+        boxShadow: _focusNodes[index].hasFocus
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+      ),
+      child: Center(
+        child: TextFormField(
+          controller: _otpControllers[index],
+          focusNode: _focusNodes[index],
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            height: 1.5,
+          ),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(1),
+          ],
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+            counterText: '',
+          ),
+          onChanged: (value) {
+            if (value.isNotEmpty && index < 3) {
+              _focusNodes[index + 1].requestFocus();
+            } else if (value.isNotEmpty && index == 3) {
+              _focusNodes[index].unfocus();
+            }
+          },
+          onTap: () {
+            _otpControllers[index].selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: _otpControllers[index].text.length,
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-    return FormLoadingOverlay(
-      isLoading: authState.isLoading,
-      loadingText: 'جاري إعادة تعيين كلمة المرور...',
-      child: Scaffold(
+
+  Widget _buildMainContent(dynamic authState, bool isLoading) {
+    return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: SafeArea(
@@ -235,30 +317,33 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
                   const SizedBox(height: 48),
 
-                  // OTP Input Field
-                  PinCodeTextField(
-                    appContext: context,
-                    length: 6,
-                    controller: _otpController,
-                    keyboardType: TextInputType.number,
-                    animationType: AnimationType.fade,
-                    animationDuration: const Duration(milliseconds: 300),
-                    enableActiveFill: true,
-                    validator: _validateOtp,
-                    pinTheme: PinTheme(
-                      shape: PinCodeFieldShape.box,
-                      borderRadius: BorderRadius.circular(12),
-                      fieldHeight: 60,
-                      fieldWidth: 50,
-                      activeFillColor: Colors.white,
-                      inactiveFillColor: Colors.white,
-                      selectedFillColor: Colors.white,
-                      activeColor: AppColors.primary,
-                      inactiveColor: AppColors.border,
-                      selectedColor: AppColors.primary,
+                  // OTP Input Fields (4 boxes, LTR)
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (int i = 0; i < 4; i++) ...[
+                          _buildOtpField(i),
+                          if (i < 3) const SizedBox(width: 20),
+                        ],
+                      ],
                     ),
-                    onChanged: (value) {},
                   ),
+
+                  // Validate OTP display
+                  if (_otpCode.isNotEmpty && _otpCode.length != 4)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _validateOtp() ?? '',
+                        style: TextStyle(
+                          color: AppColors.error,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
 
                   const SizedBox(height: 24),
 
@@ -473,7 +558,48 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
           ),
         ),
+    );
+  }
+
+  Widget _buildLoadingOverlay(bool isLoading) {
+    if (!isLoading) return const SizedBox.shrink();
+    
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.5),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'جاري إعادة تعيين كلمة المرور...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(compatibleAuthProvider);
+    final isLoading = authState.isLoading;
+
+    return Stack(
+      children: [
+        _buildMainContent(authState, isLoading),
+        _buildLoadingOverlay(isLoading),
+      ],
     );
   }
 }

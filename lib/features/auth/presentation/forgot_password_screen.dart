@@ -7,10 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -59,18 +57,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           // استخدام الرسالة من الخادم إذا كانت متوفرة
           final authState = ref.read(compatibleAuthProvider);
           String successTitle = 'إعادة تعيين كلمة المرور';
-          String successMessage = 'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber';
-          
+          String successMessage =
+              'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber';
+
           // محاولة استخراج الرسالة من استجابة الخادم
           if (authState.lastResponse != null) {
             final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
               final messageAr = response['messageAr'] as String?;
               final messageEn = response['messageEn'] as String?;
-              
+
               // اختيار الرسالة حسب لغة التطبيق
               final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
                 successMessage = messageAr;
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 successMessage = messageEn;
@@ -90,13 +92,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           // محاولة استخراج الرسالة من استجابة الخادم
           if (authState.lastResponse != null) {
             final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
               final messageAr = response['messageAr'] as String?;
               final messageEn = response['messageEn'] as String?;
-              
+
               // اختيار الرسالة حسب لغة التطبيق
               final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
                 errorMessage = messageAr;
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 errorMessage = messageEn;
@@ -125,10 +130,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   String? _validatePhone(String? value) {
-    final l10n = AppLocalizations.of(context);
-
     if (value == null || value.isEmpty) {
-      return l10n.fieldRequired;
+      return 'يرجى إدخال رقم الهاتف';
     }
 
     // Remove any non-digit characters for validation
@@ -147,20 +150,24 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
+    final isLoading = authState.isLoading;
 
-    return FormLoadingOverlay(
-      isLoading: authState.isLoading,
-      loadingText: 'جاري الإرسال...',
-      child: Scaffold(
+    return Stack(
+      children: _buildChildren(authState, isLoading),
+    );
+  }
+
+  List<Widget> _buildChildren(dynamic authState, bool isLoading) {
+    return [
+      Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
         body: SafeArea(
@@ -368,6 +375,33 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
         ),
       ),
-    );
+      isLoading
+          ? Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'جاري إرسال رمز التحقق...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : const SizedBox(),
+    ];
   }
 }

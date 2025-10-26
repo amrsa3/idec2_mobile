@@ -10,7 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/professional_loading_overlay.dart';
+import '../../../shared/widgets/loading_overlay.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -68,24 +68,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // استخدام الرسالة من الخادم إذا كانت متوفرة
           String successTitle = 'تسجيل الدخول';
           String successMessage = 'تم تسجيل الدخول بنجاح';
-          
+
           // محاولة استخراج الرسالة من استجابة الخادم
           if (authState.lastResponse != null) {
             final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
               final messageAr = response['messageAr'] as String?;
               final messageEn = response['messageEn'] as String?;
-              
+
               // اختيار الرسالة حسب لغة التطبيق
               final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
                 successMessage = messageAr;
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 successMessage = messageEn;
               }
             }
           }
-          
+
           await NotificationService.showSuccess(
             title: successTitle,
             message: successMessage,
@@ -154,13 +157,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // محاولة استخراج الرسالة من استجابة الخادم
           if (authState.lastResponse != null) {
             final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') && response.containsKey('messageEn')) {
+            if (response.containsKey('messageAr') &&
+                response.containsKey('messageEn')) {
               final messageAr = response['messageAr'] as String?;
               final messageEn = response['messageEn'] as String?;
-              
+
               // اختيار الرسالة حسب لغة التطبيق
               final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' && messageAr != null && messageAr.isNotEmpty) {
+              if (locale.languageCode == 'ar' &&
+                  messageAr != null &&
+                  messageAr.isNotEmpty) {
                 errorMessage = messageAr;
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 errorMessage = messageEn;
@@ -182,7 +188,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             }
           }
 
-          debugPrint('🔍 [LOGIN_SCREEN] Displaying error message: $errorMessage');
+          debugPrint(
+              '🔍 [LOGIN_SCREEN] Displaying error message: $errorMessage');
 
           await NotificationService.showError(
             title: errorTitle,
@@ -247,9 +254,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return ProfessionalLoadingOverlay(
+    return FormLoadingOverlay(
       isLoading: authState.isLoading,
-      message: 'جاري تسجيل الدخول...',
+      loadingText: 'جاري تسجيل الدخول...',
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(

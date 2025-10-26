@@ -93,31 +93,31 @@
   <style>
     @font-face {
       font-family: 'Cairo';
-      src: url('assets/fonts/Cairo-Regular.ttf') format('truetype');
+      src: url('assets/assets/fonts/Cairo-Regular.ttf') format('truetype');
       font-weight: 400;
       font-display: swap;
     }
     @font-face {
       font-family: 'Cairo';
-      src: url('assets/fonts/Cairo-Bold.ttf') format('truetype');
+      src: url('assets/assets/fonts/Cairo-Bold.ttf') format('truetype');
       font-weight: 700;
       font-display: swap;
     }
     @font-face {
       font-family: 'NotoSansArabic';
-      src: url('assets/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+      src: url('assets/assets/fonts/NotoSansArabic-Regular.ttf') format('truetype');
       font-weight: 400;
       font-display: swap;
     }
     @font-face {
       font-family: 'Roboto';
-      src: url('assets/fonts/Roboto-Regular.ttf') format('truetype');
+      src: url('assets/assets/fonts/Roboto-Regular.ttf') format('truetype');
       font-weight: 400;
       font-display: swap;
     }
     @font-face {
       font-family: 'Roboto';
-      src: url('assets/fonts/Roboto-Bold.ttf') format('truetype');
+      src: url('assets/assets/fonts/Roboto-Bold.ttf') format('truetype');
       font-weight: 700;
       font-display: swap;
     }
@@ -147,18 +147,11 @@
     </div>
   </div>
   
-  <!-- Fast Flutter Web initialization -->
+  <!-- Load Flutter Bootstrap -->
   <script src="flutter_web_config.js"></script>
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js"></script>
   
   <script>
-    // Service Worker Version
-    var serviceWorkerVersion = "1201463201";
-    var flutterInitialized = false;
-    
-    // Fast initialization - start immediately
-    console.log('🚀 Starting fast Flutter initialization...');
-    
     // Progress bar simulation
     let progress = 0;
     const progressBar = document.getElementById('progress');
@@ -173,103 +166,51 @@
     };
     updateProgress();
     
-    // Check if Flutter is already available
-    if (window._flutter && window._flutter.loader) {
-      console.log('✅ Flutter loader already available - starting immediately');
-      flutterInitialized = true;
-      
-      window._flutter.loader.load({
-        serviceWorkerSettings: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        }
-      }).then(function(appRunner) {
-        console.log('✅ Flutter ready - starting app...');
-        appRunner.runApp();
-        
-        // Complete progress and hide loading
-        if (progressBar) {
-          progressBar.style.width = '100%';
-        }
-        setTimeout(function() {
-          const loading = document.getElementById('loading');
-          if (loading) {
-            loading.style.display = 'none';
-          }
-          console.log('🎉 Flutter app started successfully!');
-        }, 200);
-      }).catch(function(error) {
-        console.error('❌ Flutter load error:', error);
-        flutterInitialized = false;
+    // Wait for Flutter to initialize
+    window.addEventListener('flutter-first-frame', function() {
+      console.log('🎉 Flutter first frame rendered');
+      // Complete progress and hide loading
+      if (progressBar) {
+        progressBar.style.width = '100%';
+      }
+      setTimeout(function() {
         const loading = document.getElementById('loading');
         if (loading) {
           loading.style.display = 'none';
         }
-      });
-    } else {
-      // Wait for flutter_bootstrap.js with shorter timeout
-      console.log('⏳ Waiting for flutter_bootstrap.js...');
-      
-      let attempts = 0;
-      const maxAttempts = 10; // 5 seconds max
-      
-      const checkFlutter = function() {
-        attempts++;
-        
-        if (window._flutter && window._flutter.loader) {
-          console.log('✅ Flutter loader now available');
-          flutterInitialized = true;
-          
-          window._flutter.loader.load({
-            serviceWorkerSettings: {
-              serviceWorkerVersion: serviceWorkerVersion,
-            }
-          }).then(function(appRunner) {
-            console.log('✅ Flutter ready - starting app...');
-            appRunner.runApp();
-            
-            // Complete progress and hide loading
-            if (progressBar) {
-              progressBar.style.width = '100%';
-            }
-            setTimeout(function() {
-              const loading = document.getElementById('loading');
-              if (loading) {
-                loading.style.display = 'none';
-              }
-              console.log('🎉 Flutter app started successfully!');
-            }, 200);
-          }).catch(function(error) {
-            console.error('❌ Flutter load error:', error);
-            flutterInitialized = false;
-            const loading = document.getElementById('loading');
-            if (loading) {
-              loading.style.display = 'none';
-            }
-          });
-        } else if (attempts < maxAttempts) {
-          setTimeout(checkFlutter, 500); // Check every 500ms
-        } else {
-          console.error('❌ Flutter loader not available after timeout');
-          flutterInitialized = false;
-          const loading = document.getElementById('loading');
-          if (loading) {
-            loading.style.display = 'none';
-          }
-          document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;"><div style="font-size: 24px; margin-bottom: 20px;">❌</div><h2>خطأ في تحميل التطبيق</h2><p>Error loading application</p><p>يرجى إعادة تحميل الصفحة</p></div>';
-        }
-      };
-      
-      // Start checking immediately
-      setTimeout(checkFlutter, 100);
-    }
+      }, 500);
+    });
     
-    // Faster fallback - show message after 8 seconds
-    setTimeout(function() {
-      const loading = document.getElementById('loading');
-      if (loading && loading.style.display !== 'none') {
-        loading.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="font-size: 24px; margin-bottom: 20px;">⏳</div><h2>جاري التحميل...</h2><p>Loading...</p><p>يرجى الانتظار قليلاً</p></div>';
+    // Error handling
+    window.addEventListener('error', function(e) {
+      if (e.message && e.message.includes('Flutter')) {
+        console.error('Flutter error:', e.message);
       }
-    }, 8000);
+    });
+  </script>
+  
+  <!-- This script initiates the Flutter app -->
+  <script>
+    // Listen for Flutter to be ready
+    _flutter.loader.didCreateEngineInitializer.then(function(appRunner) {
+      console.log('✅ Flutter engine initialized');
+      // Complete progress
+      if (progressBar) {
+        progressBar.style.width = '100%';
+      }
+      setTimeout(function() {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.display = 'none';
+        }
+      }, 500);
+    }).catch(function(error) {
+      console.error('❌ Flutter initialization error:', error);
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="font-size: 24px; margin-bottom: 20px;">❌</div><h2>خطأ في تحميل التطبيق</h2><p>Error loading application</p><button onclick="location.reload()">إعادة المحاولة / Retry</button></div>';
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/api_constants.dart';
 import '../../../models/file_model.dart';
 import '../../../services/enhanced_dio_service_v2.dart';
 import '../services/smart_file_service.dart';
@@ -59,4 +61,39 @@ final categorizedFilesProvider =
         (ref, entityId) async {
   final smartFileService = ref.watch(smartFileServiceProvider);
   return await smartFileService.getAllFilesCategorized(entityId: entityId);
+});
+
+/// Provider للحصول على جميع مستندات المستخدم الحالي
+final userDocumentsProvider = FutureProvider<List<FileModel>>((ref) async {
+  final dio = EnhancedDioServiceV2.instance.dio;
+
+  try {
+    debugPrint('🔍 جلب جميع مستندات المستخدم...');
+
+    // جلب جميع الملفات من API بدون فلاتر
+    final response = await dio.get(
+      '${ApiConstants.baseUrl}/api/v1/files',
+      queryParameters: {
+        'page': 1,
+        'limit': 100, // جلب حتى 100 ملف
+      },
+    );
+
+    if (response.statusCode == 200 && response.data != null) {
+      final data = response.data;
+      final files = (data['files'] as List?)
+              ?.map((file) => FileModel.fromJson(file))
+              .toList() ??
+          [];
+
+      debugPrint('✅ تم جلب ${files.length} مستند للمستخدم');
+      return files;
+    }
+
+    debugPrint('⚠️ لا توجد مستندات للمستخدم');
+    return [];
+  } catch (e) {
+    debugPrint('❌ خطأ في جلب مستندات المستخدم: $e');
+    return [];
+  }
 });

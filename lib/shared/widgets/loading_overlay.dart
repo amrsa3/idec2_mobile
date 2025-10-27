@@ -149,26 +149,3 @@ class LoadingButton extends StatelessWidget {
     );
   }
 }
-
-/// Loading overlay for forms
-class FormLoadingOverlay extends StatelessWidget {
-  final bool isLoading;
-  final Widget child;
-  final String? loadingText;
-
-  const FormLoadingOverlay({
-    super.key,
-    required this.isLoading,
-    required this.child,
-    this.loadingText,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LoadingOverlay(
-      isLoading: isLoading,
-      loadingText: loadingText ?? 'جاري المعالجة...',
-      child: child,
-    );
-  }
-}

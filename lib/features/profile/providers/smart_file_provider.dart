@@ -64,13 +64,15 @@ final categorizedFilesProvider =
 });
 
 /// Provider للحصول على جميع مستندات المستخدم الحالي
-final userDocumentsProvider = FutureProvider<List<FileModel>>((ref) async {
+/// يتم إلغاء هذا الـ provider تلقائياً عند تسجيل الخروج
+final userDocumentsProvider =
+    FutureProvider.autoDispose<List<FileModel>>((ref) async {
   final dio = EnhancedDioServiceV2.instance.dio;
 
   try {
     debugPrint('🔍 جلب جميع مستندات المستخدم...');
 
-    // جلب جميع الملفات من API بدون فلاتر
+    // جلب جميع الملفات من API
     final response = await dio.get(
       '${ApiConstants.baseUrl}/api/v1/files',
       queryParameters: {
@@ -81,13 +83,26 @@ final userDocumentsProvider = FutureProvider<List<FileModel>>((ref) async {
 
     if (response.statusCode == 200 && response.data != null) {
       final data = response.data;
-      final files = (data['files'] as List?)
+      final allFiles = (data['files'] as List?)
               ?.map((file) => FileModel.fromJson(file))
               .toList() ??
           [];
 
-      debugPrint('✅ تم جلب ${files.length} مستند للمستخدم');
-      return files;
+      debugPrint('📋 تم جلب ${allFiles.length} ملف من الـ API');
+
+      // فلترة الملفات: استبعاد الصور الشخصية فقط
+      final filteredFiles = allFiles.where((file) {
+        // استبعاد الصور الشخصية - entityType = 'profile' و fileCategory = 'profile_photo'
+        if (file.entityType == 'profile' &&
+            (file.fileCategory == 'profile_photo' ||
+                file.fileCategory == 'photo')) {
+          return false;
+        }
+        return true;
+      }).toList();
+
+      debugPrint('✅ تم جلب ${filteredFiles.length} مستند للمستخدم');
+      return filteredFiles;
     }
 
     debugPrint('⚠️ لا توجد مستندات للمستخدم');

@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/messages/smart_message_handler.dart';
@@ -60,6 +65,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   // قائمة الملفات المختارة للرفع
   List<SelectedDocument> _selectedDocuments = [];
+
+  // قائمة الملفات الفاشلة لإعادة رفعها
+  List<SelectedDocument> _failedDocuments = [];
 
   // متغير لسنة التخرج المختارة
   int? _selectedGraduationYear;
@@ -297,6 +305,39 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     super.dispose();
   }
 
+  /// ضغط الصورة إذا كانت كبيرة (أكبر من 2 ميجا)
+  Future<Uint8List?> _compressImageIfLarge(File file) async {
+    try {
+      final fileSize = await file.length();
+      final extension = file.path.toLowerCase().split('.').last;
+
+      // إذا كان الملف صورة، اضغطها دائماً لتحسين الأداء
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+        debugPrint(
+            '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
+
+        final compressedFile = await FlutterImageCompress.compressWithFile(
+          file.absolute.path,
+          minWidth: 1920,
+          minHeight: 1920,
+          quality: 85,
+          format: extension == 'png' ? CompressFormat.png : CompressFormat.jpeg,
+        );
+
+        if (compressedFile != null && compressedFile.length > 0) {
+          final compressedSize = compressedFile.length;
+          debugPrint(
+              '✅ ProfileEditScreen: Image compressed to ${compressedSize ~/ 1024}KB (reduced by ${((fileSize - compressedSize) / fileSize * 100).toStringAsFixed(1)}%)');
+          return compressedFile;
+        }
+      }
+      return null; // لا نحتاج ضغط
+    } catch (e) {
+      debugPrint('❌ ProfileEditScreen: Error compressing image: $e');
+      return null; // في حالة الخطأ، نرجع الملف الأصلي
+    }
+  }
+
   /// النظام الهرمي الجديد لتصنيف الملفات
   /// المستوى الأول: الفئات الرئيسية (profile, documents, attachments, certificates)
   /// المستوى الثاني: أنواع الملفات (image, pdf, word, excel, text)
@@ -307,7 +348,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     // تحديد الفئة الرئيسية
     String mainCategory;
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
-      mainCategory = 'profile_image'; // الصور الشخصية
+      mainCategory =
+          'documents'; // ال Photos يجب أن تظهر كـ documents في قائمة مستنداتي
     } else {
       mainCategory = 'documents'; // الوثائق المطلوبة
     }
@@ -1592,6 +1634,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             debugPrint(
                 '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
 
+            // ضغط الصور تلقائياً إذا كانت أكبر من 1MB
+            Uint8List? fileBytesToUpload = selectedDoc.bytes;
+            final fileSize = fileBytesToUpload?.length ?? 0;
+
+            // إذا كان الملف صورة وأكبر من 1MB، اضغطه
+            if (fileSize > 1024 * 1024 &&
+                ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(
+                    selectedDoc.file.path.toLowerCase().split('.').last)) {
+              debugPrint(
+                  '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
+              final compressedBytes =
+                  await _compressImageIfLarge(selectedDoc.file);
+              if (compressedBytes != null && compressedBytes.isNotEmpty) {
+                fileBytesToUpload = compressedBytes;
+                debugPrint(
+                    '✅ ProfileEditScreen: Image compressed to ${compressedBytes.length ~/ 1024}KB');
+              }
+            }
+
+            debugPrint(
+                '🔍 ProfileEditScreen: Uploading file ${i + 1}/${_selectedDocuments.length}');
+            debugPrint('📁 File path: ${selectedDoc.file.path}');
+            debugPrint(
+                '📦 Bytes length: ${fileBytesToUpload?.length ?? "null"}');
+
             // رفع الملف مع تتبع التقدم
             final uploadSuccess = await ref
                 .read(profileProvider.notifier)
@@ -1599,8 +1666,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
                   documentType: 'general',
                   file: selectedDoc.file,
-                  fileBytes: selectedDoc.bytes,
-                  maxRetries: 3,
+                  fileBytes: fileBytesToUpload, // استخدام الـ bytes الأصلية
+                  maxRetries: 1, // محاولة واحدة فقط
                   onProgress: (progress) {
                     // تحديث التقدم في الرسالة المنبثقة
                     uploadNotifier.updateFileProgress(
@@ -1640,10 +1707,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           }
         }
 
-        // إذا فشل رفع أي ملف، لا نكمل عملية الحفظ
+        // إذا فشل رفع أي ملف، نعرض رسالة خطأ مع إمكانية إعادة المحاولة
         if (!allUploadsSuccessful) {
-          uploadNotifier
-              .setError('فشل في رفع بعض الملفات. يرجى المحاولة مرة أخرى.');
+          uploadNotifier.setError(
+              'فشل في رفع بعض الملفات. اضغط على "إعادة المحاولة" لمحاولة رفعها مرة أخرى.',
+              canRetry: true);
+
+          // حفظ الملفات الفاشلة لإعادة محاولتها لاحقاً
+          _failedDocuments = _selectedDocuments
+              .where((doc) => !uploadedDocumentIds.contains(
+                  _getSmartFileCategory(_selectedDocuments.indexOf(doc),
+                      doc.file.path.split('/').last)))
+              .toList();
           return;
         }
       }

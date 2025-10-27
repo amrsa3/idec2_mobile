@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
 import '../../providers/smart_file_provider.dart';
+import '../../../../services/dio_service.dart';
 
 /// صفحة احترافية لعرض المستندات المرفوعة من المستخدم
 class UserDocumentsViewerScreen extends ConsumerStatefulWidget {
@@ -88,20 +93,8 @@ class _UserDocumentsViewerScreenState
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: _getDocumentColor(document.mimeType).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getDocumentIcon(document.mimeType),
-                  color: _getDocumentColor(document.mimeType),
-                  size: 28,
-                ),
-              ),
+              // Thumbnail or Icon
+              _buildThumbnailOrIcon(document),
               const SizedBox(width: 16),
 
               // Info
@@ -242,10 +235,59 @@ class _UserDocumentsViewerScreenState
 
   Future<void> _viewDocument(FileModel document) async {
     if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => DocumentPreviewDialog(document: document),
+      final isImage = document.mimeType.toLowerCase().contains('image');
+
+      if (isImage) {
+        // للصور: عرض في PhotoView
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => _ImageFullScreenViewer(document: document),
+          ),
+        );
+      } else {
+        // للملفات الأخرى (PDF, Word, etc): مشاركة الملف
+        await _shareDocument(document);
+      }
+    }
+  }
+
+  Future<void> _shareDocument(FileModel document) async {
+    try {
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('غير مصرح بالوصول'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      // بناء رابط تنزيل الملف
+      final fileUrl =
+          '${ApiConstants.baseUrl}/api/v1/files/${document.id}/download?token=$token';
+
+      // عرض خيارات المشاركة
+      await Share.share(
+        '${document.displayName ?? document.originalName}\n\n$fileUrl',
+        subject: document.displayName ?? document.originalName,
       );
+
+      debugPrint('✅ تم مشاركة الملف: ${document.originalName}');
+    } catch (e) {
+      debugPrint('❌ خطأ في مشاركة الملف: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -274,161 +316,304 @@ class _UserDocumentsViewerScreenState
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
+
+  Widget _buildThumbnailOrIcon(FileModel document) {
+    final isImage = document.mimeType.toLowerCase().contains('image');
+
+    if (isImage) {
+      // للصور: عرض الصورة المصغرة باستخدام Dio مع authentication
+      return _ThumbnailImage(fileId: document.id);
+    }
+
+    // للملفات الأخرى: عرض الأيقونة العادية
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: _getDocumentColor(document.mimeType).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        _getDocumentIcon(document.mimeType),
+        color: _getDocumentColor(document.mimeType),
+        size: 28,
+      ),
+    );
+  }
 }
 
-/// Dialog لعرض معلومات المستند
-class DocumentPreviewDialog extends StatelessWidget {
-  final FileModel document;
+/// Widget لعرض الصورة المصغرة مع authentication
+class _ThumbnailImage extends StatefulWidget {
+  final String fileId;
 
-  const DocumentPreviewDialog({super.key, required this.document});
+  const _ThumbnailImage({required this.fileId});
+
+  @override
+  State<_ThumbnailImage> createState() => _ThumbnailImageState();
+}
+
+class _ThumbnailImageState extends State<_ThumbnailImage> {
+  Uint8List? _thumbnailBytes;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThumbnail();
+  }
+
+  Future<void> _loadThumbnail() async {
+    try {
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final dio = EnhancedDioServiceV2.instance.dio;
+
+      final response = await dio.get(
+        '${ApiConstants.baseUrl}/api/v1/files/${widget.fileId}/thumbnail',
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      if (response.data != null && response.data is List<int>) {
+        if (mounted) {
+          setState(() {
+            _thumbnailBytes = Uint8List.fromList(response.data);
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading thumbnail: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isImage = document.mimeType.toLowerCase().contains('image');
-    final isPDF = document.mimeType.toLowerCase().contains('pdf');
+    if (_isLoading) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              value: null,
+            ),
+          ),
+        ),
+      );
+    }
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    if (_thumbnailBytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          _thumbnailBytes!,
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    // Fallback للأيقونة العادية
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: Icon(
+        Icons.image_outlined,
+        color: Colors.blue,
+        size: 28,
+      ),
+    );
+  }
+}
+
+/// عرض صورة كامل الشاشة
+class _ImageFullScreenViewer extends StatefulWidget {
+  final FileModel document;
+
+  const _ImageFullScreenViewer({required this.document});
+
+  @override
+  State<_ImageFullScreenViewer> createState() => _ImageFullScreenViewerState();
+}
+
+class _ImageFullScreenViewerState extends State<_ImageFullScreenViewer> {
+  Uint8List? _imageBytes;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _error = 'غير مصرح';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final dio = EnhancedDioServiceV2.instance.dio;
+
+      // استخدام endpoint الصحيح مع authentication
+      final response = await dio.get(
+        '${ApiConstants.baseUrl}/api/v1/files/${widget.document.id}/download',
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.data != null && response.data is List<int>) {
+        setState(() {
+          _imageBytes = Uint8List.fromList(response.data);
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'فشل تحميل الصورة';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading image: $e');
+      setState(() {
+        _error = 'حدث خطأ أثناء تحميل الصورة';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.document.displayName ?? widget.document.originalName,
+          style: const TextStyle(color: Colors.white),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: isImage
-                    ? Colors.blue.withOpacity(0.1)
-                    : isPDF
-                        ? Colors.red.withOpacity(0.1)
-                        : AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                isImage
-                    ? Icons.image_outlined
-                    : isPDF
-                        ? Icons.picture_as_pdf_outlined
-                        : Icons.insert_drive_file_outlined,
-                size: 40,
-                color: isImage
-                    ? Colors.blue
-                    : isPDF
-                        ? Colors.red
-                        : AppColors.primary,
-              ),
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.white70,
             ),
-            const SizedBox(height: 20),
-
-            // Name
+            const SizedBox(height: 16),
             Text(
-              document.displayName ?? document.originalName,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+              _error!,
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
-
-            // Details
-            _buildDetailRow('النوع', _getFileTypeLabel(document.mimeType)),
-            _buildDetailRow('الحجم', _formatFileSize(document.fileSize)),
-            _buildDetailRow('تاريخ الرفع', _formatDate(document.createdAt)),
-
             const SizedBox(height: 24),
-
-            // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('إغلاق'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Open file
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('فتح'),
-                  ),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: _loadImage,
+              child: const Text('إعادة المحاولة'),
             ),
           ],
         ),
+      );
+    }
+
+    if (_imageBytes == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.image_not_supported,
+              size: 64,
+              color: Colors.white70,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'لا توجد بيانات للصورة',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: InteractiveViewer(
+        minScale: 0.5,
+        maxScale: 4.0,
+        child: Image.memory(
+          _imageBytes!,
+          fit: BoxFit.contain,
+        ),
       ),
     );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.year}/${date.month}/${date.day}';
-  }
-
-  String _getFileTypeLabel(String mimeType) {
-    if (mimeType.contains('image')) return 'صورة';
-    if (mimeType.contains('pdf')) return 'ملف PDF';
-    if (mimeType.contains('word')) return 'مستند Word';
-    if (mimeType.contains('excel')) return 'جدول Excel';
-    return mimeType;
   }
 }

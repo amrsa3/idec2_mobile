@@ -64,9 +64,11 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             // في بيئة الويب، استخدم bytes
             if (platformFile.bytes != null) {
               fileSize = platformFile.bytes!.length;
-              // في Flutter Web، إنشاء ملف وهمي للاسم فقط
+              // في Flutter Web، استخدام اسم الملف الأصلي مباشرة
               // البيانات الفعلية ستكون في bytes
-              file = File('web_file_${platformFile.name}');
+              file = File(platformFile.name);
+              debugPrint(
+                  '📄 DocumentPickerWidget: Web file - preserving original name: ${platformFile.name}');
             } else {
               continue;
             }
@@ -75,6 +77,8 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             if (platformFile.path != null) {
               file = File(platformFile.path!);
               fileSize = await file.length();
+              debugPrint(
+                  '📄 DocumentPickerWidget: Mobile file - preserving original name: ${platformFile.name}');
             } else {
               continue;
             }

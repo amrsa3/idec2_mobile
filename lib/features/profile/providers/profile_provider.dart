@@ -1159,7 +1159,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required String documentType,
     required File file,
     Uint8List? fileBytes, // إضافة البيانات للويب
-    int maxRetries = 3,
+    int maxRetries = 1, // محاولة واحدة فقط
     Function(double)? onProgress, // إضافة callback للتقدم
   }) async {
     try {
@@ -1167,15 +1167,13 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           isUploadingDocument: true, error: null, successMessage: null);
 
       debugPrint(
-          '📄 ProfileProvider: Uploading document for field: $fieldName with retry mechanism');
+          '📄 ProfileProvider: Uploading document for field: $fieldName (single attempt)');
 
-      final response = await LocalProfileService.uploadDocumentFileWithRetry(
+      final response = await LocalProfileService.uploadDocumentFile(
         file: file,
         documentType: documentType,
         fieldName: fieldName,
         fileBytes: fileBytes, // تمرير البيانات للويب
-        maxRetries: maxRetries,
-        onProgress: onProgress, // تمرير callback التقدم
       );
 
       if (response != null) {
@@ -1197,7 +1195,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         return true;
       } else {
-        throw Exception('فشل في رفع الوثيقة');
+        debugPrint(
+            '❌ ProfileProvider: Upload response is null, returning false');
+        // لا نرمي exception، نرجع false فقط لنسمح بمعالجة الأخطاء في الكود الأصلي
+        return false;
       }
     } catch (e) {
       state = state.copyWith(

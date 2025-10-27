@@ -9,6 +9,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
+import '../../../shared/widgets/professional_loading_overlay.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -153,255 +154,228 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final authState = ref.watch(compatibleAuthProvider);
     final isLoading = authState.isLoading;
 
-    return Stack(
-      children: _buildChildren(authState, isLoading),
+    return ProfessionalLoadingOverlay(
+      isLoading: isLoading,
+      message: isLoading ? 'جاري إرسال رمز التحقق...' : null,
+      child: _buildMainContent(authState, isLoading),
     );
   }
 
-  List<Widget> _buildChildren(dynamic authState, bool isLoading) {
-    return [
-      Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+  Widget _buildMainContent(dynamic authState, bool isLoading) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
 
-                  // Logo section
-                  Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.shadow,
-                            blurRadius: 20,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: SvgPicture.asset(
-                        AppImages.logo,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Title
-                  Text(
-                    'نسيت كلمة المرور؟',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Subtitle
-                  Text(
-                    'أدخل رقم هاتفك وسنرسل لك رمز التحقق لإعادة تعيين كلمة المرور',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Phone number field with country code
-                  Container(
+                // Logo section
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        // Country code picker
-                        CountryCodePicker(
-                          onChanged: (country) {
-                            setState(() {
-                              _countryCode = country.dialCode!;
-                            });
-                          },
-                          initialSelection: 'YE', // Yemen
-                          favorite: const ['+967', 'YE'],
-                          showCountryOnly: false,
-                          showOnlyCountryWhenClosed: false,
-                          alignLeft: false,
-                          textStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                          ),
-                          dialogTextStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                          searchStyle: const TextStyle(
-                            color: AppColors.textPrimary,
-                          ),
-                          flagWidth: 25,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-
-                        // Divider
-                        Container(
-                          height: 30,
-                          width: 1,
-                          color: AppColors.border,
-                        ),
-
-                        // Phone number input
-                        Expanded(
-                          child: TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.done,
-                            validator: _validatePhone,
-                            decoration: const InputDecoration(
-                              hintText: 'رقم الهاتف',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                              hintStyle: TextStyle(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                            ),
-                            onFieldSubmitted: (_) => _sendResetOtp(),
-                          ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 20,
+                          offset: Offset(0, 8),
                         ),
                       ],
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Send OTP button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: authState.isLoading ? null : _sendResetOtp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: authState.isLoading
-                            ? AppColors.primary.withOpacity(0.6)
-                            : AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: authState.isLoading ? 0 : 2,
-                      ),
-                      child: authState.isLoading
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'جاري الإرسال...',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              'إرسال رمز التحقق',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                    padding: const EdgeInsets.all(16),
+                    child: SvgPicture.asset(
+                      AppImages.logo,
+                      fit: BoxFit.contain,
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
-                  // Back to login
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        context.go(AppRoutes.login);
-                      },
-                      child: Text(
-                        'العودة لتسجيل الدخول',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                // Title
+                Text(
+                  'نسيت كلمة المرور؟',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle
+                Text(
+                  'أدخل رقم هاتفك وسنرسل لك رمز التحقق لإعادة تعيين كلمة المرور',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 48),
+
+                // Phone number field with country code
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      isLoading
-          ? Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'جاري إرسال رمز التحقق...',
-                        style: TextStyle(
+                      // Country code picker
+                      CountryCodePicker(
+                        onChanged: (country) {
+                          setState(() {
+                            _countryCode = country.dialCode!;
+                          });
+                        },
+                        initialSelection: 'YE', // Yemen
+                        favorite: const ['+967', 'YE'],
+                        showCountryOnly: false,
+                        showOnlyCountryWhenClosed: false,
+                        alignLeft: false,
+                        textStyle: const TextStyle(
+                          color: AppColors.textPrimary,
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                        ),
+                        dialogTextStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                        ),
+                        searchStyle: const TextStyle(
+                          color: AppColors.textPrimary,
+                        ),
+                        flagWidth: 25,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+
+                      // Divider
+                      Container(
+                        height: 30,
+                        width: 1,
+                        color: AppColors.border,
+                      ),
+
+                      // Phone number input
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.done,
+                          validator: _validatePhone,
+                          decoration: const InputDecoration(
+                            hintText: 'رقم الهاتف',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            hintStyle: TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                          ),
+                          onFieldSubmitted: (_) => _sendResetOtp(),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            )
-          : const SizedBox(),
-    ];
+
+                const SizedBox(height: 32),
+
+                // Send OTP button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: authState.isLoading ? null : _sendResetOtp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: authState.isLoading
+                          ? AppColors.primary.withOpacity(0.6)
+                          : AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: authState.isLoading ? 0 : 2,
+                    ),
+                    child: authState.isLoading
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'جاري الإرسال...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            'إرسال رمز التحقق',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Back to login
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      context.go(AppRoutes.login);
+                    },
+                    child: Text(
+                      'العودة لتسجيل الدخول',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

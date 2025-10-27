@@ -338,6 +338,34 @@ class SessionManager {
     }
   }
 
+  /// Clear all session data and reset state
+  Future<void> clearAll() async {
+    await _ensureInitialized();
+
+    try {
+      debugPrint('🔐 [SESSION_MANAGER] Clearing all session data');
+
+      // Clear all session keys
+      await _storage.deleteSecure(_sessionIdKey);
+      await _storage.deleteSecure(_userIdKey);
+      await _storage.deleteSecure(_sessionStartKey);
+      await _storage.deleteSecure(_lastActivityKey);
+
+      // Reset state
+      _currentSessionId = null;
+      _currentUserId = null;
+      _sessionStartTime = null;
+      _lastActivityTime = null;
+
+      // Update status
+      _statusController.add(SessionStatus.inactive);
+
+      debugPrint('✅ [SESSION_MANAGER] All session data cleared');
+    } catch (e) {
+      debugPrint('❌ [SESSION_MANAGER] Error clearing all data: $e');
+    }
+  }
+
   /// بدء مراقبة النشاط
   void _startActivityMonitoring() {
     _stopActivityMonitoring();

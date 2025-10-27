@@ -18,19 +18,22 @@ import 'retry_service.dart';
 /// Supports all platforms (Android, iOS, Web) with unified architecture
 class EnhancedDioServiceV2 {
   static EnhancedDioServiceV2? _instance;
-  static EnhancedDioServiceV2 get instance => _instance ??= EnhancedDioServiceV2._internal();
+  static EnhancedDioServiceV2 get instance =>
+      _instance ??= EnhancedDioServiceV2._internal();
 
   late Dio _dio;
   late EnhancedTokenInterceptor _tokenInterceptor;
-  
+
   final UnifiedTokenManager _tokenManager = UnifiedTokenManager.instance;
-  final EnhancedSessionManager _sessionManager = EnhancedSessionManager.instance;
-  final SilentTokenRefreshService _silentRefresh = SilentTokenRefreshService.instance;
+  final EnhancedSessionManager _sessionManager =
+      EnhancedSessionManager.instance;
+  final SilentTokenRefreshService _silentRefresh =
+      SilentTokenRefreshService.instance;
   final PlatformStorageService _storage = PlatformStorageService.instance;
-  
+
   final Completer<void> _initCompleter = Completer<void>();
   bool _isInitialized = false;
-  
+
   // Service statistics
   int _totalRequests = 0;
   int _successfulRequests = 0;
@@ -55,25 +58,30 @@ class EnhancedDioServiceV2 {
 
   /// Get service statistics
   Map<String, dynamic> get statistics => {
-    'totalRequests': _totalRequests,
-    'successfulRequests': _successfulRequests,
-    'failedRequests': _failedRequests,
-    'successRate': _totalRequests > 0 ? (_successfulRequests / _totalRequests * 100).toStringAsFixed(2) : '0.00',
-    'lastRequestTime': _lastRequestTime?.toIso8601String(),
-    'interceptorStats': _tokenInterceptor.getStatistics(),
-  };
+        'totalRequests': _totalRequests,
+        'successfulRequests': _successfulRequests,
+        'failedRequests': _failedRequests,
+        'successRate': _totalRequests > 0
+            ? (_successfulRequests / _totalRequests * 100).toStringAsFixed(2)
+            : '0.00',
+        'lastRequestTime': _lastRequestTime?.toIso8601String(),
+        'interceptorStats': _tokenInterceptor.getStatistics(),
+      };
 
   /// Initialize Dio with enhanced configuration
   Future<void> _initializeDio() async {
     try {
       debugPrint('🚀 [ENHANCED_DIO_V2] Initializing service...');
-      
+
       // Create Dio instance with base configuration
       _dio = Dio(BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 30),
+        connectTimeout:
+            const Duration(seconds: 60), // زيادة وقت الاتصال للأحمال الكبيرة
+        receiveTimeout:
+            const Duration(seconds: 300), // زيادة وقت الاستقبال لملفات كبيرة
+        sendTimeout:
+            const Duration(seconds: 300), // زيادة وقت الإرسال لملفات كبيرة
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -95,16 +103,16 @@ class EnhancedDioServiceV2 {
 
       _isInitialized = true;
       _initCompleter.complete();
-      
+
       debugPrint('✅ [ENHANCED_DIO_V2] Service initialized successfully');
       debugPrint('🔗 [ENHANCED_DIO_V2] Base URL: ${_dio.options.baseUrl}');
-      
+
       // Validate HTTPS for production
-      if (ApiConstants.baseUrl.contains('api.idec-ye.com') && 
+      if (ApiConstants.baseUrl.contains('api.idec-ye.com') &&
           !ApiConstants.baseUrl.startsWith('https://')) {
-        debugPrint('⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
+        debugPrint(
+            '⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
       }
-      
     } catch (e) {
       debugPrint('❌ [ENHANCED_DIO_V2] Initialization failed: $e');
       _initCompleter.completeError(e);
@@ -116,19 +124,19 @@ class EnhancedDioServiceV2 {
   void _setupInterceptors() {
     // 1. Request/Response logging interceptor (first)
     _dio.interceptors.add(_createLoggingInterceptor());
-    
+
     // 2. Request statistics interceptor
     _dio.interceptors.add(_createStatisticsInterceptor());
-    
+
     // 3. Language and headers interceptor
     _dio.interceptors.add(_createHeadersInterceptor());
-    
+
     // 4. Enhanced token interceptor (handles auth)
     _dio.interceptors.add(_tokenInterceptor);
-    
+
     // 5. Network error handling interceptor
     _dio.interceptors.add(_createNetworkInterceptor());
-    
+
     // 6. Maintenance mode interceptor
     _dio.interceptors.add(_createMaintenanceInterceptor());
   }
@@ -176,22 +184,23 @@ class EnhancedDioServiceV2 {
           // Add language header
           final language = await _storage.read('selected_language') ?? 'ar';
           options.headers['Accept-Language'] = language;
-          
+
           // Add platform information
-          options.headers['X-Platform'] = kIsWeb ? 'web' : Platform.operatingSystem;
+          options.headers['X-Platform'] =
+              kIsWeb ? 'web' : Platform.operatingSystem;
           options.headers['X-App-Version'] = '2.4.0'; // Could be dynamic
-          
+
           // Add session ID if available
           final sessionId = _sessionManager.currentSessionId;
           if (sessionId != null) {
             options.headers['X-Session-ID'] = sessionId;
           }
-          
+
           debugPrint('📋 [ENHANCED_DIO_V2] Headers added for ${options.path}');
         } catch (e) {
           debugPrint('⚠️ [ENHANCED_DIO_V2] Error adding headers: $e');
         }
-        
+
         handler.next(options);
       },
     );
@@ -203,7 +212,7 @@ class EnhancedDioServiceV2 {
       onError: (error, handler) async {
         if (_isNetworkError(error)) {
           final connectivityResult = await Connectivity().checkConnectivity();
-          
+
           if (connectivityResult == ConnectivityResult.none) {
             final networkError = DioException(
               requestOptions: error.requestOptions,
@@ -214,17 +223,17 @@ class EnhancedDioServiceV2 {
               ),
               type: DioExceptionType.connectionError,
             );
-            
-            debugPrint('🌐 [ENHANCED_DIO_V2] Network error detected: No connection');
+
+            debugPrint(
+                '🌐 [ENHANCED_DIO_V2] Network error detected: No connection');
             handler.next(networkError);
             return;
           }
-          
+
           // Handle timeout errors
           if (error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
               error.type == DioExceptionType.sendTimeout) {
-            
             final timeoutError = DioException(
               requestOptions: error.requestOptions,
               error: NetworkError(
@@ -234,13 +243,13 @@ class EnhancedDioServiceV2 {
               ),
               type: error.type,
             );
-            
+
             debugPrint('⏱️ [ENHANCED_DIO_V2] Timeout error detected');
             handler.next(timeoutError);
             return;
           }
         }
-        
+
         handler.next(error);
       },
     );
@@ -252,7 +261,7 @@ class EnhancedDioServiceV2 {
       onError: (error, handler) {
         if (error.response?.statusCode == 503) {
           final data = error.response?.data;
-          
+
           if (data is Map<String, dynamic> && data['maintenance'] == true) {
             final maintenanceError = DioException(
               requestOptions: error.requestOptions,
@@ -264,13 +273,13 @@ class EnhancedDioServiceV2 {
               ),
               response: error.response,
             );
-            
+
             debugPrint('🚧 [ENHANCED_DIO_V2] Maintenance mode detected');
             handler.next(maintenanceError);
             return;
           }
         }
-        
+
         handler.next(error);
       },
     );
@@ -281,13 +290,13 @@ class EnhancedDioServiceV2 {
     try {
       // Initialize token manager
       await _tokenManager.initialize();
-      
+
       // Initialize session manager
       await _sessionManager.initialize();
-      
+
       // Initialize silent refresh service
       await _silentRefresh.initialize();
-      
+
       debugPrint('✅ [ENHANCED_DIO_V2] Dependencies initialized');
     } catch (e) {
       debugPrint('❌ [ENHANCED_DIO_V2] Dependencies initialization failed: $e');
@@ -312,7 +321,7 @@ class EnhancedDioServiceV2 {
     ProgressCallback? onReceiveProgress,
   }) async {
     await _ensureInitialized();
-    
+
     return await _dio.get<T>(
       path,
       queryParameters: queryParameters,
@@ -333,7 +342,7 @@ class EnhancedDioServiceV2 {
     ProgressCallback? onReceiveProgress,
   }) async {
     await _ensureInitialized();
-    
+
     return await _dio.post<T>(
       path,
       data: data,
@@ -356,7 +365,7 @@ class EnhancedDioServiceV2 {
     ProgressCallback? onReceiveProgress,
   }) async {
     await _ensureInitialized();
-    
+
     return await _dio.put<T>(
       path,
       data: data,
@@ -377,7 +386,7 @@ class EnhancedDioServiceV2 {
     CancelToken? cancelToken,
   }) async {
     await _ensureInitialized();
-    
+
     return await _dio.delete<T>(
       path,
       data: data,
@@ -397,20 +406,24 @@ class EnhancedDioServiceV2 {
     RetryConfig? retryConfig,
   }) async {
     await _ensureInitialized();
-    
+
     final config = retryConfig ?? RetryConfig.api;
-    
+
     return RetryService.instance.executeWithRetry(
       () async {
         switch (method.toUpperCase()) {
           case 'GET':
-            return await get<T>(path, queryParameters: queryParameters, options: options);
+            return await get<T>(path,
+                queryParameters: queryParameters, options: options);
           case 'POST':
-            return await post<T>(path, data: data, queryParameters: queryParameters, options: options);
+            return await post<T>(path,
+                data: data, queryParameters: queryParameters, options: options);
           case 'PUT':
-            return await put<T>(path, data: data, queryParameters: queryParameters, options: options);
+            return await put<T>(path,
+                data: data, queryParameters: queryParameters, options: options);
           case 'DELETE':
-            return await delete<T>(path, data: data, queryParameters: queryParameters, options: options);
+            return await delete<T>(path,
+                data: data, queryParameters: queryParameters, options: options);
           default:
             throw ArgumentError('Unsupported HTTP method: $method');
         }
@@ -426,20 +439,23 @@ class EnhancedDioServiceV2 {
   /// Update base URL (useful for server settings changes)
   Future<void> updateBaseUrl(String newBaseUrl) async {
     try {
-      debugPrint('🔄 [ENHANCED_DIO_V2] Updating base URL from ${_dio.options.baseUrl} to $newBaseUrl');
-      
+      debugPrint(
+          '🔄 [ENHANCED_DIO_V2] Updating base URL from ${_dio.options.baseUrl} to $newBaseUrl');
+
       // Validate new URL
       if (newBaseUrl.isEmpty || !newBaseUrl.contains('http')) {
         throw ArgumentError('Invalid base URL: $newBaseUrl');
       }
-      
+
       // Warn about HTTPS for production
-      if (newBaseUrl.contains('api.idec-ye.com') && !newBaseUrl.startsWith('https://')) {
-        debugPrint('⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
+      if (newBaseUrl.contains('api.idec-ye.com') &&
+          !newBaseUrl.startsWith('https://')) {
+        debugPrint(
+            '⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
       }
-      
+
       _dio.options.baseUrl = newBaseUrl;
-      
+
       debugPrint('✅ [ENHANCED_DIO_V2] Base URL updated successfully');
     } catch (e) {
       debugPrint('❌ [ENHANCED_DIO_V2] Failed to update base URL: $e');
@@ -467,10 +483,11 @@ class EnhancedDioServiceV2 {
   Future<void> setTokens(String accessToken, String refreshToken) async {
     await _ensureInitialized();
     await _tokenManager.saveTokens(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds) - تغيير من ساعة إلى 30 يوم
-      );
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresIn:
+          2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds) - تغيير من ساعة إلى 30 يوم
+    );
   }
 
   /// Clear all tokens
@@ -482,10 +499,10 @@ class EnhancedDioServiceV2 {
   /// Check if network error
   bool _isNetworkError(DioException error) {
     return error.type == DioExceptionType.connectionTimeout ||
-           error.type == DioExceptionType.sendTimeout ||
-           error.type == DioExceptionType.receiveTimeout ||
-           error.type == DioExceptionType.connectionError ||
-           (error.error is SocketException);
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError ||
+        (error.error is SocketException);
   }
 
   /// Reset service statistics
@@ -495,7 +512,7 @@ class EnhancedDioServiceV2 {
     _failedRequests = 0;
     _lastRequestTime = null;
     _tokenInterceptor.resetStatistics();
-    
+
     debugPrint('📊 [ENHANCED_DIO_V2] Statistics reset');
   }
 
@@ -503,16 +520,16 @@ class EnhancedDioServiceV2 {
   Future<void> dispose() async {
     try {
       debugPrint('🗑️ [ENHANCED_DIO_V2] Disposing service...');
-      
+
       // Close Dio
       _dio.close();
-      
+
       // Dispose dependencies
       _silentRefresh.dispose();
       _sessionManager.dispose();
-      
+
       _isInitialized = false;
-      
+
       debugPrint('✅ [ENHANCED_DIO_V2] Service disposed successfully');
     } catch (e) {
       debugPrint('❌ [ENHANCED_DIO_V2] Error disposing service: $e');

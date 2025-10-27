@@ -16,7 +16,7 @@ import '../../../services/platform_storage_service.dart';
 import '../../../services/profile_rules_service.dart';
 
 class LocalProfileService {
-  static final Dio _dio = Dio();
+  static Dio get _dio => EnhancedDioServiceV2.instance.dio;
   static const String _cacheKey = 'cached_profile_data';
   static const String _cacheTimestampKey = 'profile_cache_timestamp';
   static const int _cacheValidityHours = 24; // Cache valid for 24 hours
@@ -424,7 +424,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '/api/v1/files/upload',
         data: {
           'documentType': documentType,
           'fileUrl': fileUrl,
@@ -511,7 +511,7 @@ class LocalProfileService {
       }
 
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '/api/v1/files/upload',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -856,13 +856,16 @@ class LocalProfileService {
       debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 
@@ -1038,13 +1041,16 @@ class LocalProfileService {
       debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 
@@ -1475,9 +1481,13 @@ class LocalProfileService {
         if (kIsWeb) {
           // في بيئة الويب، استخدم اسم ملف مع الحفاظ على الامتداد الأصلي
           final originalFileName = file.path.split('/').last;
-          final fileExtension = originalFileName.contains('.')
-              ? originalFileName.split('.').last
-              : 'pdf';
+
+          // الحفاظ على الامتداد الأصلي من اسم الملف
+          String fileExtension = 'bin'; // امتداد افتراضي للأغراض العامة
+          if (originalFileName.contains('.')) {
+            fileExtension = originalFileName.split('.').last.toLowerCase();
+          }
+
           fileName =
               'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
@@ -1487,6 +1497,8 @@ class LocalProfileService {
               fileBytes,
               filename: fileName,
             );
+            debugPrint(
+                '✅ ProfileService: Retry - Web upload preserving original file type: .$fileExtension');
             debugPrint(
                 '📄 ProfileService: Document bytes length: ${fileBytes.length}');
           } else {
@@ -1501,6 +1513,8 @@ class LocalProfileService {
             file.path,
             filename: fileName,
           );
+          debugPrint(
+              '✅ ProfileService: Retry - Mobile upload preserving original file name: $fileName');
         }
 
         // الحصول على معرف المستخدم من CompatibleAuthService
@@ -1523,15 +1537,17 @@ class LocalProfileService {
         });
 
         final response = await _dio.post(
-          '${ApiConstants.baseUrl}/api/v1/files/upload',
+          '/api/v1/files/upload',
           data: formData,
           options: Options(
             headers: {
               'Authorization': 'Bearer $token',
-              'Content-Type': 'multipart/form-data',
+              // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
             },
-            sendTimeout: const Duration(seconds: 30), // زيادة مهلة الإرسال
-            receiveTimeout: const Duration(seconds: 30), // زيادة مهلة الاستقبال
+            sendTimeout:
+                const Duration(seconds: 300), // 5 دقائق للملفات الكبيرة
+            receiveTimeout: const Duration(
+                seconds: 300), // 5 دقائق لاستقبال الملفات الكبيرة
           ),
           onSendProgress: (sent, total) {
             // حساب نسبة التقدم
@@ -1557,13 +1573,11 @@ class LocalProfileService {
           // فحص البيانات قبل المعالجة
           if (data != null && data is Map<String, dynamic>) {
             try {
-              // الخادم يرجع البيانات في حقل 'file'
-              Map<String, dynamic> documentData;
-              if (data.containsKey('file') && data['file'] != null) {
-                documentData = Map<String, dynamic>.from(data['file']);
-              } else {
-                documentData = Map<String, dynamic>.from(data);
-              }
+              // الخادم يرجع البيانات مباشرة (object)
+              Map<String, dynamic> documentData =
+                  Map<String, dynamic>.from(data);
+              debugPrint(
+                  '✅ ProfileService: Using direct response data: ${documentData.keys}');
 
               // تحويل البيانات من FileResponseDto إلى DocumentUploadModel
               final convertedData = <String, dynamic>{
@@ -1662,9 +1676,13 @@ class LocalProfileService {
         final originalFileName = file.path.isNotEmpty
             ? file.path.split('/').last
             : 'document_${DateTime.now().millisecondsSinceEpoch}';
-        final fileExtension = originalFileName.contains('.')
-            ? originalFileName.split('.').last
-            : 'pdf';
+
+        // الحفاظ على الامتداد الأصلي من اسم الملف
+        String fileExtension = 'bin'; // امتداد افتراضي للأغراض العامة
+        if (originalFileName.contains('.')) {
+          fileExtension = originalFileName.split('.').last.toLowerCase();
+        }
+
         fileName =
             'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
@@ -1674,6 +1692,8 @@ class LocalProfileService {
             fileBytes,
             filename: fileName,
           );
+          debugPrint(
+              '✅ ProfileService: Web upload - preserving original file type: .$fileExtension');
         } else {
           debugPrint('❌ ProfileService: No file bytes provided for web upload');
           throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
@@ -1685,6 +1705,8 @@ class LocalProfileService {
           file.path,
           filename: fileName,
         );
+        debugPrint(
+            '✅ ProfileService: Mobile upload - preserving original file name: $fileName');
       }
 
       // الحصول على معرف المستخدم الحقيقي من التوكن
@@ -1737,13 +1759,16 @@ class LocalProfileService {
       });
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/files/upload',
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 

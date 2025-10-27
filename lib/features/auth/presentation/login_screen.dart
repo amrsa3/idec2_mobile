@@ -10,7 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/professional_loading_overlay.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -254,9 +254,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final authState = ref.watch(compatibleAuthProvider);
 
-    return FormLoadingOverlay(
+    return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading,
-      loadingText: 'جاري تسجيل الدخول...',
+      message: 'جاري تسجيل الدخول...',
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(

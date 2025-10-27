@@ -334,7 +334,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'تطبيق IDEC\nالإصدار 1.0.0',
+              'تطبيق IDEC\nالإصدار 2.0.1',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,

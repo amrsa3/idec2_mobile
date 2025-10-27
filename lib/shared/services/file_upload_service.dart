@@ -202,7 +202,7 @@ class FileUploadService {
       final options = Options(
         headers: {
           'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
+          // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
         },
       );
 

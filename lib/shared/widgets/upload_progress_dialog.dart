@@ -147,6 +147,26 @@ class UploadProgressNotifier extends StateNotifier<UploadProgressState> {
     );
   }
 
+  void resetFailedFiles() {
+    // إعادة تعيين الملفات الفاشلة فقط
+    final updatedFiles = state.files.map((file) {
+      if (!file.isSuccess && file.errorMessage != null) {
+        return file.copyWith(
+          errorMessage: null,
+          progress: 0.0,
+        );
+      }
+      return file;
+    }).toList();
+
+    state = state.copyWith(
+      files: updatedFiles,
+      state: UploadState.uploading,
+      message: 'جاري إعادة رفع الملفات...',
+      overallProgress: 0.0,
+    );
+  }
+
   void reset() {
     state = UploadProgressState();
   }
@@ -373,15 +393,12 @@ class UploadProgressDialog extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...state.files.asMap().entries.map((entry) {
-          final index = entry.key;
-          final file = entry.value;
-
+        ...state.files.map((file) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _buildFileItem(file),
           );
-        }).toList(),
+        }),
       ],
     );
   }

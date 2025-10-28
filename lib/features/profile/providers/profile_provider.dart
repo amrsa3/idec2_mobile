@@ -337,8 +337,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               successMessage: 'تم رفع الوثيقة بنجاح',
             ));
 
-        debugPrint('✅ ProfileProvider: Document uploaded successfully');
-
         NotificationService.showSuccess('تم رفع الوثيقة بنجاح');
 
         return true;
@@ -351,7 +349,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
             isUploadingDocument: false,
             error: errorMessage,
           ));
-      debugPrint('❌ ProfileProvider: Error uploading document: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Document upload failed: $e');
+      }
 
       NotificationService.showError(errorMessage);
 
@@ -364,8 +364,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     if (!mounted) return false;
 
     try {
-      debugPrint('🗑️ ProfileProvider: Deleting document: $documentId');
-
       final success = await LocalProfileService.deleteDocument(documentId);
 
       if (success) {
@@ -383,8 +381,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               successMessage: 'تم حذف الوثيقة بنجاح',
             ));
 
-        debugPrint('✅ ProfileProvider: Document deleted successfully');
-
         NotificationService.showSuccess('تم حذف الوثيقة بنجاح');
 
         return true;
@@ -396,7 +392,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       _safeUpdateState(() => state.copyWith(
             error: errorMessage,
           ));
-      debugPrint('❌ ProfileProvider: Error deleting document: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Document deletion failed: $e');
+      }
 
       NotificationService.showError(errorMessage);
 
@@ -850,17 +848,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
           if (newImageUrl?.isNotEmpty == true) {
             finalImageUrl = newImageUrl;
-            debugPrint(
-                '✅ ProfileProvider: Using new image URL: $finalImageUrl');
           } else if (oldImageUrl?.isNotEmpty == true) {
             finalImageUrl = oldImageUrl;
-            debugPrint(
-                '⚠️ ProfileProvider: Using old image URL as fallback: $finalImageUrl');
           } else {
             // Create a temporary URL to trigger UI update
             finalImageUrl = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-            debugPrint(
-                '⚠️ ProfileProvider: Created temporary URL: $finalImageUrl');
           }
 
           final updatedProfile = state.currentProfile!.copyWith(
@@ -877,21 +869,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
                 error: null, // Clear any previous errors
               ));
 
-          debugPrint(
-              '🔄 ProfileProvider: Profile updated immediately with image URL: $finalImageUrl');
 
-          // إشعار إضافي للتأكد من تحديث الواجهة (Riverpod يتولى هذا تلقائياً)
-          debugPrint(
-              '🔔 ProfileProvider: State updated, Riverpod will notify listeners automatically');
-
-          if (newImageUrl?.isEmpty == true) {
-            debugPrint(
-                '⚠️ ProfileProvider: Warning - newImageUrl is empty, using fallback: $finalImageUrl');
-          }
         } else {
           // If currentProfile is null, just update the uploading state
-          debugPrint(
-              '⚠️ ProfileProvider: currentProfile is null, updating state only');
           state = state.copyWith(
             isUploadingProfilePicture: false,
             successMessage: newImageUrl?.isNotEmpty == true
@@ -899,10 +879,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
                 : 'تم رفع الصورة بنجاح - جاري معالجة الرابط',
             error: null, // Clear any previous errors
           );
-
-          // إشعار للواجهة حتى لو كان currentProfile فارغ (Riverpod يتولى هذا تلقائياً)
-          debugPrint(
-              '🔔 ProfileProvider: State updated, Riverpod will notify listeners automatically');
         }
 
         // تحديث محلي فوري بدون إعادة تحميل من الخادم لتجنب مشاكل المصادقة
@@ -911,8 +887,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               ? newImageUrl!
               : oldImageUrl ?? '';
           await LocalProfileService.updateProfilePictureUrlLocally(urlToSave);
-          debugPrint(
-              '🔄 ProfileProvider: Profile picture URL updated locally: $urlToSave');
 
           // تحديث الحالة مرة أخرى للتأكد من أن URL الجديد محفوظ
           if (state.currentProfile != null) {
@@ -924,26 +898,21 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
                   currentProfile: finalUpdatedProfile,
                   successMessage: 'تم تحديث صورة الملف الشخصي بنجاح',
                 ));
-
-            debugPrint(
-                '🔄 ProfileProvider: Profile state updated with final URL: $urlToSave');
           }
         } catch (e) {
-          debugPrint(
-              '⚠️ ProfileProvider: Failed to update local profile picture URL: $e');
+          if (kDebugMode) {
+            debugPrint('ERROR: Failed to update local profile picture URL: $e');
+          }
         }
 
         // إضافة تأخير قصير ثم إعادة تحميل الملف الشخصي لضمان التحديث
         Future.delayed(const Duration(milliseconds: 500), () async {
           try {
-            debugPrint(
-                '🔄 ProfileProvider: Refreshing profile after image upload...');
             await loadCurrentProfile(forceRefresh: true);
-            debugPrint(
-                '✅ ProfileProvider: Profile refreshed successfully after image upload');
           } catch (e) {
-            debugPrint(
-                '⚠️ ProfileProvider: Error refreshing profile after upload: $e');
+            if (kDebugMode) {
+              debugPrint('ERROR: Failed to refresh profile after upload: $e');
+            }
           }
         });
 
@@ -952,47 +921,39 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           if (newImageUrl != null && newImageUrl.isNotEmpty) {
             await ImageCacheService.evictImage(newImageUrl);
             AuthenticatedImageService.clearImageCache(newImageUrl);
-            debugPrint(
-                '🗑️ ProfileProvider: Cache cleared for new image: $newImageUrl');
           }
         } catch (e) {
-          debugPrint(
-              '⚠️ ProfileProvider: Error clearing cache for new image: $e');
+          if (kDebugMode) {
+            debugPrint('ERROR: Failed to clear image cache: $e');
+          }
         }
 
         // تأكيد إضافي أن الملف الشخصي لا يزال موجوداً
         if (state.currentProfile == null) {
-          debugPrint(
-              '❌ ProfileProvider: CRITICAL - Profile lost after upload! Attempting recovery...');
+          if (kDebugMode) {
+            debugPrint('ERROR: Profile lost after upload! Attempting recovery...');
+          }
           // محاولة استرداد الملف الشخصي من التخزين المحلي
           try {
             final cachedProfile = await LocalProfileService.getCurrentProfile();
             if (cachedProfile != null) {
               state = state.copyWith(currentProfile: cachedProfile);
-              debugPrint('✅ ProfileProvider: Profile recovered from cache');
-            } else {
-              debugPrint(
-                  '❌ ProfileProvider: No cached profile available for recovery');
             }
           } catch (e) {
-            debugPrint(
-                '❌ ProfileProvider: Failed to recover profile from cache: $e');
+            if (kDebugMode) {
+              debugPrint('ERROR: Failed to recover profile from cache: $e');
+            }
           }
-        } else {
-          debugPrint(
-              '✅ ProfileProvider: Profile state confirmed - still exists after upload');
         }
       }
-
-      debugPrint('✅ ProfileProvider: Profile picture uploaded successfully');
 
       NotificationService.showSuccess('تم تحديث صورة الملف الشخصي بنجاح');
 
       return true;
     } catch (e) {
-      debugPrint(
-          '❌ ProfileProvider: Exception caught during profile picture upload: $e');
-      debugPrint('❌ ProfileProvider: Exception type: ${e.runtimeType}');
+      if (kDebugMode) {
+        debugPrint('ERROR: Profile picture upload failed: $e');
+      }
 
       String errorMessage = 'فشل في رفع صورة الملف الشخصي';
 
@@ -1006,8 +967,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
       // استرداد الملف الشخصي في حالة فشل العملية
       if (state.currentProfile == null) {
-        debugPrint(
-            '🔄 ProfileProvider: Profile lost after upload failure, attempting recovery...');
         try {
           final cachedProfile = await LocalProfileService.getCurrentProfile();
           if (cachedProfile != null) {
@@ -1016,23 +975,20 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               isUploadingProfilePicture: false,
               error: errorMessage,
             );
-            debugPrint(
-                '✅ ProfileProvider: Profile restored from cache after upload failure');
           } else {
             state = state.copyWith(
               isUploadingProfilePicture: false,
               error: errorMessage,
             );
-            debugPrint(
-                '❌ ProfileProvider: No cached profile available for recovery');
           }
         } catch (e) {
           state = state.copyWith(
             isUploadingProfilePicture: false,
             error: errorMessage,
           );
-          debugPrint(
-              '❌ ProfileProvider: Failed to recover profile from cache: $e');
+          if (kDebugMode) {
+            debugPrint('ERROR: Failed to recover profile from cache: $e');
+          }
         }
       } else {
         state = state.copyWith(
@@ -1040,9 +996,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           error: errorMessage,
         );
       }
-
-      debugPrint(
-          '❌ ProfileProvider: Error uploading profile picture: $errorMessage');
 
       NotificationService.showError(errorMessage);
 
@@ -1056,27 +1009,20 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       state = state.copyWith(
           isUploadingProfilePicture: true, error: null, successMessage: null);
 
-      debugPrint('🗑️ ProfileProvider: Removing profile picture');
-
       // حفظ URL الصورة القديمة قبل الحذف
       final oldImageUrl = state.currentProfile?.profilePictureUrl;
-      debugPrint('🖼️ ProfileProvider: Old image URL to remove: $oldImageUrl');
 
       final response = await LocalProfileService.removeProfilePicture();
-
-      // If we reach here, removal was successful (no exception thrown)
-      debugPrint(
-          '✅ ProfileProvider: Profile picture removal response received: $response');
 
       // مسح الـ cache للصورة القديمة فوراً
       try {
         if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
           await ImageCacheService.evictImage(oldImageUrl);
-          debugPrint(
-              '🗑️ ProfileProvider: Cleared cache for removed image: $oldImageUrl');
         }
       } catch (e) {
-        debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to clear image cache: $e');
+        }
       }
 
       // Update the current profile immediately by removing the image URL
@@ -1159,59 +1105,97 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     required String documentType,
     required File file,
     Uint8List? fileBytes, // إضافة البيانات للويب
-    int maxRetries = 1, // محاولة واحدة فقط
+    int maxRetries = 3, // زيادة عدد المحاولات للملفات الكبيرة
     Function(double)? onProgress, // إضافة callback للتقدم
   }) async {
-    try {
-      state = state.copyWith(
-          isUploadingDocument: true, error: null, successMessage: null);
+    int currentAttempt = 0;
+    Exception? lastException;
 
-      debugPrint(
-          '📄 ProfileProvider: Uploading document for field: $fieldName (single attempt)');
-
-      final response = await LocalProfileService.uploadDocumentFile(
-        file: file,
-        documentType: documentType,
-        fieldName: fieldName,
-        fileBytes: fileBytes, // تمرير البيانات للويب
-      );
-
-      if (response != null) {
-        // Remove the selected file for this field
-        final updatedDocuments =
-            Map<String, File?>.from(state.selectedDocuments);
-        updatedDocuments.remove(fieldName);
-
+    while (currentAttempt < maxRetries) {
+      try {
+        currentAttempt++;
+        
         state = state.copyWith(
-          selectedDocuments: updatedDocuments,
-          isUploadingDocument: false,
-          successMessage: 'تم رفع الوثيقة بنجاح',
+            isUploadingDocument: true, error: null, successMessage: null);
+
+        debugPrint(
+            '📄 ProfileProvider: Uploading document for field: $fieldName (attempt $currentAttempt/$maxRetries)');
+
+        // استخدام uploadDocumentFileWithRetry بدلاً من uploadDocumentFile العادي
+        final response = await LocalProfileService.uploadDocumentFileWithRetry(
+          file: file,
+          documentType: documentType,
+          fieldName: fieldName,
+          fileBytes: fileBytes,
+          maxRetries: 1, // محاولة واحدة فقط في كل استدعاء
+          onProgress: onProgress,
         );
 
-        debugPrint(
-            '✅ ProfileProvider: Document uploaded successfully for field: $fieldName');
+        if (response != null && response.id.isNotEmpty) {
+          // Remove the selected file for this field
+          final updatedDocuments =
+              Map<String, File?>.from(state.selectedDocuments);
+          updatedDocuments.remove(fieldName);
 
-        NotificationService.showSuccess('تم رفع الوثيقة بنجاح');
+          state = state.copyWith(
+            selectedDocuments: updatedDocuments,
+            isUploadingDocument: false,
+            successMessage: 'تم رفع الوثيقة بنجاح',
+          );
 
-        return true;
-      } else {
-        debugPrint(
-            '❌ ProfileProvider: Upload response is null, returning false');
-        // لا نرمي exception، نرجع false فقط لنسمح بمعالجة الأخطاء في الكود الأصلي
-        return false;
+          debugPrint(
+              '✅ ProfileProvider: Document uploaded successfully for field: $fieldName with ID: ${response.id}');
+
+          NotificationService.showSuccess('تم رفع الوثيقة بنجاح');
+
+          return true;
+        } else {
+          final errorMessage = 'فشل في رفع الوثيقة - استجابة غير صحيحة من الخادم';
+          debugPrint('❌ ProfileProvider: $errorMessage (attempt $currentAttempt/$maxRetries)');
+          
+          if (currentAttempt >= maxRetries) {
+            state = state.copyWith(
+              isUploadingDocument: false,
+              error: errorMessage,
+            );
+            NotificationService.showError(errorMessage);
+            return false;
+          }
+          
+          // انتظار قبل المحاولة التالية
+          await Future.delayed(Duration(seconds: currentAttempt * 2));
+        }
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        debugPrint('❌ ProfileProvider: Document upload error (attempt $currentAttempt/$maxRetries): $e');
+
+        if (currentAttempt >= maxRetries) {
+          final errorMessage = _getErrorMessage(e.toString());
+          state = state.copyWith(
+            isUploadingDocument: false,
+            error: errorMessage,
+          );
+          NotificationService.showError(errorMessage);
+          return false;
+        }
+        
+        // انتظار قبل المحاولة التالية
+        await Future.delayed(Duration(seconds: currentAttempt * 2));
       }
-    } catch (e) {
-      state = state.copyWith(
-        isUploadingDocument: false,
-        error: 'فشل في رفع الوثيقة: $e',
-      );
-
-      debugPrint('❌ ProfileProvider: Document upload error: $e');
-
-      NotificationService.showError('فشل في رفع الوثيقة: $e');
-
-      return false;
     }
+
+    // إذا وصلنا هنا، فشلت جميع المحاولات
+    final errorMessage = lastException != null 
+        ? _getErrorMessage(lastException.toString())
+        : 'فشل في رفع الوثيقة بعد $maxRetries محاولات';
+    
+    state = state.copyWith(
+      isUploadingDocument: false,
+      error: errorMessage,
+    );
+    
+    NotificationService.showError(errorMessage);
+    return false;
   }
 
   /// Upload document for field
@@ -1235,7 +1219,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         fileBytes: fileBytes, // تمرير البيانات للويب
       );
 
-      if (response != null) {
+      if (response != null && response.id.isNotEmpty) {
         // Remove the selected file for this field
         final updatedDocuments =
             Map<String, File?>.from(state.selectedDocuments);
@@ -1248,22 +1232,30 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         );
 
         debugPrint(
-            '✅ ProfileProvider: Document uploaded successfully for field: $fieldName');
+            '✅ ProfileProvider: Document uploaded successfully for field: $fieldName with ID: ${response.id}');
 
         NotificationService.showSuccess('تم رفع الوثيقة بنجاح');
 
         return true;
       } else {
-        throw Exception('فشل في رفع الوثيقة');
+        final errorMessage = 'فشل في رفع الوثيقة - استجابة غير صحيحة من الخادم';
+        state = state.copyWith(
+          isUploadingDocument: false,
+          error: errorMessage,
+        );
+        debugPrint('❌ ProfileProvider: $errorMessage');
+        NotificationService.showError(errorMessage);
+        return false;
       }
     } catch (e) {
+      final errorMessage = _getErrorMessage(e.toString());
       state = state.copyWith(
         isUploadingDocument: false,
-        error: 'فشل في رفع الوثيقة: $e',
+        error: errorMessage,
       );
       debugPrint('❌ ProfileProvider: Error uploading document for field: $e');
 
-      NotificationService.showError('فشل في رفع الوثيقة');
+      NotificationService.showError(errorMessage);
 
       return false;
     }
@@ -1424,8 +1416,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     // Network connectivity errors
     if (errorString.contains('لا يوجد اتصال بالإنترنت') ||
         errorString.contains('no internet') ||
-        errorString.contains('network')) {
-      return 'لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال والمحاولة مرة أخرى.';
+        errorString.contains('network') ||
+        errorString.contains('connection error') ||
+        errorString.contains('xmlhttprequest') ||
+        errorString.contains('connection errored')) {
+      return 'لا يوجد اتصال بالإنترنت أو مشكلة في الشبكة. يرجى التحقق من الاتصال والمحاولة مرة أخرى.';
     }
 
     // Authentication errors
@@ -1436,19 +1431,38 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       return 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى.';
     }
 
+    // File size errors
+    if (errorString.contains('413') ||
+        errorString.contains('payload too large') ||
+        errorString.contains('حجم الملف كبير')) {
+      return 'حجم الملف كبير جداً. يرجى اختيار ملف أصغر من 5 ميجابايت.';
+    }
+
     // Server errors
-    if (errorString.contains('500') || errorString.contains('server error')) {
+    if (errorString.contains('500') || 
+        errorString.contains('server error') ||
+        errorString.contains('internal server error')) {
       return 'خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.';
     }
 
     // Timeout errors
     if (errorString.contains('timeout') ||
-        errorString.contains('انتهت المهلة')) {
-      return 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.';
+        errorString.contains('انتهت المهلة') ||
+        errorString.contains('انتهت مهلة الاتصال')) {
+      return 'انتهت مهلة الاتصال. الملف قد يكون كبيراً، يرجى المحاولة مرة أخرى أو اختيار ملف أصغر.';
+    }
+
+    // Image compression errors (Flutter Web specific)
+    if (errorString.contains('unsupported operation') ||
+        errorString.contains('_namespace') ||
+        errorString.contains('compressing image')) {
+      return 'خطأ في معالجة الصورة. يرجى اختيار صورة أخرى أو تقليل حجمها.';
     }
 
     // File upload errors
-    if (errorString.contains('upload') || errorString.contains('رفع')) {
+    if (errorString.contains('upload') || 
+        errorString.contains('رفع') ||
+        errorString.contains('upload response is null')) {
       return 'فشل في رفع الملف. يرجى التحقق من حجم الملف ونوعه والمحاولة مرة أخرى.';
     }
 
@@ -1465,6 +1479,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     // Verification errors
     if (errorString.contains('verification') || errorString.contains('تحقق')) {
       return 'فشل في عملية التحقق. يرجى المحاولة مرة أخرى.';
+    }
+
+    // Web-specific errors
+    if (errorString.contains('user-agent') || 
+        errorString.contains('unsafe header')) {
+      return 'خطأ في المتصفح. يرجى تحديث الصفحة والمحاولة مرة أخرى.';
     }
 
     // Generic error message

@@ -11,6 +11,7 @@ import 'unified_token_manager.dart';
 import 'enhanced_session_manager.dart';
 import 'silent_token_refresh_service.dart';
 import 'enhanced_token_interceptor.dart';
+// import 'app_version_service.dart';
 import 'platform_storage_service.dart';
 import 'retry_service.dart';
 
@@ -71,20 +72,24 @@ class EnhancedDioServiceV2 {
   /// Initialize Dio with enhanced configuration
   Future<void> _initializeDio() async {
     try {
-      debugPrint('🚀 [ENHANCED_DIO_V2] Initializing service...');
+      if (kDebugMode) {
+        debugPrint('🚀 [ENHANCED_DIO_V2] Initializing service...');
+      }
 
-      // Create Dio instance with base configuration
+      // Create Dio instance with enhanced configuration for large files
       _dio = Dio(BaseOptions(
         baseUrl: ApiConstants.baseUrl,
         connectTimeout:
-            const Duration(seconds: 60), // زيادة وقت الاتصال للأحمال الكبيرة
+            const Duration(seconds: 90), // زيادة وقت الاتصال للأحمال الكبيرة
         receiveTimeout:
-            const Duration(seconds: 300), // زيادة وقت الاستقبال لملفات كبيرة
+            const Duration(seconds: 1800), // 30 دقيقة لاستقبال الملفات الكبيرة
         sendTimeout:
-            const Duration(seconds: 300), // زيادة وقت الإرسال لملفات كبيرة
+            const Duration(seconds: 1800), // 30 دقيقة لإرسال الملفات الكبيرة
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // إزالة User-Agent للويب لتجنب خطأ "Refused to set unsafe header"
+          if (!kIsWeb) 'User-Agent': 'IDEC-Mobile-App/2.4.0',
         },
       ));
 
@@ -104,17 +109,22 @@ class EnhancedDioServiceV2 {
       _isInitialized = true;
       _initCompleter.complete();
 
-      debugPrint('✅ [ENHANCED_DIO_V2] Service initialized successfully');
-      debugPrint('🔗 [ENHANCED_DIO_V2] Base URL: ${_dio.options.baseUrl}');
+      if (kDebugMode) {
+        debugPrint('✅ [ENHANCED_DIO_V2] Service initialized successfully');
+      }
 
       // Validate HTTPS for production
       if (ApiConstants.baseUrl.contains('api.idec-ye.com') &&
           !ApiConstants.baseUrl.startsWith('https://')) {
-        debugPrint(
-            '⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
+        if (kDebugMode) {
+          debugPrint(
+              '⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
+        }
       }
     } catch (e) {
-      debugPrint('❌ [ENHANCED_DIO_V2] Initialization failed: $e');
+      if (kDebugMode) {
+        debugPrint('❌ [ENHANCED_DIO_V2] Initialization failed: $e');
+      }
       _initCompleter.completeError(e);
       rethrow;
     }
@@ -188,17 +198,17 @@ class EnhancedDioServiceV2 {
           // Add platform information
           options.headers['X-Platform'] =
               kIsWeb ? 'web' : Platform.operatingSystem;
-          options.headers['X-App-Version'] = '2.4.0'; // Could be dynamic
+          options.headers['X-App-Version'] = '2.4.0';
 
           // Add session ID if available
           final sessionId = _sessionManager.currentSessionId;
           if (sessionId != null) {
             options.headers['X-Session-ID'] = sessionId;
           }
-
-          debugPrint('📋 [ENHANCED_DIO_V2] Headers added for ${options.path}');
         } catch (e) {
-          debugPrint('⚠️ [ENHANCED_DIO_V2] Error adding headers: $e');
+          if (kDebugMode) {
+            debugPrint('ERROR: Failed to add headers: $e');
+          }
         }
 
         handler.next(options);
@@ -224,8 +234,9 @@ class EnhancedDioServiceV2 {
               type: DioExceptionType.connectionError,
             );
 
-            debugPrint(
-                '🌐 [ENHANCED_DIO_V2] Network error detected: No connection');
+            if (kDebugMode) {
+              debugPrint('ERROR: No internet connection');
+            }
             handler.next(networkError);
             return;
           }
@@ -244,8 +255,48 @@ class EnhancedDioServiceV2 {
               type: error.type,
             );
 
-            debugPrint('⏱️ [ENHANCED_DIO_V2] Timeout error detected');
+            if (kDebugMode) {
+              debugPrint('ERROR: Request timeout');
+            }
             handler.next(timeoutError);
+            return;
+          }
+
+          // Handle XMLHttpRequest errors specifically for web
+          if (kIsWeb && error.message?.contains('XMLHttpRequest') == true) {
+            final webNetworkError = DioException(
+              requestOptions: error.requestOptions,
+              error: NetworkError(
+                message: 'خطأ في الشبكة - يرجى المحاولة مرة أخرى',
+                code: 'WEB_NETWORK_ERROR',
+                isConnectionError: true,
+              ),
+              type: DioExceptionType.connectionError,
+            );
+
+            if (kDebugMode) {
+              debugPrint('ERROR: Web XMLHttpRequest error detected');
+            }
+            handler.next(webNetworkError);
+            return;
+          }
+
+          // Handle connection errors
+          if (error.type == DioExceptionType.connectionError) {
+            final connectionError = DioException(
+              requestOptions: error.requestOptions,
+              error: NetworkError(
+                message: 'فشل في الاتصال بالخادم',
+                code: 'CONNECTION_ERROR',
+                isConnectionError: true,
+              ),
+              type: error.type,
+            );
+
+            if (kDebugMode) {
+              debugPrint('ERROR: Connection error');
+            }
+            handler.next(connectionError);
             return;
           }
         }
@@ -274,7 +325,9 @@ class EnhancedDioServiceV2 {
               response: error.response,
             );
 
-            debugPrint('🚧 [ENHANCED_DIO_V2] Maintenance mode detected');
+            if (kDebugMode) {
+              debugPrint('WARNING: Server under maintenance');
+            }
             handler.next(maintenanceError);
             return;
           }
@@ -297,9 +350,13 @@ class EnhancedDioServiceV2 {
       // Initialize silent refresh service
       await _silentRefresh.initialize();
 
-      debugPrint('✅ [ENHANCED_DIO_V2] Dependencies initialized');
+      if (kDebugMode) {
+        debugPrint('Dependencies initialized successfully');
+      }
     } catch (e) {
-      debugPrint('❌ [ENHANCED_DIO_V2] Dependencies initialization failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Dependencies initialization failed: $e');
+      }
       rethrow;
     }
   }
@@ -439,8 +496,9 @@ class EnhancedDioServiceV2 {
   /// Update base URL (useful for server settings changes)
   Future<void> updateBaseUrl(String newBaseUrl) async {
     try {
-      debugPrint(
-          '🔄 [ENHANCED_DIO_V2] Updating base URL from ${_dio.options.baseUrl} to $newBaseUrl');
+      if (kDebugMode) {
+        debugPrint('Updating base URL to: $newBaseUrl');
+      }
 
       // Validate new URL
       if (newBaseUrl.isEmpty || !newBaseUrl.contains('http')) {
@@ -450,15 +508,20 @@ class EnhancedDioServiceV2 {
       // Warn about HTTPS for production
       if (newBaseUrl.contains('api.idec-ye.com') &&
           !newBaseUrl.startsWith('https://')) {
-        debugPrint(
-            '⚠️ [ENHANCED_DIO_V2] WARNING: Production API should use HTTPS');
+        if (kDebugMode) {
+          debugPrint('WARNING: Production API should use HTTPS');
+        }
       }
 
       _dio.options.baseUrl = newBaseUrl;
 
-      debugPrint('✅ [ENHANCED_DIO_V2] Base URL updated successfully');
+      if (kDebugMode) {
+        debugPrint('Base URL updated successfully');
+      }
     } catch (e) {
-      debugPrint('❌ [ENHANCED_DIO_V2] Failed to update base URL: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to update base URL: $e');
+      }
       rethrow;
     }
   }
@@ -468,7 +531,9 @@ class EnhancedDioServiceV2 {
     try {
       return await _tokenManager.getValidAccessToken();
     } catch (e) {
-      debugPrint('🔴 [ENHANCED_DIO_V2] Error getting access token: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to get access token: $e');
+      }
       return null;
     }
   }
@@ -505,6 +570,28 @@ class EnhancedDioServiceV2 {
         (error.error is SocketException);
   }
 
+  /// Create options for file upload requests
+  Options createFileUploadOptions({
+    String? token,
+    Duration? sendTimeout,
+    Duration? receiveTimeout,
+    Map<String, dynamic>? headers,
+  }) {
+    final uploadHeaders = <String, dynamic>{
+      'Content-Type': 'multipart/form-data',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+      if (headers != null) ...headers,
+    };
+
+    return Options(
+      headers: uploadHeaders,
+      sendTimeout: sendTimeout ?? const Duration(minutes: 10),
+      receiveTimeout: receiveTimeout ?? const Duration(minutes: 10),
+      validateStatus: (status) => status != null && status < 500,
+    );
+  }
+
   /// Reset service statistics
   void resetStatistics() {
     _totalRequests = 0;
@@ -513,13 +600,17 @@ class EnhancedDioServiceV2 {
     _lastRequestTime = null;
     _tokenInterceptor.resetStatistics();
 
-    debugPrint('📊 [ENHANCED_DIO_V2] Statistics reset');
+    if (kDebugMode) {
+      debugPrint('Statistics reset');
+    }
   }
 
   /// Dispose service resources
   Future<void> dispose() async {
     try {
-      debugPrint('🗑️ [ENHANCED_DIO_V2] Disposing service...');
+      if (kDebugMode) {
+        debugPrint('Disposing service...');
+      }
 
       // Close Dio
       _dio.close();
@@ -530,9 +621,13 @@ class EnhancedDioServiceV2 {
 
       _isInitialized = false;
 
-      debugPrint('✅ [ENHANCED_DIO_V2] Service disposed successfully');
+      if (kDebugMode) {
+        debugPrint('Service disposed successfully');
+      }
     } catch (e) {
-      debugPrint('❌ [ENHANCED_DIO_V2] Error disposing service: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to dispose service: $e');
+      }
     }
   }
 }

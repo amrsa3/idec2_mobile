@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,7 @@ import '../core/constants/api_constants.dart';
 import '../core/utils/storage_helper.dart';
 import 'dio_service.dart';
 import 'notification_service.dart';
+import 'retry_service.dart';
 
 /// خدمة رفع الملفات المركزية
 /// تدير جميع عمليات رفع الملفات والصور في التطبيق
@@ -28,11 +30,8 @@ class FileUploadService {
   }) async {
     try {
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
-      debugPrint(
-          '🔑 [FILE_UPLOAD] Token retrieved: ${token != null ? "موجود (${token.length} حرف)" : "غير موجود"}');
 
       if (token == null || token.isEmpty) {
-        debugPrint('❌ [FILE_UPLOAD] لا يوجد توكن مصادقة');
         await NotificationService.showError(
           title: 'خطأ في المصادقة',
           message: 'يرجى تسجيل الدخول أولاً',
@@ -40,60 +39,74 @@ class FileUploadService {
         return FileUploadResult.error('غير مصرح بالوصول');
       }
 
-      // التحقق من حجم الملف (الحد الأقصى 10 ميجابايت)
+      // التحقق من حجم الملف (الحد الأقصى 200 ميجابايت)
       final fileSize = await file.length();
-      if (fileSize > 10 * 1024 * 1024) {
+      if (fileSize > 200 * 1024 * 1024) {
         await NotificationService.showError(
           title: 'حجم الملف كبير',
-          message: 'حجم الملف يجب أن يكون أقل من 10 ميجابايت',
+          message: 'حجم الملف يجب أن يكون أقل من 200 ميجابايت',
         );
         return FileUploadResult.error('حجم الملف كبير جداً');
       }
 
-      // إنشاء طلب multipart
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$_baseUrl/api/v1/files/upload'),
-      );
+      // الحصول على خدمة Dio المحسنة
+      final dioService = DioService.instance;
+      await dioService.initialize();
 
-      // إضافة الهيدرز
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
-
-      // إضافة الملف
+      // إعداد الملف للرفع
       final fileName = path.basename(file.path);
-      final multipartFile = await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-        filename: fileName,
-      );
-      request.files.add(multipartFile);
-
-      // إضافة البيانات الإضافية
-      request.fields.addAll({
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
         'entityType': entityType,
         'entityId': entityId,
         'fileCategory': fileCategory,
         'accessLevel': accessLevel,
       });
 
-      debugPrint('🔄 [FILE_UPLOAD] بدء رفع الملف: $fileName');
-      debugPrint('🔄 [FILE_UPLOAD] النوع: $entityType, التصنيف: $fileCategory');
-
-      // إرسال الطلب
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      // إرسال الطلب مع retry mechanism محسن للملفات الكبيرة
+      final response = await RetryService.instance.executeWithRetry(
+        () async {
+          return await dioService.dio.post(
+            '/api/v1/files/upload',
+            data: formData,
+            options: dioService.createFileUploadOptions(
+              token: token,
+              sendTimeout:
+                  const Duration(minutes: 30), // زيادة timeout للملفات الكبيرة
+              receiveTimeout: const Duration(minutes: 30),
+            ),
+            onSendProgress: (sent, total) {
+              if (total != -1 && onProgress != null) {
+                final progress = sent / total;
+                onProgress(progress);
+              }
+            },
+          );
+        },
+        maxRetries: 5, // زيادة عدد المحاولات للملفات الكبيرة
+        initialDelay: const Duration(seconds: 3),
+        backoffMultiplier: 1.5, // تقليل معامل التأخير
+        isFileUpload: true, // تفعيل معالجة خاصة للملفات
+        shouldRetry: (error) {
+          // إعادة المحاولة للأخطاء المؤقتة والملفات الكبيرة
+          if (error is DioException) {
+            return error.type == DioExceptionType.connectionTimeout ||
+                error.type == DioExceptionType.sendTimeout ||
+                error.type == DioExceptionType.receiveTimeout ||
+                error.type == DioExceptionType.connectionError ||
+                (error.response?.statusCode != null &&
+                    [408, 413, 429, 500, 502, 503, 504]
+                        .contains(error.response!.statusCode));
+          }
+          return false;
+        },
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-
-        await NotificationService.showSuccess(
-          title: 'تم رفع الملف',
-          message: 'تم رفع الملف بنجاح',
-        );
-
-        debugPrint('✅ [FILE_UPLOAD] تم رفع الملف بنجاح: ${data['fileId']}');
+        final data = response.data;
 
         return FileUploadResult.success(
           fileId: data['fileId'] ?? '',
@@ -101,25 +114,117 @@ class FileUploadService {
           fileName: fileName,
         );
       } else {
-        final errorData = jsonDecode(response.body);
-        final errorMessage = errorData['message'] ?? 'فشل في رفع الملف';
+        final errorMessage = response.data['message'] ?? 'فشل في رفع الملف';
 
         await NotificationService.showError(
           title: 'فشل رفع الملف',
           message: errorMessage,
         );
 
-        debugPrint('❌ [FILE_UPLOAD] فشل رفع الملف: ${response.statusCode}');
         return FileUploadResult.error(errorMessage);
       }
-    } catch (e) {
+    } on DioException catch (e) {
+      String errorMessage = 'حدث خطأ أثناء رفع الملف';
+      String errorCode = 'UNKNOWN_ERROR';
+
+      // تحليل الأخطاء المهمة فقط
+      if (e.type == DioExceptionType.connectionTimeout) {
+        errorMessage = 'انتهت مهلة الاتصال. تأكد من اتصالك بالإنترنت';
+        errorCode = 'CONNECTION_TIMEOUT';
+      } else if (e.type == DioExceptionType.sendTimeout) {
+        errorMessage =
+            'انتهت مهلة إرسال الملف. قد يكون الملف كبيراً جداً أو الاتصال بطيئاً';
+        errorCode = 'SEND_TIMEOUT';
+      } else if (e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'انتهت مهلة استقبال الاستجابة من الخادم';
+        errorCode = 'RECEIVE_TIMEOUT';
+      } else if (e.type == DioExceptionType.badResponse) {
+        final statusCode = e.response?.statusCode;
+        final responseData = e.response?.data;
+
+        switch (statusCode) {
+          case 413:
+            errorMessage = 'حجم الملف كبير جداً. الحد الأقصى 200 ميجابايت';
+            errorCode = 'FILE_TOO_LARGE';
+            break;
+          case 400:
+            errorMessage =
+                responseData is Map && responseData['message'] != null
+                    ? responseData['message']
+                    : 'بيانات الملف غير صحيحة';
+            errorCode = 'BAD_REQUEST';
+            break;
+          case 401:
+            errorMessage = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى';
+            errorCode = 'UNAUTHORIZED';
+            break;
+          case 403:
+            errorMessage = 'غير مصرح لك برفع هذا النوع من الملفات';
+            errorCode = 'FORBIDDEN';
+            break;
+          case 422:
+            errorMessage =
+                responseData is Map && responseData['message'] != null
+                    ? responseData['message']
+                    : 'نوع الملف غير مدعوم';
+            errorCode = 'UNSUPPORTED_FILE_TYPE';
+            break;
+          case 429:
+            errorMessage =
+                'تم تجاوز الحد المسموح لرفع الملفات. يرجى المحاولة لاحقاً';
+            errorCode = 'RATE_LIMITED';
+            break;
+          case 500:
+            errorMessage = 'خطأ في الخادم. يرجى المحاولة لاحقاً';
+            errorCode = 'SERVER_ERROR';
+            break;
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = 'الخادم غير متاح حالياً. يرجى المحاولة لاحقاً';
+            errorCode = 'SERVER_UNAVAILABLE';
+            break;
+          default:
+            errorMessage = 'خطأ غير متوقع من الخادم (${statusCode})';
+            errorCode = 'HTTP_ERROR_$statusCode';
+        }
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMessage = 'فشل الاتصال بالخادم. تحقق من اتصالك بالإنترنت';
+        errorCode = 'CONNECTION_ERROR';
+      } else if (e.type == DioExceptionType.cancel) {
+        errorMessage = 'تم إلغاء رفع الملف';
+        errorCode = 'CANCELLED';
+      }
+
+      // تسجيل الأخطاء المهمة فقط
+      if (kDebugMode) {
+        debugPrint('ERROR: File upload failed - $errorCode: $errorMessage');
+        if (e.response?.statusCode != null) {
+          debugPrint(
+              'ERROR: HTTP ${e.response!.statusCode} - Response: ${e.response!.data}');
+        }
+      }
+
       await NotificationService.showError(
-        title: 'خطأ في رفع الملف',
+        title: 'فشل رفع الملف',
+        message: errorMessage,
+      );
+
+      return FileUploadResult.error(errorMessage, errorCode: errorCode);
+    } catch (e, stackTrace) {
+      // تسجيل الأخطاء الحرجة فقط
+      if (kDebugMode) {
+        debugPrint('ERROR: Unexpected file upload error: $e');
+        debugPrint('ERROR: Stack trace: $stackTrace');
+      }
+
+      await NotificationService.showError(
+        title: 'خطأ غير متوقع',
         message: 'حدث خطأ غير متوقع أثناء رفع الملف',
       );
 
-      debugPrint('❌ [FILE_UPLOAD] خطأ في رفع الملف: $e');
-      return FileUploadResult.error('خطأ في رفع الملف: $e');
+      return FileUploadResult.error('خطأ غير متوقع: $e',
+          errorCode: 'UNEXPECTED_ERROR');
     }
   }
 
@@ -133,7 +238,7 @@ class FileUploadService {
       file: imageFile,
       entityType: 'USER_PROFILE_PICTURE',
       entityId: userId,
-      fileCategory: 'PROFILE_PICTURE',
+      fileCategory: 'PROFILE_PHOTO',
       accessLevel: 'public',
       onProgress: onProgress,
     );
@@ -209,15 +314,18 @@ class FileUploadService {
             .map((json) => UserFileModel.fromJson(json))
             .toList();
 
-        debugPrint('✅ [FILE_UPLOAD] تم جلب ${files.length} وثيقة للملف الشخصي');
         return files;
       } else {
-        debugPrint(
-            '❌ [FILE_UPLOAD] فشل جلب وثائق الملف الشخصي: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint(
+              'ERROR: Failed to fetch profile documents: ${response.statusCode}');
+        }
         return [];
       }
     } catch (e) {
-      debugPrint('❌ [FILE_UPLOAD] خطأ في جلب وثائق الملف الشخصي: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to fetch profile documents: $e');
+      }
       return [];
     }
   }
@@ -230,11 +338,11 @@ class FileUploadService {
         return FileValidationResult.error('الملف غير موجود');
       }
 
-      // التحقق من حجم الملف (الحد الأقصى 5 ميجابايت)
+      // التحقق من حجم الملف (الحد الأقصى 100 ميجابايت)
       final fileSize = await file.length();
-      if (fileSize > 5 * 1024 * 1024) {
+      if (fileSize > 100 * 1024 * 1024) {
         return FileValidationResult.error(
-            'حجم الملف يجب أن يكون أقل من 5 ميجابايت');
+            'حجم الملف يجب أن يكون أقل من 100 ميجابايت');
       }
 
       // التحقق من نوع الملف
@@ -276,7 +384,9 @@ class FileUploadService {
         title: 'خطأ في اختيار الصورة',
         message: 'فشل في اختيار الصورة',
       );
-      debugPrint('❌ [FILE_UPLOAD] خطأ في اختيار الصورة: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to pick image: $e');
+      }
       return null;
     }
   }
@@ -299,11 +409,11 @@ class FileUploadService {
         if (kIsWeb) {
           if (platformFile.bytes != null) {
             // في الويب، يمكن استخدام PlatformFile مباشرة
-            debugPrint('🌐 Web: Using PlatformFile with bytes for upload');
-            // يمكن إضافة منطق رفع الملفات هنا في المستقبل
             return File('web_file_${platformFile.name}');
           } else {
-            debugPrint('❌ Web: No bytes available for file upload');
+            if (kDebugMode) {
+              debugPrint('ERROR: No bytes available for web file upload');
+            }
             return null;
           }
         } else {
@@ -319,7 +429,9 @@ class FileUploadService {
         title: 'خطأ في اختيار الملف',
         message: 'فشل في اختيار الملف: ${e.toString()}',
       );
-      debugPrint('❌ [FILE_UPLOAD] خطأ في اختيار الملف: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to pick document: $e');
+      }
       return null;
     }
   }
@@ -351,7 +463,6 @@ class FileUploadService {
           message: 'تم حذف الملف بنجاح',
         );
 
-        debugPrint('✅ [FILE_UPLOAD] تم حذف الملف: $fileId');
         return true;
       } else {
         await NotificationService.showError(
@@ -359,7 +470,9 @@ class FileUploadService {
           message: 'لم يتم حذف الملف',
         );
 
-        debugPrint('❌ [FILE_UPLOAD] فشل حذف الملف: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to delete file: ${response.statusCode}');
+        }
         return false;
       }
     } catch (e) {
@@ -368,7 +481,9 @@ class FileUploadService {
         message: 'حدث خطأ أثناء حذف الملف',
       );
 
-      debugPrint('❌ [FILE_UPLOAD] خطأ في حذف الملف: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to delete file: $e');
+      }
       return false;
     }
   }
@@ -404,19 +519,22 @@ class FileUploadService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final files = (data['files'] as List)
+        final files = (data['files'] as List? ?? data as List)
             .map((json) => UserFileModel.fromJson(json))
             .toList();
 
-        debugPrint('✅ [FILE_UPLOAD] تم جلب ${files.length} ملف للمستخدم');
         return files;
       } else {
-        debugPrint(
-            '❌ [FILE_UPLOAD] فشل جلب ملفات المستخدم: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint(
+              'ERROR: Failed to fetch profile documents: ${response.statusCode}');
+        }
         return [];
       }
     } catch (e) {
-      debugPrint('❌ [FILE_UPLOAD] خطأ في جلب ملفات المستخدم: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to fetch profile documents: $e');
+      }
       return [];
     }
   }
@@ -429,6 +547,7 @@ class FileUploadResult {
   final String? fileUrl;
   final String? fileName;
   final String? errorMessage;
+  final String? errorCode;
 
   FileUploadResult._({
     required this.isSuccess,
@@ -436,6 +555,7 @@ class FileUploadResult {
     this.fileUrl,
     this.fileName,
     this.errorMessage,
+    this.errorCode,
   });
 
   factory FileUploadResult.success({
@@ -451,11 +571,39 @@ class FileUploadResult {
     );
   }
 
-  factory FileUploadResult.error(String message) {
+  factory FileUploadResult.error(String message, {String? errorCode}) {
     return FileUploadResult._(
       isSuccess: false,
       errorMessage: message,
+      errorCode: errorCode,
     );
+  }
+
+  /// Check if error is retryable
+  bool get isRetryableError {
+    if (errorCode == null) return false;
+
+    const retryableCodes = [
+      'CONNECTION_TIMEOUT',
+      'SEND_TIMEOUT',
+      'RECEIVE_TIMEOUT',
+      'CONNECTION_ERROR',
+      'SERVER_ERROR',
+      'SERVER_UNAVAILABLE',
+    ];
+
+    return retryableCodes.contains(errorCode) ||
+        errorCode!.startsWith('HTTP_ERROR_5');
+  }
+
+  /// Check if error is due to file size
+  bool get isFileSizeError {
+    return errorCode == 'FILE_TOO_LARGE';
+  }
+
+  /// Check if error is due to authentication
+  bool get isAuthError {
+    return errorCode == 'UNAUTHORIZED';
   }
 }
 

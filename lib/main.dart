@@ -12,6 +12,7 @@ import 'features/profile/presentation/widgets/verification_notification_banner.d
 import 'l10n/app_localizations.dart';
 import 'providers/enhanced_auth_provider_v2.dart';
 import 'providers/language_provider.dart';
+import 'services/app_version_service.dart';
 import 'services/enhanced_dio_service_v2.dart';
 import 'services/enhanced_storage_service.dart';
 import 'services/notification_service.dart';
@@ -80,6 +81,10 @@ void main() async {
   // Initialize StorageService first
   await PlatformStorageService.instance.init();
   debugPrint('✅ StorageService initialized successfully');
+
+  // Initialize AppVersionService
+  await AppVersionService.instance.initialize();
+  debugPrint('✅ AppVersionService initialized successfully');
 
   // Initialize and validate server settings
   // Initialize server settings with enhanced production debugging

@@ -6,8 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-/// خدمة إدارة الاتصال المحسنة
+/// خدمة إدارة الاتصال المحسنة - SILENT MODE
 /// تدعم مراقبة حالة الاتصال وإدارة التبديل بين الوضعين
+/// تم إيقاف رسائل السجلات لتحسين تجربة المطور
 class ConnectivityService {
   static ConnectivityService? _instance;
   static ConnectivityService get instance =>
@@ -51,13 +52,13 @@ class ConnectivityService {
   /// هل متصل حالياً
   bool get isConnected => _isConnected;
 
-  /// تهيئة الخدمة
+  /// تهيئة الخدمة (silent mode)
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      debugPrint(
-          '🌐 [CONNECTIVITY_SERVICE] Initializing connectivity service...');
+      // تم إيقاف رسائل التهيئة لتحسين تجربة المطور
+      // debugPrint('🌐 [CONNECTIVITY_SERVICE] Initializing connectivity service...');
 
       _connectivity = Connectivity();
 
@@ -72,10 +73,11 @@ class ConnectivityService {
         _initCompleter.complete();
       }
 
-      debugPrint(
-          '✅ [CONNECTIVITY_SERVICE] Connectivity service initialized successfully');
+      // تم إيقاف رسائل النجاح لتحسين تجربة المطور
+      // debugPrint('✅ [CONNECTIVITY_SERVICE] Connectivity service initialized successfully');
     } catch (e) {
-      debugPrint('❌ [CONNECTIVITY_SERVICE] Initialization error: $e');
+      // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+      // debugPrint('❌ [CONNECTIVITY_SERVICE] Initialization error: $e');
       if (!_initCompleter.isCompleted) {
         _initCompleter.completeError(e);
       }
@@ -91,18 +93,19 @@ class ConnectivityService {
     await _initCompleter.future;
   }
 
-  /// التحقق من حالة الاتصال
+  /// التحقق من حالة الاتصال (silent mode)
   Future<void> _checkConnectivity() async {
     try {
       final result = await _connectivity.checkConnectivity();
       await _updateConnectivityStatus(result);
     } catch (e) {
-      debugPrint('❌ [CONNECTIVITY_SERVICE] Error checking connectivity: $e');
+      // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+      // debugPrint('❌ [CONNECTIVITY_SERVICE] Error checking connectivity: $e');
       _updateStatus(ConnectivityStatus.unknown, false);
     }
   }
 
-  /// تحديث حالة الاتصال
+  /// تحديث حالة الاتصال (silent mode)
   Future<void> _updateConnectivityStatus(ConnectivityResult result) async {
     try {
       ConnectivityStatus newStatus;
@@ -141,13 +144,13 @@ class ConnectivityService {
 
       _updateStatus(newStatus, newIsConnected);
     } catch (e) {
-      debugPrint(
-          '❌ [CONNECTIVITY_SERVICE] Error updating connectivity status: $e');
+      // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+      // debugPrint('❌ [CONNECTIVITY_SERVICE] Error updating connectivity status: $e');
       _updateStatus(ConnectivityStatus.unknown, false);
     }
   }
 
-  /// اختبار الاتصال بالإنترنت
+  /// اختبار الاتصال بالإنترنت (silent mode)
   Future<bool> _testInternetConnection() async {
     try {
       // On web platform, use HTTP request instead of InternetAddress.lookup
@@ -158,7 +161,8 @@ class ConnectivityService {
           ).timeout(_connectionTimeout);
           return response.statusCode == 200;
         } catch (e) {
-          debugPrint('❌ [CONNECTIVITY_SERVICE] Web internet test failed: $e');
+          // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+          // debugPrint('❌ [CONNECTIVITY_SERVICE] Web internet test failed: $e');
           return false;
         }
       }
@@ -169,13 +173,13 @@ class ConnectivityService {
 
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
-      debugPrint(
-          '❌ [CONNECTIVITY_SERVICE] Internet connection test failed: $e');
+      // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+      // debugPrint('❌ [CONNECTIVITY_SERVICE] Internet connection test failed: $e');
       return false;
     }
   }
 
-  /// تحديث الحالة
+  /// تحديث الحالة (silent mode)
   void _updateStatus(ConnectivityStatus status, bool isConnected) {
     final statusChanged = _currentStatus != status;
     final connectionChanged = _isConnected != isConnected;
@@ -184,26 +188,26 @@ class ConnectivityService {
     _isConnected = isConnected;
 
     if (statusChanged) {
-      debugPrint(
-          '🌐 [CONNECTIVITY_SERVICE] Connectivity status changed: $status');
+      // تم إيقاف رسائل تغيير الحالة لتحسين تجربة المطور
+      // debugPrint('🌐 [CONNECTIVITY_SERVICE] Connectivity status changed: $status');
       _statusController.add(status);
     }
 
     if (connectionChanged) {
-      debugPrint(
-          '🌐 [CONNECTIVITY_SERVICE] Connection status changed: $isConnected');
+      // تم إيقاف رسائل تغيير الاتصال لتحسين تجربة المطور
+      // debugPrint('🌐 [CONNECTIVITY_SERVICE] Connection status changed: $isConnected');
       _isConnectedController.add(isConnected);
     }
   }
 
-  /// بدء المراقبة
+  /// بدء المراقبة (silent mode)
   void _startMonitoring() {
     // Listen to connectivity changes
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectivityStatus,
       onError: (error) {
-        debugPrint(
-            '❌ [CONNECTIVITY_SERVICE] Connectivity monitoring error: $error');
+        // تم إيقاف رسائل خطأ المراقبة لتحسين تجربة المطور
+        // debugPrint('❌ [CONNECTIVITY_SERVICE] Connectivity monitoring error: $error');
       },
     );
 
@@ -212,7 +216,8 @@ class ConnectivityService {
       try {
         await _checkConnectivity();
       } catch (e) {
-        debugPrint('❌ [CONNECTIVITY_SERVICE] Periodic check error: $e');
+        // تم إيقاف رسائل خطأ الفحص الدوري لتحسين تجربة المطور
+        // debugPrint('❌ [CONNECTIVITY_SERVICE] Periodic check error: $e');
       }
     });
   }
@@ -287,17 +292,19 @@ class ConnectivityService {
     };
   }
 
-  /// تنظيف الموارد
+  /// تنظيف الموارد (silent mode)
   Future<void> dispose() async {
     try {
-      debugPrint('🌐 [CONNECTIVITY_SERVICE] Disposing...');
+      // تم إيقاف رسائل التنظيف لتحسين تجربة المطور
+      // debugPrint('🌐 [CONNECTIVITY_SERVICE] Disposing...');
 
       _stopMonitoring();
 
       await _statusController.close();
       await _isConnectedController.close();
       } catch (e) {
-      debugPrint('❌ [CONNECTIVITY_SERVICE] Disposal error: $e');
+      // تم إيقاف رسائل خطأ التنظيف لتحسين تجربة المطور
+      // debugPrint('❌ [CONNECTIVITY_SERVICE] Disposal error: $e');
     }
   }
 }

@@ -20,9 +20,9 @@ class PlatformStorageService {
   /// Initialize the storage service
   Future<void> init() async {
     // No initialization needed for current implementation
+    // Only log initialization in debug mode
     if (kDebugMode) {
-      debugPrint(
-          '🔐 [PLATFORM_STORAGE] Storage service initialized with caching');
+      debugPrint('PlatformStorageService: Initialized with caching');
     }
   }
 
@@ -55,35 +55,21 @@ class PlatformStorageService {
 
       if (kIsWeb) {
         _webStorage[key] = value;
-        if (kDebugMode) {
-          debugPrint('🔐 [PLATFORM_STORAGE] Stored in web storage: $key');
-        }
         return;
       }
 
       // For mobile, use FlutterSecureStorage
       await _secureStorage.write(key: key, value: value);
-      if (kDebugMode) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Stored in secure storage: $key');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Error writing $key: $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to write secure storage key $key: $e');
       // Fallback to SharedPreferences on mobile if secure storage fails
       if (!kIsWeb) {
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(key, value);
-          if (kDebugMode) {
-            debugPrint(
-                '🔐 [PLATFORM_STORAGE] Fallback to SharedPreferences: $key');
-          }
         } catch (fallbackError) {
-          if (kDebugMode) {
-            debugPrint(
-                '🔐 [PLATFORM_STORAGE] Fallback also failed: $fallbackError');
-          }
+          debugPrint('ERROR: Secure storage fallback also failed: $fallbackError');
           rethrow;
         }
       } else {
@@ -97,9 +83,6 @@ class PlatformStorageService {
     try {
       // Check cache first
       if (_isCacheValid(key)) {
-        if (kDebugMode) {
-          debugPrint('🔐 [PLATFORM_STORAGE] Retrieved from cache: $key');
-        }
         return _cache[key];
       }
 
@@ -117,15 +100,10 @@ class PlatformStorageService {
         _cacheTimestamps[key] = DateTime.now();
       }
 
-      if (kDebugMode) {
-        debugPrint(
-            '🔐 [PLATFORM_STORAGE] Retrieved from storage: $key = ${value != null ? "found" : "null"}');
-      }
       return value;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Error reading $key: $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to read secure storage key $key: $e');
       // Fallback to SharedPreferences on mobile if secure storage fails
       if (!kIsWeb) {
         try {
@@ -135,16 +113,9 @@ class PlatformStorageService {
             _cache[key] = value;
             _cacheTimestamps[key] = DateTime.now();
           }
-          if (kDebugMode) {
-            debugPrint(
-                '🔐 [PLATFORM_STORAGE] Fallback read from SharedPreferences: $key');
-          }
           return value;
         } catch (fallbackError) {
-          if (kDebugMode) {
-            debugPrint(
-                '🔐 [PLATFORM_STORAGE] Fallback read also failed: $fallbackError');
-          }
+          debugPrint('ERROR: Secure storage fallback read failed: $fallbackError');
           return null;
         }
       }
@@ -161,32 +132,21 @@ class PlatformStorageService {
 
       if (kIsWeb) {
         _webStorage.remove(key);
-        if (kDebugMode) {
-          debugPrint('🔐 [PLATFORM_STORAGE] Deleted from web storage: $key');
-        }
         return;
       }
 
       // For mobile, use FlutterSecureStorage
       await _secureStorage.delete(key: key);
-      if (kDebugMode) {
-        debugPrint(
-            '🔐 [PLATFORM_STORAGE] Successfully deleted from secure storage: $key');
-      }
     } catch (e) {
-      debugPrint('🔐 [PLATFORM_STORAGE] Error deleting $key: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to delete secure storage key $key: $e');
       // Fallback to SharedPreferences on mobile if secure storage fails
       if (!kIsWeb) {
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove(key);
-          if (kDebugMode) {
-            debugPrint(
-                '🔐 [PLATFORM_STORAGE] Fallback delete from SharedPreferences: $key');
-          }
         } catch (fallbackError) {
-          debugPrint(
-              '🔐 [PLATFORM_STORAGE] Fallback delete also failed: $fallbackError');
+          debugPrint('ERROR: Secure storage fallback delete failed: $fallbackError');
         }
       }
     }
@@ -195,27 +155,27 @@ class PlatformStorageService {
   /// Clear all secure storage
   Future<void> clearSecure() async {
     try {
+      // Clear cache
+      _cache.clear();
+      _cacheTimestamps.clear();
+
       if (kIsWeb) {
-        debugPrint('🔐 [PLATFORM_STORAGE] Clearing web storage');
         _webStorage.clear();
-        debugPrint('🔐 [PLATFORM_STORAGE] Successfully cleared web storage');
         return;
       }
 
       // For mobile, use FlutterSecureStorage
       await _secureStorage.deleteAll();
-      debugPrint('🔐 [PLATFORM_STORAGE] Successfully cleared secure storage');
     } catch (e) {
-      debugPrint('🔐 [PLATFORM_STORAGE] Error clearing storage: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to clear secure storage: $e');
       // Fallback to SharedPreferences on mobile if secure storage fails
       if (!kIsWeb) {
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.clear();
-          debugPrint('🔐 [PLATFORM_STORAGE] Fallback clear SharedPreferences');
         } catch (fallbackError) {
-          debugPrint(
-              '🔐 [PLATFORM_STORAGE] Fallback clear also failed: $fallbackError');
+          debugPrint('ERROR: Secure storage fallback clear failed: $fallbackError');
         }
       }
     }
@@ -225,19 +185,16 @@ class PlatformStorageService {
   Future<void> write(String key, String value) async {
     try {
       if (kIsWeb) {
-        debugPrint('📝 [PLATFORM_STORAGE] Writing to web storage: $key');
         _webStorage[key] = value;
-        debugPrint('📝 [PLATFORM_STORAGE] Successfully stored: $key');
         return;
       }
 
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, value);
-      debugPrint(
-          '📝 [PLATFORM_STORAGE] Successfully stored in SharedPreferences: $key');
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error writing $key: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to write storage key $key: $e');
       rethrow;
     }
   }
@@ -246,21 +203,15 @@ class PlatformStorageService {
   Future<String?> read(String key) async {
     try {
       if (kIsWeb) {
-        debugPrint('📝 [PLATFORM_STORAGE] Reading from web storage: $key');
-        final value = _webStorage[key];
-        debugPrint(
-            '📝 [PLATFORM_STORAGE] Retrieved: $key = ${value != null ? "found" : "null"}');
-        return value;
+        return _webStorage[key];
       }
 
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final value = prefs.getString(key);
-      debugPrint(
-          '📝 [PLATFORM_STORAGE] Retrieved from SharedPreferences: $key = ${value != null ? "found" : "null"}');
-      return value;
+      return prefs.getString(key);
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error reading $key: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to read storage key $key: $e');
       return null;
     }
   }
@@ -269,19 +220,16 @@ class PlatformStorageService {
   Future<void> delete(String key) async {
     try {
       if (kIsWeb) {
-        debugPrint('📝 [PLATFORM_STORAGE] Deleting from web storage: $key');
         _webStorage.remove(key);
-        debugPrint('📝 [PLATFORM_STORAGE] Successfully deleted: $key');
         return;
       }
 
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(key);
-      debugPrint(
-          '📝 [PLATFORM_STORAGE] Successfully deleted from SharedPreferences: $key');
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error deleting $key: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to delete storage key $key: $e');
     }
   }
 
@@ -289,19 +237,16 @@ class PlatformStorageService {
   Future<void> clear() async {
     try {
       if (kIsWeb) {
-        debugPrint('📝 [PLATFORM_STORAGE] Clearing web storage');
         _webStorage.clear();
-        debugPrint('📝 [PLATFORM_STORAGE] Successfully cleared web storage');
         return;
       }
 
       // For mobile, use SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      debugPrint(
-          '📝 [PLATFORM_STORAGE] Successfully cleared SharedPreferences');
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error clearing storage: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to clear storage: $e');
     }
   }
 
@@ -323,7 +268,9 @@ class PlatformStorageService {
         return prefs.getKeys();
       }
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error getting all keys: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to get all keys: $e');
+      }
       return <String>{};
     }
   }
@@ -340,13 +287,17 @@ class PlatformStorageService {
         final secureValue = await _secureStorage.read(key: key);
         if (secureValue != null) return true;
       } catch (e) {
-        debugPrint('📝 [PLATFORM_STORAGE] Error checking secure storage: $e');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to check secure storage: $e');
+        }
       }
 
       final prefs = await SharedPreferences.getInstance();
       return prefs.containsKey(key);
     } catch (e) {
-      debugPrint('📝 [PLATFORM_STORAGE] Error checking key existence: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to check key existence: $e');
+      }
       return false;
     }
   }
@@ -435,7 +386,8 @@ class PlatformStorageService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ [PLATFORM_STORAGE] Error getting current locale: $e');
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to get current locale: $e');
       return null;
     }
   }

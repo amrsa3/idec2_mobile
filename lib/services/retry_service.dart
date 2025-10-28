@@ -38,6 +38,7 @@ class RetryService {
     double backoffMultiplier = 2.0,
     bool exponentialBackoff = true,
     bool Function(dynamic error)? shouldRetry,
+    bool isFileUpload = false,
   }) async {
     int attempt = 0;
     Duration delay = initialDelay;
@@ -58,12 +59,13 @@ class RetryService {
         }
 
         // Default retry logic for common errors
-        if (!_shouldRetryByDefault(error)) {
+        if (!_shouldRetryByDefault(error, isFileUpload: isFileUpload)) {
           rethrow;
         }
 
         if (kDebugMode) {
-          debugPrint('Retry attempt $attempt/$maxRetries after ${delay.inMilliseconds}ms');
+          debugPrint('🔄 [RETRY_SERVICE] ${isFileUpload ? "File upload" : "Operation"} retry attempt $attempt/$maxRetries after ${delay.inMilliseconds}ms');
+          debugPrint('🔄 [RETRY_SERVICE] Error: $error');
         }
 
         await Future.delayed(delay);
@@ -158,14 +160,16 @@ class RetryService {
   }
 
   /// Default retry logic for common errors
-  bool _shouldRetryByDefault(dynamic error) {
+  bool _shouldRetryByDefault(dynamic error, {bool isFileUpload = false}) {
     final errorString = error.toString().toLowerCase();
     
     // Network-related errors that should be retried
     if (errorString.contains('timeout') ||
         errorString.contains('connection') ||
         errorString.contains('network') ||
-        errorString.contains('socket')) {
+        errorString.contains('socket') ||
+        errorString.contains('handshake') ||
+        errorString.contains('reset')) {
       return true;
     }
 
@@ -173,8 +177,21 @@ class RetryService {
     if (errorString.contains('500') ||
         errorString.contains('502') ||
         errorString.contains('503') ||
-        errorString.contains('504')) {
+        errorString.contains('504') ||
+        errorString.contains('408') ||
+        errorString.contains('429')) {
       return true;
+    }
+
+    // File upload specific errors that should be retried
+    if (isFileUpload) {
+      if (errorString.contains('multipart') ||
+          errorString.contains('upload') ||
+          errorString.contains('file') ||
+          errorString.contains('413') || // Payload too large
+          errorString.contains('400')) { // Bad request (might be temporary)
+        return true;
+      }
     }
 
     return false;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../models/auth_models.dart';
 import '../../../../providers/enhanced_auth_provider.dart';
 import '../../../../services/navigation_service.dart';
 
@@ -59,12 +60,11 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final authState = ref.watch(enhancedAuthProvider);
     
-    // Don't show banner if user is verified, loading, or banner is dismissed
-    if (user == null || 
-        authState.isLoading ||
+    // Don't show banner if user is not authenticated, loading, or banner is dismissed
+    if (authState is! AuthenticatedState || 
+        authState is LoadingState ||
         _isDismissed) {
       return const SizedBox.shrink();
     }
@@ -80,7 +80,7 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
               color: AppColors.warning,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -99,7 +99,7 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
@@ -129,7 +129,7 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
                             Text(
                               l10n.tapToCompleteProfile,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 12,
                               ),
                             ),
@@ -146,7 +146,7 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: IconButton(
@@ -167,7 +167,7 @@ class _VerificationReminderBannerState extends ConsumerState<VerificationReminde
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: IconButton(
@@ -228,10 +228,9 @@ class _PersistentVerificationReminderState extends ConsumerState<PersistentVerif
     // Show reminder every 5 minutes for unverified users
     Future.delayed(const Duration(minutes: 5), () {
       if (mounted) {
-        final authState = ref.read(authProvider);
-        final user = authState.user;
+        final authState = ref.read(enhancedAuthProvider);
         
-        if (user != null) {
+        if (authState is AuthenticatedState) {
           setState(() {
             _isVisible = true;
           });

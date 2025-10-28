@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_model.dart';
 import '../services/enhanced_session_manager.dart';
-import 'enhanced_auth_provider.dart';
+import '../models/auth_models.dart';
+import 'enhanced_auth_provider_v2.dart';
 import 'web_auth_provider.dart';
 
 /// Universal AuthState that works across all platforms
@@ -35,7 +36,7 @@ class UniversalAuthState {
     this.sessionExpired = false,
     this.sessionExpiredReason,
     this.unverifiedPhoneNumber,
-    this.sessionState = SessionState.inactive,
+    this.sessionState = SessionState.none,
     this.isOnline = true,
     this.lastActivity,
     this.rememberMe = false,
@@ -120,9 +121,9 @@ class UniversalAuthState {
 /// Universal AuthNotifier that delegates to platform-specific implementations
 class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
   final Ref _ref;
-  StreamSubscription? _platformSubscription;
+  ProviderSubscription? _platformSubscription;
 
-  UniversalAuthNotifier(this._ref) : super(const UniversalAuthState()) {
+  UniversalAuthNotifier(this._ref) : super(const UniversalAuthState(sessionState: SessionState.none)) {
     _initialize();
   }
 
@@ -175,15 +176,15 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
   void _initializeEnhancedAuth() {
     debugPrint('📱 [UNIVERSAL_AUTH] Initializing Enhanced Auth');
     
-    _platformSubscription = _ref.listen<EnhancedAuthState>(
-      authProvider,
+    _platformSubscription = _ref.listen<AuthState>(
+      enhancedAuthProvider,
       (previous, next) {
         _syncEnhancedAuthState(next);
       },
     );
     
     // Get initial state
-    final enhancedState = _ref.read(authProvider);
+    final enhancedState = _ref.read(enhancedAuthProvider);
     _syncEnhancedAuthState(enhancedState);
   }
 
@@ -208,22 +209,83 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
   }
 
   /// Sync enhanced auth state to universal state
-  void _syncEnhancedAuthState(EnhancedAuthState enhancedState) {
-    state = UniversalAuthState(
-      user: enhancedState.user,
-      isAuthenticated: enhancedState.isAuthenticated,
-      isLoading: enhancedState.isLoading,
-      error: enhancedState.error,
-      phoneVerified: enhancedState.phoneVerified,
-      isRegistering: enhancedState.isRegistering,
-      sessionExpired: enhancedState.sessionExpired,
-      sessionExpiredReason: enhancedState.sessionExpiredReason,
-      unverifiedPhoneNumber: enhancedState.unverifiedPhoneNumber,
-      sessionState: enhancedState.sessionState,
-      isOnline: !enhancedState.isOffline,
-      lastActivity: enhancedState.lastActivity,
-      rememberMe: false, // Enhanced auth doesn't have remember me
-      platformInfo: state.platformInfo,
+  void _syncEnhancedAuthState(AuthState enhancedState) {
+    enhancedState.when(
+      initial: () {
+        state = UniversalAuthState(
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          phoneVerified: false,
+          isRegistering: false,
+          sessionExpired: false,
+          sessionExpiredReason: null,
+          unverifiedPhoneNumber: null,
+          sessionState: SessionState.none,
+          isOnline: true,
+          lastActivity: null,
+          rememberMe: false,
+          platformInfo: state.platformInfo,
+        );
+      },
+      loading: (message) {
+        state = state.copyWith(
+          isLoading: true,
+          error: null,
+        );
+      },
+      authenticated: (user) {
+        state = UniversalAuthState(
+          user: user,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          phoneVerified: true,
+          isRegistering: false,
+          sessionExpired: false,
+          sessionExpiredReason: null,
+          unverifiedPhoneNumber: null,
+          sessionState: SessionState.active,
+          isOnline: true,
+          lastActivity: DateTime.now(),
+          rememberMe: false,
+          platformInfo: state.platformInfo,
+        );
+      },
+      unauthenticated: () {
+        state = UniversalAuthState(
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          phoneVerified: false,
+          isRegistering: false,
+          sessionExpired: false,
+          sessionExpiredReason: null,
+          unverifiedPhoneNumber: null,
+          sessionState: SessionState.none,
+          isOnline: true,
+          lastActivity: null,
+          rememberMe: false,
+          platformInfo: state.platformInfo,
+        );
+      },
+      registered: () {
+        state = state.copyWith(
+          isRegistering: false,
+          isLoading: false,
+          error: null,
+        );
+      },
+      error: (message) {
+        state = state.copyWith(
+          isLoading: false,
+          error: message,
+          sessionExpired: message.contains('انتهت صلاحية الجلسة') || message.contains('session expired'),
+          sessionExpiredReason: message.contains('انتهت صلاحية الجلسة') || message.contains('session expired') ? message : null,
+        );
+      },
     );
   }
 
@@ -235,8 +297,13 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
       final webNotifier = _ref.read(webAuthProvider.notifier);
       return await webNotifier.loginWithPhone(phoneNumber, password, rememberMe: rememberMe);
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      return await enhancedNotifier.loginWithPhone(phoneNumber, password);
+      final enhancedNotifier = _ref.read(enhancedAuthProvider.notifier);
+      final result = await enhancedNotifier.login(phone: phoneNumber, password: password, rememberMe: rememberMe);
+      return result.when(
+        success: (user, message) => true,
+        error: (message) => false,
+        loading: (message) => false,
+      );
     }
   }
 
@@ -248,8 +315,22 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
       // Web registration would need to be implemented in WebAuthNotifier
       throw UnimplementedError('Web registration not implemented yet');
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      return await enhancedNotifier.registerWithPhone(phoneNumber, password, name);
+      final enhancedNotifier = _ref.read(enhancedAuthProvider.notifier);
+      final nameParts = name.split(' ');
+      final firstName = nameParts.isNotEmpty ? nameParts.first : name;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+      
+      final result = await enhancedNotifier.register(
+        phone: phoneNumber, 
+        password: password, 
+        firstName: firstName,
+        lastName: lastName,
+      );
+      return result.when(
+        success: (user, message) => true,
+        error: (message) => false,
+        loading: (message) => false,
+      );
     }
   }
 
@@ -261,8 +342,13 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
       // Web OTP verification would need to be implemented in WebAuthNotifier
       throw UnimplementedError('Web OTP verification not implemented yet');
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      return await enhancedNotifier.verifyOtp(phoneNumber, otp);
+      final enhancedNotifier = _ref.read(enhancedAuthProvider.notifier);
+      final result = await enhancedNotifier.verifyOtp(phone: phoneNumber, otp: otp);
+      return result.when(
+        success: (user, message) => true,
+        error: (message) => false,
+        loading: (message) => false,
+      );
     }
   }
 
@@ -274,7 +360,7 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
       final webNotifier = _ref.read(webAuthProvider.notifier);
       await webNotifier.logout(clearRememberMe: clearRememberMe);
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
+      final enhancedNotifier = _ref.read(enhancedAuthProvider.notifier);
       await enhancedNotifier.logout();
     }
   }
@@ -287,8 +373,8 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
       // Web token refresh would be handled by WebAuthNotifier
       return true; // Placeholder
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      return await enhancedNotifier.refreshTokens();
+      // Enhanced auth handles token refresh automatically
+      return true;
     }
   }
 
@@ -299,7 +385,7 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
     if (kIsWeb) {
       // Web session expiration clearing would be handled by WebAuthNotifier
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
+      final enhancedNotifier = _ref.read(enhancedAuthProvider.notifier);
       enhancedNotifier.clearSessionExpiration();
     }
   }
@@ -311,8 +397,8 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
     if (kIsWeb) {
       // Web error clearing would be handled by WebAuthNotifier
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      enhancedNotifier.clearError();
+      // Clear error by updating state
+      state = state.copyWith(error: null);
     }
   }
 
@@ -321,8 +407,8 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
     if (kIsWeb) {
       // Web activity update would be handled by WebAuthNotifier
     } else {
-      final enhancedNotifier = _ref.read(authProvider.notifier);
-      enhancedNotifier.updateActivity();
+      // Update activity by updating state
+      state = state.copyWith(lastActivity: DateTime.now());
     }
   }
 
@@ -344,7 +430,7 @@ class UniversalAuthNotifier extends StateNotifier<UniversalAuthState> {
 
   @override
   void dispose() {
-    _platformSubscription?.cancel();
+    _platformSubscription?.close();
     super.dispose();
   }
 }

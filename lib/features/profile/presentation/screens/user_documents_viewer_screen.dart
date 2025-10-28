@@ -1,14 +1,16 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:typed_data';
-import 'package:dio/dio.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
-import '../../providers/smart_file_provider.dart';
 import '../../../../services/dio_service.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../providers/smart_file_provider.dart';
 
 /// صفحة احترافية لعرض المستندات المرفوعة من المستخدم
 class UserDocumentsViewerScreen extends ConsumerStatefulWidget {
@@ -27,20 +29,8 @@ class _UserDocumentsViewerScreenState
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'مستنداتي',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: CustomAppBar(
+        title: 'مستنداتي',
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.primary),

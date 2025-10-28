@@ -74,8 +74,9 @@ class EnhancedSessionManager {
     // Listen to token manager events
     _tokenManager.sessionEvents.listen(_handleTokenManagerEvent);
     
+    // Only log initialization in debug mode
     if (kDebugMode) {
-      print('🔄 EnhancedSessionManager: Initialized successfully');
+      debugPrint('EnhancedSessionManager: Initialized');
     }
   }
 
@@ -133,13 +134,13 @@ class EnhancedSessionManager {
         ));
       }
 
+      // Only log session start in debug mode
       if (kDebugMode) {
-        print('✅ EnhancedSessionManager: Session started for user $userId');
+        debugPrint('Session started for user: $userId');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ EnhancedSessionManager: Failed to start session - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to start session - $e');
       rethrow;
     }
   }
@@ -178,9 +179,8 @@ class EnhancedSessionManager {
         ));
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ EnhancedSessionManager: Failed to update activity - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to update activity - $e');
     }
   }
 
@@ -216,29 +216,21 @@ class EnhancedSessionManager {
 
       await _clearSessionData();
 
+      // Only log session end in debug mode
       if (kDebugMode) {
-        print('🔚 EnhancedSessionManager: Session ended - ${reason ?? 'Unknown'}');
+        debugPrint('Session ended: ${reason ?? 'Unknown'}');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ EnhancedSessionManager: Failed to end session - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to end session - $e');
     }
   }
 
   /// Check if session is valid
   Future<bool> isSessionValid() async {
     try {
-      if (kDebugMode) {
-        print('🔍 [SESSION_DEBUG] Starting session validity check...');
-      }
-      
       final sessionData = await _getSessionData();
       if (sessionData == null) {
-        if (kDebugMode) {
-          print('🔍 [SESSION_DEBUG] ❌ Session invalid - No session data found');
-          print('🔍 [SESSION_DEBUG] Storage key checked: $_sessionDataKey');
-        }
         return false;
       }
 
@@ -246,24 +238,10 @@ class EnhancedSessionManager {
       final sessionDuration = now.difference(sessionData.startTime);
       final timeSinceActivity = now.difference(sessionData.lastActivity);
       
-      if (kDebugMode) {
-        print('🔍 [SESSION_DEBUG] ===== SESSION VALIDITY CHECK =====');
-        print('🔍 [SESSION_DEBUG] Current time: $now');
-        print('🔍 [SESSION_DEBUG] Session start time: ${sessionData.startTime}');
-        print('🔍 [SESSION_DEBUG] Last activity: ${sessionData.lastActivity}');
-        print('🔍 [SESSION_DEBUG] Session duration: ${sessionDuration.inDays} days, ${sessionDuration.inHours % 24} hours, ${sessionDuration.inMinutes % 60} minutes');
-        print('🔍 [SESSION_DEBUG] Time since last activity: ${timeSinceActivity.inDays} days, ${timeSinceActivity.inHours % 24} hours, ${timeSinceActivity.inMinutes % 60} minutes');
-        print('🔍 [SESSION_DEBUG] Max session duration: ${_maxSessionDuration.inDays} days');
-        print('🔍 [SESSION_DEBUG] Session timeout: ${_sessionTimeout.inDays} days');
-        print('🔍 [SESSION_DEBUG] Current session state: $_currentState');
-        print('🔍 [SESSION_DEBUG] Is online: $_isOnline');
-      }
-      
       // Check if session has exceeded maximum duration (30 days)
       if (sessionDuration > _maxSessionDuration) {
         if (kDebugMode) {
-          print('🔍 [SESSION_DEBUG] ❌ Session invalid - Maximum duration exceeded');
-          print('🔍 [SESSION_DEBUG] Session duration: ${sessionDuration.inDays} days > Max allowed: ${_maxSessionDuration.inDays} days');
+          debugPrint('Session expired: Maximum duration exceeded');
         }
         await _expireSession('Maximum session duration exceeded');
         return false;
@@ -272,36 +250,26 @@ class EnhancedSessionManager {
       // Check if session has timed out due to inactivity
       if (timeSinceActivity > _sessionTimeout) {
         if (kDebugMode) {
-          print('🔍 [SESSION_DEBUG] ❌ Session invalid - Timeout due to inactivity');
-          print('🔍 [SESSION_DEBUG] Time since activity: ${timeSinceActivity.inDays} days > Timeout: ${_sessionTimeout.inDays} days');
+          debugPrint('Session expired: Timeout due to inactivity');
         }
         await _expireSession('Session timeout due to inactivity');
         return false;
       }
 
       // Check token validity
-      if (kDebugMode) {
-        print('🔍 [SESSION_DEBUG] Checking token validity with TokenManager...');
-      }
       final hasValidToken = await _tokenManager.isAccessTokenValid();
       if (!hasValidToken) {
         if (kDebugMode) {
-          print('🔍 [SESSION_DEBUG] ❌ Session invalid - Token is invalid or expired');
-          print('🔍 [SESSION_DEBUG] TokenManager.isAccessTokenValid() returned: false');
+          debugPrint('Session expired: Invalid or expired token');
         }
         await _expireSession('Invalid or expired token');
         return false;
       }
 
-      if (kDebugMode) {
-        print('🔍 [SESSION_DEBUG] ✅ Session is valid - All checks passed');
-        print('🔍 [SESSION_DEBUG] ===== END SESSION VALIDITY CHECK =====');
-      }
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [SESSION_DEBUG] Error checking session validity - $e');
-        print('❌ [SESSION_DEBUG] Stack trace: ${StackTrace.current}');
+        debugPrint('ERROR: Failed to validate session - $e');
       }
       return false;
     }
@@ -375,13 +343,13 @@ class EnhancedSessionManager {
         activitiesCount: activities.length,
       ));
 
+      // Only log sync completion in debug mode
       if (kDebugMode) {
-        print('🔄 EnhancedSessionManager: Synced ${activities.length} offline activities');
+        debugPrint('Synced ${activities.length} offline activities');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ EnhancedSessionManager: Failed to sync offline activities - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to sync offline activities - $e');
     }
   }
 
@@ -401,38 +369,26 @@ class EnhancedSessionManager {
         }
       },
     );
-
-    // Check initial connectivity
-    _checkConnectivity();
   }
 
-  /// Check current connectivity
-  Future<void> _checkConnectivity() async {
-    try {
-      final result = await _connectivity.checkConnectivity();
-      _isOnline = result != ConnectivityResult.none;
-    } catch (e) {
-      _isOnline = false;
-    }
-  }
-
-  /// Handle device going back online
-  Future<void> _handleBackOnline() async {
+  /// Handle device coming back online
+  void _handleBackOnline() {
     _notifyOfflineSessionEvent(OfflineSessionEvent(
       type: OfflineSessionEventType.backOnline,
       timestamp: DateTime.now(),
     ));
 
-    // Sync offline activities
-    await syncOfflineActivities();
-
-    // Resume heartbeat if session is active
+    // Restart heartbeat if session is active
     if (_currentState == SessionState.active) {
       _startHeartbeat();
     }
 
+    // Sync offline activities
+    syncOfflineActivities();
+
+    // Only log connectivity changes in debug mode
     if (kDebugMode) {
-      print('🌐 EnhancedSessionManager: Device back online');
+      debugPrint('Device back online');
     }
   }
 
@@ -446,8 +402,9 @@ class EnhancedSessionManager {
     // Stop heartbeat
     _heartbeatTimer?.cancel();
 
+    // Only log connectivity changes in debug mode
     if (kDebugMode) {
-      print('📴 EnhancedSessionManager: Device went offline');
+      debugPrint('Device went offline');
     }
   }
 
@@ -469,8 +426,9 @@ class EnhancedSessionManager {
       if (await isSessionValid()) {
         _currentState = SessionState.active;
         _cachedSessionId = sessionData.deviceId; // Cache the session ID
+        // Only log session restoration in debug mode
         if (kDebugMode) {
-          print('🔄 EnhancedSessionManager: Session restored for user ${sessionData.userId}');
+          debugPrint('Session restored for user: ${sessionData.userId}');
         }
       } else {
         _currentState = SessionState.expired;
@@ -478,9 +436,8 @@ class EnhancedSessionManager {
       }
     } catch (e) {
       _currentState = SessionState.unknown;
-      if (kDebugMode) {
-        print('❌ EnhancedSessionManager: Failed to restore session state - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to restore session state - $e');
     }
   }
 
@@ -538,8 +495,9 @@ class EnhancedSessionManager {
         break;
       case SessionEventType.sessionWarning:
         // Session warning, could be handled differently
+        // Only log warnings in debug mode
         if (kDebugMode) {
-          print('⚠️ EnhancedSessionManager: Session warning received');
+          debugPrint('Session warning received');
         }
         break;
     }
@@ -548,15 +506,10 @@ class EnhancedSessionManager {
   /// Expire the current session
   Future<void> _expireSession(String reason) async {
     final timestamp = DateTime.now();
-    final previousState = _currentState;
     
+    // Only log session expiration in debug mode
     if (kDebugMode) {
-      print('⏰ [SESSION_EXPIRE] ===== SESSION EXPIRATION =====');
-      print('⏰ [SESSION_EXPIRE] Reason: $reason');
-      print('⏰ [SESSION_EXPIRE] Timestamp: $timestamp');
-      print('⏰ [SESSION_EXPIRE] Previous state: $previousState');
-      print('⏰ [SESSION_EXPIRE] New state: expired');
-      print('⏰ [SESSION_EXPIRE] Stack trace: ${StackTrace.current}');
+      debugPrint('Session expired: $reason');
     }
     
     _currentState = SessionState.expired;
@@ -568,11 +521,6 @@ class EnhancedSessionManager {
     ));
 
     await _clearSessionData();
-
-    if (kDebugMode) {
-      print('⏰ [SESSION_EXPIRE] Session data cleared');
-      print('⏰ [SESSION_EXPIRE] ===== END SESSION EXPIRATION =====');
-    }
   }
 
   /// Save session data to storage
@@ -619,9 +567,8 @@ class EnhancedSessionManager {
       activities.add(activity.toJson());
       await _storage.write(_offlineActivitiesKey, jsonEncode(activities));
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ EnhancedSessionManager: Failed to queue offline activity - $e');
-      }
+      // Only log errors - these are important
+      debugPrint('ERROR: Failed to queue offline activity - $e');
     }
   }
 
@@ -629,36 +576,28 @@ class EnhancedSessionManager {
   Future<void> _sendSessionStartToServer(SessionData sessionData) async {
     // Implementation would depend on your API
     // This is a placeholder for the actual API call
-    if (kDebugMode) {
-      print('📡 EnhancedSessionManager: Sending session start to server');
-    }
+    // Removed excessive logging
   }
 
   /// Send heartbeat to server
   Future<void> _sendHeartbeatToServer() async {
     // Implementation would depend on your API
     // This is a placeholder for the actual API call
-    if (kDebugMode) {
-      print('💓 EnhancedSessionManager: Sending heartbeat to server');
-    }
+    // Removed excessive logging
   }
 
   /// Send session end to server
   Future<void> _sendSessionEndToServer(SessionData sessionData, String? reason) async {
     // Implementation would depend on your API
     // This is a placeholder for the actual API call
-    if (kDebugMode) {
-      print('📡 EnhancedSessionManager: Sending session end to server');
-    }
+    // Removed excessive logging
   }
 
   /// Sync offline activity to server
   Future<void> _syncOfflineActivity(OfflineActivity activity) async {
     // Implementation would depend on your API and activity type
     // This is a placeholder for the actual API call
-    if (kDebugMode) {
-      print('🔄 EnhancedSessionManager: Syncing offline activity: ${activity.type}');
-    }
+    // Removed excessive logging
   }
 
   /// Notify session state change

@@ -8,8 +8,6 @@ import 'unified_token_manager.dart';
 import 'enhanced_session_manager.dart';
 import 'platform_storage_service.dart';
 import 'web_compatible_storage.dart';
-import 'token_manager.dart';
-import 'session_manager.dart';
 
 /// Migration service to handle transition from old token/session system to new enhanced system
 class MigrationService {
@@ -32,21 +30,29 @@ class MigrationService {
   /// Check if migration is needed and perform it
   Future<bool> performMigrationIfNeeded() async {
     try {
-      debugPrint('🔄 [MIGRATION] Checking if migration is needed...');
+      if (kDebugMode) {
+        debugPrint('Checking migration status...');
+      }
       
       // Check current migration version
       _migrationVersion = await _newStorage.read('migration_version');
       
       if (_migrationVersion == null || _migrationVersion != '2.4.0') {
-        debugPrint('🔄 [MIGRATION] Migration needed from version: ${_migrationVersion ?? "legacy"}');
+        if (kDebugMode) {
+          debugPrint('Migration needed from version: ${_migrationVersion ?? "legacy"}');
+        }
         return await _performMigration();
       } else {
-        debugPrint('✅ [MIGRATION] Already migrated to version: $_migrationVersion');
+        if (kDebugMode) {
+          debugPrint('Already migrated to version: $_migrationVersion');
+        }
         _migrationCompleted = true;
         return true;
       }
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Error checking migration status: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Migration status check failed: $e');
+      }
       return false;
     }
   }
@@ -54,37 +60,39 @@ class MigrationService {
   /// Perform the actual migration
   Future<bool> _performMigration() async {
     try {
-      debugPrint('🚀 [MIGRATION] Starting migration process...');
+      if (kDebugMode) {
+        debugPrint('Starting migration process...');
+      }
       
       // Step 1: Migrate tokens
       final tokensMigrated = await _migrateTokens();
-      debugPrint('📝 [MIGRATION] Tokens migration: ${tokensMigrated ? "✅ Success" : "❌ Failed"}');
       
       // Step 2: Migrate user data
       final userDataMigrated = await _migrateUserData();
-      debugPrint('📝 [MIGRATION] User data migration: ${userDataMigrated ? "✅ Success" : "❌ Failed"}');
       
       // Step 3: Migrate session data
       final sessionMigrated = await _migrateSessionData();
-      debugPrint('📝 [MIGRATION] Session migration: ${sessionMigrated ? "✅ Success" : "❌ Failed"}');
       
       // Step 4: Migrate app settings
       final settingsMigrated = await _migrateAppSettings();
-      debugPrint('📝 [MIGRATION] Settings migration: ${settingsMigrated ? "✅ Success" : "❌ Failed"}');
       
       // Step 5: Clean up old data
       await _cleanupOldData();
-      debugPrint('📝 [MIGRATION] Cleanup completed');
       
       // Step 6: Mark migration as completed
       await _markMigrationCompleted();
       
       _migrationCompleted = true;
-      debugPrint('✅ [MIGRATION] Migration completed successfully');
+      
+      if (kDebugMode) {
+        debugPrint('Migration completed successfully');
+      }
       
       return true;
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Migration failed: $e');
+      }
       return false;
     }
   }
@@ -110,13 +118,13 @@ class MigrationService {
           accessToken = accessToken ?? await UnifiedTokenManager.instance.getValidAccessToken();
           refreshToken = refreshToken ?? await UnifiedTokenManager.instance.getRefreshToken();
         } catch (e) {
-          debugPrint('⚠️ [MIGRATION] Could not get tokens from TokenManager: $e');
+          if (kDebugMode) {
+            debugPrint('Could not get tokens from TokenManager: $e');
+          }
         }
       }
       
       if (accessToken != null && refreshToken != null) {
-        debugPrint('🔑 [MIGRATION] Found existing tokens, migrating...');
-        
         // Set tokens in new system
         await _newTokenManager.saveTokens(
           accessToken: accessToken,
@@ -129,18 +137,20 @@ class MigrationService {
         final hasValidRefresh = await _newTokenManager.hasValidRefreshToken();
         
         if (migratedAccess == accessToken && hasValidRefresh) {
-          debugPrint('✅ [MIGRATION] Tokens migrated successfully');
           return true;
         } else {
-          debugPrint('❌ [MIGRATION] Token migration verification failed');
+          if (kDebugMode) {
+            debugPrint('ERROR: Token migration verification failed');
+          }
           return false;
         }
       } else {
-        debugPrint('ℹ️ [MIGRATION] No existing tokens found to migrate');
         return true; // Not an error if no tokens exist
       }
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Token migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Token migration failed: $e');
+      }
       return false;
     }
   }
@@ -158,8 +168,6 @@ class MigrationService {
       }
       
       if (userData != null && userData.isNotEmpty) {
-        debugPrint('👤 [MIGRATION] Found existing user data, migrating...');
-        
         // Parse and validate user data
         try {
           final userMap = jsonDecode(userData) as Map<String, dynamic>;
@@ -178,18 +186,20 @@ class MigrationService {
             await _newStorage.write('user_email', userMap['email'].toString());
           }
           
-          debugPrint('✅ [MIGRATION] User data migrated successfully');
           return true;
         } catch (e) {
-          debugPrint('❌ [MIGRATION] Invalid user data format: $e');
+          if (kDebugMode) {
+            debugPrint('ERROR: Invalid user data format: $e');
+          }
           return false;
         }
       } else {
-        debugPrint('ℹ️ [MIGRATION] No existing user data found to migrate');
         return true;
       }
     } catch (e) {
-      debugPrint('❌ [MIGRATION] User data migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: User data migration failed: $e');
+      }
       return false;
     }
   }
@@ -210,8 +220,6 @@ class MigrationService {
       }
       
       if (hadActiveSession) {
-        debugPrint('🔄 [MIGRATION] Found active session, creating new session...');
-        
         // Start a new session in the enhanced system
         await _newSessionManager.startSession(
           userId: 'migrated_user',
@@ -220,15 +228,13 @@ class MigrationService {
         
         // Set last activity to current time
         await _newSessionManager.updateActivity();
-        
-        debugPrint('✅ [MIGRATION] Session migrated successfully');
-      } else {
-        debugPrint('ℹ️ [MIGRATION] No active session found to migrate');
       }
       
       return true;
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Session migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Session migration failed: $e');
+      }
       return false;
     }
   }
@@ -262,17 +268,19 @@ class MigrationService {
           if (value != null) {
             await _newStorage.write(setting, value);
             migratedCount++;
-            debugPrint('📝 [MIGRATION] Migrated setting: $setting = $value');
           }
         } catch (e) {
-          debugPrint('⚠️ [MIGRATION] Failed to migrate setting $setting: $e');
+          if (kDebugMode) {
+            debugPrint('Failed to migrate setting $setting: $e');
+          }
         }
       }
       
-      debugPrint('✅ [MIGRATION] Migrated $migratedCount settings');
       return true;
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Settings migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Settings migration failed: $e');
+      }
       return false;
     }
   }
@@ -280,7 +288,9 @@ class MigrationService {
   /// Clean up old data after successful migration
   Future<void> _cleanupOldData() async {
     try {
-      debugPrint('🧹 [MIGRATION] Starting cleanup of old data...');
+      if (kDebugMode) {
+        debugPrint('Starting cleanup of old data...');
+      }
       
       final keysToCleanup = [
         'access_token',
@@ -307,13 +317,15 @@ class MigrationService {
           }
           cleanedCount++;
         } catch (e) {
-          debugPrint('⚠️ [MIGRATION] Failed to cleanup key $key: $e');
+          if (kDebugMode) {
+            debugPrint('Failed to cleanup key $key: $e');
+          }
         }
       }
-      
-      debugPrint('✅ [MIGRATION] Cleaned up $cleanedCount old data entries');
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Cleanup failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Cleanup failed: $e');
+      }
     }
   }
 
@@ -324,9 +336,10 @@ class MigrationService {
       await _newStorage.write('migration_date', DateTime.now().toIso8601String());
       await _newStorage.write('migration_completed', 'true');
       
-      debugPrint('✅ [MIGRATION] Migration marked as completed');
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Failed to mark migration as completed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to mark migration as completed: $e');
+      }
     }
   }
 
@@ -339,8 +352,6 @@ class MigrationService {
   /// Force re-migration (for testing or troubleshooting)
   Future<bool> forceMigration() async {
     try {
-      debugPrint('🔄 [MIGRATION] Forcing re-migration...');
-      
       // Clear migration markers
       await _newStorage.delete('migration_version');
       await _newStorage.delete('migration_date');
@@ -352,7 +363,9 @@ class MigrationService {
       // Perform migration
       return await performMigrationIfNeeded();
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Force migration failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Force migration failed: $e');
+      }
       return false;
     }
   }
@@ -369,8 +382,6 @@ class MigrationService {
   /// Validate migration integrity
   Future<bool> validateMigration() async {
     try {
-      debugPrint('🔍 [MIGRATION] Validating migration integrity...');
-      
       // Check if new system has required data
       final hasTokens = await _newTokenManager.hasValidRefreshToken();
       final hasUserData = await _newStorage.read('user_data') != null;
@@ -378,15 +389,19 @@ class MigrationService {
       
       final isValid = hasMigrationMarker; // At minimum, migration marker should exist
       
-      debugPrint('📊 [MIGRATION] Validation results:');
-      debugPrint('  - Has tokens: $hasTokens');
-      debugPrint('  - Has user data: $hasUserData');
-      debugPrint('  - Has migration marker: $hasMigrationMarker');
-      debugPrint('  - Overall valid: $isValid');
+      if (kDebugMode) {
+        debugPrint('Migration validation results:');
+        debugPrint('  - Has tokens: $hasTokens');
+        debugPrint('  - Has user data: $hasUserData');
+        debugPrint('  - Has migration marker: $hasMigrationMarker');
+        debugPrint('  - Overall valid: $isValid');
+      }
       
       return isValid;
     } catch (e) {
-      debugPrint('❌ [MIGRATION] Validation failed: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Migration validation failed: $e');
+      }
       return false;
     }
   }

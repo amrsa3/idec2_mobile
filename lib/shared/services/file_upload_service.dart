@@ -69,8 +69,6 @@ class FileUploadService {
     double? maxHeight,
   }) async {
     try {
-      debugPrint('📸 FileUploadService: Picking image from $source');
-      
       final XFile? image = await _imagePicker.pickImage(
         source: source,
         imageQuality: imageQuality,
@@ -78,16 +76,11 @@ class FileUploadService {
         maxHeight: maxHeight,
       );
 
-      if (image != null) {
-        debugPrint('📸 FileUploadService: Image picked successfully: ${image.name}');
-        debugPrint('📸 File size: ${await image.length()} bytes');
-      } else {
-        debugPrint('📸 FileUploadService: No image selected');
-      }
-
       return image;
     } catch (e) {
-      debugPrint('❌ FileUploadService: Error picking image: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to pick image: $e');
+      }
       return null;
     }
   }
@@ -98,8 +91,6 @@ class FileUploadService {
     int? fileSizeLimit, // in bytes
   }) async {
     try {
-      debugPrint('📄 FileUploadService: Picking document');
-      
       file_picker.FilePickerResult? result = await file_picker.FilePicker.platform.pickFiles(
         type: allowedExtensions != null ? file_picker.FileType.custom : file_picker.FileType.any,
         allowedExtensions: allowedExtensions,
@@ -108,23 +99,23 @@ class FileUploadService {
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
-        
-        debugPrint('📄 FileUploadService: Document picked successfully: ${file.name}');
-        debugPrint('📄 File size: ${file.size} bytes');
 
         // Check file size limit
         if (fileSizeLimit != null && file.size > fileSizeLimit) {
-          debugPrint('❌ FileUploadService: File size exceeds limit');
+          if (kDebugMode) {
+            debugPrint('ERROR: File size ${file.size} exceeds limit $fileSizeLimit');
+          }
           return null;
         }
 
         return file;
       } else {
-        debugPrint('📄 FileUploadService: No document selected');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ FileUploadService: Error picking document: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to pick document: $e');
+      }
       return null;
     }
   }
@@ -138,9 +129,6 @@ class FileUploadService {
     Function(int, int)? onProgress,
   }) async {
     try {
-      debugPrint('📤 FileUploadService: Starting file upload');
-      debugPrint('📤 File type: $fileType');
-
       // Get authentication token
       final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
@@ -190,10 +178,12 @@ class FileUploadService {
         return FileUploadResult.error('Unsupported file type');
       }
 
-      // Prepare form data
+      // Prepare form data with correct field names for backend
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'fileType': fileType.name,
+        'entityType': additionalData?['entityType'] ?? 'user', // Default to 'user'
+        'entityId': additionalData?['entityId'] ?? 'default', // Should be provided by caller
+        'fileCategory': additionalData?['fileCategory'] ?? fileType.name,
         if (customPath != null) 'path': customPath,
         if (additionalData != null) ...additionalData,
       });
@@ -206,18 +196,13 @@ class FileUploadService {
         },
       );
 
-      debugPrint('📤 FileUploadService: Uploading to ${ApiConstants.baseUrl}/upload');
-
       // Upload file
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/upload',
+        '${ApiConstants.baseUrl}/files/upload',
         data: formData,
         options: options,
         onSendProgress: onProgress,
       );
-
-      debugPrint('📤 FileUploadService: Upload response status: ${response.statusCode}');
-      debugPrint('📤 FileUploadService: Upload response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
@@ -239,7 +224,12 @@ class FileUploadService {
         );
       }
     } catch (e) {
-      debugPrint('❌ FileUploadService: Upload error: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: File upload failed: $e');
+        if (e is DioException && e.response != null) {
+          debugPrint('ERROR: HTTP ${e.response!.statusCode} - ${e.response!.data}');
+        }
+      }
       
       if (e is DioException) {
         if (e.response?.data != null) {
@@ -287,11 +277,11 @@ class FileUploadService {
   /// Delete file from server
   static Future<bool> deleteFile(String fileUrl) async {
     try {
-      debugPrint('🗑️ FileUploadService: Deleting file: $fileUrl');
-
       final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
-        debugPrint('❌ FileUploadService: Authentication token not found');
+        if (kDebugMode) {
+          debugPrint('ERROR: Authentication token not found for file deletion');
+        }
         return false;
       }
 
@@ -303,10 +293,11 @@ class FileUploadService {
         ),
       );
 
-      debugPrint('🗑️ FileUploadService: Delete response: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint('❌ FileUploadService: Delete error: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to delete file: $e');
+      }
       return false;
     }
   }
@@ -359,7 +350,9 @@ class FileUploadService {
       // For mobile, you can implement image compression here
       return imageBytes;
     } catch (e) {
-      debugPrint('❌ FileUploadService: Image compression error: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Image compression failed: $e');
+      }
       return null;
     }
   }

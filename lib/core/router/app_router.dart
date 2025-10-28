@@ -16,6 +16,7 @@ import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../features/profile/presentation/screens/user_documents_viewer_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../services/compatible_auth_service.dart';
@@ -33,6 +34,7 @@ class AppRoutes {
   static const String main = '/main';
   static const String profile = '/profile';
   static const String profileView = '/profile/view';
+  static const String userDocuments = '/profile/documents';
   static const String connectionStatus = '/connection-status';
   static const String serverConfig = '/server-config';
   static const String errorReporting = '/error-reporting';
@@ -193,6 +195,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ProfileMainScreen(),
       ),
 
+      // User Documents Route
+      GoRoute(
+        path: AppRoutes.userDocuments,
+        name: 'user-documents',
+        builder: (context, state) => const UserDocumentsViewerScreen(),
+      ),
+
       // Connection Status Route
       GoRoute(
         path: AppRoutes.connectionStatus,
@@ -281,6 +290,7 @@ extension AppRouterExtension on GoRouter {
       go('${AppRoutes.otpVerification}?phone=$phone');
   void goToMain() => go(AppRoutes.main);
   void goToProfile() => go(AppRoutes.profile);
+  void goToUserDocuments() => go(AppRoutes.userDocuments);
   void goToConnectionStatus() => go(AppRoutes.connectionStatus);
   void goToServerConfig() => go(AppRoutes.serverConfig);
   void goToErrorReporting({String? errorMessage, String? stackTrace}) {

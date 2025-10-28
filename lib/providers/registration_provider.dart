@@ -5,7 +5,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../core/errors/app_error.dart';
 import '../core/errors/error_handler.dart';
 import '../models/registration_settings_model.dart';
-import '../services/enhanced_auth_service.dart';
+import '../services/auth_service.dart';
+import '../services/registration_settings_service.dart';
 
 part 'registration_provider.freezed.dart';
 
@@ -64,10 +65,11 @@ class RegistrationState with _$RegistrationState {
 
 /// Registration state notifier
 class RegistrationNotifier extends StateNotifier<RegistrationState> {
-  RegistrationNotifier(this._registrationSettingsService)
+  RegistrationNotifier(this._registrationSettingsService, this._authService)
       : super(const RegistrationState());
 
   final RegistrationSettingsService _registrationSettingsService;
+  final AuthService _authService;
 
   /// Initialize registration state
   Future<void> initialize() async {
@@ -168,10 +170,15 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
           await _registrationSettingsService.getAvailableOtpChannels();
       // تحويل List<String> إلى List<OtpChannelModel>
       final channelModels = channels
-          .map((channel) => OtpChannelModel(
-                name: channel,
-                type: channel.toLowerCase(),
-                isEnabled: true,
+          .asMap()
+          .entries
+          .map((entry) => OtpChannelModel(
+                id: entry.value.toLowerCase(),
+                name: entry.value,
+                displayName: entry.value.toUpperCase(),
+                enabled: true,
+                isDefault: entry.key == 0, // First channel is default
+                priority: entry.key,
               ))
           .toList();
 
@@ -231,14 +238,18 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
       state = state.copyWithNew(clearError: true);
 
       // استخدام خدمة المصادقة المحسنة بدلاً من registration service
-      final authService = ref.read(enhancedAuthServiceProvider);
-      final result = await authService.requestOtp(phoneNumber);
+      final result = await _authService.requestOtp(phoneNumber);
 
-      return result.when(
-        success: (user, message) => true,
-        error: (message) => false,
-        loading: (message) => false,
-      );
+      if (result.success) {
+        return true;
+      } else {
+        final error = ErrorHandler.instance.handleError(
+          Exception(result.message), 
+          StackTrace.current
+        );
+        state = state.copyWithNew(error: error);
+        return false;
+      }
     } catch (e, stackTrace) {
       final error = ErrorHandler.instance.handleError(e, stackTrace);
       state = state.copyWithNew(error: error);
@@ -250,8 +261,9 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
 /// Registration provider
 final registrationProvider =
     StateNotifierProvider<RegistrationNotifier, RegistrationState>((ref) {
-  final service = ref.watch(registrationSettingsServiceProvider);
-  return RegistrationNotifier(service);
+  final registrationService = ref.watch(registrationSettingsServiceProvider);
+  final authService = ref.watch(authServiceProvider);
+  return RegistrationNotifier(registrationService, authService);
 });
 
 /// Provider for checking if registration is allowed

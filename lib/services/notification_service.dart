@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
@@ -48,12 +49,16 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    debugPrint('✅ [NOTIFICATION] تم تهيئة خدمة الإشعارات');
+    if (kDebugMode) {
+      debugPrint('NOTIFICATION: Service initialized');
+    }
   }
 
   /// معالج النقر على الإشعار
   static void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('🔔 [NOTIFICATION] تم النقر على الإشعار: ${response.payload}');
+    if (kDebugMode) {
+      debugPrint('NOTIFICATION: Tapped - ${response.payload}');
+    }
     // يمكن إضافة منطق التنقل هنا
   }
 
@@ -70,8 +75,6 @@ class NotificationService {
       icon: Icons.check_circle,
       duration: duration,
     );
-
-    debugPrint('✅ [NOTIFICATION] رسالة نجاح: $title - $message');
   }
 
   /// عرض رسالة خطأ
@@ -87,8 +90,6 @@ class NotificationService {
       icon: Icons.error,
       duration: duration,
     );
-
-    debugPrint('❌ [NOTIFICATION] رسالة خطأ: $title - $message');
   }
 
   /// عرض رسالة تحذير
@@ -104,8 +105,6 @@ class NotificationService {
       icon: Icons.warning,
       duration: duration,
     );
-
-    debugPrint('⚠️ [NOTIFICATION] رسالة تحذير: $title - $message');
   }
 
   /// عرض رسالة معلومات
@@ -121,8 +120,6 @@ class NotificationService {
       icon: Icons.info,
       duration: duration,
     );
-
-    debugPrint('ℹ️ [NOTIFICATION] رسالة معلومات: $title - $message');
   }
 
   /// عرض SnackBar مخصص
@@ -135,7 +132,9 @@ class NotificationService {
   }) {
     final scaffoldMessenger = _scaffoldMessengerKey.currentState;
     if (scaffoldMessenger == null) {
-      debugPrint('❌ [NOTIFICATION] ScaffoldMessenger غير متاح');
+      if (kDebugMode) {
+        debugPrint('ERROR: ScaffoldMessenger not available');
+      }
       return;
     }
 
@@ -198,7 +197,7 @@ class NotificationService {
     scaffoldMessenger.showSnackBar(snackBar);
   }
 
-  /// عرض إشعار محلي (Push Notification)
+  /// عرض إشعار محلي
   static Future<void> showLocalNotification({
     required String title,
     required String body,
@@ -231,8 +230,6 @@ class NotificationService {
       notificationDetails,
       payload: payload,
     );
-
-    debugPrint('🔔 [NOTIFICATION] إشعار محلي: $title - $body');
   }
 
   /// إرسال إشعار للخادم
@@ -263,15 +260,17 @@ class NotificationService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('✅ [NOTIFICATION] تم إرسال الإشعار بنجاح: $title');
         return true;
       } else {
-        debugPrint(
-            '❌ [NOTIFICATION] فشل إرسال الإشعار: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to send notification: ${response.statusCode}');
+        }
         return false;
       }
     } catch (e) {
-      debugPrint('❌ [NOTIFICATION] خطأ في إرسال الإشعار: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to send notification: $e');
+      }
       return false;
     }
   }
@@ -310,15 +309,17 @@ class NotificationService {
             .map((json) => NotificationModel.fromJson(json))
             .toList();
 
-        debugPrint('✅ [NOTIFICATION] تم جلب ${notifications.length} إشعار');
         return notifications;
       } else {
-        debugPrint(
-            '❌ [NOTIFICATION] فشل جلب الإشعارات: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to fetch notifications: ${response.statusCode}');
+        }
         return [];
       }
     } catch (e) {
-      debugPrint('❌ [NOTIFICATION] خطأ في جلب الإشعارات: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to fetch notifications: $e');
+      }
       return [];
     }
   }
@@ -337,15 +338,17 @@ class NotificationService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ [NOTIFICATION] تم تحديد الإشعار كمقروء: $notificationId');
         return true;
       } else {
-        debugPrint(
-            '❌ [NOTIFICATION] فشل تحديد الإشعار كمقروء: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to mark notification as read: ${response.statusCode}');
+        }
         return false;
       }
     } catch (e) {
-      debugPrint('❌ [NOTIFICATION] خطأ في تحديد الإشعار كمقروء: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to mark notification as read: $e');
+      }
       return false;
     }
   }
@@ -364,15 +367,17 @@ class NotificationService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ [NOTIFICATION] تم تحديد جميع الإشعارات كمقروءة');
         return true;
       } else {
-        debugPrint(
-            '❌ [NOTIFICATION] فشل تحديد جميع الإشعارات كمقروءة: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to mark all notifications as read: ${response.statusCode}');
+        }
         return false;
       }
     } catch (e) {
-      debugPrint('❌ [NOTIFICATION] خطأ في تحديد جميع الإشعارات كمقروءة: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to mark all notifications as read: $e');
+      }
       return false;
     }
   }
@@ -391,14 +396,17 @@ class NotificationService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('✅ [NOTIFICATION] تم حذف الإشعار: $notificationId');
         return true;
       } else {
-        debugPrint('❌ [NOTIFICATION] فشل حذف الإشعار: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to delete notification: ${response.statusCode}');
+        }
         return false;
       }
     } catch (e) {
-      debugPrint('❌ [NOTIFICATION] خطأ في حذف الإشعار: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to delete notification: $e');
+      }
       return false;
     }
   }
@@ -587,9 +595,12 @@ class NotificationService {
         return false;
       }
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to send test notification: $e');
+      }
       await showError(
         title: 'خطأ',
-        message: 'حدث خطأ أثناء إرسال الإشعار التجريبي: $e',
+        message: 'حدث خطأ أثناء إرسال الإشعار التجريبي',
       );
       return false;
     }

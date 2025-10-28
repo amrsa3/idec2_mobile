@@ -118,24 +118,6 @@ class ProfileAvatar extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
-    return Container(
-      width: size,
-      height: size,
-      color: AppColors.surface,
-      child: Center(
-        child: SizedBox(
-          width: size * 0.4,
-          height: size * 0.4,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInitials() {
     final initials = _getInitials();
     final fontSize = size * 0.4;
@@ -179,7 +161,7 @@ class ProfileAvatar extends StatelessWidget {
     final phone = user.phone;
     
     // Try Arabic name first
-    if (fullNameAr.isNotEmpty) {
+    if (fullNameAr != null && fullNameAr.isNotEmpty) {
       final parts = fullNameAr.trim().split(' ');
       if (parts.length >= 2) {
         return '${parts[0][0]}${parts[1][0]}';
@@ -199,9 +181,9 @@ class ProfileAvatar extends StatelessWidget {
     }
     
     // Try first and last name
-    if (firstName.isNotEmpty && lastName.isNotEmpty) {
+    if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
       return '${firstName[0]}${lastName[0]}';
-    } else if (firstName.isNotEmpty) {
+    } else if (firstName != null && firstName.isNotEmpty) {
       return firstName.substring(0, firstName.length >= 2 ? 2 : 1);
     }
     
@@ -215,10 +197,10 @@ class ProfileAvatar extends StatelessWidget {
 
   Color _getBackgroundColor() {
     // Generate a color based on user ID or phone number
-    final identifier = user.id ?? user.phone;
+    final identifier = user.id;
     final hash = identifier.hashCode;
     
-    final colors = [
+    const colors = [
       AppColors.primary,
       Colors.blue,
       Colors.green,

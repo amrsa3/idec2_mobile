@@ -468,15 +468,14 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         if (kIsWeb) {
           if (platformFile.bytes != null) {
             // في الويب، يمكن استخدام PlatformFile مباشرة
-            debugPrint(
-                '🌐 Web: Using PlatformFile with bytes for document upload');
-            // يمكن إضافة منطق رفع الملفات هنا في المستقبل
             final file = File('web_file_${platformFile.name}');
             if (_validateFile(file)) {
               widget.onFileSelected?.call(file);
             }
           } else {
-            debugPrint('❌ Web: No bytes available for document upload');
+            if (kDebugMode) {
+              debugPrint('ERROR: No bytes available for document upload');
+            }
             _showErrorSnackBar('لم يتم توفير بيانات الملف');
           }
         } else {

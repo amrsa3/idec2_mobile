@@ -108,7 +108,9 @@ class LocalProfileService {
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
-        debugPrint('❌ ProfileService: No authentication token found');
+        if (kDebugMode) {
+          debugPrint('ERROR: No authentication token found');
+        }
         return null;
       }
       debugPrint('🔑 ProfileService: Token found, length: ${token.length}');
@@ -412,10 +414,6 @@ class LocalProfileService {
     required String fileName,
   }) async {
     try {
-      debugPrint('📄 ProfileService: Uploading document');
-      debugPrint('📄 Document type: $documentType');
-      debugPrint('📄 File URL: $fileUrl');
-
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
@@ -438,12 +436,8 @@ class LocalProfileService {
         ),
       );
 
-      debugPrint(
-          '📄 ProfileService: Document upload response: ${response.statusCode}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('📄 ProfileService: Document uploaded successfully');
 
         // تحويل البيانات مع معالجة أفضل للأخطاء
         try {
@@ -493,7 +487,9 @@ class LocalProfileService {
         return null;
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading document: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Document upload failed: $e');
+      }
       return null;
     }
   }
@@ -774,15 +770,13 @@ class LocalProfileService {
   static Future<Map<String, dynamic>?> uploadProfilePicture(
       File imageFile) async {
     try {
-      debugPrint('📸 ProfileService: Uploading profile picture');
-
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
-      debugPrint(
-          '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
       if (token == null || token.isEmpty) {
-        debugPrint('❌ ProfileService: No authentication token found');
+        if (kDebugMode) {
+          debugPrint('ERROR: No authentication token found');
+        }
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
@@ -790,11 +784,12 @@ class LocalProfileService {
       final compatibleAuthService = CompatibleAuthService.instance;
       final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
+        if (kDebugMode) {
+          debugPrint('ERROR: No current user found');
+        }
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
       }
       final userId = currentUser.id;
-      debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
       String contentType = 'image/jpeg';
@@ -809,8 +804,6 @@ class LocalProfileService {
         contentType = 'image/webp';
       }
 
-      debugPrint('📸 ProfileService: Detected content type: $contentType');
-
       // User ID is already available from authService.getCurrentUser() above
 
       // Create form data with correct content type and user ID
@@ -818,8 +811,6 @@ class LocalProfileService {
       if (kIsWeb) {
         // في بيئة الويب، نحتاج لقراءة البيانات من XFile
         // هذا يتطلب تمرير XFile بدلاً من File
-        debugPrint(
-            '🌐 Web: Profile picture upload - need XFile for web platform');
         throw Exception('رفع صورة الملف الشخصي في الويب يتطلب استخدام XFile');
       } else {
         // في بيئة الموبايل، استخدم File
@@ -834,26 +825,11 @@ class LocalProfileService {
         'file': multipartFile,
         'entityType': 'profile',
         'entityId': userId,
-        'fileCategory': 'profile_picture',
+        'fileCategory': 'PROFILE_PHOTO',
         'description': 'صورة الملف الشخصي',
       });
 
       // Use the correct endpoint that matches the backend
-      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
-      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
-      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
-      debugPrint('📁 File info: ${imageFile.path}');
-      debugPrint('👤 User ID: $userId');
-      debugPrint('📦 Form data fields count: ${formData.fields.length}');
-      debugPrint('📦 Form data files count: ${formData.files.length}');
-      debugPrint(
-          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
-      debugPrint(
-          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
-      debugPrint(
-          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
-      debugPrint('🔑 Token length: ${token.length}');
-      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
 
       final response = await _dio.post(
         '/api/v1/files/upload',
@@ -863,20 +839,15 @@ class LocalProfileService {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
-          sendTimeout:
-              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
-          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
+          sendTimeout: const Duration(
+              seconds: 1800), // timeout للإرسال لملفات كبيرة (30 دقيقة)
+          receiveTimeout:
+              const Duration(seconds: 1800), // timeout للاستقبال (30 دقيقة)
         ),
       );
 
-      debugPrint(
-          '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
-      debugPrint('📸 ProfileService: Response data: ${response.data}');
-      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('📸 ProfileService: Profile picture uploaded successfully');
 
         // Extract file data from the response
         final fileData = data['file'];
@@ -887,9 +858,10 @@ class LocalProfileService {
           return data;
         }
       } else {
-        debugPrint(
-            '❌ ProfileService: Failed to upload profile picture: ${response.statusCode}');
-        debugPrint('❌ ProfileService: Error response: ${response.data}');
+        if (kDebugMode) {
+          debugPrint(
+              'ERROR: Profile picture upload failed - Status: ${response.statusCode}');
+        }
 
         // Extract error message from response if available
         String errorMessage = 'فشل في رفع الصورة';
@@ -901,7 +873,9 @@ class LocalProfileService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading profile picture: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Profile picture upload failed: $e');
+      }
 
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
@@ -967,15 +941,13 @@ class LocalProfileService {
   static Future<Map<String, dynamic>?> uploadProfilePictureWeb(
       XFile imageFile) async {
     try {
-      debugPrint('📸 ProfileService: Uploading profile picture (Web)');
-
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
-      debugPrint(
-          '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
       if (token == null || token.isEmpty) {
-        debugPrint('❌ ProfileService: No authentication token found');
+        if (kDebugMode) {
+          debugPrint('ERROR: No authentication token found');
+        }
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
@@ -983,11 +955,12 @@ class LocalProfileService {
       final compatibleAuthService = CompatibleAuthService.instance;
       final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
+        if (kDebugMode) {
+          debugPrint('ERROR: No current user found');
+        }
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
       }
       final userId = currentUser.id;
-      debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
       String contentType = 'image/jpeg';
@@ -1002,8 +975,6 @@ class LocalProfileService {
         contentType = 'image/webp';
       }
 
-      debugPrint('📸 ProfileService: Detected content type: $contentType');
-
       // Create form data for web platform
       final bytes = await imageFile.readAsBytes();
       final multipartFile = MultipartFile.fromBytes(
@@ -1012,33 +983,15 @@ class LocalProfileService {
         contentType: MediaType.parse(contentType),
       );
 
-      debugPrint('📸 ProfileService: File bytes length: ${bytes.length}');
-      debugPrint('📸 ProfileService: MultipartFile created successfully');
-
       final formData = FormData.fromMap({
         'file': multipartFile,
         'entityType': 'profile',
         'entityId': userId,
-        'fileCategory': 'profile_picture',
+        'fileCategory': 'PROFILE_PHOTO',
         'description': 'صورة الملف الشخصي',
       });
 
       // Use the correct endpoint that matches the backend
-      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
-      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
-      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
-      debugPrint('📁 File info: ${imageFile.path}');
-      debugPrint('👤 User ID: $userId');
-      debugPrint('📦 Form data fields count: ${formData.fields.length}');
-      debugPrint('📦 Form data files count: ${formData.files.length}');
-      debugPrint(
-          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
-      debugPrint(
-          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
-      debugPrint(
-          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
-      debugPrint('🔑 Token length: ${token.length}');
-      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
 
       final response = await _dio.post(
         '/api/v1/files/upload',
@@ -1048,20 +1001,15 @@ class LocalProfileService {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
-          sendTimeout:
-              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
-          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
+          sendTimeout: const Duration(
+              seconds: 1800), // timeout للإرسال لملفات كبيرة (30 دقيقة)
+          receiveTimeout:
+              const Duration(seconds: 1800), // timeout للاستقبال (30 دقيقة)
         ),
       );
 
-      debugPrint(
-          '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
-      debugPrint('📸 ProfileService: Response data: ${response.data}');
-      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('📸 ProfileService: Profile picture uploaded successfully');
 
         // Extract file data from the response
         final fileData = data['file'];
@@ -1072,9 +1020,10 @@ class LocalProfileService {
           return data;
         }
       } else {
-        debugPrint(
-            '❌ ProfileService: Failed to upload profile picture: ${response.statusCode}');
-        debugPrint('❌ ProfileService: Error response: ${response.data}');
+        if (kDebugMode) {
+          debugPrint(
+              'ERROR: Profile picture upload failed - Status: ${response.statusCode}');
+        }
 
         // Extract error message from response if available
         String errorMessage = 'فشل في رفع الصورة';
@@ -1088,7 +1037,9 @@ class LocalProfileService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading profile picture: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Profile picture upload failed: $e');
+      }
 
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
@@ -1529,7 +1480,8 @@ class LocalProfileService {
 
         final formData = FormData.fromMap({
           'file': multipartFile,
-          'entityType': 'profile', // نوع الكيان
+          'entityType':
+              'USER_DOCUMENT', // نوع الكيان - تصحيح من profile إلى USER_DOCUMENT
           'entityId': userId, // معرف المستخدم الحقيقي
           'fileCategory': fieldName, // فئة الملف
           'description':
@@ -1545,9 +1497,9 @@ class LocalProfileService {
               // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
             },
             sendTimeout:
-                const Duration(seconds: 300), // 5 دقائق للملفات الكبيرة
+                const Duration(seconds: 1800), // 30 دقيقة للملفات الكبيرة
             receiveTimeout: const Duration(
-                seconds: 300), // 5 دقائق لاستقبال الملفات الكبيرة
+                seconds: 1800), // 30 دقيقة لاستقبال الملفات الكبيرة
           ),
           onSendProgress: (sent, total) {
             // حساب نسبة التقدم
@@ -1599,20 +1551,24 @@ class LocalProfileService {
               };
 
               final document = DocumentUploadModel.fromJson(convertedData);
-              debugPrint(
-                  '✅ ProfileService: Document model created successfully');
               return document;
             } catch (e) {
-              debugPrint('❌ ProfileService: Error parsing document data: $e');
+              if (kDebugMode) {
+                debugPrint('ERROR: Document data parsing failed: $e');
+              }
               throw Exception('خطأ في معالجة بيانات الوثيقة: $e');
             }
           } else {
-            debugPrint('❌ ProfileService: Invalid response data format');
+            if (kDebugMode) {
+              debugPrint('ERROR: Invalid response data format');
+            }
             throw Exception('تنسيق بيانات الاستجابة غير صحيح');
           }
         } else {
-          debugPrint(
-              '❌ ProfileService: Upload failed with status: ${response.statusCode}');
+          if (kDebugMode) {
+            debugPrint(
+                'ERROR: Document upload failed - Status: ${response.statusCode}');
+          }
           throw Exception(
               'فشل في رفع الوثيقة. رمز الخطأ: ${response.statusCode}');
         }
@@ -1620,31 +1576,31 @@ class LocalProfileService {
         lastException = e is Exception ? e : Exception(e.toString());
         retryCount++;
 
-        debugPrint('❌ ProfileService: Upload attempt $retryCount failed: $e');
+        if (kDebugMode) {
+          debugPrint('ERROR: Document upload attempt $retryCount failed: $e');
+        }
 
         // إذا كان الخطأ متعلق بالمصادقة، لا نحاول مرة أخرى
         if (e.toString().contains('مصادقة') || e.toString().contains('token')) {
-          debugPrint('❌ ProfileService: Authentication error, not retrying');
           break;
         }
 
         // إذا كان الخطأ متعلق بالملف نفسه، لا نحاول مرة أخرى
         if (e.toString().contains('file') &&
             e.toString().contains('not found')) {
-          debugPrint('❌ ProfileService: File error, not retrying');
           break;
         }
 
         if (retryCount >= maxRetries) {
-          debugPrint('❌ ProfileService: All retry attempts failed');
           break;
         }
       }
     }
 
     // إذا وصلنا هنا، فشلت جميع المحاولات
-    debugPrint(
-        '❌ ProfileService: Document upload failed after $maxRetries attempts');
+    if (kDebugMode) {
+      debugPrint('ERROR: Document upload failed after $maxRetries attempts');
+    }
     throw lastException ??
         Exception('فشل في رفع الوثيقة بعد $maxRetries محاولات');
   }
@@ -1695,7 +1651,9 @@ class LocalProfileService {
           debugPrint(
               '✅ ProfileService: Web upload - preserving original file type: .$fileExtension');
         } else {
-          debugPrint('❌ ProfileService: No file bytes provided for web upload');
+          if (kDebugMode) {
+            debugPrint('ERROR: No file bytes provided for web upload');
+          }
           throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
         }
       } else {
@@ -1705,8 +1663,6 @@ class LocalProfileService {
           file.path,
           filename: fileName,
         );
-        debugPrint(
-            '✅ ProfileService: Mobile upload - preserving original file name: $fileName');
       }
 
       // الحصول على معرف المستخدم الحقيقي من التوكن
@@ -1725,8 +1681,6 @@ class LocalProfileService {
             userId = payloadMap['sub']?.toString() ??
                 payloadMap['id']?.toString() ??
                 'current_user';
-            debugPrint(
-                '🔐 ProfileService: Extracted user ID from token: $userId');
           }
         }
 
@@ -1738,10 +1692,10 @@ class LocalProfileService {
             try {
               final userData = jsonDecode(user) as Map<String, dynamic>;
               userId = userData['id']?.toString() ?? 'current_user';
-              debugPrint(
-                  '🔐 ProfileService: Got user ID from storage: $userId');
             } catch (e) {
-              debugPrint('❌ ProfileService: Error parsing user data: $e');
+              if (kDebugMode) {
+                debugPrint('ERROR: User data parsing failed: $e');
+              }
             }
           }
         }
@@ -1766,9 +1720,10 @@ class LocalProfileService {
             'Authorization': 'Bearer $token',
             // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
-          sendTimeout:
-              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
-          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
+          sendTimeout: const Duration(
+              seconds: 1800), // timeout للإرسال لملفات كبيرة (30 دقيقة)
+          receiveTimeout:
+              const Duration(seconds: 1800), // timeout للاستقبال (30 دقيقة)
         ),
       );
 
@@ -1814,14 +1769,10 @@ class LocalProfileService {
 
             return DocumentUploadModel.fromJson(convertedData);
           } catch (e) {
-            debugPrint(
-                '⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
-            debugPrint(
-                '⚠️ ProfileService: Response data structure: ${data.keys.toList()}');
-
-            // بما أن الرفع نجح، نرجع نموذج بسيط يشير للنجاح
-            debugPrint(
-                '✅ ProfileService: Upload succeeded but could not parse response, treating as success');
+            if (kDebugMode) {
+              debugPrint(
+                  'WARNING: Could not parse response as DocumentUploadModel: $e');
+            }
             // إنشاء نموذج بسيط للنجاح
             return DocumentUploadModel(
               id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -1834,18 +1785,65 @@ class LocalProfileService {
             );
           }
         } else {
-          debugPrint(
-              '⚠️ ProfileService: Response data is null or invalid format');
-          debugPrint('⚠️ ProfileService: Data type: ${data.runtimeType}');
+          if (kDebugMode) {
+            debugPrint('WARNING: Response data is null or invalid format');
+            debugPrint('Response status: ${response.statusCode}');
+            debugPrint('Response headers: ${response.headers}');
+          }
+
+          // إنشاء نموذج بسيط للنجاح حتى لو كانت البيانات فارغة
+          if (response.statusCode != null &&
+              response.statusCode! >= 200 &&
+              response.statusCode! < 300) {
+            return DocumentUploadModel(
+              id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+              userId: 'current_user',
+              fileName: file.path.split('/').last,
+              fileUrl: 'uploaded_successfully',
+              documentType: documentType,
+              uploadedAt: DateTime.now(),
+              status: 'uploaded',
+            );
+          }
           return null;
         }
       } else {
-        debugPrint(
-            '❌ ProfileService: Failed to upload document: ${response.statusCode}');
+        if (kDebugMode) {
+          debugPrint(
+              'ERROR: Failed to upload document - Status: ${response.statusCode}');
+          debugPrint('Response data: ${response.data}');
+          debugPrint('Response headers: ${response.headers}');
+        }
+
+        // معالجة أخطاء HTTP المحددة
+        if (response.statusCode == 413) {
+          throw Exception('حجم الملف كبير جداً - يرجى اختيار ملف أصغر');
+        } else if (response.statusCode == 401) {
+          throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول مرة أخرى');
+        } else if (response.statusCode == 500) {
+          throw Exception('خطأ في الخادم - يرجى المحاولة لاحقاً');
+        }
+
         return null;
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading document: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Document upload failed: $e');
+        debugPrint('Error type: ${e.runtimeType}');
+      }
+
+      // معالجة أخطاء الشبكة والاتصال
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          throw Exception(
+              'انتهت مهلة الاتصال - يرجى التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى');
+        } else if (e.type == DioExceptionType.connectionError) {
+          throw Exception('خطأ في الاتصال - يرجى التحقق من الاتصال بالإنترنت');
+        }
+      }
+
       return null;
     }
   }

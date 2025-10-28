@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../core/constants/api_constants.dart';
 import '../models/governorate_model.dart';
 import '../models/qualification_model.dart';
-import './services/platform_storage_service.dart';
+import 'platform_storage_service.dart';
 
 class ReferenceDataService {
   static final ReferenceDataService _instance =
@@ -13,7 +13,7 @@ class ReferenceDataService {
   factory ReferenceDataService() => _instance;
   ReferenceDataService._internal();
 
-  final StorageService _storageService = PlatformStorageService.instance;
+  final PlatformStorageService _storageService = PlatformStorageService.instance;
 
   // Cache for reference data
   List<GovernorateModel>? _governorates;

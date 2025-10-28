@@ -54,7 +54,9 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
     
     // إذا تغير URL، قم بتحديث المفتاح لإجبار إعادة التحميل
     if (oldWidget.imageUrl != widget.imageUrl) {
-      debugPrint('🔄 ProfileImageWidget: Image URL changed from ${oldWidget.imageUrl} to ${widget.imageUrl}');
+      if (kDebugMode) {
+        debugPrint('ProfileImageWidget: Image URL changed');
+      }
       setState(() {
         _currentImageUrl = widget.imageUrl;
         _imageReloadKey++;
@@ -337,9 +339,6 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
         _errorMessage = null;
       });
 
-      debugPrint(
-          '📸 Starting image picker for ${source == ImageSource.camera ? 'camera' : 'gallery'}');
-
       // طلب الأذونات (في الويب لا نحتاج أذونات)
       if (!await _requestPermission(source)) {
         setState(() {
@@ -360,20 +359,20 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
       );
 
       if (image != null) {
-        debugPrint('✅ Image selected successfully: ${image.name}');
         // رفع الصورة
         await _uploadImage(image);
       } else {
-        debugPrint('❌ No image selected');
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('❌ Error picking image: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to pick image: $e');
+      }
       setState(() {
         _isLoading = false;
-        _errorMessage = 'حدث خطأ أثناء اختيار الصورة: ${e.toString()}';
+        _errorMessage = 'حدث خطأ أثناء اختيار الصورة';
       });
       _showErrorSnackBar(_errorMessage!);
     }
@@ -384,37 +383,31 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
     try {
       // في الويب لا نحتاج أذونات
       if (kIsWeb) {
-        debugPrint('🌐 Web: No permissions needed');
         return true;
       }
 
       if (source == ImageSource.camera) {
-        debugPrint('📷 Requesting camera permission...');
         final status = await Permission.camera.request();
-        debugPrint('📷 Camera permission result: $status');
         return status.isGranted;
       } else {
-        debugPrint('🖼️ Requesting gallery permission...');
-
         if (Platform.isAndroid) {
           // للأندرويد - جرب photos أولاً
           final photosStatus = await Permission.photos.request();
-          debugPrint('📱 Photos permission result: $photosStatus');
           if (photosStatus.isGranted) return true;
 
           // إذا فشل، جرب storage
           final storageStatus = await Permission.storage.request();
-          debugPrint('📱 Storage permission result: $storageStatus');
           return storageStatus.isGranted;
         } else {
           // لـ iOS
           final status = await Permission.photos.request();
-          debugPrint('🍎 iOS photos permission result: $status');
           return status.isGranted;
         }
       }
     } catch (e) {
-      debugPrint('❌ Error requesting permission: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to request permission: $e');
+      }
       return false;
     }
   }
@@ -426,21 +419,15 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
     });
 
     try {
-      debugPrint('🔄 ProfileImageWidget: Starting image upload...');
-      
       // رفع الصورة
       final success = await ref.read(profileProvider.notifier).uploadProfilePicture(imageFile);
       
       if (success) {
-        debugPrint('✅ ProfileImageWidget: Image uploaded successfully');
-        
         // إجبار إعادة تحميل الصورة فوراً
         setState(() {
           _forceImageReload = true;
           _imageReloadKey++;
         });
-        
-        debugPrint('🔄 ProfileImageWidget: Force reload activated with key: $_imageReloadKey');
         
         // إعادة تعيين forceReload بعد فترة قصيرة
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -448,7 +435,6 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
             setState(() {
               _forceImageReload = false;
             });
-            debugPrint('🔄 ProfileImageWidget: Force reload deactivated');
           }
         });
 
@@ -462,7 +448,6 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
           );
         }
       } else {
-        debugPrint('❌ ProfileImageWidget: Image upload failed');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -473,11 +458,15 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
         }
       }
     } catch (e) {
-      debugPrint('❌ ProfileImageWidget: Error uploading image: $e');
+      if (kDebugMode) {
+        if (kDebugMode) {
+          debugPrint('ERROR: Failed to upload image: $e');
+        }
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في رفع الصورة: $e'),
+          const SnackBar(
+            content: Text('خطأ في رفع الصورة'),
             backgroundColor: Colors.red,
           ),
         );

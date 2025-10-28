@@ -54,25 +54,33 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
     
     // 1. تغيير URL
     if (oldWidget.imageUrl != widget.imageUrl) {
-      debugPrint('🔄 AuthenticatedImageWidget: URL changed from ${oldWidget.imageUrl} to ${widget.imageUrl}');
+      if (kDebugMode) {
+        debugPrint('AuthenticatedImageWidget: URL changed');
+      }
       shouldReload = true;
     }
     
     // 2. تغيير مفتاح إعادة التحميل
     if (oldWidget.reloadKey != widget.reloadKey) {
-      debugPrint('🔄 AuthenticatedImageWidget: Reload key changed from ${oldWidget.reloadKey} to ${widget.reloadKey}');
+      if (kDebugMode) {
+        debugPrint('AuthenticatedImageWidget: Reload key changed');
+      }
       shouldReload = true;
     }
     
     // 3. تفعيل forceReload
     if (widget.forceReload && !oldWidget.forceReload) {
-      debugPrint('🔄 AuthenticatedImageWidget: Force reload activated');
+      if (kDebugMode) {
+        debugPrint('AuthenticatedImageWidget: Force reload activated');
+      }
       shouldReload = true;
     }
     
     // 4. forceReload مفعل ونفس URL (لإجبار إعادة التحميل)
     if (widget.forceReload && widget.imageUrl == _lastLoadedUrl) {
-      debugPrint('🔄 AuthenticatedImageWidget: Force reload for same URL');
+      if (kDebugMode) {
+        debugPrint('AuthenticatedImageWidget: Force reload for same URL');
+      }
       shouldReload = true;
     }
     
@@ -104,11 +112,9 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
         if (widget.reloadKey != null) {
           urlWithTimestamp += '&key=${widget.reloadKey}';
         }
-        debugPrint('🔄 AuthenticatedImageWidget: Added timestamp to URL: $urlWithTimestamp');
       }
       
       final fullUrl = AuthenticatedImageService.getFullImageUrl(urlWithTimestamp);
-      debugPrint('🖼️ AuthenticatedImageWidget: Loading image: $fullUrl');
 
       final imageData = await AuthenticatedImageService.loadImageWithAuth(fullUrl);
       
@@ -120,15 +126,11 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
           _lastLoadedUrl = widget.imageUrl; // حفظ URL الأصلي (بدون timestamp)
           _lastReloadKey = widget.reloadKey; // حفظ مفتاح إعادة التحميل
         });
-        
-        if (imageData != null) {
-          debugPrint('✅ AuthenticatedImageWidget: Image loaded successfully for URL: ${widget.imageUrl}');
-        } else {
-          debugPrint('❌ AuthenticatedImageWidget: Image data is null for URL: ${widget.imageUrl}');
-        }
       }
     } catch (e) {
-      debugPrint('❌ AuthenticatedImageWidget: Error loading image: $e');
+      if (kDebugMode) {
+        debugPrint('ERROR: Failed to load image: $e');
+      }
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -142,7 +144,9 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
 
   /// إجبار إعادة تحميل الصورة
   void forceReload() {
-    debugPrint('🔄 AuthenticatedImageWidget: Manual force reload triggered');
+    if (kDebugMode) {
+      debugPrint('AuthenticatedImageWidget: Manual force reload triggered');
+    }
     _reloadCounter++;
     _loadImage();
   }

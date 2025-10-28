@@ -131,6 +131,104 @@
   <title>منصه معرض ومؤتمر IDEC لطب الاسنان 2026</title>
   <link rel="manifest" href="manifest.json">
   
+<script>
+    // ============================================================
+    // حل مشكلة الكاش - إجبار المتصفح على تحديث الملفات
+    // ============================================================
+
+    // متغير النسخة - قم بتغييره عند كل تحديث
+    const APP_VERSION = '2.0.1';
+    const BUILD_TIMESTAMP = Date.now(); // Unique timestamp for each build
+    const LAST_UPDATE = '2025-01-27';  // تاريخ التحديث (اختياري)
+
+    // حفظ النسخة في localStorage
+    localStorage.setItem('app_version', APP_VERSION);
+
+    // التحقق من وجود تحديث جديد
+    function checkForUpdates() {
+        const cachedVersion = localStorage.getItem('app_version');
+
+        if (cachedVersion && cachedVersion !== APP_VERSION) {
+            console.log('🔄 تم اكتشاف تحديث جديد!');
+            console.log('📦 الإصدار المحفوظ:', cachedVersion);
+            console.log('🆕 الإصدار الجديد:', APP_VERSION);
+
+            // مسح جميع الكاشات فوراً
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    console.log('🗑️ مسح الكاشات:', names);
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+
+            // مسح Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(registration => {
+                        console.log('🔄 إلغاء تسجيل Service Worker');
+                        registration.unregister();
+                    });
+                });
+            }
+
+            // مسح جميع البيانات المحلية
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // حفظ الإصدار الجديد
+            localStorage.setItem('app_version', APP_VERSION);
+
+            // إعادة التحميل القوية مع منع الكاش
+            console.log('🔄 إعادة تحميل التطبيق...');
+            window.location.href = window.location.href + '?v=' + APP_VERSION + '&build=' + BUILD_TIMESTAMP + '&t=' + Date.now();
+        }
+    }
+
+    // إضافة معاملات منع الكاش لجميع الطلبات
+    function addCacheBusting() {
+        const version = APP_VERSION;
+        const timestamp = Date.now();
+        
+        // إضافة معاملات منع الكاش للـ main.dart.js
+        const scripts = document.querySelectorAll('script[src*="main.dart.js"]');
+        scripts.forEach(script => {
+            if (!script.src.includes('?v=')) {
+                script.src += `?v=${version}&build=${BUILD_TIMESTAMP}&t=${timestamp}`;
+            }
+        });
+        
+        // إضافة معاملات منع الكاش للـ flutter.js
+        const flutterScripts = document.querySelectorAll('script[src*="flutter.js"]');
+        flutterScripts.forEach(script => {
+            if (!script.src.includes('?v=')) {
+                script.src += `?v=${version}&build=${BUILD_TIMESTAMP}&t=${timestamp}`;
+            }
+        });
+    }
+
+    // التحقق عند تحميل الصفحة
+    window.addEventListener('load', function() {
+        addCacheBusting();
+        checkForUpdates();
+
+        // إضافة meta tag لمنع الكاش (هذه الأسطر مكررة من إعدادات Nginx لكنها لا تضر كطبقة حماية إضافية)
+        const metaCache = document.createElement('meta');
+        metaCache.httpEquiv = 'Cache-Control';
+        metaCache.content = 'no-cache, no-store, must-revalidate';
+        document.head.appendChild(metaCache);
+
+        const metaPragma = document.createElement('meta');
+        metaPragma.httpEquiv = 'Pragma';
+        metaPragma.content = 'no-cache';
+        document.head.appendChild(metaPragma);
+
+        const metaExpires = document.createElement('meta');
+        metaExpires.httpEquiv = 'Expires';
+        metaExpires.content = '0';
+        document.head.appendChild(metaExpires);
+    });
+</script>
+
 </head>
 <body>
   <!-- Fast loading indicator -->
@@ -191,26 +289,37 @@
   
   <!-- This script initiates the Flutter app -->
   <script>
-    // Listen for Flutter to be ready
-    _flutter.loader.didCreateEngineInitializer.then(function(appRunner) {
-      console.log('✅ Flutter engine initialized');
-      // Complete progress
-      if (progressBar) {
-        progressBar.style.width = '100%';
+    // Wait for Flutter to be available
+    function initializeFlutter() {
+      if (typeof _flutter !== 'undefined' && _flutter.loader) {
+        // Listen for Flutter to be ready
+        _flutter.loader.didCreateEngineInitializer.then(function(appRunner) {
+          console.log('✅ Flutter engine initialized');
+          // Complete progress
+          if (progressBar) {
+            progressBar.style.width = '100%';
+          }
+          setTimeout(function() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+              loading.style.display = 'none';
+            }
+          }, 500);
+        }).catch(function(error) {
+          console.error('❌ Flutter initialization error:', error);
+          const loading = document.getElementById('loading');
+          if (loading) {
+            loading.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="font-size: 24px; margin-bottom: 20px;">❌</div><h2>خطأ في تحميل التطبيق</h2><p>Error loading application</p><button onclick="location.reload()">إعادة المحاولة / Retry</button></div>';
+          }
+        });
+      } else {
+        // Retry after a short delay
+        setTimeout(initializeFlutter, 100);
       }
-      setTimeout(function() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.display = 'none';
-        }
-      }, 500);
-    }).catch(function(error) {
-      console.error('❌ Flutter initialization error:', error);
-      const loading = document.getElementById('loading');
-      if (loading) {
-        loading.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="font-size: 24px; margin-bottom: 20px;">❌</div><h2>خطأ في تحميل التطبيق</h2><p>Error loading application</p><button onclick="location.reload()">إعادة المحاولة / Retry</button></div>';
-      }
-    });
+    }
+    
+    // Start initialization
+    initializeFlutter();
   </script>
 </body>
 </html>

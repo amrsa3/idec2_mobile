@@ -770,12 +770,17 @@ class CompatibleAuthService {
       _isLoading = true;
       _error = null;
 
+      debugPrint('🚪 [COMPATIBLE_AUTH] Starting logout process...');
+
       // إرسال طلب تسجيل الخروج للخادم
       try {
         await _dio.post('/auth/logout');
+        debugPrint('✅ [COMPATIBLE_AUTH] Server logout successful');
       } catch (e) {
         debugPrint('⚠️ Server logout failed, continuing with local logout: $e');
       }
+
+      debugPrint('🗑️ [COMPATIBLE_AUTH] Clearing local data...');
 
       // مسح البيانات المحلية - مسح جميع المفاتيح
       await _tokenManager.clearTokens();
@@ -786,8 +791,24 @@ class CompatibleAuthService {
       await _storage.deleteSecure('secure_refresh_token');
       await _storage.deleteSecure('current_user');
 
+      // مسح إضافي للمفاتيح المحتملة
+      await _storage.delete('token');
+      await _storage.delete('login_data');
+      await _storage.delete('auth_state');
+      await _storage.delete('cached_profile');
+      await _storage.delete('profile_cache');
+      await _storage.delete('profile_timestamp');
+
+      // مسح بيانات الصور المؤقتة
+      await _storage.delete('image_cache');
+      await _storage.delete('temp_images');
+
       _currentUser = null;
+      _lastResponse = null;
+      _unverifiedPhoneNumber = null;
+
       _isLoading = false;
+      debugPrint('✅ [COMPATIBLE_AUTH] Logout completed successfully');
       return true;
     } catch (e) {
       debugPrint('❌ Logout error: $e');

@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../core/constants/api_constants.dart';
 import '../models/connection_status.dart';
 
-/// خدمة اتصال محسنة خاصة بـ Flutter Web
+/// خدمة اتصال محسنة خاصة بـ Flutter Web - SILENT MODE
+/// تم إيقاف رسائل السجلات لتحسين تجربة المطور
 class WebConnectivityService {
   static final WebConnectivityService _instance = WebConnectivityService._internal();
   factory WebConnectivityService() => _instance;
@@ -17,52 +18,55 @@ class WebConnectivityService {
 
   final Dio _dio = Dio();
   
-  static const Duration _timeout = Duration(seconds: 15);
-  static const Duration _shortTimeout = Duration(seconds: 5);
-  
-  // Cache for connection status
+  // Cache settings
   ConnectionStatus? _cachedStatus;
   DateTime? _lastStatusUpdate;
-  static const Duration _cacheValidDuration = Duration(minutes: 1);
+  static const Duration _cacheValidDuration = Duration(minutes: 2);
+  
+  // Timeout settings
+  static const Duration _timeout = Duration(seconds: 30);
+  static const Duration _shortTimeout = Duration(seconds: 10);
 
-  /// فحص الاتصال المحسن للويب
+  /// فحص الاتصال المحسن للويب (silent mode)
   Future<bool> checkWebConnectivity() async {
     if (!kIsWeb) return true; // للمنصات الأخرى، استخدم الخدمة العادية
     
     // Check cache first
     if (_cachedStatus != null && 
-        _lastStatusUpdate != null && 
+        _lastStatusUpdate != null &&
         DateTime.now().difference(_lastStatusUpdate!) < _cacheValidDuration) {
       return _cachedStatus!.isConnected;
     }
 
     try {
-      // اختبار الاتصال بالخادم مباشرة
+      // اختبار الاتصال بالخادم أولاً (أسرع)
       final serverConnected = await _testServerConnection();
       if (serverConnected) {
         _updateCache(true);
         return true;
       }
 
-      // اختبار الاتصال بالإنترنت
+      // إذا فشل الخادم، اختبر الإنترنت
       final internetConnected = await _testInternetConnection();
       _updateCache(internetConnected);
       return internetConnected;
       
     } catch (e) {
-      debugPrint('🔴 Web connectivity check failed: $e');
+      // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+      // debugPrint('🔴 Web connectivity check failed: $e');
       _updateCache(false);
       return false;
     }
   }
 
-  /// اختبار الاتصال بالخادم مع retry logic
+  /// اختبار الاتصال بالخادم مع retry logic (silent mode)
   Future<bool> _testServerConnection() async {
     const maxRetries = 3;
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        debugPrint('🔄 Testing server connection (attempt $attempt/$maxRetries)');
+        // تم إيقاف رسائل التشخيص لتحسين تجربة المطور
+        // debugPrint('🔄 Testing server connection (attempt $attempt/$maxRetries)');
         
         final response = await _dio.get(
           '${ApiConstants.baseUrl}/api/v1/health',
@@ -80,14 +84,17 @@ class WebConnectivityService {
         );
         
         if (response.statusCode == 200) {
-          debugPrint('✅ Server connection successful');
+          // تم إيقاف رسائل النجاح لتحسين تجربة المطور
+          // debugPrint('✅ Server connection successful');
           return true;
         }
         
-        debugPrint('⚠️ Server returned status: ${response.statusCode}');
+        // تم إيقاف رسائل التحذير لتحسين تجربة المطور
+        // debugPrint('⚠️ Server returned status: ${response.statusCode}');
         
       } catch (e) {
-        debugPrint('🔴 Server connection attempt $attempt failed: $e');
+        // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+        // debugPrint('🔴 Server connection attempt $attempt failed: $e');
         
         if (attempt < maxRetries) {
           // انتظار قبل المحاولة التالية
@@ -99,7 +106,7 @@ class WebConnectivityService {
     return false;
   }
 
-  /// اختبار الاتصال بالإنترنت باستخدام خوادم موثوقة
+  /// اختبار الاتصال بالإنترنت باستخدام خوادم موثوقة (silent mode)
   Future<bool> _testInternetConnection() async {
     final testUrls = [
       'https://www.google.com/generate_204',
@@ -108,7 +115,8 @@ class WebConnectivityService {
       'https://api.github.com/zen', // إضافة خادم آخر
     ];
 
-    debugPrint('🔄 Testing internet connectivity...');
+    // تم إيقاف رسائل التشخيص لتحسين تجربة المطور
+    // debugPrint('🔄 Testing internet connectivity...');
 
     for (final url in testUrls) {
       try {
@@ -126,16 +134,19 @@ class WebConnectivityService {
         );
         
         if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 400) {
-          debugPrint('✅ Internet connection confirmed via $url');
+          // تم إيقاف رسائل النجاح لتحسين تجربة المطور
+          // debugPrint('✅ Internet connection confirmed via $url');
           return true;
         }
       } catch (e) {
-        debugPrint('🔴 Failed to connect to $url: $e');
+        // تم إيقاف رسائل الخطأ لتحسين تجربة المطور
+        // debugPrint('🔴 Failed to connect to $url: $e');
         continue; // جرب الخادم التالي
       }
     }
     
-    debugPrint('🔴 All internet connectivity tests failed');
+    // تم إيقاف رسائل الفشل لتحسين تجربة المطور
+    // debugPrint('🔴 All internet connectivity tests failed');
     return false;
   }
 
@@ -154,7 +165,7 @@ class WebConnectivityService {
     _lastStatusUpdate = null;
   }
 
-  /// إعداد Dio للويب
+  /// إعداد Dio للويب (silent mode)
   void configureDioForWeb() {
     if (!kIsWeb) return;
 
@@ -165,41 +176,44 @@ class WebConnectivityService {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'IDEC-Flutter-Web/1.0',
+        // إزالة User-Agent للويب لتجنب خطأ "Refused to set unsafe header"
+        // 'User-Agent': 'IDEC-Flutter-Web/1.0',
       },
       validateStatus: (status) => status != null && status < 500,
     );
 
-    // إضافة interceptor للتعامل مع أخطاء الويب
+    // إضافة interceptor للتعامل مع أخطاء الويب (silent mode)
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
-          debugPrint('🔴 Dio Web Error: ${error.message}');
-          debugPrint('🔴 Error Type: ${error.type}');
-          debugPrint('🔴 Response: ${error.response?.statusCode} - ${error.response?.data}');
+          // تم إيقاف جميع رسائل الخطأ لتحسين تجربة المطور
+          // debugPrint('🔴 Dio Web Error: ${error.message}');
+          // debugPrint('🔴 Error Type: ${error.type}');
+          // debugPrint('🔴 Response: ${error.response?.statusCode} - ${error.response?.data}');
           
-          // معالجة خاصة لأخطاء CORS
+          // معالجة خاصة لأخطاء CORS (silent)
           if (error.message?.contains('CORS') == true || 
               error.message?.contains('Cross-Origin') == true) {
-            debugPrint('🔴 CORS Error detected - server configuration issue');
+            // debugPrint('🔴 CORS Error detected - server configuration issue');
           }
           
-          // معالجة خاصة لأخطاء الشبكة
+          // معالجة خاصة لأخطاء الشبكة (silent)
           if (error.type == DioErrorType.connectionTimeout ||
               error.type == DioErrorType.receiveTimeout ||
               error.type == DioErrorType.sendTimeout) {
-            debugPrint('🔴 Network timeout error in web environment');
+            // debugPrint('🔴 Network timeout error in web environment');
           }
           
-          // معالجة خاصة لأخطاء الاتصال
+          // معالجة خاصة لأخطاء الاتصال (silent)
           if (error.type == DioErrorType.connectionError) {
-            debugPrint('🔴 Connection error - check network and server availability');
+            // debugPrint('🔴 Connection error - check network and server availability');
           }
           
           handler.next(error);
         },
         onRequest: (options, handler) {
-          debugPrint('🔄 Web Request: ${options.method} ${options.uri}');
+          // تم إيقاف رسائل الطلبات لتحسين تجربة المطور
+          // debugPrint('🔄 Web Request: ${options.method} ${options.uri}');
           
           // إضافة headers إضافية للويب
           options.headers['Cache-Control'] = 'no-cache';
@@ -209,14 +223,15 @@ class WebConnectivityService {
           handler.next(options);
         },
         onResponse: (response, handler) {
-          debugPrint('✅ Web Response: ${response.statusCode} ${response.requestOptions.uri}');
+          // تم إيقاف رسائل الاستجابة لتحسين تجربة المطور
+          // debugPrint('✅ Web Response: ${response.statusCode} ${response.requestOptions.uri}');
           handler.next(response);
         },
       ),
     );
   }
 
-  /// فحص حالة الخادم مع تفاصيل إضافية
+  /// فحص حالة الخادم مع تفاصيل إضافية (silent mode)
   Future<Map<String, dynamic>> getDetailedServerStatus() async {
     if (!kIsWeb) {
       return {'status': 'not_web', 'message': 'This method is for web platform only'};

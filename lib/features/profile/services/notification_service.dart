@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../models/profile_model.dart';
+import '../../../services/compatible_auth_service.dart';
 import '../../../services/notification_service.dart';
-import '../../../providers/enhanced_auth_provider.dart';
+import '../providers/profile_provider.dart';
 
 /// خدمة إشعارات التوثيق
 /// تدير إرسال الإشعارات المتعلقة بحالة توثيق الملف الشخصي
@@ -16,7 +18,9 @@ class ProfileNotificationService {
     if (_isServiceActive) return;
 
     _isServiceActive = true;
-    debugPrint('🔔 ProfileNotificationService: Service started');
+    if (kDebugMode) {
+      debugPrint('🔔 ProfileNotificationService: Service started');
+    }
 
     // فحص حالة التوثيق كل 30 ثانية
     _notificationTimer = Timer.periodic(
@@ -32,24 +36,34 @@ class ProfileNotificationService {
     _isServiceActive = false;
     _notificationTimer?.cancel();
     _notificationTimer = null;
-    debugPrint('🔔 ProfileNotificationService: Service stopped');
+    if (kDebugMode) {
+      debugPrint('🔔 ProfileNotificationService: Service stopped');
+    }
   }
 
   /// فحص حالة التوثيق
   static Future<void> _checkVerificationStatus(WidgetRef ref) async {
     try {
-      final authState = ref.read(authProvider);
+      final authState = ref.read(compatibleAuthProvider);
       final user = authState.user;
 
       if (user == null) return;
 
+      // الحصول على الملف الشخصي من profileProvider
+      final profileState = ref.read(profileProvider);
+      final profile = profileState.currentProfile;
+
+      if (profile == null) return;
+
       // فحص إذا كان المستخدم تم توثيقه حديثاً
-      if (user.isVerified) {
+      if (profile.isVerified) {
         await _sendVerificationSuccessNotification(user.id);
         // TODO: إضافة آلية لتجنب إرسال الإشعار مرة أخرى
       }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error checking verification status: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error checking verification status: $e');
+      }
     }
   }
 
@@ -75,9 +89,13 @@ class ProfileNotificationService {
         },
       );
 
-      debugPrint('✅ ProfileNotificationService: Verification success notification sent');
+      if (kDebugMode) {
+        debugPrint('✅ ProfileNotificationService: Verification success notification sent');
+      }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error sending verification notification: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error sending verification notification: $e');
+      }
     }
   }
 
@@ -107,9 +125,13 @@ class ProfileNotificationService {
         },
       );
 
-      debugPrint('✅ ProfileNotificationService: Verification rejection notification sent');
+      if (kDebugMode) {
+        debugPrint('✅ ProfileNotificationService: Verification rejection notification sent');
+      }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error sending rejection notification: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error sending rejection notification: $e');
+      }
     }
   }
 
@@ -141,9 +163,13 @@ class ProfileNotificationService {
         },
       );
 
-      debugPrint('✅ ProfileNotificationService: Profile completion reminder sent');
+      if (kDebugMode) {
+        debugPrint('✅ ProfileNotificationService: Profile completion reminder sent');
+      }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error sending completion reminder: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error sending completion reminder: $e');
+      }
     }
   }
 
@@ -187,9 +213,13 @@ class ProfileNotificationService {
         },
       );
 
-      debugPrint('✅ ProfileNotificationService: Profile update notification sent');
+      if (kDebugMode) {
+        debugPrint('✅ ProfileNotificationService: Profile update notification sent');
+      }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error sending update notification: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error sending update notification: $e');
+      }
     }
   }
 
@@ -221,9 +251,13 @@ class ProfileNotificationService {
         },
       );
 
-      debugPrint('✅ ProfileNotificationService: Document upload reminder sent');
+      if (kDebugMode) {
+        debugPrint('✅ ProfileNotificationService: Document upload reminder sent');
+      }
     } catch (e) {
-      debugPrint('❌ ProfileNotificationService: Error sending document reminder: $e');
+      if (kDebugMode) {
+        debugPrint('❌ ProfileNotificationService: Error sending document reminder: $e');
+      }
     }
   }
 }

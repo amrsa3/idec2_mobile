@@ -314,8 +314,8 @@ class UnifiedTokenManager {
         },
         options: Options(
           headers: {'Content-Type': 'application/json'},
-          sendTimeout: Duration(seconds: 10),
-          receiveTimeout: Duration(seconds: 10),
+          sendTimeout: Duration(minutes: 5), // زيادة timeout لتجديد التوكن
+          receiveTimeout: Duration(minutes: 5), // زيادة timeout لتجديد التوكن
         ),
       );
 
@@ -531,8 +531,8 @@ class UnifiedTokenManager {
             },
             options: Options(
               headers: {'Content-Type': 'application/json'},
-              sendTimeout: Duration(seconds: 5),
-              receiveTimeout: Duration(seconds: 5),
+              sendTimeout: Duration(minutes: 2), // زيادة timeout لتسجيل الخروج
+              receiveTimeout: Duration(minutes: 2), // زيادة timeout لتسجيل الخروج
             ),
           );
         } catch (e) {

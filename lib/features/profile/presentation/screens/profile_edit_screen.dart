@@ -308,33 +308,55 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   /// ضغط الصورة إذا كانت كبيرة (أكبر من 2 ميجا)
   Future<Uint8List?> _compressImageIfLarge(File file) async {
     try {
-      final fileSize = await file.length();
       final extension = file.path.toLowerCase().split('.').last;
 
       // إذا كان الملف صورة، اضغطها دائماً لتحسين الأداء
       if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
-        debugPrint(
-            '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
-
-        final compressedFile = await FlutterImageCompress.compressWithFile(
-          file.absolute.path,
-          minWidth: 1920,
-          minHeight: 1920,
-          quality: 85,
-          format: extension == 'png' ? CompressFormat.png : CompressFormat.jpeg,
-        );
-
-        if (compressedFile != null && compressedFile.length > 0) {
-          final compressedSize = compressedFile.length;
+        // للويب، نتجنب استخدام flutter_image_compress تماماً
+        if (kIsWeb) {
+          try {
+            // قراءة الملف كـ bytes مباشرة بدون ضغط لتجنب خطأ _Namespace
+            final bytes = await file.readAsBytes();
+            final fileSize = bytes.length;
+            
+            debugPrint(
+                '🌐 ProfileEditScreen: Web platform - skipping compression to avoid _Namespace error');
+            debugPrint(
+                '✅ ProfileEditScreen: Web file processed (${fileSize ~/ 1024}KB) - no compression applied');
+            
+            // في بيئة الويب، نرجع الملف كما هو بدون ضغط
+            // هذا يتجنب خطأ "Unsupported operation: _Namespace"
+            return bytes;
+          } catch (webError) {
+            debugPrint('❌ ProfileEditScreen: Web file processing error: $webError');
+            return null;
+          }
+        } else {
+          // للمنصات الأخرى (Android/iOS)، نستخدم flutter_image_compress
+          final fileSize = await file.length();
           debugPrint(
-              '✅ ProfileEditScreen: Image compressed to ${compressedSize ~/ 1024}KB (reduced by ${((fileSize - compressedSize) / fileSize * 100).toStringAsFixed(1)}%)');
-          return compressedFile;
+              '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
+              
+          final compressedFile = await FlutterImageCompress.compressWithFile(
+            file.absolute.path,
+            minWidth: 1920,
+            minHeight: 1920,
+            quality: 85,
+            format: extension == 'png' ? CompressFormat.png : CompressFormat.jpeg,
+          );
+
+          if (compressedFile != null && compressedFile.length > 0) {
+            final compressedSize = compressedFile.length;
+            debugPrint(
+                '✅ ProfileEditScreen: Image compressed to ${compressedSize ~/ 1024}KB (reduced by ${((fileSize - compressedSize) / fileSize * 100).toStringAsFixed(1)}%)');
+            return compressedFile;
+          }
         }
       }
       return null; // لا نحتاج ضغط
     } catch (e) {
-      debugPrint('❌ ProfileEditScreen: Error compressing image: $e');
-      return null; // في حالة الخطأ، نرجع الملف الأصلي
+      debugPrint('❌ ProfileEditScreen: Error processing image: $e');
+      return null; // في حالة الخطأ، نرجع null
     }
   }
 

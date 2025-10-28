@@ -1,13 +1,14 @@
-// Fast Google Fonts blocking for Flutter Web - PERFORMANCE MODE
+// Fast Google Fonts blocking for Flutter Web - SILENT MODE
+// تم إيقاف رسائل السجلات لتحسين تجربة المطور
 (function () {
   'use strict';
 
-  // Fast blocking - block Google services immediately
+  // Fast blocking - block Google services immediately (silent mode)
   let blockedCount = 0;
 
   // Override Flutter's font loading IMMEDIATELY
   if (typeof window !== 'undefined') {
-    // Block Google services - PERFORMANCE MODE
+    // Block Google services - PERFORMANCE MODE (silent)
     const blockGoogleServices = function (url) {
       return (
         url &&
@@ -20,7 +21,7 @@
       );
     };
 
-    // Override fetch IMMEDIATELY
+    // Override fetch IMMEDIATELY (silent mode)
     const originalFetch = window.fetch;
     window.fetch = function (input, init) {
       const url = typeof input === 'string' ? input : input && input.url;
@@ -32,7 +33,7 @@
       return originalFetch.apply(this, arguments);
     };
 
-    // Override XMLHttpRequest for older browsers - AGGRESSIVE MODE
+    // Override XMLHttpRequest for older browsers - AGGRESSIVE MODE (silent)
     const originalXHROpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url) {
       if (blockGoogleServices(url)) {
@@ -43,7 +44,7 @@
       return originalXHROpen.apply(this, arguments);
     };
 
-    // Block CSS imports for Google Fonts - AGGRESSIVE MODE
+    // Block CSS imports for Google Fonts - AGGRESSIVE MODE (silent)
     const originalCreateElement = document.createElement;
     document.createElement = function (tagName) {
       const element = originalCreateElement.call(this, tagName);
@@ -121,7 +122,7 @@
     `;
     document.head.appendChild(style);
 
-    // Additional aggressive blocking for Flutter Web
+    // Additional aggressive blocking for Flutter Web (silent mode)
     const blockAllGoogleRequests = function () {
       // Block any remaining Google requests
       const observer = new MutationObserver(function (mutations) {
@@ -159,16 +160,16 @@
       blockAllGoogleRequests();
     }
 
-    // Single success message only
-    console.log('✅ Google Fonts disabled for PERFORMANCE - using system fonts only');
+    // تم إيقاف جميع رسائل console.log لتحسين تجربة المطور
+    // console.log('✅ Google Fonts disabled for PERFORMANCE - using system fonts only');
 
-    // Report blocked count after 3 seconds (one time only)
-    setTimeout(() => {
-      if (blockedCount > 0) {
-        console.log(
-          `🚫 Blocked ${blockedCount} Google Fonts requests - using system fonts instead`,
-        );
-      }
-    }, 3000);
+    // تم إيقاف تقرير عدد الطلبات المحظورة لتقليل الإزعاج
+    // setTimeout(() => {
+    //   if (blockedCount > 0) {
+    //     console.log(
+    //       `🚫 Blocked ${blockedCount} Google Fonts requests - using system fonts instead`,
+    //     );
+    //   }
+    // }, 3000);
   }
 })();

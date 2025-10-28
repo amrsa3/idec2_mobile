@@ -14,6 +14,7 @@ import '../../../../models/profile_data_models.dart';
 import '../../../../models/profile_model.dart';
 import '../../../../models/profile_rule_model.dart';
 import '../../../../providers/profile_rules_provider.dart';
+import '../../../../services/app_version_service.dart';
 import '../../../../services/compatible_auth_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
@@ -21,7 +22,6 @@ import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../providers/profile_provider.dart';
 import '../widgets/verification_status_badge.dart';
 import 'profile_edit_screen.dart';
-import 'user_documents_viewer_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
@@ -35,6 +35,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   // متغير لتتبع حالة ظهور إشعار التوثيق
   bool _showVerificationNotification = true;
   Timer? _verificationNotificationTimer;
+  
+  // متغير لحفظ إصدار التطبيق
+  String _appVersion = '2.0.1+2'; // Default from pubspec.yaml
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     // تحميل بيانات الملف الشخصي وقواعد التعديل عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
+      _loadAppVersion();
     });
   }
 
@@ -71,10 +75,12 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         final profileState = ref.read(profileProvider);
         if (profileState.currentProfile == null) {
           debugPrint('ProfileMainScreen: No profile data, loading fresh data');
-          ref.read(profileProvider.notifier).loadProfile(forceRefresh: false);
+          ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
         } else {
           debugPrint(
-              'ProfileMainScreen: Profile data exists, skipping reload to preserve state');
+              'ProfileMainScreen: Profile data exists, refreshing to ensure latest verification status');
+          // إعادة تحميل للملف الشخصي لضمان ظهور أحدث حالة للتوثيق
+          ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
         }
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
@@ -133,6 +139,26 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             'ProfileMainScreen: Retrying due to error (attempt ${retryCount + 1})');
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
+      }
+    }
+  }
+
+  /// تحميل إصدار التطبيق
+  Future<void> _loadAppVersion() async {
+    try {
+      await AppVersionService.instance.initialize();
+      if (mounted) {
+        setState(() {
+          _appVersion = AppVersionService.instance.fullVersion; // استخدام الإصدار الكامل
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading app version: $e');
+      // استخدام الإصدار الافتراضي في حالة الخطأ
+      if (mounted) {
+        setState(() {
+          _appVersion = '2.0.1+2'; // Default from pubspec.yaml
+        });
       }
     }
   }
@@ -274,12 +300,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                   title: const Text('مستنداتي'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserDocumentsViewerScreen(),
-                      ),
-                    );
+                    context.go('/profile/documents');
                   },
                 ),
 
@@ -334,7 +355,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'تطبيق IDEC\nالإصدار 2.0.1',
+              'تطبيق IDEC\nالإصدار $_appVersion',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textSecondary,
@@ -390,8 +411,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         ),
       );
 
+      debugPrint('🚪 ProfileMainScreen: Starting logout process...');
+
       // تسجيل الخروج
       await ref.read(compatibleAuthProvider.notifier).logout();
+
+      debugPrint('🗑️ ProfileMainScreen: Clearing profile and other providers...');
+
+      // مسح جميع الـ providers المتعلقة بالملف الشخصي
+      ref.invalidate(profileProvider);
+      
+      // مسح providers الملفات
+      if (ref.exists(userDocumentsProvider)) {
+        ref.invalidate(userDocumentsProvider);
+      }
+
+      debugPrint('✅ ProfileMainScreen: All providers cleared');
 
       // إغلاق مؤشر التحميل
       if (mounted) {
@@ -401,6 +436,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         context.go(AppRoutes.login);
       }
     } catch (e) {
+      debugPrint('❌ ProfileMainScreen: Logout error: $e');
+
       // إغلاق مؤشر التحميل في حالة الخطأ
       if (mounted) {
         Navigator.of(context).pop();

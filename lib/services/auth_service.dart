@@ -33,35 +33,21 @@ class AuthService {
   void _printDetailedError(
       String context, dynamic error, StackTrace? stackTrace,
       {Map<String, dynamic>? additionalData}) {
-    debugPrint('🚨 [ERROR_DEBUG] ==========================================');
-    debugPrint('🚨 [ERROR_DEBUG] Context: $context');
-    debugPrint('🚨 [ERROR_DEBUG] Error Type: ${error.runtimeType}');
-    debugPrint('🚨 [ERROR_DEBUG] Error Message: $error');
-    if (additionalData != null) {
-      debugPrint('🚨 [ERROR_DEBUG] Additional Data: $additionalData');
+    if (kDebugMode) {
+      debugPrint('ERROR: $context - $error');
+      if (additionalData != null) {
+        debugPrint('Additional Data: $additionalData');
+      }
     }
-    if (stackTrace != null) {
-      debugPrint('🚨 [ERROR_DEBUG] Stack Trace:');
-      debugPrint('$stackTrace');
-    }
-    debugPrint('🚨 [ERROR_DEBUG] ==========================================');
   }
 
   // Safe user data storage with detailed error handling
   Future<bool> _safeStoreUserData(UserModel user) async {
     try {
-      debugPrint('🔍 [STORAGE_DEBUG] Starting safe user data storage...');
-      debugPrint('🔍 [STORAGE_DEBUG] User ID: ${user.id}');
-      debugPrint('🔍 [STORAGE_DEBUG] User Phone: ${user.phone}');
-      debugPrint(
-          '🔍 [STORAGE_DEBUG] User Profile: ${user.profile != null ? 'exists' : 'null'}');
-
       // First, try to convert user to JSON safely
       Map<String, dynamic> userJson;
       try {
         userJson = user.toJson();
-        debugPrint('🔍 [STORAGE_DEBUG] User.toJson() successful');
-        debugPrint('🔍 [STORAGE_DEBUG] JSON keys: ${userJson.keys.toList()}');
       } catch (toJsonError, stackTrace) {
         _printDetailedError('User.toJson() failed', toJsonError, stackTrace,
             additionalData: {
@@ -95,15 +81,12 @@ class AuthService {
           // Skip profile object if it's causing issues
           'profile': null,
         };
-        debugPrint('🔍 [STORAGE_DEBUG] Created safe JSON representation');
       }
 
       // Now try to encode to JSON string
       String jsonString;
       try {
         jsonString = jsonEncode(userJson);
-        debugPrint(
-            '🔍 [STORAGE_DEBUG] JSON encoding successful, length: ${jsonString.length}');
       } catch (encodeError, stackTrace) {
         _printDetailedError('JSON encoding failed', encodeError, stackTrace,
             additionalData: {
@@ -116,7 +99,6 @@ class AuthService {
       // Finally, try to store in storage
       try {
         await _storageService.write('user_data', jsonString);
-        debugPrint('🔍 [STORAGE_DEBUG] User data stored successfully');
         return true;
       } catch (storageError, stackTrace) {
         _printDetailedError(
@@ -149,40 +131,38 @@ class AuthService {
     );
   }
 
+  // Helper method to create password reset error response
+  PasswordResetResponse _createPasswordResetErrorResponse(String message) {
+    return PasswordResetResponse(
+      success: false,
+      message: message,
+      phoneNumber: null,
+    );
+  }
+
   // Simplified login method
   Future<AuthResponse> login(LoginRequest request) async {
     try {
-      debugPrint('🔍 [AUTH_DEBUG] Starting login for phone: ${request.phone}');
+      if (kDebugMode) {
+        debugPrint('Starting login for phone: ${request.phone}');
+      }
 
       // Production-specific debugging
       if (!kDebugMode) {
-        debugPrint('🏭 [AUTH_PRODUCTION] Production login attempt');
+        debugPrint('Production login attempt');
+        debugPrint('Current ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
         debugPrint(
-            '🏭 [AUTH_PRODUCTION] Current ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
+            'DioService baseUrl: ${EnhancedDioServiceV2.instance.dio.options.baseUrl}');
         debugPrint(
-            '🏭 [AUTH_PRODUCTION] DioService baseUrl: ${EnhancedDioServiceV2.instance.dio.options.baseUrl}');
-        debugPrint(
-            '🏭 [AUTH_PRODUCTION] HTTPS check: ${EnhancedDioServiceV2.instance.dio.options.baseUrl.startsWith("https://")}');
+            'HTTPS check: ${EnhancedDioServiceV2.instance.dio.options.baseUrl.startsWith("https://")}');
       }
 
       final dio = EnhancedDioServiceV2.instance.dio;
-
-      // Additional production logging before request
-      if (!kDebugMode) {
-        debugPrint(
-            '🏭 [AUTH_PRODUCTION] About to make request to: ${dio.options.baseUrl}/api/v1/auth/login');
-        debugPrint(
-            '🏭 [AUTH_PRODUCTION] Full URL will be: ${dio.options.baseUrl}/api/v1/auth/login');
-      }
 
       final response = await dio.post(
         '/api/v1/auth/login',
         data: request.toJson(),
       );
-
-      debugPrint('🔍 [AUTH_DEBUG] Login response received');
-      debugPrint('🔍 [AUTH_DEBUG] Status: ${response.statusCode}');
-      debugPrint('🔍 [AUTH_DEBUG] Data: ${response.data}');
 
       // Check for successful response
       if (response.statusCode == 200 && response.data != null) {
@@ -197,11 +177,10 @@ class AuthService {
           UserModel? user;
           try {
             user = UserModel.fromJsonSafe(userData);
-            debugPrint(
-                '🔍 [AUTH_DEBUG] User parsed successfully: ${user.phone ?? 'Unknown'}');
           } catch (userParseError) {
-            debugPrint(
-                '🔍 [AUTH_DEBUG] Error parsing user data: $userParseError');
+            if (kDebugMode) {
+              debugPrint('Error parsing user data: $userParseError');
+            }
             return _createErrorResponse(
                 'خطأ في تحليل بيانات المستخدم من الخادم');
           }
@@ -210,15 +189,11 @@ class AuthService {
           String accessToken = '';
           String refreshToken = '';
 
-          debugPrint('🔍 [AUTH_DEBUG] Extracting tokens...');
-
           // Get access token from either location
           if (responseData.containsKey('access_token')) {
             final accessTokenValue = responseData['access_token'];
             if (accessTokenValue != null) {
               accessToken = accessTokenValue.toString();
-              debugPrint(
-                  '🔍 [AUTH_DEBUG] Access token from access_token field: ${accessToken.isNotEmpty ? 'present' : 'empty'}');
             }
           }
 
@@ -230,28 +205,20 @@ class AuthService {
                 final tokenValue = tokensData['accessToken'];
                 if (tokenValue != null) {
                   accessToken = tokenValue.toString();
-                  debugPrint(
-                      '🔍 [AUTH_DEBUG] Access token from tokens.accessToken: ${accessToken.isNotEmpty ? 'present' : 'empty'}');
                 }
               }
               if (tokensData.containsKey('refreshToken')) {
                 final refreshTokenValue = tokensData['refreshToken'];
                 if (refreshTokenValue != null) {
                   refreshToken = refreshTokenValue.toString();
-                  debugPrint(
-                      '🔍 [AUTH_DEBUG] Refresh token: ${refreshToken.isNotEmpty ? 'present' : 'empty'}');
                 }
               }
             }
           }
 
-          debugPrint(
-              '🔍 [AUTH_DEBUG] Final validation - accessToken: ${accessToken.isNotEmpty ? 'present' : 'empty'}, user: ${'present'}');
-
           if (accessToken.isNotEmpty) {
             try {
               // Store tokens and user data
-              debugPrint('🔍 [AUTH_DEBUG] Storing tokens and user data...');
               await UnifiedTokenManager.instance.saveTokens(
                 accessToken: accessToken,
                 refreshToken: refreshToken,
@@ -262,12 +229,15 @@ class AuthService {
               // Use safe storage method
               final storageSuccess = await _safeStoreUserData(user);
               if (!storageSuccess) {
-                debugPrint('🔍 [AUTH_DEBUG] Failed to store user data safely');
+                if (kDebugMode) {
+                  debugPrint('Failed to store user data safely');
+                }
                 return _createErrorResponse('خطأ في حفظ بيانات المستخدم');
               }
 
-              debugPrint(
-                  '✅ [AUTH_DEBUG] Login successful for user: ${user.phone} (No name available)');
+              if (kDebugMode) {
+                debugPrint('Login successful for user: ${user.phone}');
+              }
 
               return AuthResponse(
                 accessToken: accessToken,
@@ -288,33 +258,31 @@ class AuthService {
               return _createErrorResponse('خطأ في حفظ بيانات المستخدم');
             }
           } else {
-            debugPrint(
-                '🔍 [AUTH_DEBUG] Login failed: Missing access token or user data');
-            debugPrint(
-                '🔍 [AUTH_DEBUG] - accessToken empty: ${accessToken.isEmpty}');
-            debugPrint('🔍 [AUTH_DEBUG] - user is null: ${user == null}');
+            if (kDebugMode) {
+              debugPrint('Login failed: Missing access token or user data');
+            }
             return _createErrorResponse(
                 'خطأ في استجابة الخادم - بيانات المستخدم غير مكتملة');
           }
         } else {
-          debugPrint(
-              '🔍 [AUTH_DEBUG] Invalid response structure - missing user or tokens');
-          debugPrint(
-              '🔍 [AUTH_DEBUG] Response keys: ${responseData.keys.toList()}');
+          if (kDebugMode) {
+            debugPrint('Invalid response structure - missing user or tokens');
+            debugPrint('Response keys: ${responseData.keys.toList()}');
+          }
           return _createErrorResponse(
               'استجابة غير صحيحة من الخادم - هيكل البيانات غير مكتمل');
         }
       } else {
-        debugPrint(
-            '🔍 [AUTH_DEBUG] Invalid response - status: ${response.statusCode}, data null: ${response.data == null}');
+        if (kDebugMode) {
+          debugPrint(
+              'Invalid response - status: ${response.statusCode}, data null: ${response.data == null}');
+        }
         return _createErrorResponse('استجابة غير صحيحة من الخادم');
       }
-
-      // If we reach here, something went wrong
-      return _createErrorResponse('استجابة غير صحيحة من الخادم');
     } on DioException catch (e) {
-      debugPrint(
-          '🔍 [AUTH_DEBUG] DioException: ${e.response?.statusCode} - ${e.message}');
+      if (kDebugMode) {
+        debugPrint('DioException: ${e.response?.statusCode} - ${e.message}');
+      }
 
       // Handle specific error status codes
       if (e.response?.statusCode == 401) {
@@ -331,7 +299,9 @@ class AuthService {
             'خطأ في الاتصال بالإنترنت - يرجى التحقق من الاتصال');
       }
     } catch (e) {
-      debugPrint('🔍 [AUTH_DEBUG] General error: $e');
+      if (kDebugMode) {
+        debugPrint('General error: $e');
+      }
 
       // Determine error type for better user feedback
       String errorMessage = 'خطأ في الاتصال بالإنترنت - يرجى التحقق من الاتصال';
@@ -412,24 +382,21 @@ class AuthService {
       debugPrint(
           'Registration DioException: ${e.response?.statusCode} - ${e.response?.data}');
 
-      if (e.response?.statusCode == 409) {
-        return _createErrorResponse('Phone number or email already exists');
-      } else if (e.response?.statusCode == 422) {
-        final errors = e.response?.data['errors'] as Map<String, dynamic>?;
-        final message = errors?.values.first?.first ?? 'Validation error';
-        return _createErrorResponse(message);
-      } else if (e.response?.statusCode == 400) {
-        final errorMessage = e.response?.data['message'] ?? 'Bad request';
-        return _createErrorResponse(errorMessage);
-      } else if (e.response?.statusCode == 503) {
-        // Handle registration closed/maintenance
-        return _createErrorResponse('Registration is temporarily unavailable');
+      String errorMessage = 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور';
+      
+      if (e.response?.data != null && e.response!.data is Map<String, dynamic>) {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        if (errorData.containsKey('message')) {
+          errorMessage = errorData['message'] ?? errorMessage;
+        }
       }
-
-      return _createErrorResponse('Registration failed: ${e.message}');
+      
+      throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('Registration error: $e');
-      return _createErrorResponse('Network error: $e');
+      if (kDebugMode) {
+        debugPrint('Password reset error: $e');
+      }
+      throw Exception('حدث خطأ غير متوقع أثناء طلب إعادة تعيين كلمة المرور: $e');
     }
   }
 
@@ -618,7 +585,7 @@ class AuthService {
         final errors = e.response?.data['errors'] as Map<String, dynamic>?;
         final message =
             errors?.values.first?.first ?? 'خطأ في التحقق من البيانات';
-        return _createErrorResponse('رمز التحقق غير صحيح');
+        return _createErrorResponse(message);
       } else if (e.response?.statusCode == 410) {
         return _createErrorResponse(
             'انتهت صلاحية رمز التحقق. يرجى طلب رمز جديد');
@@ -879,16 +846,22 @@ class AuthService {
   // Check user status
   Future<ApiResponse> checkUserStatus(String phoneNumber) async {
     try {
-      debugPrint('Checking user status for phone: $phoneNumber');
+      if (kDebugMode) {
+        debugPrint('Checking user status for phone: $phoneNumber');
+      }
 
       final response = await _apiService.checkUserStatus({
         'phone': phoneNumber,
       });
 
-      debugPrint('User status check result: ${response.message}');
+      if (kDebugMode) {
+        debugPrint('User status check result: ${response.message}');
+      }
       return response;
     } catch (e) {
-      debugPrint('Error checking user status: $e');
+      if (kDebugMode) {
+        debugPrint('Error checking user status: $e');
+      }
       return ApiResponse(
         success: false,
         message: 'Failed to check user status: $e',
@@ -901,7 +874,9 @@ class AuthService {
     try {
       return await _registrationSettingsService.validateRegistrationAllowed();
     } catch (e) {
-      debugPrint('Error checking registration status: $e');
+      if (kDebugMode) {
+        debugPrint('Error checking registration status: $e');
+      }
       return false;
     }
   }
@@ -911,7 +886,9 @@ class AuthService {
     try {
       return await _registrationSettingsService.checkRegistrationStatus();
     } catch (e) {
-      debugPrint('Error getting registration status: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting registration status: $e');
+      }
       return const RegistrationStatusResponse(
         canRegister: false,
         status: RegistrationStatus.maintenance,
@@ -925,7 +902,9 @@ class AuthService {
     try {
       return await _registrationSettingsService.getCurrentSettings();
     } catch (e) {
-      debugPrint('Error getting registration settings: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting registration settings: $e');
+      }
       rethrow;
     }
   }
@@ -941,7 +920,9 @@ class AuthService {
         availableChannels,
       );
     } catch (e) {
-      debugPrint('Error selecting OTP channel: $e');
+      if (kDebugMode) {
+        debugPrint('Error selecting OTP channel: $e');
+      }
       rethrow;
     }
   }
@@ -949,12 +930,18 @@ class AuthService {
   // Get user profile
   Future<UserModel> getUserProfile() async {
     try {
-      debugPrint('Getting user profile');
+      if (kDebugMode) {
+        debugPrint('Getting user profile');
+      }
       final result = await _apiService.getUserProfile();
-      debugPrint('Profile fetch successful');
+      if (kDebugMode) {
+        debugPrint('Profile fetch successful');
+      }
       return result;
     } catch (e) {
-      debugPrint('Error getting profile: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting profile: $e');
+      }
       rethrow;
     }
   }
@@ -962,12 +949,18 @@ class AuthService {
   // Update user profile
   Future<UserModel> updateUserProfile(UserProfileModel profile) async {
     try {
-      debugPrint('Updating user profile');
+      if (kDebugMode) {
+        debugPrint('Updating user profile');
+      }
       final result = await _apiService.updateUserProfile(profile);
-      debugPrint('Profile update successful');
+      if (kDebugMode) {
+        debugPrint('Profile update successful');
+      }
       return result;
     } catch (e) {
-      debugPrint('Error updating profile: $e');
+      if (kDebugMode) {
+        debugPrint('Error updating profile: $e');
+      }
       rethrow;
     }
   }
@@ -975,51 +968,26 @@ class AuthService {
   // Request password reset OTP - simplified version
   Future<PasswordResetResponse> requestPasswordReset(String phone) async {
     try {
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] ===== بدء طلب إعادة تعيين كلمة المرور =====');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Phone number received: "$phone"');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Phone number length: ${phone.length}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Phone number starts with +: ${phone.startsWith('+')}');
+      if (kDebugMode) {
+        debugPrint('Requesting password reset for phone: $phone');
+      }
 
       // Clean and validate phone number
       String cleanPhone = phone.trim();
       if (!cleanPhone.startsWith('+')) {
-        debugPrint(
-            '🔍 [PASSWORD_RESET_DEBUG] Phone number does not start with +, adding +967');
         cleanPhone = '+967$cleanPhone';
       }
-
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Cleaned phone number: "$cleanPhone"');
 
       final requestData = {
         'phone': cleanPhone,
       };
 
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request data: $requestData');
-
       // Make direct Dio call to handle response manually
       final dio = EnhancedDioServiceV2.instance.dio;
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Making POST request to: /api/v1/auth/request-password-reset');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Request headers: ${dio.options.headers}');
-
       final response = await dio.post(
         '/api/v1/auth/request-password-reset',
         data: requestData,
       );
-
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] ===== استجابة ناجحة =====');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response status: ${response.statusCode}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response headers: ${response.headers}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response data type: ${response.data.runtimeType}');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Response data is null');
@@ -1034,78 +1002,33 @@ class AuthService {
       final passwordResetResponse =
           PasswordResetResponse.fromJson(responseData);
 
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Password reset request successful');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] ===== انتهاء طلب إعادة تعيين كلمة المرور بنجاح =====');
+      if (kDebugMode) {
+        debugPrint('Password reset request successful');
+      }
       return passwordResetResponse;
     } on DioException catch (e) {
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] ===== خطأ DioException =====');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Error type: ${e.type}');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Error message: ${e.message}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response status code: ${e.response?.statusCode}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response status message: ${e.response?.statusMessage}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response headers: ${e.response?.headers}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response data type: ${e.response?.data.runtimeType}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Response data: ${e.response?.data}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Request path: ${e.requestOptions.path}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Request method: ${e.requestOptions.method}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Request data: ${e.requestOptions.data}');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Request headers: ${e.requestOptions.headers}');
-
-      String errorMessage = 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور';
-
-      if (e.response?.data != null) {
-        try {
-          if (e.response!.data is Map<String, dynamic>) {
-            final errorData = e.response!.data as Map<String, dynamic>;
-            debugPrint(
-                '🔍 [PASSWORD_RESET_DEBUG] Error data keys: ${errorData.keys.toList()}');
-
-            if (errorData.containsKey('message')) {
-              errorMessage = errorData['message'] ?? errorMessage;
-              debugPrint(
-                  '🔍 [PASSWORD_RESET_DEBUG] Server error message: $errorMessage');
-            }
-
-            if (errorData.containsKey('errors')) {
-              debugPrint(
-                  '🔍 [PASSWORD_RESET_DEBUG] Validation errors: ${errorData['errors']}');
-            }
-
-            if (errorData.containsKey('statusCode')) {
-              debugPrint(
-                  '🔍 [PASSWORD_RESET_DEBUG] Server status code: ${errorData['statusCode']}');
-            }
-          } else if (e.response!.data is String) {
-            debugPrint(
-                '🔍 [PASSWORD_RESET_DEBUG] Error response is string: ${e.response!.data}');
-            errorMessage = e.response!.data;
-          }
-        } catch (parseError) {
-          debugPrint(
-              '🔍 [PASSWORD_RESET_DEBUG] Error parsing response data: $parseError');
-        }
+      if (kDebugMode) {
+        debugPrint('Password reset DioException: ${e.response?.statusCode} - ${e.response?.data}');
       }
 
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Final error message: $errorMessage');
-      throw Exception(errorMessage);
+      if (e.response?.statusCode == 409) {
+        return _createPasswordResetErrorResponse('Phone number or email already exists');
+      } else if (e.response?.statusCode == 422) {
+        final errors = e.response?.data['errors'] as Map<String, dynamic>?;
+        final message = errors?.values.first?.first ?? 'Validation error';
+        return _createPasswordResetErrorResponse(message);
+      } else if (e.response?.statusCode == 400) {
+        final errorMessage = e.response?.data['message'] ?? 'Bad request';
+        return _createPasswordResetErrorResponse(errorMessage);
+      } else if (e.response?.statusCode == 503) {
+        // Handle registration closed/maintenance
+        return _createPasswordResetErrorResponse('Registration is temporarily unavailable');
+      }
+
+      return _createPasswordResetErrorResponse('Registration failed: ${e.message}');
     } catch (e) {
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] ===== خطأ عام =====');
-      debugPrint(
-          '🔍 [PASSWORD_RESET_DEBUG] Unexpected error type: ${e.runtimeType}');
-      debugPrint('🔍 [PASSWORD_RESET_DEBUG] Unexpected error: $e');
-      throw Exception(
-          'حدث خطأ غير متوقع أثناء طلب إعادة تعيين كلمة المرور: $e');
+      debugPrint('Registration error: $e');
+      return _createPasswordResetErrorResponse('Network error: $e');
     }
   }
 
@@ -1113,8 +1036,9 @@ class AuthService {
   Future<PasswordResetResponse> resetPassword(
       String phone, String otp, String newPassword) async {
     try {
-      debugPrint(
-          '🔍 [RESET_PASSWORD_DEBUG] Resetting password for phone: $phone');
+      if (kDebugMode) {
+        debugPrint('Resetting password for phone: $phone');
+      }
 
       final request = ResetPasswordRequest(
         phone: phone,
@@ -1122,18 +1046,11 @@ class AuthService {
         newPassword: newPassword,
       );
 
-      // Make direct Dio call to handle response manually
       final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.post(
         '/api/v1/auth/reset-password',
         data: request.toJson(),
       );
-
-      debugPrint(
-          '🔍 [RESET_PASSWORD_DEBUG] Raw response received successfully');
-      debugPrint(
-          '🔍 [RESET_PASSWORD_DEBUG] Response status: ${response.statusCode}');
-      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Response data: ${response.data}');
 
       if (response.data == null) {
         throw Exception('Response data is null');
@@ -1148,13 +1065,14 @@ class AuthService {
       final passwordResetResponse =
           PasswordResetResponse.fromJson(responseData);
 
-      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Password reset successful');
+      if (kDebugMode) {
+        debugPrint('Password reset successful');
+      }
       return passwordResetResponse;
     } on DioException catch (e) {
-      debugPrint(
-          '🔍 [RESET_PASSWORD_DEBUG] DioException occurred: ${e.message}');
-      debugPrint(
-          '🔍 [RESET_PASSWORD_DEBUG] Response data: ${e.response?.data}');
+      if (kDebugMode) {
+        debugPrint('Password reset DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      }
 
       if (e.response?.data != null &&
           e.response?.data is Map<String, dynamic>) {
@@ -1166,7 +1084,9 @@ class AuthService {
 
       throw Exception('حدث خطأ في الشبكة أثناء إعادة تعيين كلمة المرور');
     } catch (e) {
-      debugPrint('🔍 [RESET_PASSWORD_DEBUG] Unexpected error: $e');
+      if (kDebugMode) {
+        debugPrint('Password reset error: $e');
+      }
       throw Exception('حدث خطأ غير متوقع أثناء إعادة تعيين كلمة المرور');
     }
   }

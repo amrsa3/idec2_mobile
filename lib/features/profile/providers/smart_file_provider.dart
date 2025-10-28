@@ -92,9 +92,10 @@ final userDocumentsProvider =
 
       // فلترة الملفات: استبعاد الصور الشخصية فقط
       final filteredFiles = allFiles.where((file) {
-        // استبعاد الصور الشخصية - entityType = 'profile' و fileCategory = 'profile_photo'
+        // استبعاد الصور الشخصية - entityType = 'profile' و fileCategory = 'PROFILE_PHOTO'
         if (file.entityType == 'profile' &&
-            (file.fileCategory == 'profile_photo' ||
+            (file.fileCategory == 'PROFILE_PHOTO' ||
+                file.fileCategory == 'profile_photo' ||
                 file.fileCategory == 'photo')) {
           return false;
         }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -92,7 +93,6 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
     
     // إذا كانت قائمة العناصر فارغة، إرجاع null
     if (widget.items.isEmpty) {
-      debugPrint('⚠️ CustomDropdown: قائمة العناصر فارغة');
       return null;
     }
     
@@ -103,7 +103,6 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
     if (widget.value is String) {
       final stringValue = widget.value as String;
       if (stringValue.isEmpty || stringValue == "0" || stringValue.trim().isEmpty) {
-        debugPrint('⚠️ CustomDropdown: القيمة النصية فارغة أو غير صالحة: "$stringValue"');
         return null;
       }
     }
@@ -112,15 +111,11 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
       return widget.value;
     }
     
-    // إذا لم تكن القيمة موجودة، إرجاع null مع تسجيل تفصيلي
-    debugPrint('⚠️ CustomDropdown: القيمة المختارة غير موجودة في القائمة: ${widget.value}');
-    debugPrint('⚠️ CustomDropdown: نوع القيمة: ${widget.value.runtimeType}');
-    debugPrint('⚠️ CustomDropdown: القيم الصالحة: $validValues');
+    // إذا لم تكن القيمة موجودة، إرجاع null
     
     // إشعار الوالد بأن القيمة غير صالحة (إذا كان هناك callback)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.onChanged != null) {
-        debugPrint('🔄 CustomDropdown: إعادة تعيين القيمة إلى null');
         widget.onChanged!(null);
       }
     });

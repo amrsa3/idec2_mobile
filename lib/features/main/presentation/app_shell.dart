@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/auth_models.dart';
 import '../../../providers/enhanced_auth_provider.dart';
-import '../../../providers/language_provider.dart';
 import '../../../services/navigation_service.dart';
 import '../../notifications/presentation/widgets/verification_reminder_banner.dart';
 import '../../profile/presentation/widgets/profile_avatar.dart';
@@ -42,8 +42,7 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(authProvider);
-    final isRTL = ref.watch(isRTLProvider);
+    final authState = ref.watch(enhancedAuthProvider);
     
     return Scaffold(
       backgroundColor: backgroundColor ?? AppColors.background,
@@ -51,7 +50,7 @@ class AppShell extends ConsumerWidget {
       body: Column(
         children: [
           // Verification reminder banner
-          if (authState.isAuthenticated && authState.user != null)
+          if (authState is AuthenticatedState)
             const VerificationReminderBanner(),
           
           // Main content
@@ -84,7 +83,7 @@ class AppShell extends ConsumerWidget {
           gradient: LinearGradient(
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -102,7 +101,7 @@ class AppShell extends ConsumerWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
@@ -144,7 +143,7 @@ class AppShell extends ConsumerWidget {
   ) {
     final actions = <Widget>[];
 
-    if (authState.isAuthenticated && authState.user != null) {
+    if (authState is AuthenticatedState) {
       // Notifications button
       actions.add(
         IconButton(
@@ -177,7 +176,7 @@ class AppShell extends ConsumerWidget {
           child: GestureDetector(
             onTap: () => NavigationService.instance.goToProfile(),
             child: ProfileAvatar(
-              user: authState.user!,
+              user: authState.user,
               size: 32,
               showBorder: true,
               borderColor: Colors.white,
@@ -218,8 +217,6 @@ class AppShellWithBottomNav extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final isRTL = ref.watch(isRTLProvider);
 
     return AppShell(
       title: title,
@@ -267,7 +264,7 @@ class BrandedAppBar extends StatelessWidget implements PreferredSizeWidget {
           gradient: LinearGradient(
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -285,7 +282,7 @@ class BrandedAppBar extends StatelessWidget implements PreferredSizeWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(

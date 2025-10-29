@@ -84,41 +84,72 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _navigateAfterDelay() async {
-    await Future.delayed(const Duration(milliseconds: 3000));
+    try {
+      await Future.delayed(const Duration(milliseconds: 3000));
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Check authentication status
-    final authState = ref.read(enhancedAuthProvider);
+      // Check authentication status with error handling
+      String nextRoute;
+      try {
+        final authState = ref.read(enhancedAuthProvider);
 
-    // Check first-time flags
-    final isLanguageFirstTime = await LanguageService.isLanguageFirstTime();
-    final isOnboardingCompleted = await LanguageService.isOnboardingCompleted();
+        // Check first-time flags with timeout
+        final isLanguageFirstTime = await LanguageService.isLanguageFirstTime()
+            .timeout(const Duration(seconds: 5), onTimeout: () => false);
+        final isOnboardingCompleted =
+            await LanguageService.isOnboardingCompleted()
+                .timeout(const Duration(seconds: 5), onTimeout: () => false);
 
-    // Determine next route based on app state
-    String nextRoute;
+        // Determine next route based on app state
+        final authProvider = ref.read(enhancedAuthProvider.notifier);
 
-    final authProvider = ref.read(enhancedAuthProvider.notifier);
-
-    if (authProvider.isAuthenticated) {
-      // User is logged in - go to main screen
-      nextRoute = AppRoutes.main;
-    } else {
-      // User not logged in - check first-time flow
-      if (isLanguageFirstTime) {
-        // First time - show language selection
-        nextRoute = AppRoutes.languageSelection;
-      } else if (!isOnboardingCompleted) {
-        // Language selected but onboarding not completed
-        nextRoute = AppRoutes.onboarding;
-      } else {
-        // Everything completed - go to login
+        if (authProvider.isAuthenticated) {
+          // User is logged in - go to main screen
+          nextRoute = AppRoutes.main;
+        } else {
+          // User not logged in - check first-time flow
+          if (isLanguageFirstTime) {
+            // First time - show language selection
+            nextRoute = AppRoutes.languageSelection;
+          } else if (!isOnboardingCompleted) {
+            // Language selected but onboarding not completed
+            nextRoute = AppRoutes.onboarding;
+          } else {
+            // Everything completed - go to login
+            nextRoute = AppRoutes.login;
+          }
+        }
+      } catch (e, stackTrace) {
+        debugPrint('❌ [SPLASH] Error checking auth state: $e');
+        debugPrint('Stack trace: $stackTrace');
+        // On error, default to login screen
         nextRoute = AppRoutes.login;
       }
-    }
 
-    if (mounted) {
-      context.go(nextRoute);
+      if (mounted) {
+        try {
+          context.go(nextRoute);
+        } catch (e, stackTrace) {
+          debugPrint('❌ [SPLASH] Error navigating to route: $e');
+          debugPrint('Stack trace: $stackTrace');
+          // Try fallback route
+          if (mounted) {
+            context.go(AppRoutes.login);
+          }
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [SPLASH] Critical error in navigation: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // Last resort - try to navigate to login
+      if (mounted) {
+        try {
+          context.go(AppRoutes.login);
+        } catch (_) {
+          // If even login fails, the error boundary should handle it
+        }
+      }
     }
   }
 

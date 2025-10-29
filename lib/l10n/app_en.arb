@@ -1025,5 +1025,49 @@
   "savingSettings": "Saving settings...",
   "@savingSettings": {
     "description": "Saving settings loading message"
+  },
+  "from": "From",
+  "@from": {
+    "description": "From text for date ranges"
+  },
+  "to": "To",
+  "@to": {
+    "description": "To text for date ranges"
+  },
+  "daysRemaining": "days remaining",
+  "@daysRemaining": {
+    "description": "Days remaining text"
+  },
+  "hoursRemaining": "hours remaining",
+  "@hoursRemaining": {
+    "description": "Hours remaining text"
+  },
+  "minutesRemaining": "minutes remaining",
+  "@minutesRemaining": {
+    "description": "Minutes remaining text"
+  },
+  "underReview": "Under Review",
+  "@underReview": {
+    "description": "Under review status"
+  },
+  "paymentPending": "Payment Pending",
+  "@paymentPending": {
+    "description": "Payment pending status"
+  },
+  "activeParticipant": "Active Participant",
+  "@activeParticipant": {
+    "description": "Active participant status"
+  },
+  "onHold": "On Hold",
+  "@onHold": {
+    "description": "On hold status"
+  },
+  "rejected": "Rejected",
+  "@rejected": {
+    "description": "Rejected status"
+  },
+  "registrationStatus": "Registration Status",
+  "@registrationStatus": {
+    "description": "Registration status label"
   }
 }

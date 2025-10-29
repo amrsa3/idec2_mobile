@@ -547,5 +547,16 @@
   "enterValidHost": "يرجى إدخال عنوان خادم صحيح",
   "enterValidPort": "يرجى إدخال رقم منفذ صحيح (1-65535)",
   "currentServerSettings": "إعدادات الخادم الحالية",
-  "savingSettings": "جاري حفظ الإعدادات..."
+  "savingSettings": "جاري حفظ الإعدادات...",
+  "from": "من",
+  "to": "إلى",
+  "daysRemaining": "يوم متبقي",
+  "hoursRemaining": "ساعة متبقية",
+  "minutesRemaining": "دقيقة متبقية",
+  "underReview": "قيد المراجعة",
+  "paymentPending": "في انتظار الدفع",
+  "activeParticipant": "مشارك نشط",
+  "onHold": "معلق",
+  "rejected": "مرفوض",
+  "registrationStatus": "حالة التسجيل"
 }

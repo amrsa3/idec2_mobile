@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/main/presentation/main_screen.dart';
 import '../../../l10n/app_localizations.dart';
-import '../widgets/conference_card.dart';
+import '../widgets/conference_card_new.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -76,7 +76,7 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Conference Card
-              const ConferenceCard(),
+              const ConferenceCardNew(),
 
               const SizedBox(height: 24),
 

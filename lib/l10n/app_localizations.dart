@@ -1705,6 +1705,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saving settings...'**
   String get savingSettings;
+
+  /// From text for date ranges
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// To text for date ranges
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// Days remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'days remaining'**
+  String get daysRemaining;
+
+  /// Hours remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'hours remaining'**
+  String get hoursRemaining;
+
+  /// Minutes remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'minutes remaining'**
+  String get minutesRemaining;
+
+  /// Under review status
+  ///
+  /// In en, this message translates to:
+  /// **'Under Review'**
+  String get underReview;
+
+  /// Payment pending status
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Pending'**
+  String get paymentPending;
+
+  /// Active participant status
+  ///
+  /// In en, this message translates to:
+  /// **'Active Participant'**
+  String get activeParticipant;
+
+  /// On hold status
+  ///
+  /// In en, this message translates to:
+  /// **'On Hold'**
+  String get onHold;
+
+  /// Rejected status
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// Registration status label
+  ///
+  /// In en, this message translates to:
+  /// **'Registration Status'**
+  String get registrationStatus;
 }
 
 class _AppLocalizationsDelegate

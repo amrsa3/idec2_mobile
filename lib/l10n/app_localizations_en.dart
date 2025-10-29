@@ -827,4 +827,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savingSettings => 'Saving settings...';
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get to => 'To';
+
+  @override
+  String get daysRemaining => 'days remaining';
+
+  @override
+  String get hoursRemaining => 'hours remaining';
+
+  @override
+  String get minutesRemaining => 'minutes remaining';
+
+  @override
+  String get underReview => 'Under Review';
+
+  @override
+  String get paymentPending => 'Payment Pending';
+
+  @override
+  String get activeParticipant => 'Active Participant';
+
+  @override
+  String get onHold => 'On Hold';
+
+  @override
+  String get rejected => 'Rejected';
+
+  @override
+  String get registrationStatus => 'Registration Status';
 }

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../features/courses/presentation/courses_screen.dart';
 import '../../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../../features/schedule/presentation/schedule_screen.dart';
+import '../../../features/speakers/presentation/speakers_screen.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/language_provider.dart';
 import '../../../services/back_button_service.dart';
-import '../../home/presentation/home_screen.dart';
+import '../../home/presentation/home_screen_new.dart';
 
 // Provider for bottom navigation index
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
@@ -18,14 +20,13 @@ class MainScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final currentIndex = ref.watch(bottomNavIndexProvider);
-    final isRTL = ref.watch(isRTLProvider);
 
     // List of screens
     final screens = const [
       HomeScreen(),
       ScheduleScreen(),
       SpeakersScreen(),
-      ExhibitionScreen(),
+      CoursesScreen(),
       ProfileMainScreen(),
     ];
 
@@ -75,9 +76,9 @@ class MainScreen extends ConsumerWidget {
                 label: l10n.speakers,
               ),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.store_outlined),
-                activeIcon: const Icon(Icons.store),
-                label: l10n.exhibition,
+                icon: const Icon(Icons.school_outlined),
+                activeIcon: const Icon(Icons.school),
+                label: 'الدورات',
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.person_outline),
@@ -86,145 +87,6 @@ class MainScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Placeholder screens for other tabs
-class ScheduleScreen extends ConsumerWidget {
-  const ScheduleScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.schedule),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.schedule,
-              size: 80,
-              color: AppColors.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.comingSoon,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.scheduleComingSoon,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SpeakersScreen extends ConsumerWidget {
-  const SpeakersScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.speakers),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.people,
-              size: 80,
-              color: AppColors.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.comingSoon,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.speakersComingSoon,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ExhibitionScreen extends ConsumerWidget {
-  const ExhibitionScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.exhibition),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.store,
-              size: 80,
-              color: AppColors.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.comingSoon,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.exhibitionComingSoon,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );

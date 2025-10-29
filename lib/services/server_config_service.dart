@@ -96,7 +96,7 @@ class ServerConfigService {
       
       // Try primary health endpoint first
       try {
-        final response = await dio.get('${config.fullUrl}/api/v1/health');
+        final response = await dio.get('${config.fullUrl}/health');
         stopwatch.stop();
         
         if (response.statusCode == 200) {
@@ -104,7 +104,7 @@ class ServerConfigService {
             isReachable: true,
             responseTime: stopwatch.elapsedMilliseconds,
             statusCode: response.statusCode,
-            message: 'Server is reachable via /api/v1/health',
+            message: 'Server is reachable via /health',
             endpoint: '/api/v1/health',
           );
         }
@@ -120,7 +120,7 @@ class ServerConfigService {
               responseTime: stopwatch.elapsedMilliseconds,
               statusCode: response.statusCode,
               message: 'Server is reachable via ping endpoint',
-              endpoint: '/api/v1/health/ping',
+              endpoint: '/health/ping',
             );
           }
         } catch (fallbackError) {

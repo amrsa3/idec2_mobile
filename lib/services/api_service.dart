@@ -13,7 +13,7 @@ abstract class ApiService {
   @GET('/api/v1/server/settings')
   Future<ApiResponse> getServerSettings();
 
-  @GET('/api/v1/health')
+  @GET('/health')
   Future<HealthCheckModel> getHealthCheck();
 
   // Authentication - Updated to match server paths

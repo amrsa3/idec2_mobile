@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/main/presentation/main_screen.dart';
 import '../../../l10n/app_localizations.dart';
-import '../widgets/conference_card.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/enhanced_auth_provider_v2.dart';
+import '../../../providers/language_provider.dart';
+import '../../../services/compatible_auth_service.dart';
+import '../../../shared/widgets/app_drawer.dart';
+import '../widgets/conference_card_new.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -12,101 +19,219 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final authState = ref.watch(enhancedAuthProvider);
+    final isRTL = ref.watch(isRTLProvider);
+
+    // Extract user from auth state
+    UserModel? user;
+    final isAuthenticated = authState.when(
+      initial: () => false,
+      loading: (message) => false,
+      authenticated: (u) {
+        user = u;
+        debugPrint('✅ [HOME_SCREEN] User authenticated: ${u.phone}');
+        debugPrint(
+            '📸 [HOME_SCREEN] Profile photo: ${u.profile?.profilePhotoUrl}');
+        debugPrint('👤 [HOME_SCREEN] Full name AR: ${u.profile?.fullNameAr}');
+        debugPrint('👤 [HOME_SCREEN] Full name EN: ${u.profile?.fullNameEn}');
+        return true;
+      },
+      unauthenticated: () => false,
+      registered: () => false,
+      error: (message) => false,
+    );
+
+    String greetingText = l10n.welcome;
+
+    // If authenticated, show user name
+    if (isAuthenticated && user != null) {
+      final userName = _getFormattedUserName(user!, isRTL);
+      debugPrint('🎯 [HOME_SCREEN] Formatted user name: $userName');
+      if (isRTL) {
+        greetingText = 'مرحبا بك $userName';
+      } else {
+        greetingText = 'Welcome $userName';
+      }
+    }
 
     return Scaffold(
+      drawer: const AppDrawer(),
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.primary,
         elevation: 0,
         automaticallyImplyLeading: false,
         flexibleSpace: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                // Notifications Icon on the left
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_outlined,
-                    color: Colors.white,
-                    size: 28,
+          child: Builder(
+            builder: (context) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Menu Icon (Drawer)
+                  IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
-                  onPressed: () {
-                    // TODO: Navigate to notifications
-                  },
-                ),
-                // Welcome Text in the center
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      'مرحباً.. د. نعمان',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  // Welcome Text in the center
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        greetingText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                ),
-                // User Profile Picture on the right
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.white,
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundImage: NetworkImage(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuD-J12u0xVEbXC36tU3kyiTTMLjaYpEfM0cUdBV9c2og1Lsocl6NmqWpUdXFHWp_jQm8ksdPgcKiaznwg5XDRAZ1a342duFLWoJGdC_bjsClNdi7bXU8t5iKT2m_gnISxm3a4NkkLDnCN9M7Ot_BhIG3VItklCcZCGY8HyCVwVVLTawXjJOphi6n4vuAaF1CFkdNhPr_DYozB4PR3t5rpSX0RY1V0VkdOi-sApJcvOMxZ7pPHw6Hpih1XwpJEVGttUco_niSuMXZlwo',
+                  // Logo/User Photo on the right
+                  GestureDetector(
+                    onTap: () {
+                      if (isAuthenticated) {
+                        ref.read(bottomNavIndexProvider.notifier).state = 4;
+                      }
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: user != null &&
+                              user!.profile != null &&
+                              user!.profile!.profilePhotoUrl != null &&
+                              user!.profile!.profilePhotoUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                user!.profile!.profilePhotoUrl!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return SvgPicture.asset(AppImages.logo,
+                                      fit: BoxFit.contain);
+                                },
+                              ),
+                            )
+                          : SvgPicture.asset(AppImages.logo,
+                              fit: BoxFit.contain),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Conference Card
-              const ConferenceCard(),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh user authentication state to get latest user data
+            ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+            // Small delay to show refresh animation
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Conference Card
+                const ConferenceCardNew(),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Featured Courses Section
-              _buildSectionHeader('الدورات المميزة', 'عرض الكل', context),
-              const SizedBox(height: 12),
-              _buildFeaturedCourses(context),
+                // Featured Courses Section
+                _buildSectionHeader('الدورات المميزة', 'عرض الكل', context),
+                const SizedBox(height: 12),
+                _buildFeaturedCourses(context),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Explore Conference Section
-              _buildSectionHeader('استكشف المؤتمر', null, context),
-              const SizedBox(height: 12),
-              _buildExploreConference(context, ref),
+                // Explore Conference Section
+                _buildSectionHeader('استكشف المؤتمر', null, context),
+                const SizedBox(height: 12),
+                _buildExploreConference(context, ref),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Featured Speakers Section
-              _buildSectionHeader('أبرز المتحدثين', 'عرض الكل', context),
-              const SizedBox(height: 12),
-              _buildFeaturedSpeakers(context),
+                // Featured Speakers Section
+                _buildSectionHeader('أبرز المتحدثين', 'عرض الكل', context),
+                const SizedBox(height: 12),
+                _buildFeaturedSpeakers(context),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Exhibition Section
-              _buildSectionHeader('المعرض', 'عرض الكل', context),
-              const SizedBox(height: 12),
-              _buildExhibition(context, ref),
+                // Exhibition Section
+                _buildSectionHeader('المعرض', 'عرض الكل', context),
+                const SizedBox(height: 12),
+                _buildExhibition(context, ref),
 
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  // Function to format user name based on language
+  String _getFormattedUserName(UserModel user, bool isRTL) {
+    debugPrint('🔍 [HOME_SCREEN] Formatting name for user: ${user.phone}');
+    debugPrint('🔍 [HOME_SCREEN] Profile: ${user.profile}');
+    debugPrint('🔍 [HOME_SCREEN] Is RTL: $isRTL');
+
+    String? fullName;
+    String title = '';
+
+    // Get name based on language
+    if (isRTL) {
+      fullName = user.profile?.fullNameAr;
+      title = 'د.';
+      debugPrint('🔍 [HOME_SCREEN] Arabic name: $fullName');
+    } else {
+      fullName = user.profile?.fullNameEn ?? user.profile?.fullNameAr;
+      title = 'Dr.';
+      debugPrint('🔍 [HOME_SCREEN] English name: $fullName');
+    }
+
+    if (fullName == null || fullName.isEmpty) {
+      debugPrint('⚠️ [HOME_SCREEN] No name found, returning empty');
+      return '';
+    }
+
+    // Split name into parts
+    final nameParts = fullName.trim().split(' ');
+    debugPrint('🔍 [HOME_SCREEN] Name parts: $nameParts');
+
+    // Get first and last name
+    if (nameParts.length >= 2) {
+      final result = '$title ${nameParts.first} ${nameParts.last}';
+      debugPrint('✅ [HOME_SCREEN] Formatted name: $result');
+      return result;
+    } else if (nameParts.length == 1) {
+      final result = '$title ${nameParts.first}';
+      debugPrint('✅ [HOME_SCREEN] Formatted name: $result');
+      return result;
+    }
+
+    debugPrint('✅ [HOME_SCREEN] Using full name: $fullName');
+    return fullName;
   }
 
   Widget _buildSectionHeader(
@@ -367,7 +492,7 @@ class HomeScreen extends ConsumerWidget {
   }) {
     return Container(
       width: 112,
-      margin: const EdgeInsets.only(right: performance16),
+      margin: const EdgeInsets.only(right: 16),
       child: Column(
         children: [
           CircleAvatar(

@@ -819,4 +819,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get savingSettings => 'جاري حفظ الإعدادات...';
+
+  @override
+  String get from => 'من';
+
+  @override
+  String get to => 'إلى';
+
+  @override
+  String get daysRemaining => 'يوم متبقي';
+
+  @override
+  String get hoursRemaining => 'ساعة متبقية';
+
+  @override
+  String get minutesRemaining => 'دقيقة متبقية';
+
+  @override
+  String get underReview => 'قيد المراجعة';
+
+  @override
+  String get paymentPending => 'في انتظار الدفع';
+
+  @override
+  String get activeParticipant => 'مشارك نشط';
+
+  @override
+  String get onHold => 'معلق';
+
+  @override
+  String get rejected => 'مرفوض';
+
+  @override
+  String get registrationStatus => 'حالة التسجيل';
 }

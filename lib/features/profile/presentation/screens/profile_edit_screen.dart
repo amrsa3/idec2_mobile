@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -483,7 +482,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       appBar: AppBar(
         title: const Text('تعديل الملف الشخصي'),
       ),
-      body: _buildBody(profileState),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // Refresh profile data and rules
+          await ref.read(profileProvider.notifier).refresh();
+          await ref
+              .read(profileRulesProvider.notifier)
+              .loadRulesForCurrentUser(forceRefresh: true);
+        },
+        child: _buildBody(profileState),
+      ),
     );
   }
 
@@ -615,6 +623,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       key: _formKey,
       child: SingleChildScrollView(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

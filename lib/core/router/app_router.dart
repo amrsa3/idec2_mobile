@@ -54,221 +54,268 @@ class AuthChangeNotifier extends ChangeNotifier {
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authNotifier = AuthChangeNotifier(ref);
+  try {
+    final authNotifier = AuthChangeNotifier(ref);
 
-  return GoRouter(
-    initialLocation: AppRoutes.splash,
-    debugLogDiagnostics: true,
-    // Listen to auth state changes to trigger router refresh
-    refreshListenable: authNotifier,
-    // Deep linking configuration
-    redirect: (context, state) {
-      final authState = ref.read(compatibleAuthProvider);
-      final isAuthenticated = authState.isAuthenticated;
-      final isLoading = authState.isLoading;
-      final currentRoute = state.uri.path;
+    return GoRouter(
+      initialLocation: AppRoutes.splash,
+      debugLogDiagnostics: true,
+      // Listen to auth state changes to trigger router refresh
+      refreshListenable: authNotifier,
+      // Deep linking configuration
+      redirect: (context, state) {
+        try {
+          final authState = ref.read(compatibleAuthProvider);
+          final isAuthenticated = authState.isAuthenticated;
+          final isLoading = authState.isLoading;
+          final currentRoute = state.uri.path;
 
-      debugPrint(
-          'GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, user=${authState.user?.phone}');
+          debugPrint(
+              'GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, user=${authState.user?.phone}');
 
-      // Don't redirect while loading
-      if (isLoading) return null;
+          // Don't redirect while loading
+          if (isLoading) return null;
 
-      // Public routes that don't require authentication
-      final publicRoutes = [
-        AppRoutes.splash,
-        AppRoutes.languageSelection,
-        AppRoutes.onboarding,
-        AppRoutes.login,
-        AppRoutes.register,
-        AppRoutes.otpVerification,
-        AppRoutes.forgotPassword,
-        AppRoutes.resetPasswordOtp,
-        AppRoutes.connectionStatus,
-        AppRoutes.serverConfig,
-        AppRoutes.errorReporting,
-      ];
+          // Public routes that don't require authentication
+          final publicRoutes = [
+            AppRoutes.splash,
+            AppRoutes.languageSelection,
+            AppRoutes.onboarding,
+            AppRoutes.login,
+            AppRoutes.register,
+            AppRoutes.otpVerification,
+            AppRoutes.forgotPassword,
+            AppRoutes.resetPasswordOtp,
+            AppRoutes.connectionStatus,
+            AppRoutes.serverConfig,
+            AppRoutes.errorReporting,
+          ];
 
-      // If user is not authenticated and trying to access protected route
-      if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
-        return AppRoutes.login;
-      }
+          // If user is not authenticated and trying to access protected route
+          if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
+            return AppRoutes.login;
+          }
 
-      // If user is authenticated and trying to access auth routes
-      if (isAuthenticated &&
-          (currentRoute == AppRoutes.login ||
-              currentRoute == AppRoutes.register)) {
-        return AppRoutes.main;
-      }
+          // If user is authenticated and trying to access auth routes
+          if (isAuthenticated &&
+              (currentRoute == AppRoutes.login ||
+                  currentRoute == AppRoutes.register)) {
+            return AppRoutes.main;
+          }
 
-      // Special case: Don't redirect from OTP verification unless user is fully authenticated
-      if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
-        return null; // Stay on OTP verification page
-      }
+          // Special case: Don't redirect from OTP verification unless user is fully authenticated
+          if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
+            return null; // Stay on OTP verification page
+          }
 
-      return null; // No redirect needed
-    },
-    routes: [
-      // Splash Screen
-      GoRoute(
-        path: AppRoutes.splash,
-        name: 'splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
-
-      // Language Selection Screen
-      GoRoute(
-        path: AppRoutes.languageSelection,
-        name: 'language-selection',
-        builder: (context, state) => const LanguageSelectionScreen(),
-      ),
-
-      // Onboarding Screen
-      GoRoute(
-        path: AppRoutes.onboarding,
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
-      ),
-
-      // Authentication Routes
-      GoRoute(
-        path: AppRoutes.login,
-        name: 'login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoutes.register,
-        name: 'register',
-        builder: (context, state) => const RegisterScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoutes.otpVerification,
-        name: 'otp-verification',
-        builder: (context, state) {
-          final phone = state.uri.queryParameters['phone'] ?? '';
-          final isLogin = state.uri.queryParameters['isLogin'] == 'true';
-          return OtpVerificationScreen(
-            phone: phone,
-            isLogin: isLogin,
-          );
-        },
-      ),
-
-      // Forgot Password Routes
-      GoRoute(
-        path: AppRoutes.forgotPassword,
-        name: 'forgot-password',
-        builder: (context, state) => const ForgotPasswordScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoutes.resetPasswordOtp,
-        name: 'reset-password-otp',
-        builder: (context, state) {
-          final phone = state.uri.queryParameters['phone'] ?? '';
-          return ResetPasswordScreen(phone: phone);
-        },
-      ),
-
-      // Main Screen with Bottom Navigation
-      GoRoute(
-        path: AppRoutes.main,
-        name: 'main',
-        builder: (context, state) => const MainScreen(),
-      ),
-
-      // Profile Routes - Now using ProfileMainScreen with rules integration
-      GoRoute(
-        path: AppRoutes.profile,
-        name: 'profile',
-        builder: (context, state) => const ProfileMainScreen(),
-      ),
-
-      // Profile View Route (keeping for backward compatibility)
-      GoRoute(
-        path: AppRoutes.profileView,
-        name: 'profile-view',
-        builder: (context, state) => const ProfileMainScreen(),
-      ),
-
-      // Connection Status Route
-      GoRoute(
-        path: AppRoutes.connectionStatus,
-        name: 'connection-status',
-        builder: (context, state) => const ConnectionStatusScreen(),
-      ),
-
-      // Server Configuration Route
-      GoRoute(
-        path: AppRoutes.serverConfig,
-        name: 'server-config',
-        builder: (context, state) => const ServerConfigScreen(),
-      ),
-
-      // Error Reporting Route
-      GoRoute(
-        path: AppRoutes.errorReporting,
-        name: 'error-reporting',
-        builder: (context, state) {
-          final errorMessage = state.uri.queryParameters['error'];
-          final stackTrace = state.uri.queryParameters['stackTrace'];
-          return ErrorReportingScreen(
-            errorMessage: errorMessage,
-            stackTrace: stackTrace,
-          );
-        },
-      ),
-
-      // Notifications Routes
-      GoRoute(
-        path: AppRoutes.notifications,
-        name: 'notifications',
-        builder: (context, state) => const NotificationsPage(),
-      ),
-
-      GoRoute(
-        path: AppRoutes.notificationsTest,
-        name: 'notifications-test',
-        builder: (context, state) => const NotificationsTestScreen(),
-      ),
-    ],
-
-    // Error handling
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(
-        title: const Text('خطأ'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'الصفحة غير موجودة',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'المسار: ${state.uri.path}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.go(AppRoutes.splash),
-              child: const Text('العودة للرئيسية'),
-            ),
-          ],
+          return null; // No redirect needed
+        } catch (e, stackTrace) {
+          debugPrint('❌ [ROUTER] Error in redirect: $e');
+          debugPrint('Stack trace: $stackTrace');
+          // On error, allow access to prevent blocking
+          return null;
+        }
+      },
+      routes: [
+        // Splash Screen
+        GoRoute(
+          path: AppRoutes.splash,
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
         ),
-      ),
-    ),
-  );
+
+        // Language Selection Screen
+        GoRoute(
+          path: AppRoutes.languageSelection,
+          name: 'language-selection',
+          builder: (context, state) => const LanguageSelectionScreen(),
+        ),
+
+        // Onboarding Screen
+        GoRoute(
+          path: AppRoutes.onboarding,
+          name: 'onboarding',
+          builder: (context, state) => const OnboardingScreen(),
+        ),
+
+        // Authentication Routes
+        GoRoute(
+          path: AppRoutes.login,
+          name: 'login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.register,
+          name: 'register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.otpVerification,
+          name: 'otp-verification',
+          builder: (context, state) {
+            final phone = state.uri.queryParameters['phone'] ?? '';
+            final isLogin = state.uri.queryParameters['isLogin'] == 'true';
+            return OtpVerificationScreen(
+              phone: phone,
+              isLogin: isLogin,
+            );
+          },
+        ),
+
+        // Forgot Password Routes
+        GoRoute(
+          path: AppRoutes.forgotPassword,
+          name: 'forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.resetPasswordOtp,
+          name: 'reset-password-otp',
+          builder: (context, state) {
+            final phone = state.uri.queryParameters['phone'] ?? '';
+            return ResetPasswordScreen(phone: phone);
+          },
+        ),
+
+        // Main Screen with Bottom Navigation
+        GoRoute(
+          path: AppRoutes.main,
+          name: 'main',
+          builder: (context, state) => const MainScreen(),
+        ),
+
+        // Profile Routes - Now using ProfileMainScreen with rules integration
+        GoRoute(
+          path: AppRoutes.profile,
+          name: 'profile',
+          builder: (context, state) => const ProfileMainScreen(),
+        ),
+
+        // Profile View Route (keeping for backward compatibility)
+        GoRoute(
+          path: AppRoutes.profileView,
+          name: 'profile-view',
+          builder: (context, state) => const ProfileMainScreen(),
+        ),
+
+        // Connection Status Route
+        GoRoute(
+          path: AppRoutes.connectionStatus,
+          name: 'connection-status',
+          builder: (context, state) => const ConnectionStatusScreen(),
+        ),
+
+        // Server Configuration Route
+        GoRoute(
+          path: AppRoutes.serverConfig,
+          name: 'server-config',
+          builder: (context, state) => const ServerConfigScreen(),
+        ),
+
+        // Error Reporting Route
+        GoRoute(
+          path: AppRoutes.errorReporting,
+          name: 'error-reporting',
+          builder: (context, state) {
+            final errorMessage = state.uri.queryParameters['error'];
+            final stackTrace = state.uri.queryParameters['stackTrace'];
+            return ErrorReportingScreen(
+              errorMessage: errorMessage,
+              stackTrace: stackTrace,
+            );
+          },
+        ),
+
+        // Notifications Routes
+        GoRoute(
+          path: AppRoutes.notifications,
+          name: 'notifications',
+          builder: (context, state) => const NotificationsPage(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.notificationsTest,
+          name: 'notifications-test',
+          builder: (context, state) => const NotificationsTestScreen(),
+        ),
+      ],
+
+      // Error handling
+      errorBuilder: (context, state) => Scaffold(
+        appBar: AppBar(
+          title: const Text('خطأ'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'الصفحة غير موجودة',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'المسار: ${state.uri.path}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go(AppRoutes.splash),
+                child: const Text('العودة للرئيسية'),
+              ),
+            ],
+          ),
+        ), // Close body parameter of Scaffold
+      ), // Close Scaffold and errorBuilder
+    ); // Close GoRouter
+  } catch (e, stackTrace) {
+    debugPrint('❌ [ROUTER] CRITICAL: Failed to create router: $e');
+    debugPrint('Stack trace: $stackTrace');
+
+    // Return a minimal router that shows error screen
+    return GoRouter(
+      initialLocation: AppRoutes.splash,
+      debugLogDiagnostics: true,
+      routes: [
+        GoRoute(
+          path: AppRoutes.splash,
+          name: 'splash',
+          builder: (context, state) => const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'خطأ في تهيئة التطبيق',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'حدث خطأ في تهيئة نظام التنقل. يرجى إعادة تشغيل التطبيق.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 });
 
 // Navigation helper extensions

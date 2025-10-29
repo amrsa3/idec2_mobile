@@ -1,0 +1,625 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../providers/language_provider.dart';
+import '../../../providers/universal_auth_provider.dart';
+import '../widgets/conference_card_new.dart';
+
+// Import bottomNavIndexProvider from main_screen
+final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
+
+class HomeScreen extends ConsumerWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUniversalUserProvider);
+    final isRTL = ref.watch(isRTLProvider);
+
+    // Build user display name
+    String displayName = 'User';
+    if (user != null) {
+      final fullName = isRTL
+          ? (user.fullNameAr ?? user.profile?.fullNameAr ?? '')
+          : (user.fullNameEn ?? user.profile?.fullNameEn ?? '');
+      if (fullName.isNotEmpty) {
+        final parts = fullName.trim().split(' ');
+        if (parts.length > 1)
+          displayName = '${parts.first} ${parts.last}';
+        else
+          displayName = parts.first;
+      }
+    }
+
+    final greeting =
+        isRTL ? 'مرحباً.. د. $displayName' : 'Welcome.. Dr. $displayName';
+    final imageUrl = user?.profilePictureUrl ??
+        user?.profile?.profilePhotoUrl ??
+        'https://via.placeholder.com/150';
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      drawer: _buildDrawer(context, user, isRTL, ref),
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        flexibleSpace: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: isRTL
+                ? _buildArabicAppBar(ref, greeting, imageUrl, context)
+                : _buildEnglishAppBar(ref, greeting, imageUrl, context),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Conference Card (New HTML Design)
+              const ConferenceCardNew(),
+
+              const SizedBox(height: 24),
+
+              // Featured Courses Section
+              _buildSectionHeader('الدورات المميزة', 'عرض الكل', context),
+              const SizedBox(height: 12),
+              _buildFeaturedCourses(context),
+
+              const SizedBox(height: 24),
+
+              // Explore Conference Section
+              _buildSectionHeader('استكشف المؤتمر', null, context),
+              const SizedBox(height: 12),
+              _buildExploreConference(context, ref),
+
+              const SizedBox(height: 24),
+
+              // Featured Speakers Section
+              _buildSectionHeader('أبرز المتحدثين', 'عرض الكل', context),
+              const SizedBox(height: 12),
+              _buildFeaturedSpeakers(context),
+
+              const SizedBox(height: 24),
+
+              // Exhibition Section
+              _buildSectionHeader('المعرض', 'عرض الكل', context),
+              const SizedBox(height: 12),
+              _buildExhibition(context, ref),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+      String title, String? actionText, BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+        ),
+        if (actionText != null)
+          TextButton(
+            onPressed: () {},
+            child: Text(
+              actionText,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFeaturedCourses(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildCourseCard(
+            context,
+            title: 'تقنيات تبييض الأسنان الحديثة',
+            speaker: 'د. سارة القحطاني',
+            date: '26 أكتوبر، 10: Using صباحاً',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuD5CplnuyL7aDCOUE6HoV8vP_RroTcRxQHcn2anh7aFZ5zLmGDQfOY_Tyzj3vuW7Z9gOjXYTV多INYuJeUCIoJ_EuP9py2LeEw3OkVsR_LHSYuJeJJXSeHJkSs8g3UL6hD-9uNskGt53qo3TzcsYxp7ATGE70GhGrXRdKyyt5xk04kJYlNzyJQtu91dmSlnV6kEV7GxBvsvbQE25ziuKZl6oTJVJdVmEKOF563y3ao_VVk5O_OTOq0ZAUJGZpLboQRsEyJ9egAo0SFF69',
+          ),
+          _buildCourseCard(
+            context,
+            title: 'التصوير الرقميアクセス في طب الأسنان',
+            speaker: 'د. عمر الهاشمي',
+            date: '25 أكتوبر، 2:00 ظهراً',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuD0x2RGHpLIkJR8Z-sE3SXqWp-9pNJubKCL4L1geNR6wQ_HbTclzBZPCAW6PyyZsQAQTEjK9jLhltJdDDNZFDs-_CsQyqOyYjM5lioEctYQ7ARweDQZjTBqgpnuRDGY1PG6nBYbq2AvYFY-59NO3XwRhztCyqb9wkhSA9e61mHEoGWpAUArEIKvOK6JwaYWIeJ3hGVYHHHbuc8MKdKFH6UAqMHOnRGnMQltlEKQ6XSWs5Aptedvi_4WngRZTUkqkDErKtBBD3uClcDs6F',
+          ),
+          _buildCourseCard(
+            context,
+            title: 'إدارة عيادات الأسنان بنجاح',
+            speaker: 'أ. خالد العمري',
+            date: '27 أكتوبر، 4:00 عصراً',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuD1NAD4laStA8OLQmJzIJL4x6o7qWe0xVgcRWhtHPzquiyZopywwotSukxYL4yS_JJGb6nIIczmSs6qP_mxeRKWaXzkXPkZTKHNYscP03fNpRo0X27jV-vIKZUUSEaX-1k1kgT0nCftT2UceKNRccZS6-k-mv_64v8wZQIuClMJ0fPbOiw1XDmParJhGemrMRjQRJasLV2i7N3jnrRiJbLL77tjT2uyPGHH5O0Hm6vn8fwHtLl1JKlXg8NpATLp0bjP3a3A6jHKkTcn',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCourseCard(
+    BuildContext context, {
+    required String title,
+    required String speaker,
+    required String date,
+    required String imageUrl,
+  }) {
+    return Container(
+      width: 170,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Image.network(
+              imageUrl,
+              height: 80,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    speaker,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 10,
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today,
+                          size: 12, color: Colors.grey[300]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          date,
+                          style: TextStyle(
+                            color: Colors.grey[300],
+                            fontSize: 10,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExploreConference(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildExploreCard(
+            context,
+            title: 'برنامج المؤتمر',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuDpaFShP6XdTJvMQxUPezXXDQwlJmwfwHLQuWJPbkJGctfDQC2Cw1kc5HO4ZS2fNOT0Sj15H79xs4KLhfCrb0hRwgMYeoh19p8okoabENDIqJ2diTSMxEiUsBt3_TOrNrJ4Hd2KR2gAtM09c2to3ew0FlnGS2Ux3vIIMMqOD3KyXzt3VuIXSTt4htkp9AgepzlDYHfsuG7N44S_8YCq6QxdHbGdyFMHop8b6L6yM6caHN4mAqxSSwNKp8BUFe_HpgUQ9ahtdf4eHEs7',
+            onTap: () => ref.read(bottomNavIndexProvider.notifier).state = 1,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildExploreCard(
+            context,
+            title: 'تفاصيل المكان',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuDf0ZCKk3qYMLFzYWe8a2gGuJHjWsA3iwjbqwqRKi56o866cvfc4m5PgHEwBuEvo5g-Qm79qonlNxXZDI3Tms8C3ms9Tc-Yu12lqjTms8_HfqdaERrZWMQQqWYFF-19sX6U86qsntBKEp3BzzdvPi3ui9VlskBBxS1NR962-k0oEG1QAqrI1DmZrri_TcMeD3XLg1mbEuxQ2ZSZTxFYGcIvzxM9hUIcpTS1lyYkwfQjUchlSsmAQEgCAEMcz9p39ethR-OZ-ogdzS7I',
+            onTap: () {},
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExploreCard(
+    BuildContext context, {
+    required String title,
+    required String imageUrl,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 128,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withOpacity(0.7),
+                Colors.black.withOpacity(0.4),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.all(12),
+          alignment: Alignment.bottomLeft,
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedSpeakers(BuildContext context) {
+    return SizedBox(
+      height: 140,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildSpeakerCard(
+            context,
+            name: 'د. جون أندرسون',
+            title: 'خبير زراعة الأسنان',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuD1aO9_-4QnzOS-rfAugI_NA_vSu-wvsPFHsWJd8yGCIp3W1Q23_PsrYDnsvmxC4GzHpTtbzuxxZGbAsdciRq_GsIX5VLCiXXjiGQOLmBZ9rPjwZ0Dq80wRgJWpRyKEvKnsReEov933D6L2ZvVETA38rMuSqTvPwrvxezW2ZysPAR-98bDxdWHHMOiaiRR60A4ExOLjvB4-TCOjZyMenWTu84mACSiLKgs8xCRzmylMmCF4ypCvqf2_2RnZMx2Ku9mRXPZg7q3SN-6S',
+          ),
+          _buildSpeakerCard(
+            context,
+            name: 'د. إيلينا بتروفا',
+            title: 'طب الأسنان التجميلي',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuD-J12u0xVEbXC36tU3kyiTTMLjaYpEfM0cUdBV9c2og1Lsocl6NmqWpUdXFHWp_jQm8ksdPgcKiaznwg5XDRAZ1a342duFLWoJGdC_bjsClNdi7bXU8t5iKT2m_gnISxm3a4NkkLDnCN9M7Ot_BhIG3VItklCcZCGY8HyCVwVVLTawXjJOphi6n4vuAaF1CFkdNhPr_DYozB4PR3t5rpSX0RY1V0VkdOi-sApJcvOMxZ7pPHw6Hpih1XwpJEVGttUco_niSuMXZlwo',
+          ),
+          _buildSpeakerCard(
+            context,
+            name: 'د. أحمد خان',
+            title: 'تقويم الأسنان الرقمي',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuA-bE6pTOfLb_DnZ6VwvNUk5vktBdedDyRIjFbyZaFKaVLjlwWIDichYWr8O2eIBmsVLQkgJEQJCWl89N0kwmwM7zih0SIkWH9gOhuXTns9waYMSvVmaGiwOleasedZSygB1NG7eIU-rhtLDWvRcPxQ3QITvblUHiKu36HNvO11L5LN_tXyfm-XP1A5ls_9HOVDROqg341GsGwgr_f6Ms0Yfrq46232Tp-tNt225JIvK7ax_B8IZKtlE6nQrmjRGoDbU3aknSYofrR-QtKa5',
+          ),
+          _buildSpeakerCard(
+            context,
+            name: 'د. فاطمة الزهراء',
+            title: 'صحة أسنان الأطفال',
+            imageUrl:
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuAsczs1NngRv_CBUXoszhXLiA1YD5_sTMGwV8jeP7sCDwupWxW8G9wM6wnLHmIZNBiLEa8yg0s8o_ebQ9uZZ0D8chQX1MQBKDTYLz0swAGv1ve9NyXp_ZpQxadrF6qLLoff4CWcNbzhVcevyC1-Hf0EoCRpWAkyggI-bd8e8HPwCg_pxE9FH2X-_XYPO78wJwjOfxfPe7tPtt7tMimUn_R2r4MoEAKeQTPKJLKg6JtzWDThex1FwIc2bSpjmKMgel8uuiJ8B1Y2BEe1',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpeakerCard(
+    BuildContext context, {
+    required String name,
+    required String title,
+    required String imageUrl,
+  }) {
+    return Container(
+      width: 112,
+      margin: const EdgeInsets.only(right: 16),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundImage: NetworkImage(imageUrl),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            name,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 10,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExhibition(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () => ref.read(bottomNavIndexProvider.notifier).state = 3,
+      child: Container(
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          image: const DecorationImage(
+            image: NetworkImage(
+              'https://lh3.googleusercontent.com/aida-public/AB6AXuBvNNu_cMhGlKW8J3VVpz9o_GQJ0shv7AOnDogxwvNTQFTsmUfV3GOd4J7u3trVsU6Aqtz8hdqxQz5bTp08jx3POWTaF34O3RnSkuX1Nz2Qx93Fr7ZRLa1L10_6cTzIgHab5U2_x9bqYrRXcEBBU7fQ5pulqFQJVNQoPL0A1_FToW09dldQ4VyLYqhp3Hu3C90SndS2vJ8vzhImhTBuTUWjK30Y0Cf3nHfK8OfQmbE7FyAy4Q6g0CT-XgBotHRg2lySg7HBrWD8v0Cr',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withOpacity(0.7),
+                Colors.black.withOpacity(0.4),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'اكتشف أحدث التقنيات',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'تعرف على العارضين والشركاء',
+                style: TextStyle(
+                  color: Colors.grey[200],
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Arabic layout: drawer (left), text (center), photo (right)
+  Widget _buildArabicAppBar(
+      WidgetRef ref, String greeting, String imageUrl, BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(greeting,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ),
+        GestureDetector(
+          onTap: () => ref.read(routerProvider).goToProfile(),
+          child: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
+              child: CircleAvatar(
+                  radius: 18, backgroundImage: NetworkImage(imageUrl))),
+        ),
+      ],
+    );
+  }
+
+  // English layout: photo (left), text (center), notifications (right)
+  Widget _buildEnglishAppBar(
+      WidgetRef ref, String greeting, String imageUrl, BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => ref.read(routerProvider).goToProfile(),
+          child: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
+              child: CircleAvatar(
+                  radius: 18, backgroundImage: NetworkImage(imageUrl))),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(greeting,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, user, bool isRTL, WidgetRef ref) {
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFEC1313), Colors.white],
+          ),
+        ),
+        child: ListView(
+          children: [
+            // Header with user info
+            Container(
+              height: 200,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFEC1313), Color(0xFFE85050)],
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: 48,
+                      backgroundImage: NetworkImage(user?.profilePictureUrl ??
+                          user?.profile?.profilePhotoUrl ??
+                          'https://via.placeholder.com/150'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _getUserDisplayName(user, isRTL),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user?.phone ?? '',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.8), fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            // Menu items
+            _buildDrawerItem(context, Icons.home, isRTL ? 'الرئيسية' : 'Home',
+                () {
+              Navigator.pop(context);
+            }),
+            _buildDrawerItem(context, Icons.calendar_today,
+                isRTL ? 'الجدول الزمني' : 'Schedule', () {
+              Navigator.pop(context);
+              ref.read(bottomNavIndexProvider.notifier).state = 1;
+            }),
+            _buildDrawerItem(
+                context, Icons.people, isRTL ? 'المتحدثون' : 'Speakers', () {
+              Navigator.pop(context);
+              ref.read(bottomNavIndexProvider.notifier).state = 2;
+            }),
+            _buildDrawerItem(
+                context, Icons.store, isRTL ? 'المعرض' : 'Exhibition', () {
+              Navigator.pop(context);
+              ref.read(bottomNavIndexProvider.notifier).state = 3;
+            }),
+            _buildDrawerItem(
+                context, Icons.person, isRTL ? 'الملف الشخصي' : 'Profile', () {
+              Navigator.pop(context);
+              ref.read(routerProvider).goToProfile();
+            }),
+            _buildDrawerItem(context, Icons.notifications,
+                isRTL ? 'الإشعارات' : 'Notifications', () {
+              Navigator.pop(context);
+            }),
+            const Divider(thickness: 1),
+            _buildDrawerItem(
+                context, Icons.settings, isRTL ? 'الإعدادات' : 'Settings', () {
+              Navigator.pop(context);
+            }),
+            _buildDrawerItem(context, Icons.help, isRTL ? 'المساعدة' : 'Help',
+                () {
+              Navigator.pop(context);
+            }),
+            _buildDrawerItem(
+                context, Icons.info, isRTL ? 'حول التطبيق' : 'About', () {
+              Navigator.pop(context);
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      BuildContext context, IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+      onTap: onTap,
+    );
+  }
+
+  String _getUserDisplayName(user, bool isRTL) {
+    if (user == null) return isRTL ? 'المستخدم' : 'User';
+    final fullName = isRTL
+        ? (user.fullNameAr ?? user.profile?.fullNameAr ?? 'المستخدم')
+        : (user.fullNameEn ?? user.profile?.fullNameEn ?? 'User');
+    return fullName;
+  }
+}

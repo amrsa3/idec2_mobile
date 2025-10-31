@@ -607,6 +607,16 @@ class MockSessionManager extends _i1.Mock implements _i9.SessionManager {
       ) as _i4.Future<Map<String, dynamic>>);
 
   @override
+  _i4.Future<void> clearAll() => (super.noSuchMethod(
+        Invocation.method(
+          #clearAll,
+          [],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
   _i4.Future<void> dispose() => (super.noSuchMethod(
         Invocation.method(
           #dispose,

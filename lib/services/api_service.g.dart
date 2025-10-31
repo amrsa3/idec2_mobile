@@ -67,7 +67,7 @@ class _ApiService implements ApiService {
     )
         .compose(
           _dio.options,
-          '/api/v1/health',
+          '/health',
           queryParameters: queryParameters,
           data: _data,
         )

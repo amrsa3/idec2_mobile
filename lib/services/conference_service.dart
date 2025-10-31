@@ -25,7 +25,8 @@ class ConferenceService {
 
   Future<ConferenceModel?> getActiveConference() async {
     try {
-      print('🔍 Fetching active conference from: ${ApiConstants.baseUrl}/api/v1/events/conferences/active');
+      print(
+          '🔍 Fetching active conference from: ${ApiConstants.baseUrl}/api/v1/events/conferences/active');
       final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/api/v1/events/conferences/active'),
@@ -78,6 +79,33 @@ class ConferenceService {
       }
     } catch (e) {
       throw Exception('Error fetching registration: $e');
+    }
+  }
+
+  /// Register to conference
+  Future<Map<String, dynamic>> registerToConference({
+    required String conferenceId,
+    String? notes,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse(
+            '${ApiConstants.baseUrl}/api/v1/events/conferences/$conferenceId/register'),
+        headers: headers,
+        body: json.encode({
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'فشل في التسجيل');
+      }
+    } catch (e) {
+      throw Exception('Error registering to conference: $e');
     }
   }
 }

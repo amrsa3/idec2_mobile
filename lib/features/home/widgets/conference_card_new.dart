@@ -6,6 +6,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/conference_model.dart';
 import '../../../providers/conference_provider.dart';
 import '../../../providers/language_provider.dart';
+import '../../../services/conference_service.dart';
+import '../../registrations/presentation/my_registrations_screen.dart';
 
 /// New Conference Card matching HTML design exactly with real data
 class ConferenceCardNew extends ConsumerWidget {
@@ -248,30 +250,7 @@ class ConferenceCardNew extends ConsumerWidget {
   }
 
   Widget _buildSubscribeButton(String status) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: () {
-          // TODO: Handle subscription
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFEC1313),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        child: const Text(
-          'اشترك الآن',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
+    return _SubscribeButtonBuilder(status: status);
   }
 
   String _getArabicMonthName(int month) {
@@ -309,6 +288,231 @@ class ConferenceCardNew extends ConsumerWidget {
           color: Colors.white,
         ),
       ),
+    );
+  }
+}
+
+class _SubscribeButtonBuilder extends ConsumerStatefulWidget {
+  final String status;
+
+  const _SubscribeButtonBuilder({required this.status});
+
+  @override
+  ConsumerState<_SubscribeButtonBuilder> createState() =>
+      _SubscribeButtonBuilderState();
+}
+
+class _SubscribeButtonBuilderState
+    extends ConsumerState<_SubscribeButtonBuilder> {
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final conferenceAsync = ref.watch(activeConferenceProvider);
+
+    return conferenceAsync.when(
+      data: (conference) {
+        if (conference == null) {
+          return const SizedBox.shrink();
+        }
+
+        // Check if user already registered
+        final registrationAsync = ref.watch(
+          conferenceRegistrationProvider(conference.id),
+        );
+
+        return registrationAsync.when(
+          data: (registration) {
+            if (registration != null) {
+              // User is already registered
+              return SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyRegistrationsScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'مسجل - عرض التفاصيل',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // User not registered - show subscribe button
+            return SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setState(() => isLoading = true);
+                        try {
+                          final service = ConferenceService();
+                          await service.registerToConference(
+                            conferenceId: conference.id,
+                          );
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('تم إرسال طلب التسجيل بنجاح'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            // Refresh registration status
+                            ref.invalidate(
+                              conferenceRegistrationProvider(conference.id),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('فشل التسجيل: ${e.toString()}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => isLoading = false);
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEC1313),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'اشترك الآن',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            );
+          },
+          loading: () => SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEC1313),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
+          ),
+          error: (_, __) => SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () async {
+                setState(() => isLoading = true);
+                try {
+                  final conferenceData = await ref.read(
+                    activeConferenceProvider.future,
+                  );
+                  if (conferenceData != null) {
+                    final service = ConferenceService();
+                    await service.registerToConference(
+                      conferenceId: conferenceData.id,
+                    );
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم إرسال طلب التسجيل بنجاح'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      ref.invalidate(
+                        conferenceRegistrationProvider(conferenceData.id),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('فشل التسجيل: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() => isLoading = false);
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEC1313),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'اشترك الآن',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

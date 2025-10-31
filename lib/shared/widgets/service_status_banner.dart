@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/errors/app_error.dart';
 import 'custom_button.dart';
@@ -316,6 +317,11 @@ class ServiceStatusProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// Riverpod provider for ServiceStatusProvider
+final serviceStatusProviderProvider = ChangeNotifierProvider<ServiceStatusProvider>((ref) {
+  return ServiceStatusProvider();
+});
 
 /// Widget that automatically shows service status banner
 class ServiceStatusWrapper extends StatelessWidget {

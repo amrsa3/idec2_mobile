@@ -50,11 +50,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         if (success) {
           debugPrint('ForgotPasswordScreen: Reset OTP sent successfully');
 
-          // Navigate to reset password screen
-          context.go(
-            '${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}',
-          );
-
           // استخدام الرسالة من الخادم إذا كانت متوفرة
           final authState = ref.read(compatibleAuthProvider);
           String successTitle = 'إعادة تعيين كلمة المرور';
@@ -78,12 +73,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 successMessage = messageEn;
               }
+            } else if (response.containsKey('message')) {
+              successMessage = response['message'] as String? ?? successMessage;
             }
           }
 
           await NotificationService.showSuccess(
             title: successTitle,
             message: successMessage,
+          );
+
+          // Navigate to reset password screen after showing message
+          context.go(
+            '${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}',
           );
         } else {
           final authState = ref.read(compatibleAuthProvider);
@@ -107,8 +109,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               } else if (messageEn != null && messageEn.isNotEmpty) {
                 errorMessage = messageEn;
               }
+            } else if (response.containsKey('message')) {
+              errorMessage = response['message'] as String? ?? errorMessage;
             }
-          } else if (authState.error != null && authState.error!.isNotEmpty) {
+          }
+
+          // استخدام رسالة الخطأ من authState إذا كانت متوفرة
+          if (authState.error != null && authState.error!.isNotEmpty) {
             errorMessage = authState.error!;
           }
 

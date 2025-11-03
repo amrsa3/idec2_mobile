@@ -365,7 +365,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             isRTL ? Icons.arrow_forward : Icons.arrow_back,
             color: AppColors.textPrimary,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoutes.login);
+            }
+          },
         ),
       ),
       body: SafeArea(

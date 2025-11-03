@@ -727,16 +727,82 @@ class CompatibleAuthService {
       });
 
       if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>?;
+
+        // حفظ آخر استجابة من الخادم
+        if (responseData != null) {
+          _lastResponse = responseData;
+        }
+
         _isLoading = false;
         return true;
       } else {
-        _error = 'فشل في طلب إعادة تعيين كلمة المرور';
+        // Handle non-200 responses
+        if (response.data != null && response.data is Map<String, dynamic>) {
+          final responseData = response.data as Map<String, dynamic>;
+          
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            
+            if (messageAr.isNotEmpty || messageEn.isNotEmpty) {
+              _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            } else {
+              _error = errorData['message'] as String? ?? 'فشل في طلب إعادة تعيين كلمة المرور';
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'فشل في طلب إعادة تعيين كلمة المرور';
+          }
+        } else {
+          _error = 'فشل في طلب إعادة تعيين كلمة المرور';
+        }
+        
         _isLoading = false;
         return false;
       }
     } catch (e) {
       debugPrint('❌ Password reset request error: $e');
-      _error = 'خطأ في طلب إعادة تعيين كلمة المرور: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            
+            if (messageAr.isNotEmpty || messageEn.isNotEmpty) {
+              _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            } else {
+              _error = errorData['message'] as String? ?? 'خطأ في طلب إعادة تعيين كلمة المرور';
+            }
+          } else if (responseData.containsKey('messageAr') &&
+              responseData.containsKey('messageEn')) {
+            // Direct Smart Messages System format
+            final messageAr = responseData['messageAr'] as String? ?? '';
+            final messageEn = responseData['messageEn'] as String? ?? '';
+            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في طلب إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error = 'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }
@@ -756,16 +822,82 @@ class CompatibleAuthService {
       });
 
       if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>?;
+
+        // حفظ آخر استجابة من الخادم
+        if (responseData != null) {
+          _lastResponse = responseData;
+        }
+
         _isLoading = false;
         return true;
       } else {
-        _error = 'فشل في إعادة تعيين كلمة المرور';
+        // Handle non-200 responses
+        if (response.data != null && response.data is Map<String, dynamic>) {
+          final responseData = response.data as Map<String, dynamic>;
+          
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            
+            if (messageAr.isNotEmpty || messageEn.isNotEmpty) {
+              _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            } else {
+              _error = errorData['message'] as String? ?? 'فشل في إعادة تعيين كلمة المرور';
+            }
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'فشل في إعادة تعيين كلمة المرور';
+          }
+        } else {
+          _error = 'فشل في إعادة تعيين كلمة المرور';
+        }
+        
         _isLoading = false;
         return false;
       }
     } catch (e) {
       debugPrint('❌ Password reset error: $e');
-      _error = 'خطأ في إعادة تعيين كلمة المرور: $e';
+
+      // Handle DioException specifically
+      if (e is DioException) {
+        if (e.response?.data != null) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+
+          // Check for Smart Messages System error
+          if (responseData.containsKey('error') &&
+              responseData['error'] is Map<String, dynamic>) {
+            final errorData = responseData['error'] as Map<String, dynamic>;
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            
+            if (messageAr.isNotEmpty || messageEn.isNotEmpty) {
+              _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            } else {
+              _error = errorData['message'] as String? ?? 'خطأ في إعادة تعيين كلمة المرور';
+            }
+          } else if (responseData.containsKey('messageAr') &&
+              responseData.containsKey('messageEn')) {
+            // Direct Smart Messages System format
+            final messageAr = responseData['messageAr'] as String? ?? '';
+            final messageEn = responseData['messageEn'] as String? ?? '';
+            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+          } else if (responseData.containsKey('message')) {
+            _error = responseData['message'] as String;
+          } else {
+            _error = 'خطأ في إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى';
+          }
+        } else {
+          _error = 'خطأ في الاتصال بالخادم. يرجى التحقق من الإنترنت والمحاولة مرة أخرى';
+        }
+      } else {
+        _error = 'خطأ غير متوقع. يرجى المحاولة مرة أخرى';
+      }
+
       _isLoading = false;
       return false;
     }

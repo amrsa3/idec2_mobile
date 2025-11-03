@@ -157,18 +157,18 @@ class AppLocalizationsAr extends AppLocalizations {
       'انضم إلى معرض ومؤتمر IDEC لطب الأسنان وتواصل مع أطباء الأسنان والمختصين والمبتكرين من جميع أنحاء العالم.';
 
   @override
-  String get onboardingTitle2 => 'شبكة مهنية متكاملة';
+  String get onboardingTitle2 => 'تواصل وبناء العلاقات المهنية.';
 
   @override
   String get onboardingDescription2 =>
-      'تواصل مع نخبة من أطباء الأسنان والخبراء الدوليين، وشارك في ورش العمل والجلسات العلمية لتبادل المعرفة وتطوير مهاراتك المهنية في طب الأسنان.';
+      'بناء علاقات مهنية مع الحضور الآخرين، وتبادل الخبرات، والتعاون في تطوير مجال طب الأسنان.';
 
   @override
-  String get onboardingTitle3 => 'معرض طب الأسنان ';
+  String get onboardingTitle3 => 'معرض وتجارة';
 
   @override
   String get onboardingDescription3 =>
-      'اكتشف أحدث الابتكارات والأدوات الطبية في معرض IDEC الشامل، وتعرف على أحدث التقنيات والمعدات المتطورة في عالم طب الأسنان.';
+      'استكشف أحدث التقنيات والمنتجات في مجال طب الأسنان من خلال المعرض التجاري والعروض التفاعلية.';
 
   @override
   String get onboardingPage3Description =>
@@ -854,95 +854,95 @@ class AppLocalizationsAr extends AppLocalizations {
   String get registrationStatus => 'حالة التسجيل';
 
   @override
-  String get selectPaymentGateway => 'اختر بوابة الدفع';
+  String get selectPaymentGateway => 'Select Payment Gateway';
 
   @override
-  String get processingPayment => 'جارٍ المعالجة...';
+  String get processingPayment => 'Processing...';
 
   @override
-  String get completePayment => 'إتمام الدفع';
+  String get completePayment => 'Complete Payment';
 
   @override
-  String get paymentSuccess => 'تم الدفع بنجاح';
+  String get paymentSuccess => 'Payment Successful';
 
   @override
-  String get paymentFailed => 'فشل الدفع';
+  String get paymentFailed => 'Payment Failed';
 
   @override
-  String get youAreNowActiveParticipant => 'أنت الآن مشارك نشط';
+  String get youAreNowActiveParticipant => 'You are now an active participant';
 
   @override
-  String get noActiveGateways => 'لا توجد بوابات دفع نشطة حالياً';
+  String get noActiveGateways => 'No active payment gateways available';
 
   @override
-  String get invoiceReceipt => 'الإيصال';
+  String get invoiceReceipt => 'Receipt';
 
   @override
-  String get receiptDetails => 'تفاصيل الإيصال';
+  String get receiptDetails => 'Receipt Details';
 
   @override
-  String get invoiceNumber => 'رقم الفاتورة';
+  String get invoiceNumber => 'Invoice Number';
 
   @override
-  String get conferenceOrCourse => 'المؤتمر/الدورة';
+  String get conferenceOrCourse => 'Conference/Course';
 
   @override
-  String get amount => 'المبلغ';
+  String get amount => 'Amount';
 
   @override
-  String get issueDate => 'تاريخ الإصدار';
+  String get issueDate => 'Issue Date';
 
   @override
-  String get dueDate => 'تاريخ الاستحقاق';
+  String get dueDate => 'Due Date';
 
   @override
-  String get transactionDetails => 'تفاصيل المعاملة';
+  String get transactionDetails => 'Transaction Details';
 
   @override
-  String get transactionNumber => 'رقم المعاملة';
+  String get transactionNumber => 'Transaction Number';
 
   @override
-  String get paymentGateway => 'بوابة الدفع';
+  String get paymentGateway => 'Payment Gateway';
 
   @override
-  String get paymentMethod => 'طريقة الدفع';
+  String get paymentMethod => 'Payment Method';
 
   @override
-  String get transactionDate => 'تاريخ المعاملة';
+  String get transactionDate => 'Transaction Date';
 
   @override
-  String get completionDate => 'تاريخ الإتمام';
+  String get completionDate => 'Completion Date';
 
   @override
-  String get shareReceipt => 'مشاركة الإيصال';
+  String get shareReceipt => 'Share Receipt';
 
   @override
-  String get backToHome => 'العودة للرئيسية';
+  String get backToHome => 'Back to Home';
 
   @override
-  String get paymentInput => 'إدخال بيانات الدفع';
+  String get paymentInput => 'Payment Input';
 
   @override
-  String get confirmPayment => 'تأكيد';
+  String get confirmPayment => 'Confirm';
 
   @override
-  String get enterPaymentCode => 'أدخل كود الدفع';
+  String get enterPaymentCode => 'Enter Payment Code';
 
   @override
-  String get enterSecretCode => 'أدخل الرمز السري';
+  String get enterSecretCode => 'Enter Secret Code';
 
   @override
-  String get featureComingSoon => 'ميزة المشاركة قريباً';
+  String get featureComingSoon => 'Feature coming soon';
 
   @override
-  String get paymentProcessingError => 'فشل عملية الدفع';
+  String get paymentProcessingError => 'Payment Processing Error';
 
   @override
-  String get gatewaySelectionTitle => 'اختر بوابة الدفع';
+  String get gatewaySelectionTitle => 'Select Payment Gateway';
 
   @override
-  String get testMode => 'وضع الاختبار';
+  String get testMode => 'Test Mode';
 
   @override
-  String get productionMode => 'وضع الإنتاج';
+  String get productionMode => 'Production Mode';
 }

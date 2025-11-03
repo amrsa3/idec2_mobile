@@ -346,26 +346,14 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
   /// Print receipt
   Future<void> _printReceipt(BuildContext context) async {
     try {
-      final receiptText = _buildReceiptText();
+      // Generate PDF for printing
+      final pdf = await _generatePdf();
       
-      if (kIsWeb) {
-        // For web: show print dialog
-        await Share.share(
-          receiptText,
-          subject: 'إيصال الدفع - ${widget.invoice.invoiceNumber}',
-        );
-      } else {
-        // For mobile: save to file and share for printing
-        final directory = await getTemporaryDirectory();
-        final file = File('${directory.path}/receipt_${widget.invoice.invoiceNumber}.txt');
-        await file.writeAsString(receiptText);
-        
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          subject: 'إيصال الدفع - ${widget.invoice.invoiceNumber}',
-          text: 'إيصال الدفع',
-        );
-      }
+      // Use Printing.layoutPdf to show print dialog
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf,
+        name: 'إيصال_الدفع_${widget.invoice.invoiceNumber}.pdf',
+      );
     } catch (e) {
       debugPrint('❌ Error printing receipt: $e');
       if (context.mounted) {
@@ -454,9 +442,36 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
     final invoice = widget.invoice;
     final transaction = widget.transaction;
     
-    // Load Arabic fonts
-    final arabicFont = pw.Font.ttf(await rootBundle.load('assets/fonts/Cairo/Cairo-Regular.ttf'));
-    final arabicFontBold = pw.Font.ttf(await rootBundle.load('assets/fonts/Cairo/Cairo-Bold.ttf'));
+    // Load Arabic fonts - Try NotoSansArabic first for better Arabic support
+    pw.Font arabicFont;
+    pw.Font arabicFontBold;
+    
+    try {
+      // Try loading NotoSansArabic first (better Unicode support)
+      final notoSansData = await rootBundle.load('assets/fonts/NotoSansArabic-Regular.ttf');
+      arabicFont = pw.Font.ttf(notoSansData);
+      arabicFontBold = pw.Font.ttf(notoSansData); // Use same font for bold, or load Cairo-Bold
+      
+      // Try to load Cairo-Bold for better bold text
+      try {
+        final cairoBoldData = await rootBundle.load('assets/fonts/Cairo/Cairo-Bold.ttf');
+        arabicFontBold = pw.Font.ttf(cairoBoldData);
+      } catch (e) {
+        // Fallback to NotoSansArabic if Cairo-Bold fails
+        debugPrint('⚠️ Could not load Cairo-Bold, using NotoSansArabic for bold: $e');
+      }
+    } catch (e) {
+      // Fallback to Cairo if NotoSansArabic fails
+      debugPrint('⚠️ Could not load NotoSansArabic, falling back to Cairo: $e');
+      final cairoData = await rootBundle.load('assets/fonts/Cairo/Cairo-Regular.ttf');
+      arabicFont = pw.Font.ttf(cairoData);
+      try {
+        final cairoBoldData = await rootBundle.load('assets/fonts/Cairo/Cairo-Bold.ttf');
+        arabicFontBold = pw.Font.ttf(cairoBoldData);
+      } catch (e2) {
+        arabicFontBold = arabicFont;
+      }
+    }
     
     pdf.addPage(
       pw.Page(
@@ -475,6 +490,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
                     fontSize: 28,
                     fontWeight: pw.FontWeight.bold,
                   ),
+                  textDirection: pw.TextDirection.rtl,
                 ),
               ),
               pw.SizedBox(height: 30),
@@ -501,6 +517,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
                             fontSize: 18,
                             fontWeight: pw.FontWeight.bold,
                           ),
+                          textDirection: pw.TextDirection.rtl,
                         ),
                       ],
                     ),
@@ -543,6 +560,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
                           fontSize: 16,
                           fontWeight: pw.FontWeight.bold,
                         ),
+                        textDirection: pw.TextDirection.rtl,
                       ),
                       pw.SizedBox(height: 12),
                       
@@ -582,6 +600,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
                     fontSize: 14,
                     color: PdfColors.grey700,
                   ),
+                  textDirection: pw.TextDirection.rtl,
                 ),
               ),
             ],
@@ -597,6 +616,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
   pw.Widget _buildPdfRow(String label, String value, pw.Font font, {bool isHighlighted = false}) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      textDirection: pw.TextDirection.rtl,
       children: [
         pw.Text(
           '$label:',
@@ -605,6 +625,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
             fontSize: 14,
             color: PdfColors.grey700,
           ),
+          textDirection: pw.TextDirection.rtl,
         ),
         pw.Text(
           value,
@@ -614,6 +635,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
             fontWeight: isHighlighted ? pw.FontWeight.bold : pw.FontWeight.normal,
             color: isHighlighted ? PdfColors.blue900 : PdfColors.black,
           ),
+          textDirection: pw.TextDirection.rtl,
         ),
       ],
     );

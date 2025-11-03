@@ -205,8 +205,9 @@ class LocalProfileService {
       }
 
       // If connected, check cache strategy
+      // IMPORTANT: When forceRefresh is true, NEVER use cache (even recent cache)
       if (!forceRefresh) {
-        // Use recent cache if available and requested
+        // Use recent cache if available and requested (only if not forceRefresh)
         if (useRecentCache && await _isRecentCache()) {
           final cachedProfile = await _getCachedProfile();
           if (cachedProfile != null) {
@@ -216,13 +217,23 @@ class LocalProfileService {
           }
         }
 
-        // Use regular cache if valid
+        // Use regular cache if valid (only if not forceRefresh)
         if (await _isCacheValid()) {
           final cachedProfile = await _getCachedProfile();
           if (cachedProfile != null) {
             debugPrint('✅ ProfileService: Using cached profile data');
             return cachedProfile;
           }
+        }
+      } else {
+        debugPrint('🔄 ProfileService: forceRefresh=true, skipping all cache checks');
+        // Clear cache when forceRefresh to ensure fresh data
+        try {
+          await clearCache();
+          debugPrint('✅ ProfileService: Cache cleared due to forceRefresh');
+        } catch (e) {
+          debugPrint('⚠️ ProfileService: Error clearing cache: $e');
+          // Continue anyway
         }
       }
 
@@ -1290,9 +1301,14 @@ class LocalProfileService {
 
   /// Alias for getProfile() for backward compatibility
   /// Use getProfile() instead - this method will be deprecated
+  /// When forceRefresh is true, NEVER use cache (not even recent cache)
   static Future<ProfileModel?> getCurrentProfile(
       {bool forceRefresh = false}) async {
-    return getProfile(forceRefresh: forceRefresh, useRecentCache: true);
+    // If forceRefresh is true, disable both regular cache and recent cache
+    return getProfile(
+      forceRefresh: forceRefresh, 
+      useRecentCache: !forceRefresh // Disable recent cache if forceRefresh
+    );
   }
 
   /// Update profile picture URL locally without server call

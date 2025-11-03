@@ -157,18 +157,18 @@ class AppLocalizationsAr extends AppLocalizations {
       'انضم إلى معرض ومؤتمر IDEC لطب الأسنان وتواصل مع أطباء الأسنان والمختصين والمبتكرين من جميع أنحاء العالم.';
 
   @override
-  String get onboardingTitle2 => 'تواصل وتشبيك';
+  String get onboardingTitle2 => 'شبكة مهنية متكاملة';
 
   @override
   String get onboardingDescription2 =>
-      'بناء علاقات مهنية مع الحضور الآخرين، وتبادل الخبرات، والتعاون في تطوير مجال طب الأسنان.';
+      'تواصل مع نخبة من أطباء الأسنان والخبراء الدوليين، وشارك في ورش العمل والجلسات العلمية لتبادل المعرفة وتطوير مهاراتك المهنية في طب الأسنان.';
 
   @override
-  String get onboardingTitle3 => 'معرض وتجارة';
+  String get onboardingTitle3 => 'معرض طب الأسنان ';
 
   @override
   String get onboardingDescription3 =>
-      'استكشف أحدث التقنيات والمنتجات في مجال طب الأسنان من خلال المعرض التجاري والعروض التفاعلية.';
+      'اكتشف أحدث الابتكارات والأدوات الطبية في معرض IDEC الشامل، وتعرف على أحدث التقنيات والمعدات المتطورة في عالم طب الأسنان.';
 
   @override
   String get onboardingPage3Description =>
@@ -852,4 +852,97 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get registrationStatus => 'حالة التسجيل';
+
+  @override
+  String get selectPaymentGateway => 'اختر بوابة الدفع';
+
+  @override
+  String get processingPayment => 'جارٍ المعالجة...';
+
+  @override
+  String get completePayment => 'إتمام الدفع';
+
+  @override
+  String get paymentSuccess => 'تم الدفع بنجاح';
+
+  @override
+  String get paymentFailed => 'فشل الدفع';
+
+  @override
+  String get youAreNowActiveParticipant => 'أنت الآن مشارك نشط';
+
+  @override
+  String get noActiveGateways => 'لا توجد بوابات دفع نشطة حالياً';
+
+  @override
+  String get invoiceReceipt => 'الإيصال';
+
+  @override
+  String get receiptDetails => 'تفاصيل الإيصال';
+
+  @override
+  String get invoiceNumber => 'رقم الفاتورة';
+
+  @override
+  String get conferenceOrCourse => 'المؤتمر/الدورة';
+
+  @override
+  String get amount => 'المبلغ';
+
+  @override
+  String get issueDate => 'تاريخ الإصدار';
+
+  @override
+  String get dueDate => 'تاريخ الاستحقاق';
+
+  @override
+  String get transactionDetails => 'تفاصيل المعاملة';
+
+  @override
+  String get transactionNumber => 'رقم المعاملة';
+
+  @override
+  String get paymentGateway => 'بوابة الدفع';
+
+  @override
+  String get paymentMethod => 'طريقة الدفع';
+
+  @override
+  String get transactionDate => 'تاريخ المعاملة';
+
+  @override
+  String get completionDate => 'تاريخ الإتمام';
+
+  @override
+  String get shareReceipt => 'مشاركة الإيصال';
+
+  @override
+  String get backToHome => 'العودة للرئيسية';
+
+  @override
+  String get paymentInput => 'إدخال بيانات الدفع';
+
+  @override
+  String get confirmPayment => 'تأكيد';
+
+  @override
+  String get enterPaymentCode => 'أدخل كود الدفع';
+
+  @override
+  String get enterSecretCode => 'أدخل الرمز السري';
+
+  @override
+  String get featureComingSoon => 'ميزة المشاركة قريباً';
+
+  @override
+  String get paymentProcessingError => 'فشل عملية الدفع';
+
+  @override
+  String get gatewaySelectionTitle => 'اختر بوابة الدفع';
+
+  @override
+  String get testMode => 'وضع الاختبار';
+
+  @override
+  String get productionMode => 'وضع الإنتاج';
 }

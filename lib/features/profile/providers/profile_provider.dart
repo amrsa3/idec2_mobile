@@ -11,7 +11,7 @@ import '../../../models/profile_model.dart';
 import '../../../models/verification_request_model.dart';
 import '../../../providers/profile_rules_provider.dart';
 import '../../../services/authenticated_image_service.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../services/compatible_auth_service.dart' show CompatibleAuthService, CompatibleAuthState, compatibleAuthProvider;
 import '../../../services/image_cache_service.dart';
 import '../../../shared/services/notification_service.dart';
 import '../services/profile_service.dart';
@@ -112,6 +112,32 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   ProfileNotifier(this.ref) : super(const ProfileState()) {
     // Listen to authentication state changes
     _listenToAuthChanges();
+    
+    // Initialize profile if user is already authenticated (e.g., app restart)
+    _initializeIfAuthenticated();
+  }
+  
+  /// Initialize profile if user is already authenticated
+  Future<void> _initializeIfAuthenticated() async {
+    // Small delay to ensure auth state is ready
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final authState = ref.read(compatibleAuthProvider);
+    if (authState.isAuthenticated && state.currentProfile == null) {
+      debugPrint('🔄 ProfileProvider: User already authenticated, loading profile on init');
+      
+      // Clear cache first
+      try {
+        await LocalProfileService.clearCache();
+        debugPrint('✅ ProfileProvider: Cache cleared on init');
+      } catch (e) {
+        debugPrint('⚠️ ProfileProvider: Error clearing cache on init: $e');
+      }
+      
+      // Load profile with qualifications and governorates
+      // Use initializeProfilePage to ensure all reference data is available
+      await initializeProfilePage(forceRefresh: true);
+    }
   }
 
   /// تحديث الحالة بأمان مع فحص mounted
@@ -146,9 +172,76 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   /// Listen to authentication state changes to auto-reload profile
   void _listenToAuthChanges() {
-    // TODO: Implement proper auth state listening
-    // This is temporarily disabled due to AuthState structure changes
-    debugPrint('🔄 ProfileProvider: Auth state listening disabled temporarily');
+    // Use ref.listen to listen to auth state changes
+    ref.listen<CompatibleAuthState>(
+      compatibleAuthProvider,
+      (previous, next) {
+        // If user logged out, clear profile state
+        if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+          debugPrint('🔄 ProfileProvider: User logged out, clearing profile state');
+          _clearProfileState();
+        }
+        // If user logged in, load profile
+        else if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
+          debugPrint('🔄 ProfileProvider: User logged in, loading profile');
+          debugPrint('🔄 ProfileProvider: Previous auth: ${previous?.isAuthenticated}, Next auth: ${next.isAuthenticated}');
+          debugPrint('🔄 ProfileProvider: User ID: ${next.user?.id}');
+          
+          // Clear cache first to ensure fresh data
+          // Use async operation in the listener
+          Future.microtask(() async {
+            try {
+              await LocalProfileService.clearCache();
+              debugPrint('✅ ProfileProvider: Cache cleared after login');
+            } catch (e) {
+              debugPrint('⚠️ ProfileProvider: Error clearing cache: $e');
+            }
+            
+            // Use a delay to ensure auth state and tokens are fully ready
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            if (mounted) {
+              debugPrint('🔄 ProfileProvider: Loading profile after login with force refresh');
+              // Use initializeProfilePage to ensure qualifications and governorates are also loaded
+              // This prevents "غير محدد" from appearing when displaying qualification
+              await initializeProfilePage(forceRefresh: true);
+              debugPrint('✅ ProfileProvider: Profile, qualifications, and governorates loaded successfully after login');
+            }
+          });
+        }
+        // Also refresh profile if user was already authenticated and auth state is refreshed
+        // Check if user ID changed or if we need to refresh (e.g., after admin approval)
+        else if (previous?.isAuthenticated == true && next.isAuthenticated) {
+          // If user ID changed, it's a different user
+          if (previous?.user?.id != next.user?.id) {
+            debugPrint('🔄 ProfileProvider: User changed, loading new profile');
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                loadCurrentProfile(forceRefresh: true);
+              }
+            });
+          }
+          // If same user but we want to refresh (e.g., after profile edit or admin approval)
+          // We'll check if profile data is missing or stale
+          else if (state.currentProfile == null) {
+            debugPrint('🔄 ProfileProvider: Authenticated but no profile data, loading profile');
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                loadCurrentProfile(forceRefresh: true);
+              }
+            });
+          }
+        }
+      },
+    );
+  }
+
+  /// Clear profile state completely
+  void _clearProfileState() {
+    if (mounted) {
+      state = const ProfileState();
+      debugPrint('✅ ProfileProvider: Profile state cleared');
+    }
   }
 
   /// Load profile data
@@ -199,6 +292,13 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               // Ensure boolean fields have safe defaults
               safeData['isActive'] ??= true;
               safeData['requiresDocument'] ??= false;
+              
+              // Convert displayOrder/order to sortOrder for compatibility
+              if (safeData['displayOrder'] != null) {
+                safeData['sortOrder'] = safeData['displayOrder'];
+              } else if (safeData['order'] != null) {
+                safeData['sortOrder'] = safeData['order'];
+              }
 
               final qualification = QualificationModel.fromJson(safeData);
               qualifications.add(qualification);
@@ -209,7 +309,15 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
             continue;
           }
         }
-        debugPrint('✅ ProfileProvider: Qualifications converted successfully');
+        
+        // Sort qualifications by sortOrder (displayOrder)
+        qualifications.sort((a, b) {
+          final orderA = a.sortOrder ?? 0;
+          final orderB = b.sortOrder ?? 0;
+          return orderA.compareTo(orderB);
+        });
+        
+        debugPrint('✅ ProfileProvider: Qualifications converted and sorted successfully');
       } catch (e) {
         debugPrint('❌ ProfileProvider: Error converting qualifications: $e');
       }
@@ -617,6 +725,17 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               error: 'انتهت صلاحية جلسة العمل، يرجى تسجيل الدخول مرة أخرى',
             ));
         return;
+      }
+
+      // Clear cache if forceRefresh is true to ensure fresh data
+      if (forceRefresh) {
+        try {
+          await LocalProfileService.clearCache();
+          debugPrint('✅ ProfileProvider: Cache cleared before loading with forceRefresh');
+        } catch (e) {
+          debugPrint('⚠️ ProfileProvider: Error clearing cache: $e');
+          // Continue anyway
+        }
       }
 
       // Try to load profile with timeout
@@ -1365,20 +1484,26 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   /// Initialize profile page data
+  /// This method ensures profile, qualifications, and governorates are all loaded
+  /// which is essential for displaying qualification/governorate names correctly
   Future<void> initializeProfilePage({bool forceRefresh = false}) async {
     try {
+      debugPrint('🔄 ProfileProvider: Initializing profile page (forceRefresh: $forceRefresh)');
+      
       // First load profile data
       await loadCurrentProfile(forceRefresh: forceRefresh);
 
-      // Wait a bit to ensure token is properly saved
+      // Wait a bit to ensure token is properly saved and profile is loaded
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Then load other data in parallel
+      // Then load other data in parallel (qualifications and governorates are critical for display)
       await Future.wait([
-        loadVerificationRules(),
         loadQualifications(),
         loadGovernorates(),
+        loadVerificationRules(), // This can be in background
       ]);
+      
+      debugPrint('✅ ProfileProvider: Profile page initialized successfully');
     } catch (e) {
       debugPrint('❌ ProfileProvider: Error initializing profile page: $e');
       _safeUpdateState(() => state.copyWith(
@@ -1388,14 +1513,28 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   /// Refresh profile data
+  /// Uses loadCurrentProfile to ensure fresh data from server
   Future<void> refresh() async {
     if (!mounted) return;
+
+    debugPrint('🔄 ProfileProvider: Refreshing profile data...');
 
     // Clear cache to ensure fresh data
     await LocalProfileService.clearCache();
 
-    // Force refresh all data
-    await loadProfile(forceRefresh: true);
+    // Force refresh all data using loadCurrentProfile (better error handling)
+    await loadCurrentProfile(forceRefresh: true);
+    
+    // Also reload other data in background
+    try {
+      await Future.wait([
+        loadGovernorates(),
+        loadQualifications(),
+      ]);
+    } catch (e) {
+      debugPrint('⚠️ ProfileProvider: Error loading reference data during refresh: $e');
+      // Don't fail the refresh if reference data fails
+    }
   }
 
   /// Light refresh - just update state without server call

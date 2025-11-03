@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
@@ -24,12 +25,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late Animation<double> _logoAnimation;
   late Animation<double> _textAnimation;
   late Animation<Offset> _slideAnimation;
+  String _version = ''; // Version from pubspec.yaml
 
   @override
   void initState() {
     super.initState();
+    _loadVersionInfo();
     _setupAnimations();
     _navigateAfterDelay();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _version = packageInfo.version;
+      });
+    } catch (e) {
+      debugPrint('❌ [SPLASH] Error loading version info: $e');
+      // Fallback to default version if loading fails
+      setState(() {
+        _version = '1.0.0';
+      });
+    }
   }
 
   void _setupAnimations() {
@@ -295,7 +313,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 32),
                       child: Text(
-                        'Version 1.0.0',
+                        _version.isEmpty ? 'Loading...' : 'Version $_version',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white.withOpacity(0.7),
                             ),

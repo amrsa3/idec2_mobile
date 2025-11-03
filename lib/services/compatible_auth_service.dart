@@ -2,14 +2,21 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/user_model.dart';
 import 'enhanced_dio_service_v2.dart';
+import 'enhanced_storage_service.dart';
+import 'lazy_loading_service.dart';
 import 'platform_storage_service.dart';
 import 'unified_token_manager.dart';
+import '../features/profile/services/profile_service.dart' as profile_service;
+
+// Conditional import for web
+import 'dart:html' as html;
 
 /// نظام مصادقة متوافق تماماً مع النظام الحالي
 class CompatibleAuthService {
@@ -770,15 +777,21 @@ class CompatibleAuthService {
       _isLoading = true;
       _error = null;
 
+      debugPrint('🔐 [COMPATIBLE_AUTH] Starting comprehensive logout process...');
+
       // إرسال طلب تسجيل الخروج للخادم
       try {
         await _dio.post('/auth/logout');
+        debugPrint('✅ [COMPATIBLE_AUTH] Server logout successful');
       } catch (e) {
-        debugPrint('⚠️ Server logout failed, continuing with local logout: $e');
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Server logout failed, continuing with local logout: $e');
       }
 
       // مسح البيانات المحلية - مسح جميع المفاتيح
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing tokens...');
       await _tokenManager.clearTokens();
+      
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing storage keys...');
       await _storage.delete('access_token');
       await _storage.delete('refresh_token');
       await _storage.delete('user_data');
@@ -786,14 +799,86 @@ class CompatibleAuthService {
       await _storage.deleteSecure('secure_refresh_token');
       await _storage.deleteSecure('current_user');
 
+      // مسح الكاش الإضافي - Lazy loading cache
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing lazy loading cache...');
+      try {
+        await LazyLoadingService.instance.clearAllCache();
+        debugPrint('✅ [COMPATIBLE_AUTH] Lazy loading cache cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing lazy loading cache: $e');
+      }
+
+      // مسح Enhanced Storage
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing enhanced storage...');
+      try {
+        await EnhancedStorageService.instance.clearAllData();
+        debugPrint('✅ [COMPATIBLE_AUTH] Enhanced storage cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing enhanced storage: $e');
+      }
+
+      // مسح كاش الملف الشخصي
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing profile cache...');
+      try {
+        // Import will be added at top of file
+        await _clearProfileCache();
+        debugPrint('✅ [COMPATIBLE_AUTH] Profile cache cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing profile cache: $e');
+      }
+
+      // مسح إضافي للويب - مسح جميع البيانات المخزنة
+      if (kIsWeb) {
+        debugPrint('🌐 [COMPATIBLE_AUTH] Additional web cleanup...');
+        try {
+          // Clear all platform storage
+          await _storage.clearSecure();
+          await _storage.clear();
+          
+          // Clear browser storage
+          html.window.localStorage.clear();
+          html.window.sessionStorage.clear();
+          
+          debugPrint('✅ [COMPATIBLE_AUTH] Web storage cleared successfully');
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
+        }
+      }
+
+      // مسح الكاش من الذاكرة
       _currentUser = null;
       _isLoading = false;
+      
+      debugPrint('✅ [COMPATIBLE_AUTH] Logout completed successfully');
       return true;
     } catch (e) {
-      debugPrint('❌ Logout error: $e');
+      debugPrint('❌ [COMPATIBLE_AUTH] Logout error: $e');
       _error = 'خطأ في تسجيل الخروج: $e';
       _isLoading = false;
+      
+      // Force clear even on error
+      _currentUser = null;
+      if (kIsWeb) {
+        try {
+          html.window.localStorage.clear();
+          html.window.sessionStorage.clear();
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Force web cleanup error: $e');
+        }
+      }
+      
       return false;
+    }
+  }
+
+  /// مسح كاش الملف الشخصي (private helper)
+  Future<void> _clearProfileCache() async {
+    try {
+      await profile_service.LocalProfileService.clearCache();
+      debugPrint('✅ [COMPATIBLE_AUTH] Profile cache cleared successfully');
+    } catch (e) {
+      debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing profile cache: $e');
+      // لا نريد أن يفشل تسجيل الخروج بسبب خطأ في مسح الكاش
     }
   }
 
@@ -961,8 +1046,34 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// تسجيل الدخول بالهاتف
   Future<bool> loginWithPhone(String phone, String password) async {
+    final previousState = state;
     final result = await _authService.loginWithPhone(phone, password);
     _updateState();
+    
+    // If login successful, ensure state change is detected
+    if (result && _authService.isAuthenticated) {
+      debugPrint('✅ [COMPATIBLE_AUTH] Login successful, ProfileProvider should load profile');
+      debugPrint('✅ [COMPATIBLE_AUTH] Previous auth state: ${previousState.isAuthenticated}, Current: ${state.isAuthenticated}');
+      
+      // Force state update to ensure listener is triggered even if values appear the same
+      // This is important because sometimes state doesn't change reference
+      if (previousState.isAuthenticated == state.isAuthenticated) {
+        state = CompatibleAuthState(
+          user: _authService.user,
+          isLoading: _authService.isLoading,
+          error: _authService.error,
+          isAuthenticated: _authService.isAuthenticated,
+          sessionExpired: _authService.sessionExpired,
+          unverifiedPhoneNumber: _authService.unverifiedPhoneNumber,
+          lastResponse: _authService.lastResponse,
+        );
+        debugPrint('🔄 [COMPATIBLE_AUTH] Forced state update after login to trigger listeners');
+      }
+      
+      // ProfileProvider listener will automatically trigger loadCurrentProfile
+      // when it detects isAuthenticated changed from false to true
+    }
+    
     return result;
   }
 
@@ -1031,8 +1142,35 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
   }
 
   /// تحديث حالة المصادقة يدوياً
+  /// This method updates auth state and should trigger profile refresh
   void refreshAuthState() {
+    debugPrint('🔄 [COMPATIBLE_AUTH] Refreshing auth state...');
+    final previousState = state;
     _updateState();
+    
+    // If user is authenticated, ensure ProfileProvider gets notified
+    if (_authService.isAuthenticated) {
+      debugPrint('✅ [COMPATIBLE_AUTH] User is authenticated, ProfileProvider should refresh');
+      
+      // Force state update to trigger listeners even if values appear unchanged
+      // This ensures ProfileProvider gets notified when refreshAuthState is called
+      if (previousState.isAuthenticated == state.isAuthenticated) {
+        // If auth state didn't change, force an update by creating a new state
+        // This will trigger listeners even if values are the same
+        state = CompatibleAuthState(
+          user: _authService.user,
+          isLoading: _authService.isLoading,
+          error: _authService.error,
+          isAuthenticated: _authService.isAuthenticated,
+          sessionExpired: _authService.sessionExpired,
+          unverifiedPhoneNumber: _authService.unverifiedPhoneNumber,
+          lastResponse: _authService.lastResponse,
+        );
+        debugPrint('🔄 [COMPATIBLE_AUTH] Forced state update to trigger listeners');
+      }
+    } else {
+      debugPrint('⚠️ [COMPATIBLE_AUTH] User is not authenticated');
+    }
   }
 
   /// التحقق من حالة المصادقة

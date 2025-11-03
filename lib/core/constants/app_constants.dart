@@ -64,6 +64,11 @@ class AppImages {
   static const String onboarding2 = 'assets/images/onboarding_2.png';
   static const String onboarding3 = 'assets/images/onboarding_3.png';
   static const String placeholder = 'assets/images/placeholder.png';
+  
+  // Payment Gateway Logos
+  static const String jawaliLogo = 'assets/images/jawali.jpg';
+  static const String jaibLogo = 'assets/images/jeeb.jpg';
+  static const String kurimiLogo = 'assets/images/kurimi.jpg';
 }
 
 class AppAnimations {

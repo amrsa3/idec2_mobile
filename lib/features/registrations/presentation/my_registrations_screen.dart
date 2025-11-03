@@ -2,27 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/registration_model.dart';
+import '../../../models/profile_model.dart';
 import '../../../services/registration_service.dart';
+import '../../../shared/widgets/profile_side_drawer.dart';
+import '../../../features/profile/providers/profile_provider.dart';
 import 'registration_detail_screen.dart';
 
 final myRegistrationsProvider =
     FutureProvider<List<RegistrationModel>>((ref) async {
   final service = RegistrationService();
-  return await service.getMyRegistrations();
+  try {
+    final registrations = await service.getMyRegistrations();
+    return registrations;
+  } catch (e) {
+    // Log error for debugging
+    print('❌ [MY_REGISTRATIONS] Error loading registrations: $e');
+    rethrow;
+  }
 });
 
-class MyRegistrationsScreen extends ConsumerWidget {
+class MyRegistrationsScreen extends ConsumerStatefulWidget {
   const MyRegistrationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyRegistrationsScreen> createState() =>
+      _MyRegistrationsScreenState();
+}
+
+class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Ensure data is loaded when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // This will trigger the FutureProvider to load data if not already loaded
+      ref.read(myRegistrationsProvider.future);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final registrationsAsync = ref.watch(myRegistrationsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تسجيلاتي'),
+        title: const Text('اشتراكاتي'),
         centerTitle: true,
+        actions: [
+          // زر القائمة الجانبية
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
+        ],
       ),
+      endDrawer: _buildSideDrawer(context, ref),
       body: registrationsAsync.when(
         data: (registrations) {
           if (registrations.isEmpty) {
@@ -115,6 +151,16 @@ class MyRegistrationsScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSideDrawer(BuildContext context, WidgetRef ref) {
+    final profileState = ref.watch(profileProvider);
+    final currentProfile = profileState.currentProfile;
+    
+    return ProfileSideDrawer(
+      currentScreen: 'registrations',
+      profile: currentProfile,
     );
   }
 }

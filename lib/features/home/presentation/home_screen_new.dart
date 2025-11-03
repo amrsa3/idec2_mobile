@@ -10,6 +10,7 @@ import '../../../models/user_model.dart';
 import '../../../providers/enhanced_auth_provider_v2.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/compatible_auth_service.dart';
+import '../../../services/lazy_loading_service.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../widgets/conference_card_new.dart';
 
@@ -87,6 +88,49 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // Refresh Icon
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white, size: 24),
+                    onPressed: () async {
+                      debugPrint('🔄 [HOME_SCREEN] Refresh button pressed');
+                      try {
+                        // Clear cache for fresh data
+                        await LazyLoadingService.instance.clearAllCache();
+                        debugPrint('✅ [HOME_SCREEN] Cache cleared');
+                        
+                        // Refresh user authentication state
+                        ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+                        debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
+                        
+                        // Refresh profile data - force reload from server
+                        final profileNotifier = ref.read(profileProvider.notifier);
+                        await profileNotifier.loadCurrentProfile(forceRefresh: true);
+                        debugPrint('✅ [HOME_SCREEN] Profile data refreshed');
+                        
+                        // Show success feedback
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('تم تحديث البيانات بنجاح'),
+                              duration: Duration(seconds: 2),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint('❌ [HOME_SCREEN] Refresh error: $e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('خطأ في تحديث البيانات: $e'),
+                              duration: const Duration(seconds: 2),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
                   // Logo/User Photo on the right
                   GestureDetector(
                     onTap: () {
@@ -139,10 +183,29 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            // Refresh user authentication state to get latest user data
-            ref.read(compatibleAuthProvider.notifier).refreshAuthState();
-            // Small delay to show refresh animation
-            await Future.delayed(const Duration(milliseconds: 500));
+            debugPrint('🔄 [HOME_SCREEN] Pull to refresh triggered');
+            
+            try {
+              // Clear relevant cache for fresh data
+              await LazyLoadingService.instance.clearAllCache();
+              debugPrint('✅ [HOME_SCREEN] Cache cleared');
+              
+              // Refresh user authentication state to get latest user data
+              ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+              debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
+              
+              // Refresh profile data - force reload from server
+              final profileNotifier = ref.read(profileProvider.notifier);
+              await profileNotifier.loadCurrentProfile(forceRefresh: true);
+              debugPrint('✅ [HOME_SCREEN] Profile data refreshed');
+              
+              // Small delay to show refresh animation
+              await Future.delayed(const Duration(milliseconds: 500));
+            } catch (e) {
+              debugPrint('❌ [HOME_SCREEN] Refresh error: $e');
+              // Continue anyway to dismiss refresh indicator
+              await Future.delayed(const Duration(milliseconds: 500));
+            }
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

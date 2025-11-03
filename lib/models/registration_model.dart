@@ -3,6 +3,23 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'registration_model.freezed.dart';
 part 'registration_model.g.dart';
 
+class DecimalConverter implements JsonConverter<double, dynamic> {
+  const DecimalConverter();
+
+  @override
+  double fromJson(dynamic json) {
+    if (json is num) {
+      return json.toDouble();
+    } else if (json is String) {
+      return double.parse(json);
+    }
+    return 0.0;
+  }
+
+  @override
+  dynamic toJson(double object) => object;
+}
+
 @freezed
 class RegistrationModel with _$RegistrationModel {
   const factory RegistrationModel({
@@ -13,7 +30,7 @@ class RegistrationModel with _$RegistrationModel {
     @JsonKey(name: 'eventId') String? eventId,
     @JsonKey(name: 'conferenceId') String? conferenceId,
     required String status, // UNDER_REVIEW, ACCEPTED, PAYMENT_PENDING, etc.
-    @JsonKey(name: 'calculatedPrice') required double calculatedPrice,
+    @DecimalConverter() @JsonKey(name: 'calculatedPrice') required double calculatedPrice,
     @JsonKey(name: 'currency') String? currency,
     @JsonKey(name: 'appliedRuleSet') String? appliedRuleSet,
     @JsonKey(name: 'paymentDeadline') DateTime? paymentDeadline,
@@ -49,6 +66,12 @@ extension RegistrationModelExtensions on RegistrationModel {
   bool get isRejected => status == 'REJECTED';
   bool get isOnHold => status == 'ON_HOLD';
 }
+
+
+
+
+
+
 
 
 

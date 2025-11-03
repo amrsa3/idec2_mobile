@@ -15,7 +15,8 @@ _$RegistrationModelImpl _$$RegistrationModelImplFromJson(
       eventId: json['eventId'] as String?,
       conferenceId: json['conferenceId'] as String?,
       status: json['status'] as String,
-      calculatedPrice: (json['calculatedPrice'] as num).toDouble(),
+      calculatedPrice:
+          const DecimalConverter().fromJson(json['calculatedPrice']),
       currency: json['currency'] as String?,
       appliedRuleSet: json['appliedRuleSet'] as String?,
       paymentDeadline: json['paymentDeadline'] == null
@@ -40,7 +41,8 @@ Map<String, dynamic> _$$RegistrationModelImplToJson(
       'eventId': instance.eventId,
       'conferenceId': instance.conferenceId,
       'status': instance.status,
-      'calculatedPrice': instance.calculatedPrice,
+      'calculatedPrice':
+          const DecimalConverter().toJson(instance.calculatedPrice),
       'currency': instance.currency,
       'appliedRuleSet': instance.appliedRuleSet,
       'paymentDeadline': instance.paymentDeadline?.toIso8601String(),

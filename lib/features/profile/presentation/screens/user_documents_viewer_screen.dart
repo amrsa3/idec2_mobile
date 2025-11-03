@@ -7,8 +7,11 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
+import '../../../../models/profile_model.dart';
 import '../../providers/smart_file_provider.dart';
 import '../../../../services/dio_service.dart';
+import '../../../../shared/widgets/profile_side_drawer.dart';
+import '../../providers/profile_provider.dart' as profile_provider;
 
 /// صفحة احترافية لعرض المستندات المرفوعة من المستخدم
 class UserDocumentsViewerScreen extends ConsumerStatefulWidget {
@@ -48,13 +51,31 @@ class _UserDocumentsViewerScreenState
               ref.invalidate(userDocumentsProvider);
             },
           ),
+          // زر القائمة الجانبية
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
         ],
       ),
+      endDrawer: _buildSideDrawer(context, ref),
       body: documentsAsync.when(
         data: (documents) => _buildDocumentsList(documents),
         loading: () => _buildLoadingState(),
         error: (error, stack) => _buildErrorState(error),
       ),
+    );
+  }
+
+  Widget _buildSideDrawer(BuildContext context, WidgetRef ref) {
+    final profileState = ref.watch(profile_provider.profileProvider);
+    final currentProfile = profileState.currentProfile;
+    
+    return ProfileSideDrawer(
+      currentScreen: 'documents',
+      profile: currentProfile,
     );
   }
 

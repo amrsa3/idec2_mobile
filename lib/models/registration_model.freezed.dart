@@ -31,6 +31,7 @@ mixin _$RegistrationModel {
   String? get conferenceId => throw _privateConstructorUsedError;
   String get status =>
       throw _privateConstructorUsedError; // UNDER_REVIEW, ACCEPTED, PAYMENT_PENDING, etc.
+  @DecimalConverter()
   @JsonKey(name: 'calculatedPrice')
   double get calculatedPrice => throw _privateConstructorUsedError;
   @JsonKey(name: 'currency')
@@ -71,7 +72,9 @@ abstract class $RegistrationModelCopyWith<$Res> {
       @JsonKey(name: 'eventId') String? eventId,
       @JsonKey(name: 'conferenceId') String? conferenceId,
       String status,
-      @JsonKey(name: 'calculatedPrice') double calculatedPrice,
+      @DecimalConverter()
+      @JsonKey(name: 'calculatedPrice')
+      double calculatedPrice,
       @JsonKey(name: 'currency') String? currency,
       @JsonKey(name: 'appliedRuleSet') String? appliedRuleSet,
       @JsonKey(name: 'paymentDeadline') DateTime? paymentDeadline,
@@ -197,7 +200,9 @@ abstract class _$$RegistrationModelImplCopyWith<$Res>
       @JsonKey(name: 'eventId') String? eventId,
       @JsonKey(name: 'conferenceId') String? conferenceId,
       String status,
-      @JsonKey(name: 'calculatedPrice') double calculatedPrice,
+      @DecimalConverter()
+      @JsonKey(name: 'calculatedPrice')
+      double calculatedPrice,
       @JsonKey(name: 'currency') String? currency,
       @JsonKey(name: 'appliedRuleSet') String? appliedRuleSet,
       @JsonKey(name: 'paymentDeadline') DateTime? paymentDeadline,
@@ -316,7 +321,9 @@ class _$RegistrationModelImpl implements _RegistrationModel {
       @JsonKey(name: 'eventId') this.eventId,
       @JsonKey(name: 'conferenceId') this.conferenceId,
       required this.status,
-      @JsonKey(name: 'calculatedPrice') required this.calculatedPrice,
+      @DecimalConverter()
+      @JsonKey(name: 'calculatedPrice')
+      required this.calculatedPrice,
       @JsonKey(name: 'currency') this.currency,
       @JsonKey(name: 'appliedRuleSet') this.appliedRuleSet,
       @JsonKey(name: 'paymentDeadline') this.paymentDeadline,
@@ -351,6 +358,7 @@ class _$RegistrationModelImpl implements _RegistrationModel {
   final String status;
 // UNDER_REVIEW, ACCEPTED, PAYMENT_PENDING, etc.
   @override
+  @DecimalConverter()
   @JsonKey(name: 'calculatedPrice')
   final double calculatedPrice;
   @override
@@ -488,7 +496,9 @@ abstract class _RegistrationModel implements RegistrationModel {
       @JsonKey(name: 'eventId') final String? eventId,
       @JsonKey(name: 'conferenceId') final String? conferenceId,
       required final String status,
-      @JsonKey(name: 'calculatedPrice') required final double calculatedPrice,
+      @DecimalConverter()
+      @JsonKey(name: 'calculatedPrice')
+      required final double calculatedPrice,
       @JsonKey(name: 'currency') final String? currency,
       @JsonKey(name: 'appliedRuleSet') final String? appliedRuleSet,
       @JsonKey(name: 'paymentDeadline') final DateTime? paymentDeadline,
@@ -519,6 +529,7 @@ abstract class _RegistrationModel implements RegistrationModel {
   @override
   String get status;
   @override // UNDER_REVIEW, ACCEPTED, PAYMENT_PENDING, etc.
+  @DecimalConverter()
   @JsonKey(name: 'calculatedPrice')
   double get calculatedPrice;
   @override

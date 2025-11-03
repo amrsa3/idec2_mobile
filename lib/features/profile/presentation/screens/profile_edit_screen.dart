@@ -15,8 +15,10 @@ import '../../../../shared/widgets/custom_dropdown.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/loading_button.dart';
 import '../../../../shared/widgets/upload_progress_dialog.dart';
+import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../../../widgets/profile/document_picker_widget.dart';
 import '../../providers/profile_provider.dart';
+import '../../services/profile_service.dart';
 
 /// شاشة تعديل البيانات الشخصية
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -202,10 +204,68 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _loadData();
   }
 
-  void _loadData() {
+  void _loadData() async {
+    // Always load fresh data from server when opening edit screen
+    // This ensures we have the latest profile status (e.g., admin approval)
+    debugPrint('🔍 [PROFILE_EDIT] Loading fresh profile data...');
+    
+    // Clear cache first
+    await LocalProfileService.clearCache();
+    
+    // Load fresh profile data from server
+    await ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+    
+    // Wait a bit for data to load
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Update form with latest data from Provider (not widget.profile)
+    final profileState = ref.read(profileProvider);
+    final latestProfile = profileState.currentProfile ?? widget.profile;
+    
+    if (latestProfile != widget.profile) {
+      debugPrint('🔄 [PROFILE_EDIT] Profile data updated, refreshing form...');
+      // Re-initialize form with latest data
+      _updateFormWithLatestProfile(latestProfile);
+    }
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(profileProvider.notifier).initializeProfilePage();
     });
+  }
+  
+  /// Update form controllers with latest profile data
+  void _updateFormWithLatestProfile(ProfileModel latestProfile) {
+    _fullNameArController.text = latestProfile.fullNameAr ?? '';
+    _fullNameEnController.text = latestProfile.fullNameEn ?? '';
+    _emailController.text = latestProfile.email ?? '';
+    _graduationYearController.text = latestProfile.graduationYear?.toString() ?? '';
+    _universityController.text = latestProfile.university ?? '';
+    _workplaceController.text = latestProfile.workplace ?? '';
+    
+    _selectedBirthDate = latestProfile.birthDate;
+    
+    // Update governorate
+    final governorateId = latestProfile.governorateId;
+    if (governorateId == null || governorateId.isEmpty || governorateId == "0") {
+      _selectedGovernorateId = null;
+    } else {
+      _selectedGovernorateId = governorateId;
+    }
+    
+    // Update qualification
+    final qualificationId = latestProfile.qualificationId;
+    if (qualificationId == null || qualificationId.isEmpty || qualificationId == "0" || qualificationId.trim().isEmpty) {
+      _selectedQualificationId = null;
+    } else {
+      _selectedQualificationId = qualificationId;
+    }
+    
+    _selectedGraduationYear = latestProfile.graduationYear;
+    
+    // Force rebuild
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _retryLoadData() {
@@ -481,6 +541,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('تعديل الملف الشخصي'),
+        actions: [
+          // زر القائمة الجانبية
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
+        ],
+      ),
+      endDrawer: ProfileSideDrawer(
+        currentScreen: 'edit',
+        profile: widget.profile,
       ),
       body: RefreshIndicator(
         onRefresh: () async {

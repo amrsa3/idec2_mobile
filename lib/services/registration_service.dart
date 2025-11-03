@@ -40,10 +40,47 @@ class RegistrationService {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
+        // Handle ApiResponse structure: { success, messageAr, messageEn, code, data: { registration: {...} } }
+        if (data.containsKey('data') && data['data'] is Map) {
+          final dataMap = data['data'] as Map<String, dynamic>;
+          if (dataMap.containsKey('registration')) {
+            return RegistrationModel.fromJson(dataMap['registration']);
+          }
+        }
         return RegistrationModel.fromJson(data);
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'فشل في التسجيل');
+        
+        // Check for Smart Messages System error response
+        String errorMessage = 'فشل في التسجيل';
+        
+        if (errorData is Map<String, dynamic>) {
+          // Check for messageAr/messageEn (from ApiResponse)
+          if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+          }
+          // Check for error.message (from HttpExceptionFilter)
+          else if (errorData.containsKey('error') && errorData['error'] is Map) {
+            final errorObj = errorData['error'] as Map<String, dynamic>;
+            if (errorObj.containsKey('message')) {
+              errorMessage = errorObj['message'] as String? ?? errorMessage;
+            }
+            // Also check for messageAr/messageEn in error object
+            if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
+              final messageAr = errorObj['messageAr'] as String? ?? '';
+              final messageEn = errorObj['messageEn'] as String? ?? '';
+              errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+            }
+          }
+          // Fallback to top-level message
+          else if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'] as String? ?? errorMessage;
+          }
+        }
+        
+        throw Exception(errorMessage);
       }
     } catch (e) {
       throw Exception('Error registering to conference: $e');
@@ -68,13 +105,54 @@ class RegistrationService {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
+        // Handle ApiResponse structure: { success, messageAr, messageEn, code, data: { registration: {...} } }
+        if (data.containsKey('data') && data['data'] is Map) {
+          final dataMap = data['data'] as Map<String, dynamic>;
+          if (dataMap.containsKey('registration')) {
+            return RegistrationModel.fromJson(dataMap['registration']);
+          }
+        }
         return RegistrationModel.fromJson(data);
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'فشل في التسجيل');
+        
+        // Check for Smart Messages System error response
+        String errorMessage = 'فشل في التسجيل';
+        
+        if (errorData is Map<String, dynamic>) {
+          // Check for messageAr/messageEn (from ApiResponse)
+          if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+          }
+          // Check for error.message (from HttpExceptionFilter)
+          else if (errorData.containsKey('error') && errorData['error'] is Map) {
+            final errorObj = errorData['error'] as Map<String, dynamic>;
+            if (errorObj.containsKey('message')) {
+              errorMessage = errorObj['message'] as String? ?? errorMessage;
+            }
+            // Also check for messageAr/messageEn in error object
+            if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
+              final messageAr = errorObj['messageAr'] as String? ?? '';
+              final messageEn = errorObj['messageEn'] as String? ?? '';
+              errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+            }
+          }
+          // Fallback to top-level message
+          else if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'] as String? ?? errorMessage;
+          }
+        }
+        
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      throw Exception('Error registering to event: $e');
+      // If it's already an Exception with a message, rethrow it
+      if (e is Exception && !e.toString().contains('Error registering to event')) {
+        rethrow;
+      }
+      throw Exception('خطأ في التسجيل: ${e.toString()}');
     }
   }
 
@@ -82,19 +160,51 @@ class RegistrationService {
   Future<List<RegistrationModel>> getMyRegistrations() async {
     try {
       final headers = await _getHeaders();
+      final url = '${ApiConstants.baseUrl}/api/v1/events/registrations/my-registrations';
+      print('📋 [REGISTRATION_SERVICE] Fetching registrations from: $url');
+      
       final response = await http.get(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/registrations/my-registrations'),
+        Uri.parse(url),
         headers: headers,
       );
 
+      print('📋 [REGISTRATION_SERVICE] Response status: ${response.statusCode}');
+      print('📋 [REGISTRATION_SERVICE] Response body length: ${response.body.length}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => RegistrationModel.fromJson(json)).toList();
+        final dynamic decoded = json.decode(response.body);
+        print('📋 [REGISTRATION_SERVICE] Decoded type: ${decoded.runtimeType}');
+        
+        List<dynamic> data;
+        if (decoded is List) {
+          data = decoded;
+        } else if (decoded is Map && decoded.containsKey('data') && decoded['data'] is List) {
+          data = decoded['data'] as List;
+        } else {
+          print('❌ [REGISTRATION_SERVICE] Unexpected response format: $decoded');
+          throw Exception('Unexpected response format from server');
+        }
+        
+        print('📋 [REGISTRATION_SERVICE] Parsing ${data.length} registrations');
+        final registrations = data.map((json) {
+          try {
+            return RegistrationModel.fromJson(json as Map<String, dynamic>);
+          } catch (e) {
+            print('❌ [REGISTRATION_SERVICE] Error parsing registration: $e');
+            print('❌ [REGISTRATION_SERVICE] Registration JSON: $json');
+            rethrow;
+          }
+        }).toList();
+        
+        print('✅ [REGISTRATION_SERVICE] Successfully loaded ${registrations.length} registrations');
+        return registrations;
       } else {
-        throw Exception('Failed to load registrations: ${response.statusCode}');
+        print('❌ [REGISTRATION_SERVICE] Failed with status ${response.statusCode}');
+        print('❌ [REGISTRATION_SERVICE] Response body: ${response.body}');
+        throw Exception('Failed to load registrations: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('❌ [REGISTRATION_SERVICE] Exception: $e');
       throw Exception('Error fetching registrations: $e');
     }
   }

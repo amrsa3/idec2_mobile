@@ -159,9 +159,7 @@ _$ProfileUpdateRequestImpl _$$ProfileUpdateRequestImplFromJson(
       fullNameAr: json['full_name_ar'] as String?,
       fullNameEn: json['full_name_en'] as String?,
       email: json['email'] as String?,
-      birthDate: json['birth_date'] == null
-          ? null
-          : DateTime.parse(json['birth_date'] as String),
+      birthDate: _dateFromJson(json['birth_date'] as String?),
       governorateId: json['governorate_id'] as String?,
       qualificationId: json['qualification_id'] as String?,
       graduationYear: (json['graduation_year'] as num?)?.toInt(),
@@ -175,7 +173,7 @@ Map<String, dynamic> _$$ProfileUpdateRequestImplToJson(
       'full_name_ar': instance.fullNameAr,
       'full_name_en': instance.fullNameEn,
       'email': instance.email,
-      'birth_date': instance.birthDate?.toIso8601String(),
+      'birth_date': _dateToJson(instance.birthDate),
       'governorate_id': instance.governorateId,
       'qualification_id': instance.qualificationId,
       'graduation_year': instance.graduationYear,

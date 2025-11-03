@@ -196,19 +196,19 @@
   "@onboardingDescription1": {
     "description": "First onboarding screen description"
   },
-  "onboardingTitle2": "Connect & Network",
+  "onboardingTitle2": "Integrated Professional Network",
   "@onboardingTitle2": {
     "description": "Second onboarding screen title"
   },
-  "onboardingDescription2": "Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.",
+  "onboardingDescription2": "Connect with elite dentists and international experts, participate in workshops and scientific sessions to exchange knowledge and develop your professional skills in dentistry.",
   "@onboardingDescription2": {
     "description": "Second onboarding screen description"
   },
-  "onboardingTitle3": "Exhibition & Trade",
+  "onboardingTitle3": "Advanced Dental Exhibition",
   "@onboardingTitle3": {
     "description": "Third onboarding screen title"
   },
-  "onboardingDescription3": "Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.",
+  "onboardingDescription3": "Discover cutting-edge innovations and medical equipment at the comprehensive IDEC exhibition, and explore the latest technologies and advanced dental tools.",
   "@onboardingDescription3": {
     "description": "Third onboarding screen description"
   },
@@ -1069,5 +1069,135 @@
   "registrationStatus": "Registration Status",
   "@registrationStatus": {
     "description": "Registration status label"
+  },
+
+  "@@payment": {},
+  "selectPaymentGateway": "Select Payment Gateway",
+  "@selectPaymentGateway": {
+    "description": "Title for payment gateway selection"
+  },
+  "processingPayment": "Processing...",
+  "@processingPayment": {
+    "description": "Processing payment status"
+  },
+  "completePayment": "Complete Payment",
+  "@completePayment": {
+    "description": "Complete payment button"
+  },
+  "paymentSuccess": "Payment Successful",
+  "@paymentSuccess": {
+    "description": "Payment success message"
+  },
+  "paymentFailed": "Payment Failed",
+  "@paymentFailed": {
+    "description": "Payment failed message"
+  },
+  "youAreNowActiveParticipant": "You are now an active participant",
+  "@youAreNowActiveParticipant": {
+    "description": "Active participant message"
+  },
+  "noActiveGateways": "No active payment gateways available",
+  "@noActiveGateways": {
+    "description": "No active gateways message"
+  },
+  "invoiceReceipt": "Receipt",
+  "@invoiceReceipt": {
+    "description": "Invoice receipt title"
+  },
+  "receiptDetails": "Receipt Details",
+  "@receiptDetails": {
+    "description": "Receipt details title"
+  },
+  "invoiceNumber": "Invoice Number",
+  "@invoiceNumber": {
+    "description": "Invoice number label"
+  },
+  "conferenceOrCourse": "Conference/Course",
+  "@conferenceOrCourse": {
+    "description": "Conference or course label"
+  },
+  "amount": "Amount",
+  "@amount": {
+    "description": "Amount label"
+  },
+  "issueDate": "Issue Date",
+  "@issueDate": {
+    "description": "Issue date label"
+  },
+  "dueDate": "Due Date",
+  "@dueDate": {
+    "description": "Due date label"
+  },
+  "transactionDetails": "Transaction Details",
+  "@transactionDetails": {
+    "description": "Transaction details title"
+  },
+  "transactionNumber": "Transaction Number",
+  "@transactionNumber": {
+    "description": "Transaction number label"
+  },
+  "paymentGateway": "Payment Gateway",
+  "@paymentGateway": {
+    "description": "Payment gateway label"
+  },
+  "paymentMethod": "Payment Method",
+  "@paymentMethod": {
+    "description": "Payment method label"
+  },
+  "transactionDate": "Transaction Date",
+  "@transactionDate": {
+    "description": "Transaction date label"
+  },
+  "completionDate": "Completion Date",
+  "@completionDate": {
+    "description": "Completion date label"
+  },
+  "shareReceipt": "Share Receipt",
+  "@shareReceipt": {
+    "description": "Share receipt button"
+  },
+  "backToHome": "Back to Home",
+  "@backToHome": {
+    "description": "Back to home button"
+  },
+  "paymentInput": "Payment Input",
+  "@paymentInput": {
+    "description": "Payment input title"
+  },
+  "confirmPayment": "Confirm",
+  "@confirmPayment": {
+    "description": "Confirm payment button"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "enterPaymentCode": "Enter Payment Code",
+  "@enterPaymentCode": {
+    "description": "Enter payment code label"
+  },
+  "enterSecretCode": "Enter Secret Code",
+  "@enterSecretCode": {
+    "description": "Enter secret code label"
+  },
+  "featureComingSoon": "Feature coming soon",
+  "@featureComingSoon": {
+    "description": "Feature coming soon message"
+  },
+  "paymentProcessingError": "Payment Processing Error",
+  "@paymentProcessingError": {
+    "description": "Payment processing error message"
+  },
+  "gatewaySelectionTitle": "Select Payment Gateway",
+  "@gatewaySelectionTitle": {
+    "description": "Gateway selection title"
+  },
+  "testMode": "Test Mode",
+  "@testMode": {
+    "description": "Test mode label"
+  },
+  "productionMode": "Production Mode",
+  "@productionMode": {
+    "description": "Production mode label"
   }
 }

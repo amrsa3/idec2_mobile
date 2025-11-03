@@ -19,7 +19,9 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../providers/profile_provider.dart';
+import '../../services/profile_service.dart';
 import '../widgets/verification_status_badge.dart';
+import '../../../registrations/presentation/my_registrations_screen.dart';
 import 'profile_edit_screen.dart';
 import 'user_documents_viewer_screen.dart';
 
@@ -42,7 +44,42 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     // تحميل بيانات الملف الشخصي وقواعد التعديل عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
+      _listenToAuthChanges();
     });
+  }
+  
+  /// Listen to authentication changes to refresh profile when user logs in
+  void _listenToAuthChanges() {
+    // Listen to auth state changes to refresh profile when login occurs
+    ref.listen<CompatibleAuthState>(
+      compatibleAuthProvider,
+      (previous, next) {
+        // If user just logged in, refresh profile data
+        if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
+          debugPrint('🔄 ProfileMainScreen: User logged in, refreshing profile data...');
+          // Use the same approach as edit screen for consistency
+          Future.microtask(() async {
+            try {
+              // Clear cache first (like edit screen does)
+              await LocalProfileService.clearCache();
+              debugPrint('✅ ProfileMainScreen: Cache cleared after login');
+              
+              // Wait a bit to ensure tokens are ready
+              await Future.delayed(const Duration(milliseconds: 500));
+              
+              // Load fresh data from server (including qualifications and governorates)
+              // Use initializeProfilePage instead of loadCurrentProfile to ensure all data is loaded
+              if (mounted) {
+                await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+                debugPrint('✅ ProfileMainScreen: Profile, qualifications, and governorates refreshed after login');
+              }
+            } catch (e) {
+              debugPrint('❌ ProfileMainScreen: Error refreshing profile after login: $e');
+            }
+          });
+        }
+      },
+    );
   }
 
   /// Load profile data with retry mechanism
@@ -67,18 +104,24 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         debugPrint(
             'ProfileMainScreen: Auth state confirmed - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
         // تحميل بيانات الملف الشخصي مع البيانات المرجعية (المحافظات والمؤهلات)
-        // استخدام forceRefresh: false لتجنب إعادة تحميل غير ضرورية بعد رفع الصورة
-        final profileState = ref.read(profileProvider);
-        if (profileState.currentProfile == null) {
-          debugPrint('ProfileMainScreen: No profile data, loading fresh data');
-          ref.read(profileProvider.notifier).loadProfile(forceRefresh: false);
-        } else {
-          debugPrint(
-              'ProfileMainScreen: Profile data exists, skipping reload to preserve state');
+        // Always force refresh to get latest data from server (especially after admin approval)
+        debugPrint('ProfileMainScreen: Loading profile data with force refresh to ensure latest status');
+        
+        // Clear cache first (same approach as edit screen)
+        try {
+          await LocalProfileService.clearCache();
+          debugPrint('✅ ProfileMainScreen: Cache cleared in _loadProfileData');
+        } catch (e) {
+          debugPrint('⚠️ ProfileMainScreen: Error clearing cache: $e');
         }
+        
+        // Use initializeProfilePage to load profile + qualifications + governorates together
+        // This ensures qualifications are available when displaying profile data
+        await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+        
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
-        debugPrint('ProfileMainScreen: Profile loading completed successfully');
+        debugPrint('ProfileMainScreen: Profile, qualifications, and governorates loaded successfully');
       } else if (authState.isLoading && retryCount < maxRetries) {
         // Auth is still loading, wait and retry
         debugPrint(
@@ -278,6 +321,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const UserDocumentsViewerScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                // اشتراكاتي
+                ListTile(
+                  leading:
+                      Icon(Icons.event_note, color: AppColors.primary),
+                  title: const Text('اشتراكاتي'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyRegistrationsScreen(),
                       ),
                     );
                   },
@@ -1080,20 +1139,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       MaterialPageRoute(
         builder: (context) => ProfileEditScreen(profile: profile),
       ),
-    ).then((result) {
-      // تحديث البيانات فقط إذا كان هناك تحديث فعلي
-      if (result == true) {
-        debugPrint(
-            'ProfileMainScreen: Profile was updated, refreshing data...');
-        // استخدام forceRefresh: false لتجنب إعادة تحميل غير ضرورية بعد رفع الصورة
-        ref.read(profileProvider.notifier).loadProfile(forceRefresh: false);
-        // تحديث قواعد التعديل أيضاً
-        ref.read(profileRulesProvider.notifier).loadRules();
-      } else {
-        debugPrint('ProfileMainScreen: No profile update, skipping refresh...');
-        // فقط تحديث خفيف للحالة دون إعادة تحميل من الخادم
-        ref.read(profileProvider.notifier).lightRefresh();
-      }
+    ).then((result) async {
+      // Always refresh data when returning from edit screen
+      // This ensures we get latest data including admin approval changes
+      debugPrint('ProfileMainScreen: Returning from edit screen, refreshing data...');
+      
+      // Clear cache first
+      await LocalProfileService.clearCache();
+      
+      // Always load fresh data from server (including qualifications and governorates)
+      // This is critical to detect admin approval changes and display qualification names correctly
+      await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+      
+      // Update profile rules as well
+      ref.read(profileRulesProvider.notifier).loadRules();
+      
+      debugPrint('✅ ProfileMainScreen: Profile data refreshed after returning from edit');
     });
   }
 

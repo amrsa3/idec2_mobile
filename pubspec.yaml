@@ -89,6 +89,10 @@ dependencies:
   # Share functionality
   share_plus: ^7.2.1
 
+  # PDF generation
+  printing: ^5.13.1
+  pdf: ^3.11.1
+
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
@@ -108,6 +112,9 @@ dev_dependencies:
 
   # Testing
   mockito: ^5.4.2
+
+  # Icon Generation
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -143,3 +150,15 @@ flutter:
       fonts:
         - asset: assets/fonts/Tahoma.ttf
           weight: 400
+
+# Flutter Launcher Icons Configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+    background_color: "#fe0303"
+    theme_color: "#fe0303"
+  image_path: "../images/App icon 02.ico"
+  adaptive_icon_background: "#fe0303"
+  adaptive_icon_foreground: "../images/App icon 02.ico"

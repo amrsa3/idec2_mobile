@@ -102,10 +102,46 @@ class ConferenceService {
         return json.decode(response.body);
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'فشل في التسجيل');
+        
+        // Check for Smart Messages System error response
+        // Structure: { success: false, error: {...}, messageAr: "...", messageEn: "..." }
+        String errorMessage = 'فشل في التسجيل';
+        
+        if (errorData is Map<String, dynamic>) {
+          // Check for messageAr/messageEn (from ApiResponse)
+          if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
+            final messageAr = errorData['messageAr'] as String? ?? '';
+            final messageEn = errorData['messageEn'] as String? ?? '';
+            // Use Arabic by default, fallback to English
+            errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+          }
+          // Check for error.message (from HttpExceptionFilter)
+          else if (errorData.containsKey('error') && errorData['error'] is Map) {
+            final errorObj = errorData['error'] as Map<String, dynamic>;
+            if (errorObj.containsKey('message')) {
+              errorMessage = errorObj['message'] as String? ?? errorMessage;
+            }
+            // Also check for messageAr/messageEn in error object
+            if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
+              final messageAr = errorObj['messageAr'] as String? ?? '';
+              final messageEn = errorObj['messageEn'] as String? ?? '';
+              errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+            }
+          }
+          // Fallback to top-level message
+          else if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'] as String? ?? errorMessage;
+          }
+        }
+        
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      throw Exception('Error registering to conference: $e');
+      // If it's already an Exception with a message, rethrow it
+      if (e is Exception && !e.toString().contains('Error registering to conference')) {
+        rethrow;
+      }
+      throw Exception('خطأ في التسجيل: ${e.toString()}');
     }
   }
 }

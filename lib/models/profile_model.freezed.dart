@@ -1417,7 +1417,7 @@ mixin _$ProfileUpdateRequest {
   @JsonKey(name: 'full_name_en')
   String? get fullNameEn => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   DateTime? get birthDate => throw _privateConstructorUsedError;
   @JsonKey(name: 'governorate_id')
   String? get governorateId => throw _privateConstructorUsedError;
@@ -1444,7 +1444,8 @@ abstract class $ProfileUpdateRequestCopyWith<$Res> {
       {@JsonKey(name: 'full_name_ar') String? fullNameAr,
       @JsonKey(name: 'full_name_en') String? fullNameEn,
       String? email,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
       @JsonKey(name: 'graduation_year') int? graduationYear,
@@ -1529,7 +1530,8 @@ abstract class _$$ProfileUpdateRequestImplCopyWith<$Res>
       {@JsonKey(name: 'full_name_ar') String? fullNameAr,
       @JsonKey(name: 'full_name_en') String? fullNameEn,
       String? email,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
       @JsonKey(name: 'graduation_year') int? graduationYear,
@@ -1608,7 +1610,8 @@ class _$ProfileUpdateRequestImpl
       {@JsonKey(name: 'full_name_ar') this.fullNameAr,
       @JsonKey(name: 'full_name_en') this.fullNameEn,
       this.email,
-      @JsonKey(name: 'birth_date') this.birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      this.birthDate,
       @JsonKey(name: 'governorate_id') this.governorateId,
       @JsonKey(name: 'qualification_id') this.qualificationId,
       @JsonKey(name: 'graduation_year') this.graduationYear,
@@ -1627,7 +1630,7 @@ class _$ProfileUpdateRequestImpl
   @override
   final String? email;
   @override
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   final DateTime? birthDate;
   @override
   @JsonKey(name: 'governorate_id')
@@ -1723,7 +1726,8 @@ abstract class _ProfileUpdateRequest implements ProfileUpdateRequest {
       {@JsonKey(name: 'full_name_ar') final String? fullNameAr,
       @JsonKey(name: 'full_name_en') final String? fullNameEn,
       final String? email,
-      @JsonKey(name: 'birth_date') final DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      final DateTime? birthDate,
       @JsonKey(name: 'governorate_id') final String? governorateId,
       @JsonKey(name: 'qualification_id') final String? qualificationId,
       @JsonKey(name: 'graduation_year') final int? graduationYear,
@@ -1742,7 +1746,7 @@ abstract class _ProfileUpdateRequest implements ProfileUpdateRequest {
   @override
   String? get email;
   @override
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   DateTime? get birthDate;
   @override
   @JsonKey(name: 'governorate_id')

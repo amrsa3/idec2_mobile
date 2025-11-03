@@ -236,7 +236,7 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
-  /// Cancel button text
+  /// Cancel button
   ///
   /// In en, this message translates to:
   /// **'Cancel'**
@@ -395,25 +395,25 @@ abstract class AppLocalizations {
   /// Second onboarding screen title
   ///
   /// In en, this message translates to:
-  /// **'Connect & Network'**
+  /// **'Integrated Professional Network'**
   String get onboardingTitle2;
 
   /// Second onboarding screen description
   ///
   /// In en, this message translates to:
-  /// **'Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.'**
+  /// **'Connect with elite dentists and international experts, participate in workshops and scientific sessions to exchange knowledge and develop your professional skills in dentistry.'**
   String get onboardingDescription2;
 
   /// Third onboarding screen title
   ///
   /// In en, this message translates to:
-  /// **'Exhibition & Trade'**
+  /// **'Advanced Dental Exhibition'**
   String get onboardingTitle3;
 
   /// Third onboarding screen description
   ///
   /// In en, this message translates to:
-  /// **'Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.'**
+  /// **'Discover cutting-edge innovations and medical equipment at the comprehensive IDEC exhibition, and explore the latest technologies and advanced dental tools.'**
   String get onboardingDescription3;
 
   /// No description provided for @onboardingPage3Description.
@@ -1771,6 +1771,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration Status'**
   String get registrationStatus;
+
+  /// Title for payment gateway selection
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Gateway'**
+  String get selectPaymentGateway;
+
+  /// Processing payment status
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get processingPayment;
+
+  /// Complete payment button
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Payment'**
+  String get completePayment;
+
+  /// Payment success message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Successful'**
+  String get paymentSuccess;
+
+  /// Payment failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Failed'**
+  String get paymentFailed;
+
+  /// Active participant message
+  ///
+  /// In en, this message translates to:
+  /// **'You are now an active participant'**
+  String get youAreNowActiveParticipant;
+
+  /// No active gateways message
+  ///
+  /// In en, this message translates to:
+  /// **'No active payment gateways available'**
+  String get noActiveGateways;
+
+  /// Invoice receipt title
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get invoiceReceipt;
+
+  /// Receipt details title
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt Details'**
+  String get receiptDetails;
+
+  /// Invoice number label
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Number'**
+  String get invoiceNumber;
+
+  /// Conference or course label
+  ///
+  /// In en, this message translates to:
+  /// **'Conference/Course'**
+  String get conferenceOrCourse;
+
+  /// Amount label
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// Issue date label
+  ///
+  /// In en, this message translates to:
+  /// **'Issue Date'**
+  String get issueDate;
+
+  /// Due date label
+  ///
+  /// In en, this message translates to:
+  /// **'Due Date'**
+  String get dueDate;
+
+  /// Transaction details title
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Details'**
+  String get transactionDetails;
+
+  /// Transaction number label
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Number'**
+  String get transactionNumber;
+
+  /// Payment gateway label
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Gateway'**
+  String get paymentGateway;
+
+  /// Payment method label
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Method'**
+  String get paymentMethod;
+
+  /// Transaction date label
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Date'**
+  String get transactionDate;
+
+  /// Completion date label
+  ///
+  /// In en, this message translates to:
+  /// **'Completion Date'**
+  String get completionDate;
+
+  /// Share receipt button
+  ///
+  /// In en, this message translates to:
+  /// **'Share Receipt'**
+  String get shareReceipt;
+
+  /// Back to home button
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Home'**
+  String get backToHome;
+
+  /// Payment input title
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Input'**
+  String get paymentInput;
+
+  /// Confirm payment button
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmPayment;
+
+  /// Enter payment code label
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Payment Code'**
+  String get enterPaymentCode;
+
+  /// Enter secret code label
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Secret Code'**
+  String get enterSecretCode;
+
+  /// Feature coming soon message
+  ///
+  /// In en, this message translates to:
+  /// **'Feature coming soon'**
+  String get featureComingSoon;
+
+  /// Payment processing error message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Processing Error'**
+  String get paymentProcessingError;
+
+  /// Gateway selection title
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Gateway'**
+  String get gatewaySelectionTitle;
+
+  /// Test mode label
+  ///
+  /// In en, this message translates to:
+  /// **'Test Mode'**
+  String get testMode;
+
+  /// Production mode label
+  ///
+  /// In en, this message translates to:
+  /// **'Production Mode'**
+  String get productionMode;
 }
 
 class _AppLocalizationsDelegate

@@ -8,7 +8,7 @@ import '../../../features/schedule/presentation/schedule_screen.dart';
 import '../../../features/speakers/presentation/speakers_screen.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/back_button_service.dart';
-import '../../home/presentation/home_screen_new.dart';
+import '../../home/presentation/home_screen_old.dart';
 
 // Provider for bottom navigation index
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);

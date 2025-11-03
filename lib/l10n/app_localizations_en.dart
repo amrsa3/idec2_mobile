@@ -157,18 +157,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Join the IDEC Dental Conference & Exhibition and connect with dentists, specialists, and innovators from around the world.';
 
   @override
-  String get onboardingTitle2 => 'Connect & Network';
+  String get onboardingTitle2 => 'Integrated Professional Network';
 
   @override
   String get onboardingDescription2 =>
-      'Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.';
+      'Connect with elite dentists and international experts, participate in workshops and scientific sessions to exchange knowledge and develop your professional skills in dentistry.';
 
   @override
-  String get onboardingTitle3 => 'Exhibition & Trade';
+  String get onboardingTitle3 => 'Advanced Dental Exhibition';
 
   @override
   String get onboardingDescription3 =>
-      'Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.';
+      'Discover cutting-edge innovations and medical equipment at the comprehensive IDEC exhibition, and explore the latest technologies and advanced dental tools.';
 
   @override
   String get onboardingPage3Description =>
@@ -860,4 +860,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registrationStatus => 'Registration Status';
+
+  @override
+  String get selectPaymentGateway => 'Select Payment Gateway';
+
+  @override
+  String get processingPayment => 'Processing...';
+
+  @override
+  String get completePayment => 'Complete Payment';
+
+  @override
+  String get paymentSuccess => 'Payment Successful';
+
+  @override
+  String get paymentFailed => 'Payment Failed';
+
+  @override
+  String get youAreNowActiveParticipant => 'You are now an active participant';
+
+  @override
+  String get noActiveGateways => 'No active payment gateways available';
+
+  @override
+  String get invoiceReceipt => 'Receipt';
+
+  @override
+  String get receiptDetails => 'Receipt Details';
+
+  @override
+  String get invoiceNumber => 'Invoice Number';
+
+  @override
+  String get conferenceOrCourse => 'Conference/Course';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get issueDate => 'Issue Date';
+
+  @override
+  String get dueDate => 'Due Date';
+
+  @override
+  String get transactionDetails => 'Transaction Details';
+
+  @override
+  String get transactionNumber => 'Transaction Number';
+
+  @override
+  String get paymentGateway => 'Payment Gateway';
+
+  @override
+  String get paymentMethod => 'Payment Method';
+
+  @override
+  String get transactionDate => 'Transaction Date';
+
+  @override
+  String get completionDate => 'Completion Date';
+
+  @override
+  String get shareReceipt => 'Share Receipt';
+
+  @override
+  String get backToHome => 'Back to Home';
+
+  @override
+  String get paymentInput => 'Payment Input';
+
+  @override
+  String get confirmPayment => 'Confirm';
+
+  @override
+  String get enterPaymentCode => 'Enter Payment Code';
+
+  @override
+  String get enterSecretCode => 'Enter Secret Code';
+
+  @override
+  String get featureComingSoon => 'Feature coming soon';
+
+  @override
+  String get paymentProcessingError => 'Payment Processing Error';
+
+  @override
+  String get gatewaySelectionTitle => 'Select Payment Gateway';
+
+  @override
+  String get testMode => 'Test Mode';
+
+  @override
+  String get productionMode => 'Production Mode';
 }

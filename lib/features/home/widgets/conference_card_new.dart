@@ -22,19 +22,29 @@ class ConferenceCardNew extends ConsumerWidget {
     return conferenceAsync.when(
       data: (conference) {
         if (conference == null) {
+          // Show empty state when no conference is found
           return const SizedBox.shrink();
         }
 
         // Show card only for statuses: SETUP, REGISTRATION_OPEN, ONGOING
-        final validStatuses = ['SETUP', 'REGISTRATION_OPEN', 'ONGOING'];
+        // Also show for DRAFT status for testing/development
+        final validStatuses = ['SETUP', 'REGISTRATION_OPEN', 'ONGOING', 'DRAFT'];
         if (!validStatuses.contains(conference.status)) {
+          // Debug: Print why card is hidden
+          debugPrint('⚠️ Conference card hidden - Status: ${conference.status}');
           return const SizedBox.shrink();
         }
 
         return _buildConferenceCard(context, conference, isRTL, l10n);
       },
       loading: () => _buildLoadingState(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (error, stackTrace) {
+        // Show error message for debugging
+        debugPrint('❌ Conference card error: $error');
+        debugPrint('❌ Stack trace: $stackTrace');
+        // Return empty for now, but you can show an error widget if needed
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -131,12 +141,15 @@ class ConferenceCardNew extends ConsumerWidget {
     // Show countdown conditions:
     // 1. watchModeEnabled == true
     // 2. registrationStartDate != null
+    // 3. now < registrationStartDate (registration hasn't started yet)
     // Hide countdown if:
-    // 1. registrationEndDate has passed
-    // 2. conference.status == 'ONGOING'
+    // 1. registrationStartDate has passed
+    // 2. registrationEndDate has passed
+    // 3. conference.status == 'ONGOING'
 
     final shouldShowCountdown = conference.watchModeEnabled == true &&
         conference.registrationStartDate != null &&
+        now.isBefore(conference.registrationStartDate!) &&
         (conference.registrationEndDate == null ||
             now.isBefore(conference.registrationEndDate!)) &&
         conference.status != 'ONGOING';
@@ -324,11 +337,12 @@ class _SubscribeButtonBuilderState
         return registrationAsync.when(
           data: (registration) {
             if (registration != null) {
-              // User is already registered
+              // User is already registered - show status
+              final statusInfo = _getRegistrationStatusInfo(registration.status);
               return SizedBox(
                 width: double.infinity,
                 height: 48,
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -337,20 +351,21 @@ class _SubscribeButtonBuilderState
                       ),
                     );
                   },
+                  icon: Icon(statusInfo.icon, size: 20),
+                  label: Text(
+                    statusInfo.text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: statusInfo.color,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
-                  ),
-                  child: const Text(
-                    'مسجل - عرض التفاصيل',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               );
@@ -385,10 +400,25 @@ class _SubscribeButtonBuilderState
                           }
                         } catch (e) {
                           if (mounted) {
+                            // Extract error message from exception
+                            String errorMessage = 'فشل في التسجيل';
+                            if (e is Exception) {
+                              final errorStr = e.toString();
+                              // Remove "Exception: " prefix if present
+                              if (errorStr.startsWith('Exception: ')) {
+                                errorMessage = errorStr.substring(11);
+                              } else {
+                                errorMessage = errorStr;
+                              }
+                            } else {
+                              errorMessage = e.toString();
+                            }
+                            
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('فشل التسجيل: ${e.toString()}'),
+                                content: Text(errorMessage),
                                 backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 5),
                               ),
                             );
                           }
@@ -479,10 +509,25 @@ class _SubscribeButtonBuilderState
                   }
                 } catch (e) {
                   if (mounted) {
+                    // Extract error message from exception
+                    String errorMessage = 'فشل في التسجيل';
+                    if (e is Exception) {
+                      final errorStr = e.toString();
+                      // Remove "Exception: " prefix if present
+                      if (errorStr.startsWith('Exception: ')) {
+                        errorMessage = errorStr.substring(11);
+                      } else {
+                        errorMessage = errorStr;
+                      }
+                    } else {
+                      errorMessage = e.toString();
+                    }
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('فشل التسجيل: ${e.toString()}'),
+                        content: Text(errorMessage),
                         backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 5),
                       ),
                     );
                   }
@@ -515,4 +560,77 @@ class _SubscribeButtonBuilderState
       error: (_, __) => const SizedBox.shrink(),
     );
   }
+
+  /// Get registration status information (text, color, icon)
+  _RegistrationStatusInfo _getRegistrationStatusInfo(String status) {
+    switch (status) {
+      case 'UNDER_REVIEW':
+        return _RegistrationStatusInfo(
+          text: 'قيد المراجعة',
+          color: Colors.blue,
+          icon: Icons.hourglass_empty,
+        );
+      case 'PAYMENT_PENDING':
+        return _RegistrationStatusInfo(
+          text: 'في انتظار الدفع',
+          color: Colors.orange,
+          icon: Icons.payment,
+        );
+      case 'ACTIVE_PARTICIPANT':
+        return _RegistrationStatusInfo(
+          text: 'مشترك',
+          color: Colors.green,
+          icon: Icons.check_circle,
+        );
+      case 'REJECTED':
+        return _RegistrationStatusInfo(
+          text: 'مرفوض',
+          color: Colors.red,
+          icon: Icons.cancel,
+        );
+      case 'WAITING_LIST':
+        return _RegistrationStatusInfo(
+          text: 'بقائمة الانتظار',
+          color: Colors.purple,
+          icon: Icons.queue,
+        );
+      case 'ON_HOLD':
+        return _RegistrationStatusInfo(
+          text: 'معلق',
+          color: Colors.red[700]!,
+          icon: Icons.pause_circle,
+        );
+      case 'CANCELLED':
+        return _RegistrationStatusInfo(
+          text: 'ملغي',
+          color: Colors.grey[600]!,
+          icon: Icons.cancel_outlined,
+        );
+      case 'ACCEPTED':
+        return _RegistrationStatusInfo(
+          text: 'مقبول',
+          color: Colors.green[600]!,
+          icon: Icons.check_circle_outline,
+        );
+      default:
+        return _RegistrationStatusInfo(
+          text: 'مسجل',
+          color: Colors.green,
+          icon: Icons.info,
+        );
+    }
+  }
+}
+
+/// Helper class for registration status information
+class _RegistrationStatusInfo {
+  final String text;
+  final Color color;
+  final IconData icon;
+
+  _RegistrationStatusInfo({
+    required this.text,
+    required this.color,
+    required this.icon,
+  });
 }

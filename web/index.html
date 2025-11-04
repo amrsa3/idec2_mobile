@@ -61,7 +61,7 @@
   </script>
   
   <!-- CORS Handler for Flutter Web -->
-  <script src="cors_handler.js"></script>
+  <script src="cors_handler.js" onerror="console.warn('⚠️ cors_handler.js not found, continuing anyway...')"></script>
   
   <!-- CORS and Security Headers for Flutter Web -->
   <meta http-equiv="Access-Control-Allow-Origin" content="*">
@@ -179,68 +179,164 @@
   </script>
   
   <!-- Load Flutter Bootstrap with Cache Busting -->
-  <script src="flutter_web_config.js?v=2.0.2"></script>
-  <script src="flutter_bootstrap.js?v=2.0.2"></script>
+  <script>
+    // Initialize error handling first
+    let progress = 0;
+    let loadingHidden = false;
+    let progressBar, loading;
+    
+    // Function to get elements safely
+    function getElements() {
+      if (!progressBar) progressBar = document.getElementById('progress');
+      if (!loading) loading = document.getElementById('loading');
+    }
+    
+    // Error handler for script loading (console only)
+    function handleScriptError(scriptName) {
+      console.error('❌ [ERROR] Failed to load script:', scriptName);
+      console.error('❌ [ERROR] خطأ في تحميل الملفات المطلوبة');
+      console.error('❌ [ERROR] Failed to load required files');
+      // Don't show error on screen, just log to console
+    }
+    
+    // Function to hide loading
+    function hideLoading() {
+      if (loadingHidden) return;
+      loadingHidden = true;
+      getElements();
+      if (progressBar) {
+        progressBar.style.width = '100%';
+      }
+      setTimeout(function() {
+        if (loading) {
+          loading.style.display = 'none';
+        }
+      }, 500);
+    }
+    
+    // Function to show error (console only)
+    function showError(arText, enText) {
+      console.error('❌ [ERROR]', arText);
+      console.error('❌ [ERROR]', enText);
+      // Don't show error on screen, just log to console
+    }
+    
+    // Initialize elements when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', getElements);
+    } else {
+      getElements();
+    }
+  </script>
+  
+  <script src="flutter_web_config.js?v=2.0.2" onerror="handleScriptError('flutter_web_config.js')"></script>
+  <script src="flutter_bootstrap.js?v=2.0.2" onerror="handleScriptError('flutter_bootstrap.js')"></script>
   
   <script>
-    // Progress bar simulation
-    let progress = 0;
-    const progressBar = document.getElementById('progress');
-    const updateProgress = function() {
-      if (progress < 90) {
+    
+    // Update progress bar
+    function updateProgress() {
+      getElements();
+      if (progress < 90 && !loadingHidden) {
         progress += Math.random() * 10;
         if (progressBar) {
           progressBar.style.width = progress + '%';
         }
         setTimeout(updateProgress, 100);
       }
-    };
-    updateProgress();
+    }
     
-    // Wait for Flutter to initialize
-    window.addEventListener('flutter-first-frame', function() {
-      console.log('🎉 Flutter first frame rendered');
-      // Complete progress and hide loading
-      if (progressBar) {
-        progressBar.style.width = '100%';
+    // Start progress bar when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateProgress);
+    } else {
+      updateProgress();
+    }
+    
+    // Timeout safety - hide loading after maximum wait time
+    const maxWaitTime = 60000; // 60 seconds
+    const timeoutId = setTimeout(function() {
+      if (!loadingHidden) {
+        console.warn('⚠️ Timeout waiting for Flutter to load');
+        // Don't show error, just try to hide loading (Flutter might still work)
+        hideLoading();
       }
-      setTimeout(function() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.display = 'none';
-        }
-      }, 500);
-    });
+    }, maxWaitTime);
     
-    // Error handling
+    // Wait for Flutter to initialize - multiple methods for compatibility
+    function initFlutterApp() {
+      // Method 1: Wait for flutter-first-frame event
+      window.addEventListener('flutter-first-frame', function() {
+        console.log('🎉 Flutter first frame rendered');
+        clearTimeout(timeoutId);
+        hideLoading();
+      }, { once: true });
+      
+      // Method 2: Check if _flutter is available and wait for it
+      let checkAttempts = 0;
+      const maxCheckAttempts = 100; // Maximum 10 seconds (100 * 100ms)
+      
+      function checkFlutterLoader() {
+        checkAttempts++;
+        
+        if (typeof window._flutter !== 'undefined' && window._flutter.loader) {
+          console.log('✅ Flutter loader found, waiting for initialization...');
+          
+          window._flutter.loader.didCreateEngineInitializer
+            .then(function(appRunner) {
+              console.log('✅ Flutter engine initialized');
+              clearTimeout(timeoutId);
+              
+              // Start the app
+              appRunner().then(function() {
+                console.log('✅ Flutter app started');
+              }).catch(function(error) {
+                console.error('❌ Error starting Flutter app:', error);
+                showError('خطأ في بدء التطبيق', 'Error starting application');
+                clearTimeout(timeoutId);
+                hideLoading(); // Hide loading even on error
+              });
+            })
+            .catch(function(error) {
+              console.error('❌ Flutter initialization error:', error);
+              clearTimeout(timeoutId);
+              showError('خطأ في تهيئة التطبيق', 'Error initializing application');
+              hideLoading(); // Hide loading even on error
+            });
+        } else if (checkAttempts < maxCheckAttempts) {
+          // Retry after a short delay
+          setTimeout(checkFlutterLoader, 100);
+        } else {
+          // Max attempts reached
+          console.error('❌ Flutter loader not found after maximum attempts');
+          clearTimeout(timeoutId);
+          showError('خطأ في تحميل التطبيق', 'Failed to load application');
+          hideLoading(); // Hide loading even on error
+        }
+      }
+      
+      // Start checking after a short delay to allow scripts to load
+      setTimeout(checkFlutterLoader, 500);
+    }
+    
+    // Start initialization when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFlutterApp);
+    } else {
+      initFlutterApp();
+    }
+    
+    // Global error handling
     window.addEventListener('error', function(e) {
-      if (e.message && e.message.includes('Flutter')) {
-        console.error('Flutter error:', e.message);
+      console.error('❌ Global error:', e.message, e.filename, e.lineno);
+      if (e.message && (e.message.includes('Flutter') || e.message.includes('flutter'))) {
+        console.error('Flutter-related error detected');
       }
-    });
-  </script>
-  
-  <!-- This script initiates the Flutter app -->
-  <script>
-    // Listen for Flutter to be ready
-    _flutter.loader.didCreateEngineInitializer.then(function(appRunner) {
-      console.log('✅ Flutter engine initialized');
-      // Complete progress
-      if (progressBar) {
-        progressBar.style.width = '100%';
-      }
-      setTimeout(function() {
-        const loading = document.getElementById('loading');
-        if (loading) {
-          loading.style.display = 'none';
-        }
-      }, 500);
-    }).catch(function(error) {
-      console.error('❌ Flutter initialization error:', error);
-      const loading = document.getElementById('loading');
-      if (loading) {
-        loading.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="font-size: 24px; margin-bottom: 20px;">❌</div><h2>خطأ في تحميل التطبيق</h2><p>Error loading application</p><button onclick="location.reload()">إعادة المحاولة / Retry</button></div>';
-      }
+    }, true);
+    
+    // Unhandled promise rejection
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('❌ Unhandled promise rejection:', e.reason);
     });
   </script>
 </body>

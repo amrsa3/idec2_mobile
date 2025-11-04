@@ -8,7 +8,11 @@ window.flutterWebConfig = {
   debugShowCheckedModeBanner: false, // Disable debug banner
   // Fast initialization
   autoStart: true,
-  enableServiceWorker: false, // Disable service worker for faster loading
+  enableServiceWorker: true, // Enable service worker with update strategy
+  serviceWorkerSettings: {
+    serviceWorkerVersion: null, // Will be set automatically by Flutter
+    updateStrategy: 'on-download', // Immediate update when new version is downloaded
+  },
 };
 
-console.log('✅ Flutter Web configured for fast loading');
+console.log('✅ Flutter Web configured with cache busting enabled');

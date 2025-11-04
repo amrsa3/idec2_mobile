@@ -23,6 +23,11 @@
   <meta name="keywords" content="IDEC, معرض, مؤتمر, طب الاسنان, 2026">
   <meta name="author" content="IDEC Team">
   
+  <!-- Cache Control Meta Tags - Prevent caching of HTML -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <!-- SEO Meta Tags -->
   <meta property="og:title" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
   <meta property="og:description" content="منصه معرض ومؤتمر IDEC لطب الاسنان 2026">
@@ -147,9 +152,35 @@
     </div>
   </div>
   
-  <!-- Load Flutter Bootstrap -->
-  <script src="flutter_web_config.js"></script>
-  <script src="flutter_bootstrap.js"></script>
+  <!-- Version and Cache Busting -->
+  <script>
+    // إضافة version من pubspec.yaml للـ cache busting
+    // سيتم تحديثه تلقائياً عند البناء
+    const APP_VERSION = '2.0.2';
+    const BUILD_TIMESTAMP = Date.now();
+    const VERSION_PARAM = `?v=${APP_VERSION}&t=${BUILD_TIMESTAMP}`;
+    
+    // Force reload if version changed
+    const lastVersion = localStorage.getItem('app_version');
+    if (lastVersion && lastVersion !== APP_VERSION) {
+      console.log('🔄 New version detected, clearing cache...');
+      localStorage.clear();
+      sessionStorage.clear();
+      // Clear service worker cache if exists
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+    }
+    localStorage.setItem('app_version', APP_VERSION);
+  </script>
+  
+  <!-- Load Flutter Bootstrap with Cache Busting -->
+  <script src="flutter_web_config.js?v=2.0.2"></script>
+  <script src="flutter_bootstrap.js?v=2.0.2"></script>
   
   <script>
     // Progress bar simulation

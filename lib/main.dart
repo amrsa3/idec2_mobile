@@ -7,6 +7,7 @@ import 'core/constants/api_constants.dart';
 import 'core/errors/error_handler.dart';
 import 'core/router/app_router.dart';
 import 'core/services/server_settings_service.dart';
+import 'core/services/version_check_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/profile/presentation/widgets/verification_notification_banner.dart';
 import 'l10n/app_localizations.dart';
@@ -101,6 +102,17 @@ void main() async {
       debugPrint('❌ [MAIN] StorageService initialization failed: $e');
       debugPrint('Stack trace: $stackTrace');
       // Continue - storage might fail but app can still start
+    }
+
+    // Check for version updates and clear cache if needed (for web)
+    if (kIsWeb) {
+      try {
+        await VersionCheckService.checkForUpdates();
+        debugPrint('✅ [MAIN] Version check completed');
+      } catch (e) {
+        debugPrint('⚠️ [MAIN] Version check failed: $e');
+        // Continue - version check is not critical for app startup
+      }
     }
 
     // Initialize and validate server settings with timeout

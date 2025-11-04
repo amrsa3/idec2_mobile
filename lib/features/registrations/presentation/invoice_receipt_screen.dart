@@ -616,7 +616,6 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
   pw.Widget _buildPdfRow(String label, String value, pw.Font font, {bool isHighlighted = false}) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      textDirection: pw.TextDirection.rtl,
       children: [
         pw.Text(
           '$label:',

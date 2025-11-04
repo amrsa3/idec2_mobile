@@ -8,6 +8,10 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
 import '../../../../models/profile_model.dart';
+import '../../../../services/compatible_auth_service.dart';
+import '../../../../services/enhanced_dio_service_v2.dart';
+import '../../../../services/image_cache_service.dart';
+import '../../../../services/authenticated_image_service.dart';
 import '../../providers/smart_file_provider.dart';
 import '../../../../services/dio_service.dart';
 import '../../../../shared/widgets/profile_side_drawer.dart';
@@ -24,6 +28,80 @@ class UserDocumentsViewerScreen extends ConsumerStatefulWidget {
 
 class _UserDocumentsViewerScreenState
     extends ConsumerState<UserDocumentsViewerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // الاستماع لتغييرات المصادقة لإعادة تحميل المستندات
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenToAuthChanges();
+      // إجبار إعادة تحميل المستندات عند فتح الصفحة
+      _forceRefreshDocuments();
+    });
+  }
+
+  /// إجبار إعادة تحميل المستندات
+  Future<void> _forceRefreshDocuments() async {
+    try {
+      final authState = ref.read(compatibleAuthProvider);
+      if (authState.isAuthenticated) {
+        debugPrint('🔄 UserDocumentsViewerScreen: Force refreshing documents on init...');
+        // إلغاء provider لإجبار إعادة التحميل
+        ref.invalidate(userDocumentsProvider);
+        ref.invalidate(profile_provider.profileProvider);
+        
+        // إجبار إعادة تحميل المستندات من الخادم
+        if (mounted) {
+          await ref.read(profile_provider.profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+          debugPrint('✅ UserDocumentsViewerScreen: Documents force refreshed on init');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ UserDocumentsViewerScreen: Error force refreshing documents: $e');
+    }
+  }
+
+  /// الاستماع لتغييرات المصادقة لإعادة تحميل المستندات
+  void _listenToAuthChanges() {
+    ref.listen<CompatibleAuthState>(
+      compatibleAuthProvider,
+      (previous, next) {
+        // إذا تم تسجيل الدخول (من غير مصادق إلى مصادق)، أعد تحميل المستندات
+        if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
+          debugPrint('🔄 UserDocumentsViewerScreen: User logged in, refreshing documents...');
+          
+          // استخدام Future.microtask للعمليات غير المتزامنة
+          Future.microtask(() async {
+            // مسح كاش الصور أولاً
+            try {
+              await ImageCacheService.clearAllCache();
+              AuthenticatedImageService.clearAllImageCache();
+              debugPrint('✅ UserDocumentsViewerScreen: Image cache cleared after login');
+            } catch (e) {
+              debugPrint('⚠️ UserDocumentsViewerScreen: Error clearing image cache: $e');
+            }
+            
+            // إلغاء provider لإجبار إعادة التحميل
+            ref.invalidate(userDocumentsProvider);
+            ref.invalidate(profile_provider.profileProvider);
+            
+            // إجبار إعادة تحميل المستندات من الخادم
+            if (mounted) {
+              await ref.read(profile_provider.profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+              debugPrint('✅ UserDocumentsViewerScreen: Documents reloaded after login');
+            }
+          });
+        }
+        // إذا تم تسجيل الخروج (من مصادق إلى غير مصادق)، أعد تحميل المستندات
+        else if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+          debugPrint('🔄 UserDocumentsViewerScreen: User logged out, clearing documents...');
+          // إلغاء provider لإجبار إعادة التحميل
+          ref.invalidate(userDocumentsProvider);
+          ref.invalidate(profile_provider.profileProvider);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final documentsAsync = ref.watch(userDocumentsProvider);
@@ -343,7 +421,13 @@ class _UserDocumentsViewerScreenState
 
     if (isImage) {
       // للصور: عرض الصورة المصغرة باستخدام Dio مع authentication
-      return _ThumbnailImage(fileId: document.id);
+      // استخدام key فريد لإجبار إعادة البناء عند تغيير المستخدم
+      final authState = ref.read(compatibleAuthProvider);
+      final userKey = authState.user?.id ?? 'unknown';
+      return _ThumbnailImage(
+        key: ValueKey('${document.id}_$userKey'),
+        fileId: document.id,
+      );
     }
 
     // للملفات الأخرى: عرض الأيقونة العادية
@@ -367,7 +451,10 @@ class _UserDocumentsViewerScreenState
 class _ThumbnailImage extends StatefulWidget {
   final String fileId;
 
-  const _ThumbnailImage({required this.fileId});
+  const _ThumbnailImage({
+    super.key,
+    required this.fileId,
+  });
 
   @override
   State<_ThumbnailImage> createState() => _ThumbnailImageState();
@@ -376,50 +463,75 @@ class _ThumbnailImage extends StatefulWidget {
 class _ThumbnailImageState extends State<_ThumbnailImage> {
   Uint8List? _thumbnailBytes;
   bool _isLoading = true;
+  String? _lastFileId;
 
   @override
   void initState() {
     super.initState();
+    _lastFileId = widget.fileId;
     _loadThumbnail();
   }
 
+  @override
+  void didUpdateWidget(_ThumbnailImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // إذا تغير fileId، أعد تحميل الصورة
+    if (oldWidget.fileId != widget.fileId) {
+      _lastFileId = widget.fileId;
+      _thumbnailBytes = null;
+      _isLoading = true;
+      _loadThumbnail();
+    }
+  }
+
   Future<void> _loadThumbnail() async {
+    // التحقق من أن fileId لم يتغير أثناء التحميل
+    final currentFileId = widget.fileId;
+    
     try {
       final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted && widget.fileId == currentFileId) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
         return;
       }
 
       final dio = EnhancedDioServiceV2.instance.dio;
 
+      // إضافة timestamp فريد لإجبار إعادة التحميل
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await dio.get(
-        '${ApiConstants.baseUrl}/api/v1/files/${widget.fileId}/thumbnail',
+        '${ApiConstants.baseUrl}/api/v1/files/${widget.fileId}/thumbnail?t=$timestamp',
         options: Options(
           responseType: ResponseType.bytes,
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Cache-Control': 'no-cache',
+          },
         ),
       );
 
       if (response.data != null && response.data is List<int>) {
-        if (mounted) {
+        // التحقق من أن fileId لم يتغير أثناء التحميل
+        if (mounted && widget.fileId == currentFileId) {
           setState(() {
             _thumbnailBytes = Uint8List.fromList(response.data);
             _isLoading = false;
           });
         }
       } else {
-        if (mounted) {
+        if (mounted && widget.fileId == currentFileId) {
           setState(() {
             _isLoading = false;
           });
         }
       }
     } catch (e) {
-      debugPrint('❌ Error loading thumbnail: $e');
-      if (mounted) {
+      debugPrint('❌ Error loading thumbnail for ${widget.fileId}: $e');
+      if (mounted && widget.fileId == currentFileId) {
         setState(() {
           _isLoading = false;
         });

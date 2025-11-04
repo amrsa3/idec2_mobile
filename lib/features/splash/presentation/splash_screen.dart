@@ -26,6 +26,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late Animation<double> _textAnimation;
   late Animation<Offset> _slideAnimation;
   String _version = ''; // Version from pubspec.yaml
+  String _buildNumber = ''; // Build number from pubspec.yaml
 
   @override
   void initState() {
@@ -37,16 +38,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _loadVersionInfo() async {
     try {
+      debugPrint('📦 [SPLASH] Loading version info from PackageInfo...');
       final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _version = packageInfo.version;
-      });
-    } catch (e) {
+      
+      debugPrint('📦 [SPLASH] PackageInfo loaded:');
+      debugPrint('📦 [SPLASH] - Version: ${packageInfo.version}');
+      debugPrint('📦 [SPLASH] - BuildNumber: ${packageInfo.buildNumber}');
+      debugPrint('📦 [SPLASH] - AppName: ${packageInfo.appName}');
+      debugPrint('📦 [SPLASH] - PackageName: ${packageInfo.packageName}');
+      
+      // استخدام version من PackageInfo (يأتي من pubspec.yaml)
+      // التنسيق: version+buildNumber (مثل: 1.0.0+1)
+      final versionString = packageInfo.version;
+      final buildNumberString = packageInfo.buildNumber;
+      
+      if (mounted) {
+        setState(() {
+          _version = versionString;
+          _buildNumber = buildNumberString;
+        });
+        debugPrint('✅ [SPLASH] Version set to: $_version (Build: $_buildNumber)');
+      }
+    } catch (e, stackTrace) {
       debugPrint('❌ [SPLASH] Error loading version info: $e');
+      debugPrint('❌ [SPLASH] Stack trace: $stackTrace');
+      
       // Fallback to default version if loading fails
-      setState(() {
-        _version = '1.0.0';
-      });
+      if (mounted) {
+        setState(() {
+          _version = '1.0.0'; // Fallback version
+        });
+        debugPrint('⚠️ [SPLASH] Using fallback version: $_version');
+      }
     }
   }
 
@@ -313,7 +336,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 32),
                       child: Text(
-                        _version.isEmpty ? 'Loading...' : 'Version $_version',
+                        _version.isEmpty 
+                            ? 'Loading...' 
+                            : _buildNumber.isNotEmpty && _buildNumber != '0'
+                                ? 'Version $_version (Build $_buildNumber)'
+                                : 'Version $_version',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white.withOpacity(0.7),
                             ),

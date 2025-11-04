@@ -180,6 +180,17 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         if (previous?.isAuthenticated == true && !next.isAuthenticated) {
           debugPrint('🔄 ProfileProvider: User logged out, clearing profile state');
           _clearProfileState();
+          
+          // مسح كاش الصور أيضاً
+          Future.microtask(() async {
+            try {
+              await ImageCacheService.clearAllCache();
+              AuthenticatedImageService.clearAllImageCache();
+              debugPrint('✅ ProfileProvider: Image cache cleared after logout');
+            } catch (e) {
+              debugPrint('⚠️ ProfileProvider: Error clearing image cache: $e');
+            }
+          });
         }
         // If user logged in, load profile
         else if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
@@ -239,8 +250,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   /// Clear profile state completely
   void _clearProfileState() {
     if (mounted) {
-      state = const ProfileState();
-      debugPrint('✅ ProfileProvider: Profile state cleared');
+      // مسح جميع البيانات بما في ذلك المستندات
+      state = const ProfileState(
+        documents: [],
+        selectedDocuments: {},
+      );
+      debugPrint('✅ ProfileProvider: Profile state cleared (including documents)');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -15,11 +16,13 @@ import '../../../../models/profile_model.dart';
 import '../../../../models/profile_rule_model.dart';
 import '../../../../providers/profile_rules_provider.dart';
 import '../../../../services/compatible_auth_service.dart';
+import '../../../../services/image_cache_service.dart';
+import '../../../../services/authenticated_image_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../providers/profile_provider.dart';
-import '../../services/profile_service.dart';
+import '../../services/profile_service.dart' as profile_service;
 import '../widgets/verification_status_badge.dart';
 import '../../../registrations/presentation/my_registrations_screen.dart';
 import 'profile_edit_screen.dart';
@@ -61,7 +64,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           Future.microtask(() async {
             try {
               // Clear cache first (like edit screen does)
-              await LocalProfileService.clearCache();
+              await profile_service.LocalProfileService.clearCache();
               debugPrint('✅ ProfileMainScreen: Cache cleared after login');
               
               // Wait a bit to ensure tokens are ready
@@ -109,7 +112,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         
         // Clear cache first (same approach as edit screen)
         try {
-          await LocalProfileService.clearCache();
+          await profile_service.LocalProfileService.clearCache();
           debugPrint('✅ ProfileMainScreen: Cache cleared in _loadProfileData');
         } catch (e) {
           debugPrint('⚠️ ProfileMainScreen: Error clearing cache: $e');
@@ -392,13 +395,27 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           // معلومات التطبيق في أسفل القائمة
           Container(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              'تطبيق IDEC\nالإصدار 2.0.1',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.hasData 
+                    ? snapshot.data!.version 
+                    : 'Loading...';
+                final buildNumber = snapshot.hasData && 
+                        snapshot.data!.buildNumber.isNotEmpty && 
+                        snapshot.data!.buildNumber != '0'
+                    ? ' (Build ${snapshot.data!.buildNumber})'
+                    : '';
+                
+                return Text(
+                  'تطبيق IDEC\nالإصدار $version$buildNumber',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -448,6 +465,27 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           child: CircularProgressIndicator(),
         ),
       );
+
+      // مسح كاش المستندات والملف الشخصي قبل تسجيل الخروج
+      try {
+        await profile_service.LocalProfileService.clearCache();
+        debugPrint('✅ ProfileMainScreen: Profile cache cleared before logout');
+        
+        // مسح كاش الصور
+        try {
+          await ImageCacheService.clearAllCache();
+          AuthenticatedImageService.clearAllImageCache();
+          debugPrint('✅ ProfileMainScreen: Image cache cleared before logout');
+        } catch (e) {
+          debugPrint('⚠️ ProfileMainScreen: Error clearing image cache: $e');
+        }
+        
+        // إلغاء profile provider لإجبار إعادة التحميل
+        ref.invalidate(profileProvider);
+        debugPrint('✅ ProfileMainScreen: Profile provider invalidated');
+      } catch (e) {
+        debugPrint('⚠️ ProfileMainScreen: Error clearing cache before logout: $e');
+      }
 
       // تسجيل الخروج
       await ref.read(compatibleAuthProvider.notifier).logout();
@@ -1145,7 +1183,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       debugPrint('ProfileMainScreen: Returning from edit screen, refreshing data...');
       
       // Clear cache first
-      await LocalProfileService.clearCache();
+      await profile_service.LocalProfileService.clearCache();
       
       // Always load fresh data from server (including qualifications and governorates)
       // This is critical to detect admin approval changes and display qualification names correctly

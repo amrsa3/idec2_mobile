@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -266,13 +267,27 @@ class ProfileSideDrawer extends ConsumerWidget {
           // معلومات التطبيق في أسفل القائمة
           Container(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              'تطبيق IDEC\nالإصدار 2.0.1',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.hasData 
+                    ? snapshot.data!.version 
+                    : 'Loading...';
+                final buildNumber = snapshot.hasData && 
+                        snapshot.data!.buildNumber.isNotEmpty && 
+                        snapshot.data!.buildNumber != '0'
+                    ? ' (Build ${snapshot.data!.buildNumber})'
+                    : '';
+                
+                return Text(
+                  'تطبيق IDEC\nالإصدار $version$buildNumber',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                );
+              },
             ),
           ),
         ],

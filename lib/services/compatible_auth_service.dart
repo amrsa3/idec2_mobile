@@ -34,6 +34,10 @@ class CompatibleAuthService {
   String? _error;
   String? _unverifiedPhoneNumber;
   Map<String, dynamic>? _lastResponse;
+  
+  // Cached session expiry state (updated periodically)
+  bool _cachedSessionExpired = false;
+  DateTime? _lastSessionCheck;
 
   CompatibleAuthService._internal() {
     // Initialize core services synchronously
@@ -68,6 +72,9 @@ class CompatibleAuthService {
 
       // محاولة استعادة الجلسة المحفوظة
       await _restoreSession();
+      
+      // تحديث حالة انتهاء الجلسة عند التهيئة
+      await _updateSessionExpiryState();
 
       debugPrint('✅ [COMPATIBLE_AUTH] Async services initialized successfully');
     } catch (e) {
@@ -162,7 +169,7 @@ class CompatibleAuthService {
                 await _tokenManager.saveTokens(
                   accessToken: accessToken,
                   refreshToken: refreshToken ?? '',
-                  expiresIn: 900,
+                  expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
                 );
                 await _storage.setString('access_token', accessToken);
                 debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved');
@@ -175,6 +182,9 @@ class CompatibleAuthService {
                   'current_user', _currentUser!.toJson().toString());
               await _storage.setString(
                   'user_data', _currentUser!.toJson().toString());
+
+              // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
+              await _updateSessionExpiryState();
 
               _isLoading = false;
               debugPrint('✅ [COMPATIBLE_AUTH] Smart Messages login successful');
@@ -226,7 +236,7 @@ class CompatibleAuthService {
             await _tokenManager.saveTokens(
               accessToken: accessToken,
               refreshToken: refreshToken ?? '',
-              expiresIn: 900, // 15 minutes default
+              expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
             );
             // أيضاً احفظ في المفاتيح القديمة للتوافق
             await _storage.setString('access_token', accessToken);
@@ -242,6 +252,9 @@ class CompatibleAuthService {
           await _storage.setString(
               'user_data', _currentUser!.toJson().toString());
           debugPrint('🔐 [COMPATIBLE_AUTH] User data saved');
+
+          // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
+          await _updateSessionExpiryState();
 
           _isLoading = false;
           debugPrint('✅ [COMPATIBLE_AUTH] Login successful for: $phone');
@@ -532,7 +545,7 @@ class CompatibleAuthService {
                 await _tokenManager.saveTokens(
                   accessToken: accessToken,
                   refreshToken: refreshToken ?? '',
-                  expiresIn: 900,
+                  expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
                 );
                 await _storage.setString('access_token', accessToken);
                 debugPrint(
@@ -546,6 +559,9 @@ class CompatibleAuthService {
                   'current_user', _currentUser!.toJson().toString());
               await _storage.setString(
                   'user_data', _currentUser!.toJson().toString());
+              
+              // تحديث حالة الجلسة بعد التحقق الناجح
+              await _updateSessionExpiryState();
             }
           } else if (!success) {
             // Handle error from Smart Messages System
@@ -575,7 +591,7 @@ class CompatibleAuthService {
             await _tokenManager.saveTokens(
               accessToken: accessToken,
               refreshToken: refreshToken,
-              expiresIn: 900, // 15 minutes default
+              expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
             );
             await _storage.setString('access_token', accessToken);
           }
@@ -586,6 +602,9 @@ class CompatibleAuthService {
               'current_user', _currentUser!.toJson().toString());
           await _storage.setString(
               'user_data', _currentUser!.toJson().toString());
+          
+          // تحديث حالة الجلسة بعد التحقق الناجح
+          await _updateSessionExpiryState();
         }
 
         _isLoading = false;
@@ -981,6 +1000,9 @@ class CompatibleAuthService {
       _currentUser = null;
       _isLoading = false;
       
+      // تحديث حالة الجلسة بعد تسجيل الخروج
+      await _updateSessionExpiryState();
+      
       debugPrint('✅ [COMPATIBLE_AUTH] Logout completed successfully');
       return true;
     } catch (e) {
@@ -1038,11 +1060,44 @@ class CompatibleAuthService {
   /// التحقق من انتهاء صلاحية الجلسة
   bool get sessionExpired {
     // إذا لم يكن هناك مستخدم، فالجلسة منتهية الصلاحية
-    if (_currentUser == null) return true;
+    if (_currentUser == null) {
+      _cachedSessionExpired = true;
+      return true;
+    }
 
-    // يمكن إضافة منطق أكثر تعقيداً هنا للتحقق من انتهاء صلاحية التوكن
-    // لكن في الوقت الحالي، إذا كان المستخدم موجود، فالجلسة صالحة
-    return false;
+    // تحديث حالة الجلسة بشكل دوري (كل 5 دقائق)
+    // نستخدم unawaited لأن getter يجب أن يكون synchronous
+    final now = DateTime.now();
+    if (_lastSessionCheck == null || 
+        now.difference(_lastSessionCheck!).inMinutes >= 5) {
+      _lastSessionCheck = now;
+      // تحديث في الخلفية بدون انتظار
+      _updateSessionExpiryState().catchError((e) {
+        debugPrint('🔐 [COMPATIBLE_AUTH] Error updating session expiry: $e');
+      });
+    }
+
+    return _cachedSessionExpired;
+  }
+
+  /// تحديث حالة انتهاء الجلسة بشكل غير متزامن
+  Future<void> _updateSessionExpiryState() async {
+    try {
+      // التحقق من وجود refresh token صالح
+      // إذا كان refresh token موجود وصالح، فالجلسة لا تزال صالحة حتى لو انتهى access token
+      // لأننا يمكننا استخدام refresh token لتجديد access token
+      final hasValidRefreshToken = await _tokenManager.hasValidRefreshToken();
+      final hasValidAccessToken = await _tokenManager.isAccessTokenValid();
+      
+      // الجلسة صالحة إذا كان هناك refresh token صالح أو access token صالح
+      _cachedSessionExpired = !(hasValidRefreshToken || hasValidAccessToken);
+      
+      debugPrint('🔐 [COMPATIBLE_AUTH] Session expiry check: hasValidRefreshToken=$hasValidRefreshToken, hasValidAccessToken=$hasValidAccessToken, sessionExpired=$_cachedSessionExpired');
+    } catch (e) {
+      debugPrint('🔐 [COMPATIBLE_AUTH] Error checking session expiry: $e');
+      // في حالة الخطأ، نفترض أن الجلسة منتهية للسلامة
+      _cachedSessionExpired = true;
+    }
   }
 
   /// الحصول على رقم الهاتف غير الموثق
@@ -1079,15 +1134,22 @@ class CompatibleAuthService {
             _currentUser = UserModel.fromJsonSafe(userData);
             debugPrint(
                 '🔐 [COMPATIBLE_AUTH] User restored: ${_currentUser?.phone}');
+            
+            // تحديث حالة الجلسة بعد استعادة المستخدم
+            await _updateSessionExpiryState();
           } catch (e) {
             debugPrint('❌ [COMPATIBLE_AUTH] Error parsing user data: $e');
           }
         }
       } else {
         debugPrint('🔐 [COMPATIBLE_AUTH] No access token found');
+        // تحديث حالة الجلسة حتى لو لم يكن هناك token
+        await _updateSessionExpiryState();
       }
     } catch (e) {
       debugPrint('❌ [COMPATIBLE_AUTH] Session restoration error: $e');
+      // تحديث حالة الجلسة في حالة الخطأ
+      await _updateSessionExpiryState();
     }
   }
 }

@@ -201,6 +201,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   void initState() {
     super.initState();
+    // مسح الوثائق المختارة عند فتح الصفحة
+    _selectedDocuments.clear();
+    _failedDocuments.clear();
     _initializeForm();
     _loadData();
   }
@@ -1676,11 +1679,26 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       uploadNotifier.setPreparing();
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // الخطوة 2: رفع الملفات (إذا وجدت) - إجبارية إذا كانت مطلوبة
+      // الخطوة 1.5: التحقق من الحقول المتغيرة التي تتطلب وثائق
+      final profileState = ref.read(profileProvider);
+      final currentProfile = profileState.currentProfile;
+      if (currentProfile == null) {
+        throw Exception('الملف الشخصي غير متاح');
+      }
+
+      // الحصول على الحقول المتغيرة التي تتطلب وثائق
+      final changedFieldsRequiringDocuments = _getChangedFieldsRequiringDocuments(currentProfile);
+      
+      debugPrint('🔍 [PROFILE_EDIT] Changed fields requiring documents: $changedFieldsRequiringDocuments');
+      debugPrint('🔍 [PROFILE_EDIT] Selected documents count: ${_selectedDocuments.length}');
+
+      // الخطوة 2: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
       List<String> uploadedDocumentIds = [];
       bool allUploadsSuccessful = true;
 
-      if (_selectedDocuments.isNotEmpty) {
+      // الخطوة 2: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
+      // إذا لم تكن هناك حقول متغيرة تتطلب وثائق، لا يجب رفع أي وثائق
+      if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isNotEmpty) {
         // تهيئة بيانات الملفات
         final filesData = _selectedDocuments
             .map((doc) => FileProgressData(
@@ -1796,6 +1814,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               .toList();
           return;
         }
+      } else if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isEmpty) {
+        // إذا كانت هناك حقول متغيرة تتطلب وثائق ولكن لم يتم رفع وثائق
+        throw Exception('يجب رفع وثائق للحقول المتغيرة التي تتطلب وثائق: ${changedFieldsRequiringDocuments.join(", ")}');
+      } else if (changedFieldsRequiringDocuments.isEmpty && _selectedDocuments.isNotEmpty) {
+        // إذا لم تكن هناك حقول متغيرة تتطلب وثائق ولكن تم اختيار وثائق
+        debugPrint('⚠️ [PROFILE_EDIT] تم اختيار وثائق ولكن لا توجد حقول متغيرة تتطلب وثائق. سيتم تجاهل الوثائق.');
+        // مسح الوثائق المختارة لأنها غير مطلوبة
+        _selectedDocuments.clear();
       }
 
       // الخطوة 3: حفظ البيانات (فقط إذا نجح رفع جميع الملفات)
@@ -1853,10 +1879,24 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // الخطوة 1: رفع الملفات أولاً (إذا وجدت)
+      // الخطوة 0.5: التحقق من الحقول المتغيرة التي تتطلب وثائق
+      final profileState = ref.read(profileProvider);
+      final currentProfile = profileState.currentProfile;
+      if (currentProfile == null) {
+        throw Exception('الملف الشخصي غير متاح');
+      }
+
+      // الحصول على الحقول المتغيرة التي تتطلب وثائق
+      final changedFieldsRequiringDocuments = _getChangedFieldsRequiringDocuments(currentProfile);
+      
+      debugPrint('🔍 [PROFILE_EDIT] Changed fields requiring documents: $changedFieldsRequiringDocuments');
+      debugPrint('🔍 [PROFILE_EDIT] Selected documents count: ${_selectedDocuments.length}');
+
+      // الخطوة 1: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
       List<String> uploadedDocumentIds = [];
 
-      if (_selectedDocuments.isNotEmpty) {
+      // يجب أن تكون هناك وثائق مرفقة فقط إذا كانت هناك حقول متغيرة تتطلب وثائق
+      if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isNotEmpty) {
         setState(() => _isUploadingFiles = true);
 
         // تهيئة متغيرات التتبع
@@ -1930,6 +1970,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         }
 
         setState(() => _isUploadingFiles = false);
+      } else if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isEmpty) {
+        // إذا كانت هناك حقول متغيرة تتطلب وثائق ولكن لم يتم رفع وثائق
+        setState(() => _isSaving = false);
+        throw Exception('يجب رفع وثائق للحقول المتغيرة التي تتطلب وثائق: ${changedFieldsRequiringDocuments.join(", ")}');
+      } else if (changedFieldsRequiringDocuments.isEmpty && _selectedDocuments.isNotEmpty) {
+        // إذا لم تكن هناك حقول متغيرة تتطلب وثائق ولكن تم اختيار وثائق
+        debugPrint('⚠️ [PROFILE_EDIT] تم اختيار وثائق ولكن لا توجد حقول متغيرة تتطلب وثائق. سيتم تجاهل الوثائق.');
+        // مسح الوثائق المختارة لأنها غير مطلوبة
+        setState(() {
+          _selectedDocuments.clear();
+          _isUploadingFiles = false;
+        });
       }
 
       // الخطوة 2: إنشاء البيانات المحدثة مع مراجع الملفات المرفقة

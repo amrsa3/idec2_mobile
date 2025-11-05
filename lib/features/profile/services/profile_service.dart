@@ -974,11 +974,22 @@ class LocalProfileService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         debugPrint('📸 ProfileService: Profile picture uploaded successfully');
+        
+        // 🔍 DEBUG: طباعة تفاصيل الاستجابة من الخادم
+        debugPrint('📥 [UPLOAD_PROFILE_PICTURE] Server response:');
+        final fileData = data['file'] ?? data;
+        if (fileData is Map<String, dynamic>) {
+          debugPrint('   - id: ${fileData['id']}');
+          debugPrint('   - entityType: ${fileData['entityType']}');
+          debugPrint('   - entityId: ${fileData['entityId']}');
+          debugPrint('   - fileCategory: ${fileData['fileCategory']}');
+          debugPrint('   - url: ${fileData['url']}');
+          debugPrint('   - originalName: ${fileData['originalName']}');
+        }
 
         // Extract file data from the response
-        final fileData = data['file'];
         if (fileData != null) {
-          return fileData;
+          return fileData is Map<String, dynamic> ? fileData : data;
         } else {
           // Fallback if file data is not in expected format
           return data;
@@ -1163,12 +1174,23 @@ class LocalProfileService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('📸 ProfileService: Profile picture uploaded successfully');
+        debugPrint('📸 ProfileService: Profile picture uploaded successfully (Web)');
+        
+        // 🔍 DEBUG: طباعة تفاصيل الاستجابة من الخادم
+        debugPrint('📥 [UPLOAD_PROFILE_PICTURE_WEB] Server response:');
+        final fileData = data['file'] ?? data;
+        if (fileData is Map<String, dynamic>) {
+          debugPrint('   - id: ${fileData['id']}');
+          debugPrint('   - entityType: ${fileData['entityType']}');
+          debugPrint('   - entityId: ${fileData['entityId']}');
+          debugPrint('   - fileCategory: ${fileData['fileCategory']}');
+          debugPrint('   - url: ${fileData['url']}');
+          debugPrint('   - originalName: ${fileData['originalName']}');
+        }
 
         // Extract file data from the response
-        final fileData = data['file'];
         if (fileData != null) {
-          return fileData;
+          return fileData is Map<String, dynamic> ? fileData : data;
         } else {
           // Fallback if file data is not in expected format
           return data;
@@ -1190,7 +1212,7 @@ class LocalProfileService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading profile picture: $e');
+      debugPrint('❌ ProfileService: Error uploading profile picture (Web): $e');
 
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
@@ -1823,45 +1845,15 @@ class LocalProfileService {
             '✅ ProfileService: Mobile upload - preserving original file name: $fileName');
       }
 
-      // الحصول على معرف المستخدم الحقيقي من التوكن
-      String userId = 'current_user'; // قيمة افتراضية
-      try {
-        // محاولة الحصول على معرف المستخدم من التوكن
-        final token = await EnhancedDioServiceV2.instance.getAccessToken();
-        if (token != null && token.isNotEmpty) {
-          // فك تشفير التوكن للحصول على معرف المستخدم
-          final parts = token.split('.');
-          if (parts.length == 3) {
-            final payload = parts[1];
-            final normalized = base64Url.normalize(payload);
-            final resp = utf8.decode(base64Url.decode(normalized));
-            final payloadMap = jsonDecode(resp) as Map<String, dynamic>;
-            userId = payloadMap['sub']?.toString() ??
-                payloadMap['id']?.toString() ??
-                'current_user';
-            debugPrint(
-                '🔐 ProfileService: Extracted user ID from token: $userId');
-          }
-        }
-
-        // إذا فشل فك تشفير التوكن، جرب التخزين الآمن
-        if (userId == 'current_user') {
-          final storage = PlatformStorageService.instance;
-          final user = await storage.readSecure('current_user');
-          if (user != null) {
-            try {
-              final userData = jsonDecode(user) as Map<String, dynamic>;
-              userId = userData['id']?.toString() ?? 'current_user';
-              debugPrint(
-                  '🔐 ProfileService: Got user ID from storage: $userId');
-            } catch (e) {
-              debugPrint('❌ ProfileService: Error parsing user data: $e');
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('❌ ProfileService: Error getting user ID: $e');
+      // الحصول على معرف المستخدم من CompatibleAuthService (مثل uploadDocumentFileWithRetry)
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('❌ ProfileService: No current user found');
+        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
       }
+      final userId = currentUser.id;
+      debugPrint('👤 ProfileService: Current user ID: $userId');
 
       final formData = FormData.fromMap({
         'file': multipartFile,

@@ -1074,17 +1074,20 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               '⚠️ ProfileProvider: Failed to update local profile picture URL: $e');
         }
 
-        // إضافة تأخير قصير ثم إعادة تحميل الملف الشخصي لضمان التحديث
-        Future.delayed(const Duration(milliseconds: 500), () async {
+        // إعادة تحميل الملف الشخصي فوراً بعد التحديث لضمان التحديث
+        // لا نستخدم delay لأننا نريد التحديث الفوري
+        Future.microtask(() async {
           try {
             debugPrint(
                 '🔄 ProfileProvider: Refreshing profile after image upload...');
+            // إعادة تحميل الملف الشخصي من الخادم
             await loadCurrentProfile(forceRefresh: true);
             debugPrint(
                 '✅ ProfileProvider: Profile refreshed successfully after image upload');
           } catch (e) {
             debugPrint(
                 '⚠️ ProfileProvider: Error refreshing profile after upload: $e');
+            // حتى لو فشل التحديث، نترك URL المحدث في state
           }
         });
 

@@ -74,6 +74,33 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // الاستماع لتغييرات profileProvider للحصول على URL محدث
+    final profileState = ref.watch(profileProvider);
+    final profileImageUrl = profileState.currentProfile?.profilePictureUrl;
+    
+    // إذا تغير URL من profileProvider، قم بتحديث _currentImageUrl
+    if (profileImageUrl != null && profileImageUrl != _currentImageUrl) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentImageUrl = profileImageUrl;
+            _imageReloadKey++;
+            _forceImageReload = true;
+            debugPrint('🔄 ProfileImageWidget: URL updated from profileProvider: $profileImageUrl');
+          });
+          
+          // إعادة تعيين forceReload بعد فترة قصيرة
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              setState(() {
+                _forceImageReload = false;
+              });
+            }
+          });
+        }
+      });
+    }
+    
     return GestureDetector(
       onTap: widget.isEditable ? _showImageOptions : null,
       child: Stack(
@@ -138,21 +165,25 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
 
   /// بناء محتوى الصورة
   Widget _buildImageContent() {
-    final imageUrl = widget.imageUrl;
+    // استخدام URL الحالي من state أو من widget
+    final imageUrl = _currentImageUrl ?? widget.imageUrl;
     final size = widget.size;
 
     if (imageUrl == null || imageUrl.isEmpty) {
       return _buildFallbackImage();
     }
 
+    // استخدام مفتاح فريد يتضمن URL الحالي و reloadKey لإجبار إعادة البناء
+    final uniqueKey = 'profile_image_${imageUrl}_${_imageReloadKey}_${DateTime.now().millisecondsSinceEpoch}';
+    
     return AuthenticatedImageWidget(
       imageUrl: imageUrl,
       width: size,
       height: size,
       fit: BoxFit.cover,
       forceReload: _forceImageReload,
-      reloadKey: '${_imageReloadKey}_${DateTime.now().millisecondsSinceEpoch}', // مفتاح فريد
-      key: ValueKey('profile_image_${imageUrl}_${_imageReloadKey}'), // مفتاح فريد للويدجت
+      reloadKey: uniqueKey, // مفتاح فريد
+      key: ValueKey(uniqueKey), // مفتاح فريد للويدجت
       placeholder: Container(
         width: size,
         height: size,
@@ -434,10 +465,24 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
       if (success) {
         debugPrint('✅ ProfileImageWidget: Image uploaded successfully');
         
+        // إعادة تحميل profile من الخادم لضمان الحصول على URL الجديد
+        try {
+          await ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+          debugPrint('✅ ProfileImageWidget: Profile reloaded after upload');
+        } catch (e) {
+          debugPrint('⚠️ ProfileImageWidget: Error reloading profile: $e');
+        }
+        
         // إجبار إعادة تحميل الصورة فوراً
         setState(() {
           _forceImageReload = true;
           _imageReloadKey++;
+          // تحديث URL الحالي من profileProvider
+          final updatedProfile = ref.read(profileProvider).currentProfile;
+          if (updatedProfile != null && updatedProfile.profilePictureUrl != null) {
+            _currentImageUrl = updatedProfile.profilePictureUrl;
+            debugPrint('🔄 ProfileImageWidget: Updated image URL to: $_currentImageUrl');
+          }
         });
         
         debugPrint('🔄 ProfileImageWidget: Force reload activated with key: $_imageReloadKey');
@@ -451,6 +496,12 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
             debugPrint('🔄 ProfileImageWidget: Force reload deactivated');
           }
         });
+
+        // استدعاء callback إذا كان موجوداً
+        if (widget.onImageChanged != null) {
+          widget.onImageChanged!();
+          debugPrint('🔄 ProfileImageWidget: onImageChanged callback called');
+        }
 
         // إظهار رسالة نجاح
         if (mounted) {

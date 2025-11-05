@@ -682,6 +682,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             children: [
               // صورة الملف الشخصي
               ProfileImageWidget(
+                key: ValueKey('profile_image_${profile.profilePictureUrl}_${DateTime.now().millisecondsSinceEpoch}'), // مفتاح فريد لإجبار إعادة البناء
                 imageUrl: profile.profilePictureUrl,
                 size: 80,
                 fallbackText: profile.fullNameAr.isNotEmpty
@@ -693,7 +694,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 isEditable: true,
                 onImageChanged: () {
                   // إعادة تحميل البيانات بعد تغيير الصورة
-                  ref.refresh(profileProvider);
+                  debugPrint('🔄 ProfileMainScreen: onImageChanged callback triggered');
+                  ref.invalidate(profileProvider);
+                  ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
                 },
               ),
 

@@ -90,6 +90,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       final success = await ref.read(compatibleAuthProvider.notifier).verifyOtp(
             widget.phone,
             otp,
+            isLogin: widget.isLogin,
           );
 
       if (mounted) {
@@ -380,7 +381,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                 // Title
                 Text(
-                  'التحقق من رقم الهاتف',
+                  widget.isLogin ? 'التحقق من حسابك' : 'التحقق من رقم الهاتف',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
@@ -392,7 +393,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
                 // Subtitle
                 Text(
-                  'أدخل رمز التحقق المكون من 4 أرقام\nالمرسل إلى ${widget.phone}',
+                  widget.isLogin
+                      ? 'حسابك غير مؤكد. يرجى إدخال رمز التحقق المكون من 4 أرقام\nالمرسل إلى ${widget.phone} للتحقق من حسابك'
+                      : 'أدخل رمز التحقق المكون من 4 أرقام\nالمرسل إلى ${widget.phone}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),

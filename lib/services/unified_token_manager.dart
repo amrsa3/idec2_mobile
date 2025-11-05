@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'platform_storage_service.dart';
+import '../core/constants/api_constants.dart';
 
 /// Unified Token Manager that supports all platforms (Android, iOS, Web)
 /// Provides secure token storage, automatic refresh, and session management
@@ -34,6 +35,9 @@ class UnifiedTokenManager {
   Timer? _sessionTimer;
   final StreamController<SessionEvent> _sessionController =
       StreamController<SessionEvent>.broadcast();
+  
+  // Flag to prevent multiple refresh scheduling attempts
+  bool _isSchedulingRefresh = false;
 
   /// Stream for session events (expiration, refresh, etc.)
   Stream<SessionEvent> get sessionEvents => _sessionController.stream;
@@ -76,6 +80,7 @@ class UnifiedTokenManager {
     required String accessToken,
     required String refreshToken,
     required int expiresIn,
+    int? refreshExpiresIn,
     String? sessionId,
     Map<String, dynamic>? userData,
     Map<String, dynamic>? deviceInfo,
@@ -85,8 +90,10 @@ class UnifiedTokenManager {
     try {
       final now = DateTime.now();
       final accessTokenExpiry = now.add(Duration(seconds: expiresIn));
-      final refreshTokenExpiry =
-          now.add(Duration(days: 30)); // 30 days for refresh token
+      // استخدام مدة صلاحية refresh token من الخادم أو 30 يوم كافتراضي
+      final refreshTokenExpiry = refreshExpiresIn != null
+          ? now.add(Duration(seconds: refreshExpiresIn))
+          : now.add(Duration(days: 30));
 
       // Debug logging for token expiry calculation
       debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Token expiry calculation:');
@@ -131,6 +138,9 @@ class UnifiedTokenManager {
         timestamp: now,
         data: {'expiresIn': expiresIn},
       ));
+
+      // بعد حفظ التوكن الجديد، جدول تجديد التالي
+      _scheduleNextTokenRefresh();
     } catch (e) {
       debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Error saving tokens: $e');
       rethrow;
@@ -204,46 +214,17 @@ class UnifiedTokenManager {
 
       final expiry = DateTime.parse(expiryString);
       final now = DateTime.now();
-
-      // Add 5-minute buffer before expiration
-      final bufferTime = Duration(minutes: 5);
-      final effectiveExpiry = expiry.subtract(bufferTime);
-      final isValid = now.isBefore(effectiveExpiry);
+      
+      // التحقق فقط من أن التوكن لم ينتهي بعد (لا نستخدم buffer)
+      final isValid = now.isBefore(expiry);
       final timeUntilExpiry = expiry.difference(now);
-      final timeUntilEffectiveExpiry = effectiveExpiry.difference(now);
 
-      // Enhanced debug logging for token validity check
-      debugPrint('🔐 [TOKEN_DEBUG] ===== TOKEN VALIDITY CHECK =====');
-      debugPrint('🔐 [TOKEN_DEBUG] Current time: $now');
-      debugPrint('🔐 [TOKEN_DEBUG] Token expiry: $expiry');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Buffer time: ${bufferTime.inMinutes} minutes');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Effective expiry (with buffer): $effectiveExpiry');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Time until actual expiry: ${timeUntilExpiry.inDays} days, ${timeUntilExpiry.inHours % 24} hours, ${timeUntilExpiry.inMinutes % 60} minutes');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Time until effective expiry: ${timeUntilEffectiveExpiry.inDays} days, ${timeUntilEffectiveExpiry.inHours % 24} hours, ${timeUntilEffectiveExpiry.inMinutes % 60} minutes');
-      debugPrint('🔐 [TOKEN_DEBUG] Is token valid (with buffer): $isValid');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Access token length: ${accessToken.length} characters');
-      debugPrint(
-          '🔐 [TOKEN_DEBUG] Access token prefix: ${accessToken.substring(0, accessToken.length > 20 ? 20 : accessToken.length)}...');
-
-      if (!isValid) {
-        debugPrint('🔐 [TOKEN_DEBUG] ❌ Token is invalid or expired');
-        if (timeUntilExpiry.isNegative) {
-          debugPrint(
-              '🔐 [TOKEN_DEBUG] Token has already expired ${timeUntilExpiry.abs().inMinutes} minutes ago');
-        } else {
-          debugPrint(
-              '🔐 [TOKEN_DEBUG] Token expires in ${timeUntilExpiry.inMinutes} minutes but buffer makes it invalid');
-        }
+      // Debug logging for token validity check
+      if (timeUntilExpiry.isNegative) {
+        debugPrint('🔐 [TOKEN_DEBUG] ❌ Token expired ${timeUntilExpiry.abs().inMinutes} minutes ago');
       } else {
-        debugPrint('🔐 [TOKEN_DEBUG] ✅ Token is valid');
+        debugPrint('🔐 [TOKEN_DEBUG] ✅ Token valid, expires in ${timeUntilExpiry.inMinutes} minutes');
       }
-
-      debugPrint('🔐 [TOKEN_DEBUG] ===== END TOKEN VALIDITY CHECK =====');
 
       return isValid;
     } catch (e) {
@@ -322,11 +303,24 @@ class UnifiedTokenManager {
       if (response.statusCode == 200) {
         final data = response.data;
 
+        // استخراج مدة صلاحية refresh token من الاستجابة
+        int? refreshExpiresIn;
+        if (data.containsKey('refreshTokenExpiresAt')) {
+          try {
+            final refreshExpiresAtString = data['refreshTokenExpiresAt'] as String;
+            final refreshExpiresAt = DateTime.parse(refreshExpiresAtString);
+            final now = DateTime.now();
+            refreshExpiresIn = refreshExpiresAt.difference(now).inSeconds;
+          } catch (e) {
+            debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] Error parsing refreshTokenExpiresAt: $e');
+          }
+        }
+        
         await saveTokens(
           accessToken: data['accessToken'],
           refreshToken: data['refreshToken'] ?? refreshToken,
-          expiresIn: data['expiresIn'] ??
-              2592000, // Default 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
+          expiresIn: data['expiresIn'] ?? 900, // Default 15 minutes (900 seconds)
+          refreshExpiresIn: refreshExpiresIn,
           sessionId: data['sessionId'] ?? sessionId,
           userData: data['user'],
         );
@@ -475,41 +469,111 @@ class UnifiedTokenManager {
     }
   }
 
-  /// Start session monitoring - تقليل عدد الطلبات
+  /// Start session monitoring
+  /// يتم استخدام timer محسوب بناءً على وقت انتهاء التوكن لتقليل الحمل على الخادم
   void _startSessionMonitoring() {
     _sessionTimer?.cancel();
+    _scheduleNextTokenRefresh();
+    debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Session monitoring initialized with calculated timer');
+  }
 
-    _sessionTimer = Timer.periodic(Duration(minutes: 30), (timer) async {
-      // تغيير من 5 دقائق إلى 30 دقيقة
-      try {
-        // Check if session is still valid
-        if (!await hasValidSession()) {
-          await _handleSessionExpired('Session monitoring detected expiration');
-          timer.cancel();
-          return;
-        }
-
-        // Update activity
-        await _updateLastActivity();
-
-        // Check if token needs refresh soon (within 6 hours instead of 10 minutes)
-        final expiryString = await _storage.readSecure(_tokenExpiryKey);
-        if (expiryString != null) {
-          final expiry = DateTime.parse(expiryString);
-          final now = DateTime.now();
-          final timeUntilExpiry = expiry.difference(now);
-
-          if (timeUntilExpiry.inHours <= 6 && timeUntilExpiry.inHours > 0) {
-            // تغيير من 10 دقائق إلى 6 ساعات
-            debugPrint(
-                '🔐 [UNIFIED_TOKEN_MANAGER] Token expires soon, refreshing proactively');
-            await refreshAccessToken();
-          }
-        }
-      } catch (e) {
-        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Session monitoring error: $e');
+  /// جدولة تجديد التوكن التالي بناءً على وقت انتهاء الصلاحية
+  /// هذا يقلل الحمل على الخادم بدلاً من فحص دوري لكل المستخدمين
+  Future<void> _scheduleNextTokenRefresh() async {
+    // منع جدولة متعددة متزامنة
+    if (_isSchedulingRefresh) {
+      debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Refresh scheduling already in progress, skipping');
+      return;
+    }
+    
+    _isSchedulingRefresh = true;
+    try {
+      final expiryString = await _storage.readSecure(_tokenExpiryKey);
+      if (expiryString == null) {
+        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] No token expiry found, skipping refresh scheduling');
+        return;
       }
-    });
+
+      final expiry = DateTime.parse(expiryString);
+      final now = DateTime.now();
+      final timeUntilExpiry = expiry.difference(now);
+
+      // إذا كان التوكن منتهي بالفعل، قم بتجديده فوراً
+      if (timeUntilExpiry.isNegative || timeUntilExpiry.inSeconds <= 0) {
+        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Token already expired, refreshing immediately');
+        final hasRefresh = await hasValidRefreshToken();
+        if (hasRefresh) {
+          await refreshAccessToken();
+        } else {
+          await _handleSessionExpired('Token expired and no valid refresh token');
+        }
+        return;
+      }
+
+      // احسب الوقت المتبقي قبل 10 دقائق من انتهاء الصلاحية
+      // نريد تجديد التوكن قبل 10 دقائق من انتهائه
+      const refreshBuffer = Duration(minutes: 10);
+      final refreshTime = timeUntilExpiry - refreshBuffer;
+
+      // إذا كان الوقت المتبقي أقل من 10 دقائق، قم بتجديده فوراً
+      if (refreshTime.isNegative || refreshTime.inSeconds <= 0) {
+        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Token expires soon (${timeUntilExpiry.inMinutes} minutes), refreshing immediately');
+        final hasRefresh = await hasValidRefreshToken();
+        if (hasRefresh) {
+          await refreshAccessToken();
+        }
+        return;
+      }
+
+      // جدولة تجديد واحد فقط عند الوقت المحدد
+      debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Scheduling token refresh in ${refreshTime.inMinutes} minutes (${refreshTime.inSeconds} seconds)');
+      _sessionTimer = Timer(refreshTime, () async {
+        try {
+          debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Scheduled refresh time reached, refreshing token...');
+          final hasRefresh = await hasValidRefreshToken();
+          if (hasRefresh) {
+            final success = await refreshAccessToken();
+            if (success) {
+              // بعد نجاح التجديد، جدول التالي
+              _scheduleNextTokenRefresh();
+            } else {
+              await _handleSessionExpired('Scheduled refresh failed');
+            }
+          } else {
+            await _handleSessionExpired('No valid refresh token for scheduled refresh');
+          }
+        } catch (e) {
+          debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Error in scheduled refresh: $e');
+          // في حالة الخطأ، حاول مرة أخرى بعد 5 دقائق
+          _sessionTimer = Timer(const Duration(minutes: 5), () {
+            _scheduleNextTokenRefresh();
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Error scheduling token refresh: $e');
+      // في حالة الخطأ، استخدم fallback: فحص كل 10 دقائق
+      _sessionTimer = Timer.periodic(const Duration(minutes: 10), (timer) async {
+        try {
+          final isValid = await isAccessTokenValid();
+          if (!isValid) {
+            final hasRefresh = await hasValidRefreshToken();
+            if (hasRefresh) {
+              await refreshAccessToken();
+              timer.cancel();
+              _scheduleNextTokenRefresh();
+            } else {
+              timer.cancel();
+              await _handleSessionExpired('Token expired');
+            }
+          }
+        } catch (e) {
+          debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Error in fallback monitoring: $e');
+        }
+      });
+    } finally {
+      _isSchedulingRefresh = false;
+    }
   }
 
   /// Logout from current session
@@ -559,8 +623,8 @@ class UnifiedTokenManager {
 
   /// Get base URL for API calls
   String _getBaseUrl() {
-    // This can be configured based on environment
-    return 'https://api.idec-ye.com';
+    // Use ApiConstants.baseUrl to ensure consistency
+    return ApiConstants.baseUrl;
   }
 
   /// Dispose resources

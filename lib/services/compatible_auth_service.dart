@@ -103,6 +103,85 @@ class CompatibleAuthService {
     }
   }
 
+  /// استخراج expiresIn من استجابة الخادم
+  int _extractExpiresIn(Map<String, dynamic>? tokens, Map<String, dynamic>? data) {
+    if (tokens != null) {
+      // محاولة استخراج expiresIn مباشرة
+      if (tokens.containsKey('expiresIn') && tokens['expiresIn'] is int) {
+        return tokens['expiresIn'] as int;
+      }
+      
+      // محاولة حساب expiresIn من accessTokenExpiresAt
+      if (tokens.containsKey('accessTokenExpiresAt')) {
+        try {
+          final expiresAtString = tokens['accessTokenExpiresAt'] as String;
+          final expiresAt = DateTime.parse(expiresAtString);
+          final now = DateTime.now();
+          final difference = expiresAt.difference(now).inSeconds;
+          if (difference > 0) {
+            return difference;
+          }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing accessTokenExpiresAt: $e');
+        }
+      }
+    }
+    
+    // البحث في data إذا كانت tokens غير متوفرة
+    if (data != null) {
+      if (data.containsKey('expiresIn') && data['expiresIn'] is int) {
+        return data['expiresIn'] as int;
+      }
+      
+      if (data.containsKey('expires_in') && data['expires_in'] is int) {
+        return data['expires_in'] as int;
+      }
+    }
+    
+    // قيمة افتراضية: 15 دقيقة (900 ثانية) - توافق مع التوكن الذي ينتهي بعد 15 دقيقة
+    debugPrint('⚠️ [COMPATIBLE_AUTH] expiresIn not found in response, using default: 900 seconds (15 minutes)');
+    return 900; // 15 minutes
+  }
+
+  /// استخراج refreshExpiresIn من استجابة الخادم
+  int? _extractRefreshExpiresIn(Map<String, dynamic>? tokens, Map<String, dynamic>? data) {
+    if (tokens != null) {
+      // محاولة حساب refreshExpiresIn من refreshTokenExpiresAt
+      if (tokens.containsKey('refreshTokenExpiresAt')) {
+        try {
+          final expiresAtString = tokens['refreshTokenExpiresAt'] as String;
+          final expiresAt = DateTime.parse(expiresAtString);
+          final now = DateTime.now();
+          final difference = expiresAt.difference(now).inSeconds;
+          if (difference > 0) {
+            return difference;
+          }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshTokenExpiresAt: $e');
+        }
+      }
+    }
+    
+    // البحث في data
+    if (data != null) {
+      if (data.containsKey('refreshTokenExpiresAt')) {
+        try {
+          final expiresAtString = data['refreshTokenExpiresAt'] as String;
+          final expiresAt = DateTime.parse(expiresAtString);
+          final now = DateTime.now();
+          final difference = expiresAt.difference(now).inSeconds;
+          if (difference > 0) {
+            return difference;
+          }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshTokenExpiresAt from data: $e');
+        }
+      }
+    }
+    
+    return null; // لا قيمة افتراضية - سيستخدم 30 يوم في saveTokens
+  }
+
   /// تسجيل الدخول بالهاتف
   Future<bool> loginWithPhone(String phone, String password) async {
     try {
@@ -110,6 +189,25 @@ class CompatibleAuthService {
       _error = null;
 
       debugPrint('🔐 [COMPATIBLE_AUTH] Attempting login for: $phone');
+      
+      // 🔥 IMPORTANT: Clear old user data before login to prevent showing previous user's data
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing old user data before login...');
+      try {
+        // Clear cached user data
+        _currentUser = null;
+        await _storage.delete('current_user');
+        await _storage.delete('user_data');
+        await _storage.deleteSecure('current_user');
+        // Clear profile cache
+        try {
+          await profile_service.LocalProfileService.clearCache();
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing profile cache: $e');
+        }
+        debugPrint('✅ [COMPATIBLE_AUTH] Old user data cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing old data: $e');
+      }
 
       final response = await _dio.post(ApiConstants.loginEndpoint, data: {
         'phone': phone,
@@ -157,22 +255,26 @@ class CompatibleAuthService {
               // Extract tokens from new structure
               String? accessToken;
               String? refreshToken;
+              Map<String, dynamic>? tokensMap;
 
               if (data.containsKey('tokens')) {
-                final tokens = data['tokens'] as Map<String, dynamic>;
-                accessToken = tokens['accessToken'] as String?;
-                refreshToken = tokens['refreshToken'] as String?;
+                tokensMap = data['tokens'] as Map<String, dynamic>;
+                accessToken = tokensMap['accessToken'] as String?;
+                refreshToken = tokensMap['refreshToken'] as String?;
               }
 
               // Save tokens using existing method
               if (accessToken != null) {
+                final expiresIn = _extractExpiresIn(tokensMap, data);
+                final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
                 await _tokenManager.saveTokens(
                   accessToken: accessToken,
                   refreshToken: refreshToken ?? '',
-                  expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
+                  expiresIn: expiresIn,
+                  refreshExpiresIn: refreshExpiresIn,
                 );
                 await _storage.setString('access_token', accessToken);
-                debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved');
+                debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
               }
               if (refreshToken != null) {
                 await _storage.setString('refresh_token', refreshToken);
@@ -192,7 +294,24 @@ class CompatibleAuthService {
             }
           } else {
             // Handle error from Smart Messages System
-            _error = _selectMessageByLanguage(messageAr, messageEn, null);
+            final errorMessage = _selectMessageByLanguage(messageAr, messageEn, null);
+            
+            // Check if it's an unverified phone error
+            if (messageAr.toLowerCase().contains('غير موثق') ||
+                messageAr.toLowerCase().contains('لم يتم التحقق') ||
+                messageAr.toLowerCase().contains('غير مؤكد') ||
+                messageEn.toLowerCase().contains('not verified') ||
+                messageEn.toLowerCase().contains('phone not verified') ||
+                messageEn.toLowerCase().contains('unverified') ||
+                code == 'PHONE_NOT_VERIFIED' ||
+                code == 'AUTH_PHONE_NOT_VERIFIED') {
+              _unverifiedPhoneNumber = phone;
+              _error = 'phone_not_verified';
+              debugPrint('🔐 [COMPATIBLE_AUTH] Unverified phone detected in Smart Messages: $phone');
+            } else {
+              _error = errorMessage;
+            }
+            
             _isLoading = false;
             debugPrint('❌ [COMPATIBLE_AUTH] Smart Messages error: $_error');
             return false;
@@ -221,11 +340,12 @@ class CompatibleAuthService {
           // Extract tokens - check both possible structures
           String? accessToken;
           String? refreshToken;
+          Map<String, dynamic>? tokensMap;
 
           if (responseData.containsKey('tokens')) {
-            final tokens = responseData['tokens'] as Map<String, dynamic>;
-            accessToken = tokens['accessToken'] as String?;
-            refreshToken = tokens['refreshToken'] as String?;
+            tokensMap = responseData['tokens'] as Map<String, dynamic>;
+            accessToken = tokensMap['accessToken'] as String?;
+            refreshToken = tokensMap['refreshToken'] as String?;
           } else {
             accessToken = responseData['access_token'] as String?;
             refreshToken = responseData['refresh_token'] as String?;
@@ -233,15 +353,18 @@ class CompatibleAuthService {
 
           // حفظ التوكنات - استخدام UnifiedTokenManager
           if (accessToken != null) {
+            final expiresIn = _extractExpiresIn(tokensMap, responseData);
+            final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, responseData);
             await _tokenManager.saveTokens(
               accessToken: accessToken,
               refreshToken: refreshToken ?? '',
-              expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
+              expiresIn: expiresIn,
+              refreshExpiresIn: refreshExpiresIn,
             );
             // أيضاً احفظ في المفاتيح القديمة للتوافق
             await _storage.setString('access_token', accessToken);
             debugPrint(
-                '🔐 [COMPATIBLE_AUTH] Access token saved via UnifiedTokenManager');
+                '🔐 [COMPATIBLE_AUTH] Access token saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
           }
           if (refreshToken != null) {
             await _storage.setString('refresh_token', refreshToken);
@@ -287,9 +410,24 @@ class CompatibleAuthService {
               responseData['error'] is Map<String, dynamic>) {
             final errorData = responseData['error'] as Map<String, dynamic>;
             final message = errorData['message'] as String? ?? 'خطأ غير معروف';
+            final code = errorData['code'] as String? ?? '';
 
+            // Check for unverified phone number error
+            if (message.toLowerCase().contains('not verified') ||
+                message.toLowerCase().contains('غير موثق') ||
+                message.toLowerCase().contains('لم يتم التحقق') ||
+                message.toLowerCase().contains('غير مؤكد') ||
+                message.toLowerCase().contains('phone not verified') ||
+                message.toLowerCase().contains('unverified') ||
+                code == 'PHONE_NOT_VERIFIED' ||
+                code == 'AUTH_PHONE_NOT_VERIFIED') {
+              // Save unverified phone number for later use
+              _unverifiedPhoneNumber = phone;
+              _error = 'phone_not_verified';
+              debugPrint('🔐 [COMPATIBLE_AUTH] Unverified phone detected: $phone');
+            }
             // Check if it's a validation error for phone number
-            if (message.contains('phone number') ||
+            else if (message.contains('phone number') ||
                 message.contains('رقم الهاتف')) {
               _error =
                   'رقم الهاتف غير صحيح. يرجى التأكد من الرقم وإعادة المحاولة';
@@ -303,7 +441,21 @@ class CompatibleAuthService {
               _error = message;
             }
           } else if (responseData.containsKey('message')) {
-            _error = responseData['message'] as String;
+            final message = responseData['message'] as String;
+            
+            // Check for unverified phone number in message
+            if (message.toLowerCase().contains('not verified') ||
+                message.toLowerCase().contains('غير موثق') ||
+                message.toLowerCase().contains('لم يتم التحقق') ||
+                message.toLowerCase().contains('غير مؤكد') ||
+                message.toLowerCase().contains('phone not verified') ||
+                message.toLowerCase().contains('unverified')) {
+              _unverifiedPhoneNumber = phone;
+              _error = 'phone_not_verified';
+              debugPrint('🔐 [COMPATIBLE_AUTH] Unverified phone detected in message: $phone');
+            } else {
+              _error = message;
+            }
           } else {
             _error = 'خطأ في تسجيل الدخول. يرجى المحاولة مرة أخرى';
           }
@@ -322,20 +474,27 @@ class CompatibleAuthService {
 
   /// تسجيل المستخدم الجديد
   Future<bool> registerWithPhone(
-      String phone, String password, String fullName, String email) async {
+      String phone, String password, String fullName, String email, {String? gender}) async {
     try {
       _isLoading = true;
       _error = null;
 
       debugPrint('🔐 [COMPATIBLE_AUTH] Attempting registration for: $phone');
 
-      final response = await _dio.post(ApiConstants.registerEndpoint, data: {
+      final requestData = <String, dynamic>{
         'name': fullName, // Send full name as 'name'
         'phone': phone,
         'password': password,
         'confirmPassword': password, // Use same password for confirmation
         'email': email.isNotEmpty ? email : null, // Send email if provided
-      });
+      };
+
+      // Add gender if provided
+      if (gender != null && gender.isNotEmpty) {
+        requestData['gender'] = gender;
+      }
+
+      final response = await _dio.post(ApiConstants.registerEndpoint, data: requestData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
@@ -533,23 +692,27 @@ class CompatibleAuthService {
               // Extract tokens from new structure
               String? accessToken;
               String? refreshToken;
+              Map<String, dynamic>? tokensMap;
 
               if (data.containsKey('tokens')) {
-                final tokens = data['tokens'] as Map<String, dynamic>;
-                accessToken = tokens['accessToken'] as String?;
-                refreshToken = tokens['refreshToken'] as String?;
+                tokensMap = data['tokens'] as Map<String, dynamic>;
+                accessToken = tokensMap['accessToken'] as String?;
+                refreshToken = tokensMap['refreshToken'] as String?;
               }
 
               // Save tokens using existing method
               if (accessToken != null) {
+                final expiresIn = _extractExpiresIn(tokensMap, data);
+                final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
                 await _tokenManager.saveTokens(
                   accessToken: accessToken,
                   refreshToken: refreshToken ?? '',
-                  expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
+                  expiresIn: expiresIn,
+                  refreshExpiresIn: refreshExpiresIn,
                 );
                 await _storage.setString('access_token', accessToken);
                 debugPrint(
-                    '🔐 [COMPATIBLE_AUTH] Smart Messages OTP tokens saved');
+                    '🔐 [COMPATIBLE_AUTH] Smart Messages OTP tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
               }
               if (refreshToken != null) {
                 await _storage.setString('refresh_token', refreshToken);
@@ -586,14 +749,24 @@ class CompatibleAuthService {
           // حفظ التوكنات بنفس الطريقة المستخدمة في loginWithPhone
           final accessToken = response.data['accessToken'] ?? '';
           final refreshToken = response.data['refreshToken'] ?? '';
+          final responseData = response.data as Map<String, dynamic>;
+          Map<String, dynamic>? tokensMap;
+          
+          if (responseData.containsKey('tokens')) {
+            tokensMap = responseData['tokens'] as Map<String, dynamic>;
+          }
 
           if (accessToken.isNotEmpty) {
+            final expiresIn = _extractExpiresIn(tokensMap, responseData);
+            final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, responseData);
             await _tokenManager.saveTokens(
               accessToken: accessToken,
               refreshToken: refreshToken,
-              expiresIn: 2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds)
+              expiresIn: expiresIn,
+              refreshExpiresIn: refreshExpiresIn,
             );
             await _storage.setString('access_token', accessToken);
+            debugPrint('🔐 [COMPATIBLE_AUTH] Legacy OTP tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
           }
           if (refreshToken.isNotEmpty) {
             await _storage.setString('refresh_token', refreshToken);
@@ -995,6 +1168,17 @@ class CompatibleAuthService {
           debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
         }
       }
+      
+      // مسح جميع البيانات المخزنة محلياً بشكل شامل (يتم بعد تنظيف الويب)
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing all cached data...');
+      try {
+        // مسح جميع مفاتيح التخزين المحلية مرة أخرى للتأكد
+        await _storage.clear();
+        await _storage.clearSecure();
+        debugPrint('✅ [COMPATIBLE_AUTH] All storage cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing storage: $e');
+      }
 
       // مسح الكاش من الذاكرة
       _currentUser = null;
@@ -1273,7 +1457,7 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// تسجيل المستخدم الجديد
   Future<bool> registerWithPhone(
-      String phone, String password, String fullName, String email) async {
+      String phone, String password, String fullName, String email, {String? gender}) async {
     // بدء الـ loading في الخدمة أولاً
     _authService._isLoading = true;
     _authService._error = null;
@@ -1281,7 +1465,7 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
     _updateState();
 
     final result =
-        await _authService.registerWithPhone(phone, password, fullName, email);
+        await _authService.registerWithPhone(phone, password, fullName, email, gender: gender);
     _updateState();
     return result;
   }

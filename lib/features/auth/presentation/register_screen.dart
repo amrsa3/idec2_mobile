@@ -35,6 +35,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String _countryCode = '+967'; // Default to Yemen
   bool _isCheckingRegistrationSettings = false;
   bool _registrationEnabled = true;
+  String? _selectedGender; // 'MALE' or 'FEMALE'
 
   @override
   void initState() {
@@ -160,6 +161,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               _emailController.text.trim().isEmpty
                   ? ''
                   : _emailController.text.trim(),
+              gender: _selectedGender,
             );
 
     if (!mounted) return;
@@ -519,6 +521,82 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 const SizedBox(height: 16),
 
+                // Gender selection field
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    decoration: InputDecoration(
+                      labelText: 'الجنس',
+                      hintText: 'اختر الجنس',
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      prefixIcon: const Icon(Icons.person_outline),
+                      labelStyle: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                      ),
+                      hintStyle: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'MALE',
+                        child: Text(
+                          'ذكر',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'FEMALE',
+                        child: Text(
+                          'أنثى',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (_registrationEnabled && !_isCheckingRegistrationSettings)
+                        ? (value) {
+                            setState(() {
+                              _selectedGender = value;
+                            });
+                          }
+                        : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'يرجى اختيار الجنس';
+                      }
+                      return null;
+                    },
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontFamily: 'Cairo',
+                      fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                    ),
+                    dropdownColor: Colors.white,
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 // Phone number field with country code
                 Container(
                   decoration: BoxDecoration(
@@ -685,6 +763,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
+                                fontFamily: 'NotoSansArabic',
+                                fontFamilyFallback: ['NotoSansArabic', 'Cairo', 'Tahoma'],
                               ),
                               children: [
                                 const TextSpan(text: 'أوافق على '),
@@ -693,6 +773,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   style: const TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
+                                    fontFamily: 'NotoSansArabic',
+                                    fontFamilyFallback: ['NotoSansArabic', 'Cairo', 'Tahoma'],
                                   ),
                                 ),
                                 TextSpan(text: ' ${l10n.and} '),
@@ -701,6 +783,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   style: const TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
+                                    fontFamily: 'NotoSansArabic',
+                                    fontFamilyFallback: ['NotoSansArabic', 'Cairo', 'Tahoma'],
                                   ),
                                 ),
                               ],

@@ -1,243 +1,220 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../core/router/app_router.dart';
-import '../../providers/enhanced_auth_provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../models/profile_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/enhanced_auth_provider_v2.dart';
+import '../../features/profile/providers/profile_provider.dart';
+import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 
-class VerificationNotificationBanner extends ConsumerStatefulWidget {
+/// إشعار التوثيق - يظهر عندما يكون الحساب غير موثق
+class VerificationNotificationBanner extends ConsumerWidget {
   const VerificationNotificationBanner({super.key});
 
   @override
-  ConsumerState<VerificationNotificationBanner> createState() =>
-      _VerificationNotificationBannerState();
-}
-
-class _VerificationNotificationBannerState
-    extends ConsumerState<VerificationNotificationBanner>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _slideAnimation;
-  bool _isVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _slideAnimation = Tween<double>(
-      begin: -1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Show notification after a delay
-    Future.delayed(const Duration(seconds: 1), () {
-      _showNotification();
-    });
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _showNotification() {
-    final authState = ref.read(enhancedAuthProvider);
-    final user = authState.maybeWhen(
-      authenticated: (user) => user,
-      orElse: () => null,
-    );
-    
-    // Only show for unverified users
-    if (user != null && !user.phoneVerified) {
-      setState(() {
-        _isVisible = true;
-      });
-      _animationController.forward();
-
-      // Auto hide after 60 seconds (1 minute)
-      Future.delayed(const Duration(seconds: 60), () {
-        _hideNotification();
-      });
-    }
-  }
-
-  void _hideNotification() {
-    if (_isVisible) {
-      _animationController.reverse().then((_) {
-        if (mounted) {
-          setState(() {
-            _isVisible = false;
-          });
-        }
-      });
-    }
-  }
-
-  void _onTap() {
-    _hideNotification();
-    // Navigate to profile edit screen
-    context.go(AppRoutes.profile);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(enhancedAuthProvider);
-    final user = authState.maybeWhen(
-      authenticated: (user) => user,
-      orElse: () => null,
+    
+    // استخراج المستخدم من auth state
+    UserModel? user;
+    final isAuthenticated = authState.when(
+      initial: () => false,
+      loading: (message) => false,
+      authenticated: (u) {
+        user = u;
+        return true;
+      },
+      unauthenticated: () => false,
+      registered: () => false,
+      error: (message) => false,
     );
 
-    // Don't show if user is verified or not logged in
-    if (user == null || user.phoneVerified || !_isVisible) {
+    debugPrint('🔍 [VERIFICATION_BANNER] Building banner - isAuthenticated: $isAuthenticated, user: ${user?.phone}');
+
+    // إذا لم يكن المستخدم مسجل دخول، لا نعرض الإشعار
+    if (!isAuthenticated || user == null) {
+      debugPrint('⚠️ [VERIFICATION_BANNER] User not authenticated, hiding banner');
       return const SizedBox.shrink();
     }
 
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: SafeArea(
-        child: AnimatedBuilder(
-          animation: _slideAnimation,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _slideAnimation.value * 100),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    // محاولة الحصول على حالة التوثيق من مصدرين:
+    // 1. من user.profile.status مباشرة (أسرع)
+    // 2. من profileProvider (أكثر دقة)
+    
+    bool isUnverified = false;
+    ProfileModel? profileForNavigation;
+    
+    // محاولة 1: من user.profile.status مباشرة
+    if (user!.profile != null) {
+      final status = user!.profile!.status;
+      debugPrint('🔍 [VERIFICATION_BANNER] User profile exists, status: $status');
+      
+      if (status != null) {
+        final statusUpper = status.toUpperCase();
+        debugPrint('🔍 [VERIFICATION_BANNER] Status (uppercase): $statusUpper');
+        
+        // التحقق من الحالة - نعرض الإشعار إذا كان unverified أو rejected
+        isUnverified = statusUpper == 'UNVERIFIED' || statusUpper == 'REJECTED';
+        
+        if (isUnverified) {
+          debugPrint('✅ [VERIFICATION_BANNER] User is unverified based on user.profile.status: $status');
+        } else {
+          debugPrint('ℹ️ [VERIFICATION_BANNER] User status is: $status (not unverified)');
+        }
+      } else {
+        debugPrint('⚠️ [VERIFICATION_BANNER] User profile exists but status is null');
+      }
+    } else {
+      debugPrint('⚠️ [VERIFICATION_BANNER] User profile is null');
+    }
+    
+    // محاولة 2: من profileProvider (أكثر دقة وموثوقية)
+    final profileState = ref.watch(profileProvider);
+    debugPrint('🔍 [VERIFICATION_BANNER] Profile state - isLoading: ${profileState.isLoading}, currentProfile: ${profileState.currentProfile != null}');
+    
+    // إذا كان profileProvider محملاً، استخدمه
+    if (profileState.currentProfile != null) {
+      final profile = profileState.currentProfile!;
+      profileForNavigation = profile;
+      
+      final profileStatus = profile.verificationStatus;
+      debugPrint('🔍 [VERIFICATION_BANNER] Profile status from provider: $profileStatus');
+      
+      isUnverified = profileStatus == VerificationStatus.unverified ||
+                    profileStatus == VerificationStatus.rejected;
+      
+      if (isUnverified) {
+        debugPrint('✅ [VERIFICATION_BANNER] User is unverified based on profileProvider: $profileStatus');
+      } else {
+        debugPrint('ℹ️ [VERIFICATION_BANNER] Profile status is: $profileStatus (not unverified)');
+      }
+    } else if (!profileState.isLoading && isAuthenticated) {
+      // إذا لم يكن محملاً ولم يكن قيد التحميل، حاول تحميله
+      debugPrint('🔄 [VERIFICATION_BANNER] Profile not loaded, attempting to load...');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(profileProvider.notifier).loadCurrentProfile();
+      });
+    }
+    
+    // إذا لم نجد حالة توثيق واضحة، لا نعرض الإشعار
+    if (!isUnverified) {
+      debugPrint('ℹ️ [VERIFICATION_BANNER] User is verified or status unknown, hiding banner');
+      debugPrint('🔍 [VERIFICATION_BANNER] Final check - isUnverified: $isUnverified, profileForNavigation: ${profileForNavigation != null}');
+      return const SizedBox.shrink();
+    }
+
+    debugPrint('✅ [VERIFICATION_BANNER] Showing verification banner - user is unverified');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade600,
+        color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.blue.shade200,
+          width: 1,
+        ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: _onTap,
+          onTap: () async {
+            // الانتقال إلى صفحة تعديل البيانات الشخصية
+            // إذا لم يكن لدينا profile محملاً، نحاول تحميله أولاً
+            ProfileModel? profileToEdit = profileForNavigation;
+            
+            if (profileToEdit == null) {
+              // محاولة تحميل profile
+              final profileState = ref.read(profileProvider);
+              profileToEdit = profileState.currentProfile;
+              
+              if (profileToEdit == null) {
+                // إذا لم يكن محملاً، نحاول تحميله
+                await ref.read(profileProvider.notifier).loadCurrentProfile();
+                final updatedState = ref.read(profileProvider);
+                profileToEdit = updatedState.currentProfile;
+              }
+            }
+            
+            if (profileToEdit != null && context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileEditScreen(profile: profileToEdit!),
+                ),
+              );
+            } else if (context.mounted) {
+              // إذا لم نتمكن من تحميل profile، ننتقل إلى صفحة الملف الشخصي
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('جاري تحميل بيانات الملف الشخصي...'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          },
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
+                // أيقونة المعلومات
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.warning,
-                              color: Colors.white,
-                              size: 20,
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade700,
+                    size: 24,
                             ),
                           ),
                           const SizedBox(width: 12),
+                // النص
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text(
-                                  'تنبيه مهم',
+                      Text(
+                        'يجب توثيق الحساب',
                                   style: TextStyle(
-                                    color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade900,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'يرجى توثيق حسابك لتتمكن من الاشتراك في المؤتمر والفعاليات',
+                        'للاشتراك بالمؤتمر والفعاليات',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
                                     fontSize: 12,
+                          color: Colors.blue.shade700,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: _hideNotification,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white.withOpacity(0.8),
-                                size: 18,
-                              ),
-                            ),
+                // سهم التنقل
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.blue.shade700,
+                  size: 16,
                           ),
                         ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-// Provider for managing verification notification settings
-final verificationNotificationProvider = StateNotifierProvider<
-    VerificationNotificationNotifier, VerificationNotificationState>((ref) {
-  return VerificationNotificationNotifier();
-});
-
-class VerificationNotificationState {
-  final bool isEnabled;
-  final int intervalMinutes;
-  final String message;
-
-  const VerificationNotificationState({
-    this.isEnabled = true,
-    this.intervalMinutes = 30, // Default: every 30 minutes
-    this.message = 'يرجى توثيق حسابك',
-  });
-
-  VerificationNotificationState copyWith({
-    bool? isEnabled,
-    int? intervalMinutes,
-    String? message,
-  }) {
-    return VerificationNotificationState(
-      isEnabled: isEnabled ?? this.isEnabled,
-      intervalMinutes: intervalMinutes ?? this.intervalMinutes,
-      message: message ?? this.message,
-    );
-  }
-}
-
-class VerificationNotificationNotifier
-    extends StateNotifier<VerificationNotificationState> {
-  VerificationNotificationNotifier()
-      : super(const VerificationNotificationState());
-
-  void updateSettings({
-    bool? isEnabled,
-    int? intervalMinutes,
-    String? message,
-  }) {
-    state = state.copyWith(
-      isEnabled: isEnabled,
-      intervalMinutes: intervalMinutes,
-      message: message,
     );
   }
 }

@@ -49,6 +49,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   DateTime? _selectedBirthDate;
   String? _selectedGovernorateId;
   String? _selectedQualificationId;
+  String? _selectedCategoryId; // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
 
   // متغيرات لحالة التحميل والأخطاء
   bool _isLoading = false;
@@ -1004,7 +1005,25 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               enabled: canEdit,
               onChanged: (value) {
                 debugPrint('🔄 تغيير قيمة المؤهل إلى: "$value"');
-                setState(() => _selectedQualificationId = value);
+                setState(() {
+                  _selectedQualificationId = value;
+                  
+                  // تحديث الفئة الرئيسية تلقائياً من المؤهل المختار
+                  if (value != null && value.isNotEmpty && state.qualifications != null) {
+                    final selectedQualification = state.qualifications!.firstWhere(
+                      (q) => q.id == value,
+                      orElse: () => state.qualifications!.first,
+                    );
+                    
+                    if (selectedQualification.categoryId != null && 
+                        selectedQualification.categoryId!.isNotEmpty) {
+                      _selectedCategoryId = selectedQualification.categoryId;
+                      debugPrint('✅ تم تحديث الفئة الرئيسية تلقائياً إلى: "${_selectedCategoryId}" من المؤهل: "${selectedQualification.nameAr}"');
+                    }
+                  } else {
+                    _selectedCategoryId = null;
+                  }
+                });
               },
               validator: (value) => _validateField('qualificationId', value),
               errorText: _fieldErrors['qualificationId'],
@@ -1829,6 +1848,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         birthDate: updatedProfile.birthDate,
         governorateId: updatedProfile.governorateId,
         qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
         university: updatedProfile.university?.isEmpty == true
             ? null
@@ -1961,6 +1981,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         birthDate: updatedProfile.birthDate,
         governorateId: updatedProfile.governorateId,
         qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
         university: updatedProfile.university?.isEmpty == true
             ? null
@@ -2099,6 +2120,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         birthDate: updatedProfile.birthDate,
         governorateId: updatedProfile.governorateId,
         qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
         university: updatedProfile.university?.isEmpty == true
             ? null

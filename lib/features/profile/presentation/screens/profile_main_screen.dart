@@ -1158,6 +1158,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           id: '',
           nameAr: 'غير محدد',
           nameEn: '',
+          categoryId: '',
           requiresDocument: false,
           isActive: true,
           description: '',

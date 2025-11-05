@@ -158,6 +158,7 @@ class ProfileUpdateRequest with _$ProfileUpdateRequest {
     @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson) DateTime? birthDate,
     @JsonKey(name: 'governorate_id') String? governorateId,
     @JsonKey(name: 'qualification_id') String? qualificationId,
+    @JsonKey(name: 'category_id') String? categoryId,
     @JsonKey(name: 'graduation_year') int? graduationYear,
     String? university,
     String? workplace,

@@ -12,6 +12,8 @@ import '../../../providers/language_provider.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/lazy_loading_service.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../../shared/widgets/verification_notification_banner.dart';
+import '../../../features/profile/providers/profile_provider.dart';
 import '../widgets/conference_card_new.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -213,6 +215,24 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // إشعار التوثيق (يظهر فقط إذا كان الحساب غير موثق)
+                // يتم تحميل بيانات الملف الشخصي تلقائياً إذا لزم الأمر
+                Builder(
+                  builder: (context) {
+                    // تحميل بيانات الملف الشخصي عند فتح الشاشة إذا لم تكن محمولة
+                    if (isAuthenticated) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        final profileState = ref.read(profileProvider);
+                        if (profileState.currentProfile == null && !profileState.isLoading) {
+                          debugPrint('🔄 [HOME_SCREEN] Loading profile data for verification banner...');
+                          ref.read(profileProvider.notifier).loadCurrentProfile();
+                        }
+                      });
+                    }
+                    return const VerificationNotificationBanner();
+                  },
+                ),
+
                 // Conference Card
                 const ConferenceCardNew(),
 

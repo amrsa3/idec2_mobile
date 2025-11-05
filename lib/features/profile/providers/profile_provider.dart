@@ -308,6 +308,13 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
               safeData['isActive'] ??= true;
               safeData['requiresDocument'] ??= false;
               
+              // Ensure categoryId exists (required field)
+              if (safeData['categoryId'] == null || safeData['categoryId'].toString().isEmpty) {
+                debugPrint('⚠️ ProfileProvider: Qualification missing categoryId: ${safeData['id']}');
+                // Skip qualifications without categoryId
+                continue;
+              }
+              
               // Convert displayOrder/order to sortOrder for compatibility
               if (safeData['displayOrder'] != null) {
                 safeData['sortOrder'] = safeData['displayOrder'];

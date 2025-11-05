@@ -294,8 +294,8 @@ class EnhancedDioServiceV2 {
       // Initialize session manager
       await _sessionManager.initialize();
 
-      // Initialize silent refresh service
-      await _silentRefresh.initialize();
+      // Silent refresh service معطل - نستخدم فقط interceptor عند 401 error
+      // await _silentRefresh.initialize();
 
       debugPrint('✅ [ENHANCED_DIO_V2] Dependencies initialized');
     } catch (e) {

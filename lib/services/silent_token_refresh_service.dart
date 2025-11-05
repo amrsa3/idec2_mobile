@@ -21,7 +21,7 @@ class SilentRefreshConfig {
 
   const SilentRefreshConfig({
     this.refreshInterval = const Duration(hours: 2), // تحسين الأداء: كل ساعتين بدلاً من ساعة
-    this.tokenExpiryBuffer = const Duration(hours: 8), // زيادة إلى 8 ساعات لتقليل التحديثات غير الضرورية
+    this.tokenExpiryBuffer = const Duration(minutes: 10), // تجديد التوكن قبل 10 دقائق من انتهائه
     this.maxRetryAttempts = 3,
     this.initialRetryDelay = const Duration(seconds: 1),
     this.retryBackoffMultiplier = 2.0,
@@ -222,14 +222,14 @@ class SilentTokenRefreshService {
   void _startPreemptiveRefresh() {
     _preemptiveTimer?.cancel();
     
-    // Check every 15 minutes for tokens that are about to expire (تحسين الأداء)
-    _preemptiveTimer = Timer.periodic(const Duration(minutes: 15), (timer) {
+    // Check every 1 minute for tokens that are about to expire
+    _preemptiveTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (_isOnline && !_isRefreshing) {
         _checkPreemptiveRefresh();
       }
     });
 
-    debugPrint('🔄 [SILENT_REFRESH] Preemptive refresh started (every 15 minutes)');
+    debugPrint('🔄 [SILENT_REFRESH] Preemptive refresh started (every 1 minute)');
   }
 
   /// Check if preemptive refresh is needed

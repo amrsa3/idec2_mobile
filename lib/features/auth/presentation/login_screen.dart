@@ -123,28 +123,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               authState.unverifiedPhoneNumber != null) {
             // Redirect to phone verification screen
             if (mounted) {
+              // Show informative message first
+              await NotificationService.showInfo(
+                title: 'حسابك غير مؤكد',
+                message:
+                    'يرجى التحقق من رقم هاتفك لإكمال تسجيل الدخول. سيتم إرسال رمز التحقق الآن.',
+              );
+
+              // Wait a moment for user to read the message
+              await Future.delayed(const Duration(milliseconds: 500));
+
               // First send OTP automatically
               try {
-                await ref.read(compatibleAuthProvider.notifier).resendOtp(
+                final otpSent = await ref.read(compatibleAuthProvider.notifier).resendOtp(
                       authState.unverifiedPhoneNumber!,
                     );
 
-                // Navigate to OTP verification screen
-                context.go(
-                  '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
-                );
+                if (otpSent && mounted) {
+                  // Navigate to OTP verification screen
+                  context.go(
+                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                  );
 
-                await NotificationService.showInfo(
-                  title: 'التحقق من رقم الهاتف',
-                  message:
-                      'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhoneNumber}',
-                );
+                  await NotificationService.showSuccess(
+                    title: 'تم إرسال رمز التحقق',
+                    message:
+                        'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhoneNumber}. يرجى إدخال الرمز للتحقق من حسابك.',
+                  );
+                } else {
+                  // If OTP sending failed, still navigate to OTP screen so user can resend
+                  if (mounted) {
+                    context.go(
+                      '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                    );
+                    
+                    await NotificationService.showInfo(
+                      title: 'التحقق من رقم الهاتف',
+                      message:
+                          'يمكنك إعادة إرسال رمز التحقق من صفحة التحقق.',
+                    );
+                  }
+                }
               } catch (otpError) {
                 debugPrint('❌ [LOGIN_SCREEN] Failed to send OTP: $otpError');
-                await NotificationService.showError(
-                  title: 'خطأ في إرسال رمز التحقق',
-                  message: 'فشل في إرسال رمز التحقق، يرجى المحاولة مرة أخرى',
-                );
+                
+                // Still navigate to OTP screen so user can manually resend
+                if (mounted) {
+                  context.go(
+                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                  );
+                  
+                  await NotificationService.showInfo(
+                    title: 'التحقق من رقم الهاتف',
+                    message:
+                        'يرجى إعادة إرسال رمز التحقق من صفحة التحقق.',
+                  );
+                }
               }
             }
             return;

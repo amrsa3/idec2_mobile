@@ -49,22 +49,36 @@ class EnhancedTokenInterceptor extends Interceptor {
         return;
       }
 
-      // Get access token
-      final accessToken = await _tokenManager.getValidAccessToken();
+      // Get access token (سيتم تجديده تلقائياً إذا كان منتهي)
+      String? accessToken = await _tokenManager.getValidAccessToken();
+      
+      // إذا لم يكن هناك access token صالح، حاول refresh قبل إرسال الطلب
+      if (accessToken == null || accessToken.isEmpty) {
+        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No valid access token, attempting refresh before request');
+        
+        // تحقق من وجود refresh token صالح
+        final hasValidRefresh = await _tokenManager.hasValidRefreshToken();
+        if (hasValidRefresh) {
+          debugPrint('🔄 [TOKEN_INTERCEPTOR] Refresh token available, refreshing access token...');
+          final refreshSuccess = await _tokenManager.refreshAccessToken();
+          
+          if (refreshSuccess) {
+            accessToken = await _tokenManager.getValidAccessToken();
+            debugPrint('✅ [TOKEN_INTERCEPTOR] Token refreshed successfully before request');
+          } else {
+            debugPrint('❌ [TOKEN_INTERCEPTOR] Failed to refresh token before request');
+          }
+        } else {
+          debugPrint('❌ [TOKEN_INTERCEPTOR] No valid refresh token available');
+        }
+      }
       
       if (accessToken != null && accessToken.isNotEmpty) {
-        // Check if token is about to expire and refresh if needed
-        await _checkAndRefreshToken();
-        
-        // Get the latest token after potential refresh
-        final latestToken = await _tokenManager.getValidAccessToken();
-        
-        if (latestToken != null && latestToken.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $latestToken';
-          debugPrint('🔐 [TOKEN_INTERCEPTOR] Token added to request');
-        }
+        options.headers['Authorization'] = 'Bearer $accessToken';
+        debugPrint('🔐 [TOKEN_INTERCEPTOR] Token added to request');
       } else {
-        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No access token available');
+        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No access token available - request will be sent without token');
+        // لا نمنع الطلب - سنترك interceptor آخر (401 handler) يتعامل معه
       }
 
       handler.next(options);
@@ -114,24 +128,10 @@ class EnhancedTokenInterceptor extends Interceptor {
   }
 
   /// Check if token needs refresh and refresh if necessary
+  /// لا نستخدم refresh preemptive - فقط عند انتهاء التوكن (401 error)
   Future<void> _checkAndRefreshToken() async {
-    try {
-      final tokenInfo = await _tokenManager.getTokenInfo();
-      
-      if (tokenInfo['accessExpiry'] != null) {
-        final expiryString = tokenInfo['accessExpiry'] as String;
-        final expiry = DateTime.parse(expiryString);
-        final timeUntilExpiry = expiry.difference(DateTime.now());
-        
-        // Refresh if token expires in less than 5 minutes
-        if (timeUntilExpiry.inMinutes < 5) {
-          debugPrint('🔄 [TOKEN_INTERCEPTOR] Token expires soon, refreshing preemptively');
-          await _performTokenRefresh();
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ [TOKEN_INTERCEPTOR] Preemptive token check failed: $e');
-    }
+    // تم إزالة الفحص المسبق - سيتم تجديد التوكن فقط عند انتهائه (401 error)
+    // هذا يقلل الحمل على الخادم ويتبع أفضل الممارسات
   }
 
   /// Handle token-related errors (401, 403)
@@ -150,6 +150,8 @@ class EnhancedTokenInterceptor extends Interceptor {
   /// Handle 401 Unauthorized errors
   Future<bool> _handle401Error(DioException err, ErrorInterceptorHandler handler) async {
     debugPrint('🔄 [TOKEN_INTERCEPTOR] Handling 401 error - attempting token refresh');
+    debugPrint('🔄 [TOKEN_INTERCEPTOR] Request path: ${err.requestOptions.path}');
+    debugPrint('🔄 [TOKEN_INTERCEPTOR] Request method: ${err.requestOptions.method}');
     
     try {
       // Check if we have a refresh token
@@ -157,24 +159,48 @@ class EnhancedTokenInterceptor extends Interceptor {
       if (refreshToken == null || refreshToken.isEmpty) {
         debugPrint('❌ [TOKEN_INTERCEPTOR] No refresh token available, ending session');
         await _sessionManager.endSession();
+        handler.next(err); // Propagate error
         return false;
       }
+
+      // Check if refresh token is still valid
+      final hasValidRefresh = await _tokenManager.hasValidRefreshToken();
+      if (!hasValidRefresh) {
+        debugPrint('❌ [TOKEN_INTERCEPTOR] Refresh token expired, ending session');
+        await _sessionManager.endSession();
+        handler.next(err); // Propagate error
+        return false;
+      }
+
+      debugPrint('✅ [TOKEN_INTERCEPTOR] Refresh token available and valid, attempting refresh...');
 
       // Attempt token refresh
       final refreshSuccess = await _performTokenRefresh();
       
       if (refreshSuccess) {
+        debugPrint('✅ [TOKEN_INTERCEPTOR] Token refresh successful, retrying original request...');
         // Retry the original request with new token
         final retrySuccess = await _retryRequest(err.requestOptions, handler);
-        return retrySuccess;
+        
+        if (retrySuccess) {
+          debugPrint('✅ [TOKEN_INTERCEPTOR] Retry successful after token refresh');
+          return true;
+        } else {
+          debugPrint('❌ [TOKEN_INTERCEPTOR] Retry failed after token refresh');
+          handler.next(err); // Propagate original error
+          return false;
+        }
       } else {
         debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh failed, ending session');
         await _sessionManager.endSession();
+        handler.next(err); // Propagate error
         return false;
       }
     } catch (e) {
       debugPrint('❌ [TOKEN_INTERCEPTOR] Error handling 401: $e');
+      debugPrint('❌ [TOKEN_INTERCEPTOR] Stack trace: ${StackTrace.current}');
       await _sessionManager.endSession();
+      handler.next(err); // Propagate error
       return false;
     }
   }
@@ -259,7 +285,7 @@ class EnhancedTokenInterceptor extends Interceptor {
   /// Retry the original request with new token
   Future<bool> _retryRequest(RequestOptions originalOptions, ErrorInterceptorHandler handler) async {
     try {
-      debugPrint('🔄 [TOKEN_INTERCEPTOR] Retrying original request');
+      debugPrint('🔄 [TOKEN_INTERCEPTOR] Retrying original request: ${originalOptions.method} ${originalOptions.path}');
       _retryCount++;
       
       // Get new access token
@@ -269,14 +295,37 @@ class EnhancedTokenInterceptor extends Interceptor {
         return false;
       }
       
+      debugPrint('✅ [TOKEN_INTERCEPTOR] New token obtained, retrying request...');
+      
       // Update authorization header
       originalOptions.headers['Authorization'] = 'Bearer $newToken';
       
       // Create new Dio instance to avoid interceptor loops
       final dio = Dio();
-      dio.options.baseUrl = originalOptions.baseUrl;
+      
+      // Use baseUrl from original options, or construct full URL if path is absolute
+      String requestUrl;
+      if (originalOptions.path.startsWith('http://') || originalOptions.path.startsWith('https://')) {
+        requestUrl = originalOptions.path;
+      } else {
+        final baseUrl = originalOptions.baseUrl.isNotEmpty 
+            ? originalOptions.baseUrl 
+            : 'https://api.idec-ye.com';
+        requestUrl = baseUrl + (originalOptions.path.startsWith('/') ? '' : '/') + originalOptions.path;
+      }
+      
+      dio.options.baseUrl = originalOptions.baseUrl.isNotEmpty 
+          ? originalOptions.baseUrl 
+          : 'https://api.idec-ye.com';
       dio.options.connectTimeout = originalOptions.connectTimeout;
       dio.options.receiveTimeout = originalOptions.receiveTimeout;
+      dio.options.sendTimeout = originalOptions.sendTimeout;
+      
+      // Copy all headers except Authorization (which we already set)
+      final headers = Map<String, dynamic>.from(originalOptions.headers);
+      headers['Authorization'] = 'Bearer $newToken';
+      
+      debugPrint('🔄 [TOKEN_INTERCEPTOR] Making retry request to: $requestUrl');
       
       // Make the retry request
       final response = await dio.request(
@@ -285,17 +334,24 @@ class EnhancedTokenInterceptor extends Interceptor {
         queryParameters: originalOptions.queryParameters,
         options: Options(
           method: originalOptions.method,
-          headers: originalOptions.headers,
+          headers: headers,
           responseType: originalOptions.responseType,
           contentType: originalOptions.contentType,
+          followRedirects: originalOptions.followRedirects,
+          validateStatus: originalOptions.validateStatus,
         ),
       );
       
-      debugPrint('✅ [TOKEN_INTERCEPTOR] Retry request successful');
+      debugPrint('✅ [TOKEN_INTERCEPTOR] Retry request successful: ${response.statusCode}');
       handler.resolve(response);
       return true;
     } catch (e) {
       debugPrint('❌ [TOKEN_INTERCEPTOR] Retry request failed: $e');
+      if (e is DioException) {
+        debugPrint('❌ [TOKEN_INTERCEPTOR] DioException details: ${e.response?.statusCode} - ${e.message}');
+        debugPrint('❌ [TOKEN_INTERCEPTOR] Request path: ${originalOptions.path}');
+        debugPrint('❌ [TOKEN_INTERCEPTOR] Base URL: ${originalOptions.baseUrl}');
+      }
       return false;
     }
   }

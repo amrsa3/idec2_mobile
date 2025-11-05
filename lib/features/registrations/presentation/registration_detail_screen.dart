@@ -11,6 +11,7 @@ import '../../../services/payment_service.dart';
 import '../../../services/registration_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../providers/conference_provider.dart';
 import '../widgets/payment_gateway_selector.dart';
 import '../widgets/payment_input_dialog.dart';
 import 'invoice_receipt_screen.dart';
@@ -673,9 +674,22 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
       if (context.mounted) {
         if (confirmedTransaction.isSuccessful) {
           debugPrint('💳 [PAYMENT] ✅ SUCCESS: Payment completed successfully!');
+          
+          // Get registration details to find conference ID
+          final registration = await ref.read(registrationDetailProvider(widget.registrationId).future);
+          final conferenceId = registration.conferenceId;
+          
           // Refresh registration details
           ref.invalidate(registrationDetailProvider(widget.registrationId));
           ref.invalidate(registrationTimelineProvider(widget.registrationId));
+          
+          // 🔥 IMPORTANT: Invalidate conference registration provider to update card on home screen
+          if (conferenceId != null && conferenceId.isNotEmpty) {
+            debugPrint('💳 [PAYMENT] Invalidating conference registration provider for conference: $conferenceId');
+            ref.invalidate(conferenceRegistrationProvider(conferenceId));
+            // Also invalidate active conference to ensure fresh data
+            ref.invalidate(activeConferenceProvider);
+          }
           
           // Navigate to receipt
           Navigator.pushReplacement(

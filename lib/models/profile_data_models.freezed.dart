@@ -23,6 +23,8 @@ mixin _$QualificationModel {
   String get id => throw _privateConstructorUsedError;
   String get nameAr => throw _privateConstructorUsedError;
   String get nameEn => throw _privateConstructorUsedError;
+  String get categoryId =>
+      throw _privateConstructorUsedError; // الفئة الرئيسية التي ينتمي إليها المؤهل
   bool? get requiresDocument => throw _privateConstructorUsedError;
   bool? get isActive => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
@@ -44,6 +46,7 @@ abstract class $QualificationModelCopyWith<$Res> {
       {String id,
       String nameAr,
       String nameEn,
+      String categoryId,
       bool? requiresDocument,
       bool? isActive,
       String? description,
@@ -66,6 +69,7 @@ class _$QualificationModelCopyWithImpl<$Res, $Val extends QualificationModel>
     Object? id = null,
     Object? nameAr = null,
     Object? nameEn = null,
+    Object? categoryId = null,
     Object? requiresDocument = freezed,
     Object? isActive = freezed,
     Object? description = freezed,
@@ -83,6 +87,10 @@ class _$QualificationModelCopyWithImpl<$Res, $Val extends QualificationModel>
       nameEn: null == nameEn
           ? _value.nameEn
           : nameEn // ignore: cast_nullable_to_non_nullable
+              as String,
+      categoryId: null == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
               as String,
       requiresDocument: freezed == requiresDocument
           ? _value.requiresDocument
@@ -116,6 +124,7 @@ abstract class _$$QualificationModelImplCopyWith<$Res>
       {String id,
       String nameAr,
       String nameEn,
+      String categoryId,
       bool? requiresDocument,
       bool? isActive,
       String? description,
@@ -136,6 +145,7 @@ class __$$QualificationModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? nameAr = null,
     Object? nameEn = null,
+    Object? categoryId = null,
     Object? requiresDocument = freezed,
     Object? isActive = freezed,
     Object? description = freezed,
@@ -153,6 +163,10 @@ class __$$QualificationModelImplCopyWithImpl<$Res>
       nameEn: null == nameEn
           ? _value.nameEn
           : nameEn // ignore: cast_nullable_to_non_nullable
+              as String,
+      categoryId: null == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
               as String,
       requiresDocument: freezed == requiresDocument
           ? _value.requiresDocument
@@ -181,6 +195,7 @@ class _$QualificationModelImpl implements _QualificationModel {
       {required this.id,
       required this.nameAr,
       required this.nameEn,
+      required this.categoryId,
       this.requiresDocument = false,
       this.isActive = true,
       this.description,
@@ -196,6 +211,9 @@ class _$QualificationModelImpl implements _QualificationModel {
   @override
   final String nameEn;
   @override
+  final String categoryId;
+// الفئة الرئيسية التي ينتمي إليها المؤهل
+  @override
   @JsonKey()
   final bool? requiresDocument;
   @override
@@ -208,7 +226,7 @@ class _$QualificationModelImpl implements _QualificationModel {
 
   @override
   String toString() {
-    return 'QualificationModel(id: $id, nameAr: $nameAr, nameEn: $nameEn, requiresDocument: $requiresDocument, isActive: $isActive, description: $description, sortOrder: $sortOrder)';
+    return 'QualificationModel(id: $id, nameAr: $nameAr, nameEn: $nameEn, categoryId: $categoryId, requiresDocument: $requiresDocument, isActive: $isActive, description: $description, sortOrder: $sortOrder)';
   }
 
   @override
@@ -219,6 +237,8 @@ class _$QualificationModelImpl implements _QualificationModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.nameAr, nameAr) || other.nameAr == nameAr) &&
             (identical(other.nameEn, nameEn) || other.nameEn == nameEn) &&
+            (identical(other.categoryId, categoryId) ||
+                other.categoryId == categoryId) &&
             (identical(other.requiresDocument, requiresDocument) ||
                 other.requiresDocument == requiresDocument) &&
             (identical(other.isActive, isActive) ||
@@ -231,7 +251,7 @@ class _$QualificationModelImpl implements _QualificationModel {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, nameAr, nameEn,
+  int get hashCode => Object.hash(runtimeType, id, nameAr, nameEn, categoryId,
       requiresDocument, isActive, description, sortOrder);
 
   @JsonKey(ignore: true)
@@ -254,6 +274,7 @@ abstract class _QualificationModel implements QualificationModel {
       {required final String id,
       required final String nameAr,
       required final String nameEn,
+      required final String categoryId,
       final bool? requiresDocument,
       final bool? isActive,
       final String? description,
@@ -269,6 +290,8 @@ abstract class _QualificationModel implements QualificationModel {
   @override
   String get nameEn;
   @override
+  String get categoryId;
+  @override // الفئة الرئيسية التي ينتمي إليها المؤهل
   bool? get requiresDocument;
   @override
   bool? get isActive;

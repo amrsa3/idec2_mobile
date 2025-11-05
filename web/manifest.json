@@ -1,8 +1,8 @@
-{
+﻿{
     "name": "منصة IDEC ",
     "short_name": "IDEC",
-    "version": "2.0.2",
-    "start_url": "/?v=2.0.2",
+    "version": "2.0.3",
+    "start_url": "/?v=2.0.3",
     "display": "standalone",
     "background_color": "#fe0303",
     "theme_color": "#fe0303",

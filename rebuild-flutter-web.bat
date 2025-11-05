@@ -1,67 +1,254 @@
 @echo off
+setlocal enabledelayedexpansion
 REM Flutter Web Build Script for IDEC Mobile App (Windows)
 REM This script rebuilds the Flutter Web application with proper configuration
+REM Automatically extracts and updates version from pubspec.yaml
 
 echo 🚀 Starting Flutter Web rebuild for IDEC Mobile App...
 
-REM Navigate to mobile app directory
-cd mobile-app
+REM Navigate to mobile app directory (script is already in mobile-app)
+cd /d "%~dp0"
+
+REM Extract version from pubspec.yaml FIRST (before build)
+echo 📋 Extracting version from pubspec.yaml...
+set VERSION=
+for /f "tokens=2 delims=: " %%a in ('findstr /c:"version:" pubspec.yaml') do (
+    set VERSION_RAW=%%a
+    REM Remove any trailing spaces or build number (e.g., "2.0.3+1" becomes "2.0.3")
+    for /f "tokens=1 delims=+" %%b in ("!VERSION_RAW!") do set VERSION=%%b
+)
+
+REM Trim whitespace from version
+set VERSION=!VERSION: =!
+echo 📦 Extracted Version: !VERSION!
+
+if "!VERSION!"=="" (
+    echo ❌ ERROR: Could not extract version from pubspec.yaml!
+    exit /b 1
+)
+
+REM Update source files in web\ directory BEFORE building (so they are correct)
+echo 🔄 Updating source files in web\ directory (before build)...
+if exist "web\index.html" (
+    echo 📝 Updating web\index.html...
+    set "PS_SCRIPT=update_web_source.ps1"
+    (
+        echo $version = '%VERSION%'
+        echo $indexFile = 'web\index.html'
+        echo $manifestFile = 'web\manifest.json'
+        echo.
+        echo Write-Host '🔄 Updating source files with version:' $version
+        echo.
+        echo if ^(Test-Path $indexFile^) {
+        echo     Write-Host '📝 Updating web\index.html...'
+        echo     $content = [System.IO.File]::ReadAllText($indexFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = $content -replace "const APP_VERSION = '[^']+'", "const APP_VERSION = '$version'"
+        echo     $content = $content -replace 'src=\"flutter_web_config\.js\?v=[0-9.]+', "src=`"flutter_web_config.js?v=$version"
+        echo     $content = $content -replace 'src=\"flutter_bootstrap\.js\?v=[0-9.]+', "src=`"flutter_bootstrap.js?v=$version"
+        echo     $content = $content -replace 'VERSION_PARAM = `\?v=[0-9.]+', "VERSION_PARAM = `?v=$version"
+        echo     $content = $content -replace '\?v=[0-9.]+', "?v=$version"
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $indexFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated web\index.html'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in web\index.html'
+        echo     }
+        echo } else {
+        echo     Write-Host '⚠️  File not found: ' + $indexFile
+        echo }
+        echo.
+        echo if ^(Test-Path $manifestFile^) {
+        echo     Write-Host '📝 Updating web\manifest.json...'
+        echo     $content = [System.IO.File]::ReadAllText($manifestFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = $content -replace '\"version\":\s*\"[^\"]+\"', "`"version`": `"$version`""
+        echo     $content = $content -replace '\"start_url\":\s*\"\/\?v=[^\"]+\"', "`"start_url`": `"/?v=$version`""
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $manifestFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated web\manifest.json'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in web\manifest.json'
+        echo     }
+        echo } else {
+        echo     Write-Host '⚠️  File not found: ' + $manifestFile
+        echo }
+    ) > "!PS_SCRIPT!"
+    call powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
+    if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
+)
 
 REM Clean previous build
 echo 🧹 Cleaning previous build...
-flutter clean
-if exist build\web rmdir /s /q build\web
+call flutter clean
+set CLEAN_RESULT=%errorlevel%
+if %CLEAN_RESULT% neq 0 (
+    echo ⚠️  Warning: flutter clean had issues, continuing anyway...
+)
+if exist build\web (
+    echo Removing old build\web directory...
+    rmdir /s /q build\web
+)
 
 REM Get dependencies
+echo.
 echo 📦 Getting Flutter dependencies...
-flutter pub get
+call flutter pub get
+if %errorlevel% neq 0 (
+    echo ❌ ERROR: Failed to get Flutter dependencies!
+    exit /b 1
+)
 
-REM Build Flutter Web with HTML renderer
-echo 🔨 Building Flutter Web with HTML renderer...
-flutter build web --web-renderer html --release --dart-define=FLUTTER_WEB_USE_SKIA=false --dart-define=FLUTTER_WEB_CANVASKIT_URL=./canvaskit/ --base-href /
+REM Build Flutter Web with HTML renderer (will copy updated files from web\ to build\web)
+echo.
+echo ========================================
+echo 🔨 Building Flutter Web Application...
+echo ========================================
+echo This may take several minutes, please wait...
+echo.
+echo Starting build command...
+call flutter build web --release --base-href /
+set BUILD_RESULT=%errorlevel%
+echo.
+echo Build command completed with exit code: %BUILD_RESULT%
+echo.
 
 REM Check if build was successful
-if %errorlevel% equ 0 (
+if %BUILD_RESULT% equ 0 (
+    echo ========================================
     echo ✅ Flutter Web build completed successfully!
+    echo ========================================
     
-    REM Extract version from pubspec.yaml
-    echo 📋 Extracting version from pubspec.yaml...
-    for /f "tokens=2 delims=: " %%a in ('findstr /c:"version:" pubspec.yaml') do set VERSION=%%a
-    echo 📦 Version: %VERSION%
+    REM Note: Files in build\web should already have correct version (copied from updated web\ files)
+    REM But we'll update them again to be sure (in case Flutter modified them)
+    REM Check if build files exist
+    if not exist "build\web\index.html" (
+        echo ❌ ERROR: build\web\index.html not found!
+        exit /b 1
+    )
     
-    REM Update version in index.html
-    echo 🔄 Updating version in index.html...
-    powershell -Command "(Get-Content build\web\index.html) -replace '2\.0\.2', '%VERSION%' | Set-Content build\web\index.html"
+    if not exist "build\web\manifest.json" (
+        echo ❌ ERROR: build\web\manifest.json not found!
+        exit /b 1
+    )
     
-    REM Update version in manifest.json
-    echo 🔄 Updating version in manifest.json...
-    powershell -Command "(Get-Content build\web\manifest.json) -replace '\"version\": \"[^\"]+\"', '\"version\": \"%VERSION%\"' | Set-Content build\web\manifest.json"
-    powershell -Command "(Get-Content build\web\manifest.json) -replace '\"start_url\": \"/\\?v=[^\"]+\"', '\"start_url\": \"/?v=%VERSION%\"' | Set-Content build\web\manifest.json"
+    REM Create temporary PowerShell script to update build files (as backup, in case Flutter modified them)
+    echo 🔄 Updating build files (ensuring correct version)...
+    set PS_SCRIPT=update_version.ps1
+    (
+        echo $version = '%VERSION%'
+        echo $indexFile = 'build\web\index.html'
+        echo $manifestFile = 'build\web\manifest.json'
+        echo.
+        echo Write-Host '🔄 Updating files with version:' $version
+        echo.
+        echo if ^(Test-Path $indexFile^) {
+        echo     Write-Host '📝 Updating index.html...'
+        echo     $content = [System.IO.File]::ReadAllText($indexFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = $content -replace "const APP_VERSION = '[^']+'", "const APP_VERSION = '$version'"
+        echo     $content = $content -replace 'src=\"flutter_web_config\.js\?v=[0-9.]+', "src=`"flutter_web_config.js?v=$version"
+        echo     $content = $content -replace 'src=\"flutter_bootstrap\.js\?v=[0-9.]+', "src=`"flutter_bootstrap.js?v=$version"
+        echo     $content = $content -replace 'VERSION_PARAM = `\?v=[0-9.]+', "VERSION_PARAM = `?v=$version"
+        echo     $content = $content -replace '\?v=[0-9.]+', "?v=$version"
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $indexFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated index.html'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in index.html'
+        echo     }
+        echo } else {
+        echo     Write-Host '❌ File not found: ' + $indexFile
+        echo }
+        echo.
+        echo if ^(Test-Path $manifestFile^) {
+        echo     Write-Host '📝 Updating manifest.json...'
+        echo     $content = [System.IO.File]::ReadAllText($manifestFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = $content -replace '\"version\":\s*\"[^\"]+\"', "`"version`": `"$version`""
+        echo     $content = $content -replace '\"start_url\":\s*\"\/\?v=[^\"]+\"', "`"start_url`": `"/?v=$version`""
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $manifestFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated manifest.json'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in manifest.json'
+        echo     }
+        echo } else {
+        echo     Write-Host '❌ File not found: ' + $manifestFile
+        echo }
+    ) > "!PS_SCRIPT!"
+    
+    REM Execute PowerShell script
+    echo 🔄 Updating version in files...
+    call powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
+    if %errorlevel% neq 0 (
+        echo ❌ ERROR: Failed to update version in files!
+        if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
+        exit /b 1
+    )
+    
+    REM Clean up temporary script
+    if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
     
     REM Copy simplified configuration files (if they exist)
     if exist web\flutter_web_config_simple.js (
         echo 📋 Copying simplified configuration files...
-        copy web\flutter_web_config_simple.js build\web\flutter_web_config.js
+        copy /Y web\flutter_web_config_simple.js build\web\flutter_web_config.js >nul
     )
     if exist web\index_simple.html (
-        copy web\index_simple.html build\web\index.html
-        REM Update version in copied index.html
-        powershell -Command "(Get-Content build\web\index.html) -replace '2\.0\.2', '%VERSION%' | Set-Content build\web\index.html"
+        echo 📋 Copying simplified index.html...
+        copy /Y web\index_simple.html build\web\index.html >nul
+        REM Re-run update script for copied file
+        (
+            echo $version = '%VERSION%'
+            echo $indexFile = 'build\web\index.html'
+            echo if ^(Test-Path $indexFile^) {
+            echo     Write-Host '📝 Updating copied index.html...'
+            echo     $content = [System.IO.File]::ReadAllText($indexFile, [System.Text.Encoding]::UTF8^)
+            echo     $content = $content -replace "const APP_VERSION = '[^']+'", "const APP_VERSION = '$version'"
+            echo     $content = $content -replace 'src=\"flutter_web_config\.js\?v=[0-9.]+', "src=`"flutter_web_config.js?v=$version"
+            echo     $content = $content -replace 'src=\"flutter_bootstrap\.js\?v=[0-9.]+', "src=`"flutter_bootstrap.js?v=$version"
+            echo     $content = $content -replace 'VERSION_PARAM = `\?v=[0-9.]+', "VERSION_PARAM = `?v=$version"
+            echo     $content = $content -replace '\?v=[0-9.]+', "?v=$version"
+            echo     [System.IO.File]::WriteAllText((Resolve-Path $indexFile^), $content, [System.Text.Encoding]::UTF8^)
+            echo     Write-Host '✅ Updated index.html (copied)'
+            echo }
+        ) > "!PS_SCRIPT!"
+        call powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
+        if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
     )
     
+    REM Verify the updates
+    echo.
+    echo 🔍 Verifying updates...
+    findstr /C:"!VERSION!" build\web\index.html >nul
+    if %errorlevel% equ 0 (
+        echo ✅ Version !VERSION! found in index.html
+    ) else (
+        echo ⚠️  Warning: Version !VERSION! not found in index.html
+    )
+    
+    findstr /C:"!VERSION!" build\web\manifest.json >nul
+    if %errorlevel% equ 0 (
+        echo ✅ Version !VERSION! found in manifest.json
+    ) else (
+        echo ⚠️  Warning: Version !VERSION! not found in manifest.json
+    )
+    
+    echo.
     echo 🎉 Flutter Web application is ready for deployment!
-    echo 📁 Build output: mobile-app\build\web
+    echo 📁 Build output: %CD%\\build\\web
     echo 🌐 Deploy the contents of build\web to your web server
-    echo 📦 Version: %VERSION%
+    echo 📦 Version: !VERSION!
+    echo.
     
 ) else (
-    echo ❌ Flutter Web build failed!
+    echo.
+    echo ❌ Flutter Web build failed with error code: %BUILD_RESULT%
+    echo Please check the error messages above.
     exit /b 1
 )
 
 echo 🏁 Build process completed!
 pause
-
-
-
-
+endlocal

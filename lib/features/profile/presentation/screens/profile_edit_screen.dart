@@ -94,6 +94,95 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return items;
   }
 
+  /// الحصول على الحقول المتغيرة التي تتطلب وثائق
+  List<String> _getChangedFieldsRequiringDocuments(ProfileModel currentProfile) {
+    final changedFieldsRequiringDocs = <String>[];
+    
+    try {
+      // قائمة الحقول التي قد تتطلب وثائق
+      final fieldsToCheck = [
+        'fullNameAr',
+        'fullNameEn',
+        'email',
+        'birthDate',
+        'governorateId',
+        'qualificationId',
+        'graduationYear',
+        'university',
+        'workplace'
+      ];
+
+      for (final fieldName in fieldsToCheck) {
+        try {
+          // التحقق من وجود تغيير في الحقل
+          bool hasChange = false;
+
+          switch (fieldName) {
+            case 'fullNameAr':
+              final currentValue = _fullNameArController.text.trim();
+              final originalValue = currentProfile.fullNameAr ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'fullNameEn':
+              final currentValue = _fullNameEnController.text.trim();
+              final originalValue = currentProfile.fullNameEn ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'email':
+              final currentValue = _emailController.text.trim();
+              final originalValue = currentProfile.email ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'birthDate':
+              hasChange = _selectedBirthDate != currentProfile.birthDate;
+              break;
+            case 'governorateId':
+              final currentValue = _selectedGovernorateId ?? '';
+              final originalValue = currentProfile.governorateId ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'qualificationId':
+              final currentValue = _selectedQualificationId ?? '';
+              final originalValue = currentProfile.qualificationId ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'graduationYear':
+              final currentValue = _selectedGraduationYear;
+              final originalValue = currentProfile.graduationYear;
+              hasChange = currentValue != originalValue;
+              break;
+            case 'university':
+              final currentValue = _universityController.text.trim();
+              final originalValue = currentProfile.university ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'workplace':
+              final currentValue = _workplaceController.text.trim();
+              final originalValue = currentProfile.workplace ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+          }
+
+          // إذا كان هناك تغيير، التحقق من الحاجة للوثيقة
+          if (hasChange) {
+            final requiresDoc = _requiresDocument(fieldName, ref);
+            if (requiresDoc) {
+              debugPrint('📄 الحقل $fieldName تم تغييره ويتطلب وثيقة');
+              changedFieldsRequiringDocs.add(fieldName);
+            }
+          }
+        } catch (fieldError) {
+          debugPrint('❌ خطأ في فحص الحقل $fieldName: $fieldError');
+          continue;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ خطأ في الحصول على الحقول المتغيرة التي تتطلب وثائق: $e');
+    }
+
+    return changedFieldsRequiringDocs;
+  }
+
   /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
   bool _hasDocumentRequiringChanges(WidgetRef ref) {
     try {

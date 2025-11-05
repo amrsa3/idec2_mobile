@@ -7,6 +7,7 @@ import '../../../models/conference_model.dart';
 import '../../../providers/conference_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/conference_service.dart';
+import '../../../services/registration_service.dart';
 import '../../registrations/presentation/my_registrations_screen.dart';
 
 /// New Conference Card matching HTML design exactly with real data
@@ -339,6 +340,37 @@ class _SubscribeButtonBuilderState
             if (registration != null) {
               // User is already registered - show status
               final statusInfo = _getRegistrationStatusInfo(registration.status);
+              
+              // Handle ON_HOLD status specially - show reactivation dialog
+              if (registration.status == 'ON_HOLD') {
+                return SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: isLoading
+                        ? null
+                        : () => _showReactivationDialog(context, conference, registration.id),
+                    icon: Icon(statusInfo.icon, size: 20),
+                    label: Text(
+                      statusInfo.text,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: statusInfo.color,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                );
+              }
+              
+              // For other statuses, navigate to registrations screen
               return SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -559,6 +591,100 @@ class _SubscribeButtonBuilderState
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
     );
+  }
+
+  /// Show reactivation dialog when user clicks on ON_HOLD button
+  Future<void> _showReactivationDialog(
+    BuildContext context,
+    ConferenceModel conference,
+    String registrationId,
+  ) async {
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'طلب معلق',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          content: const Text(
+            'لقد انتهت مهلة الدفع وتم تعليق طلب اشتراكك في المؤتمر.\n\nهل تريد إعادة تفعيل طلبك؟',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEC1313),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('موافق'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldRequest == true && mounted) {
+      setState(() => isLoading = true);
+      
+      try {
+        final registrationService = RegistrationService();
+        await registrationService.requestReactivation(
+          registrationId: registrationId,
+          reason: 'طلب إعادة تفعيل من المستخدم',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم إرسال طلب إعادة التفعيل بنجاح. سيتم مراجعته من قبل الإدارة.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          
+          // Refresh registration status
+          ref.invalidate(conferenceRegistrationProvider(conference.id));
+        }
+      } catch (e) {
+        if (mounted) {
+          String errorMessage = 'فشل في إرسال طلب إعادة التفعيل';
+          if (e is Exception) {
+            final errorStr = e.toString();
+            if (errorStr.startsWith('Exception: ')) {
+              errorMessage = errorStr.substring(11);
+            } else {
+              errorMessage = errorStr;
+            }
+          } else {
+            errorMessage = e.toString();
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => isLoading = false);
+        }
+      }
+    }
   }
 
   /// Get registration status information (text, color, icon)

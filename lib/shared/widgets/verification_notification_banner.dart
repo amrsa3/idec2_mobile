@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/profile_model.dart';
 import '../../models/user_model.dart';
-import '../../providers/enhanced_auth_provider_v2.dart';
+import '../../services/compatible_auth_service.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 
@@ -14,21 +14,11 @@ class VerificationNotificationBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(enhancedAuthProvider);
+    final authState = ref.watch(compatibleAuthProvider);
     
     // استخراج المستخدم من auth state
-    UserModel? user;
-    final isAuthenticated = authState.when(
-      initial: () => false,
-      loading: (message) => false,
-      authenticated: (u) {
-        user = u;
-        return true;
-      },
-      unauthenticated: () => false,
-      registered: () => false,
-      error: (message) => false,
-    );
+    final user = authState.user;
+    final isAuthenticated = authState.isAuthenticated;
 
     debugPrint('🔍 [VERIFICATION_BANNER] Building banner - isAuthenticated: $isAuthenticated, user: ${user?.phone}');
 

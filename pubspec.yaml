@@ -2,7 +2,7 @@ name: idec_conference_app
 description: 'معرض ومؤتمر IDEC لطب الاسنان 2026 - تطبيق Flutter احترافي لإدارة المؤتمر'
 publish_to: 'none'
 
-version: 2.0.3
+version: 2.0.4
 environment:
   sdk: '>=3.0.0 <4.0.0'
   flutter: '>=3.10.0'
@@ -161,8 +161,8 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-    background_color: "#fe0303"
-    theme_color: "#fe0303"
-  image_path: "../images/App icon 02.ico"
-  adaptive_icon_background: "#fe0303"
-  adaptive_icon_foreground: "../images/App icon 02.ico"
+    background_color: '#fe0303'
+    theme_color: '#fe0303'
+  image_path: '../images/App icon 02.ico'
+  adaptive_icon_background: '#fe0303'
+  adaptive_icon_foreground: '../images/App icon 02.ico'

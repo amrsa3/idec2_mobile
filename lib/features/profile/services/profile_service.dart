@@ -8,6 +8,9 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Conditional import for web
+import 'dart:html' as html;
+
 import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
 import '../../../services/compatible_auth_service.dart';
@@ -62,17 +65,79 @@ class LocalProfileService {
   /// Get cached profile data
   static Future<ProfileModel?> _getCachedProfile() async {
     try {
+      // الحصول على userId الحالي من auth service
+      final currentUserId = await _getCurrentUserId();
+      
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString(_cacheKey);
+      final userIdKey = '${_cacheKey}_user_id';
+      final cachedUserId = prefs.getString(userIdKey);
 
+      // التحقق من تطابق userId قبل استخدام الكاش
       if (cachedData != null) {
+        if (currentUserId != null && cachedUserId != null && currentUserId != cachedUserId) {
+          debugPrint('⚠️ Cached profile userId ($cachedUserId) does not match current userId ($currentUserId), clearing cache');
+          await clearCache();
+          return null;
+        }
+        
         final profileJson = json.decode(cachedData);
-        return ProfileModel.fromJson(profileJson);
+        final profile = ProfileModel.fromJson(profileJson);
+        
+        // التحقق مرة أخرى من userId في profile نفسه
+        if (currentUserId != null && profile.userId != currentUserId) {
+          debugPrint('⚠️ Profile userId (${profile.userId}) does not match current userId ($currentUserId), clearing cache');
+          await clearCache();
+          return null;
+        }
+        
+        return profile;
+      }
+      
+      // على الويب، محاولة قراءة من localStorage
+      if (kIsWeb) {
+        try {
+          final cachedDataWeb = html.window.localStorage[_cacheKey];
+          final cachedUserIdWeb = html.window.localStorage[userIdKey];
+          
+          if (cachedDataWeb != null) {
+            if (currentUserId != null && cachedUserIdWeb != null && currentUserId != cachedUserIdWeb) {
+              debugPrint('⚠️ Web cached profile userId ($cachedUserIdWeb) does not match current userId ($currentUserId), clearing cache');
+              await clearCache();
+              return null;
+            }
+            
+            final profileJson = json.decode(cachedDataWeb);
+            final profile = ProfileModel.fromJson(profileJson);
+            
+            if (currentUserId != null && profile.userId != currentUserId) {
+              debugPrint('⚠️ Web profile userId (${profile.userId}) does not match current userId ($currentUserId), clearing cache');
+              await clearCache();
+              return null;
+            }
+            
+            return profile;
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error reading cached profile from localStorage: $e');
+        }
       }
     } catch (e) {
-      debugPrint('Error loading cached profile: $e');
+      debugPrint('❌ Error loading cached profile: $e');
     }
     return null;
+  }
+  
+  /// Get current user ID from auth service
+  static Future<String?> _getCurrentUserId() async {
+    try {
+      final authService = CompatibleAuthService.instance;
+      final user = authService.user;
+      return user?.id;
+    } catch (e) {
+      debugPrint('⚠️ Error getting current user ID: $e');
+      return null;
+    }
   }
 
   /// Cache profile data
@@ -80,12 +145,28 @@ class LocalProfileService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final profileJson = json.encode(profile.toJson());
+      
+      // حفظ userId مع الكاش للتحقق لاحقاً
+      final userIdKey = '${_cacheKey}_user_id';
       await prefs.setString(_cacheKey, profileJson);
+      await prefs.setString(userIdKey, profile.userId);
       await prefs.setInt(
           _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
-      debugPrint('✅ Profile cached successfully');
+      
+      // على الويب، حفظ في localStorage أيضاً
+      if (kIsWeb) {
+        try {
+          html.window.localStorage[_cacheKey] = profileJson;
+          html.window.localStorage[userIdKey] = profile.userId;
+          html.window.localStorage[_cacheTimestampKey] = DateTime.now().millisecondsSinceEpoch.toString();
+        } catch (e) {
+          debugPrint('⚠️ Error caching profile to localStorage: $e');
+        }
+      }
+      
+      debugPrint('✅ Profile cached successfully (userId: ${profile.userId})');
     } catch (e) {
-      debugPrint('Error caching profile: $e');
+      debugPrint('❌ Error caching profile: $e');
     }
   }
 
@@ -843,11 +924,16 @@ class LocalProfileService {
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'entityType': 'profile',
+        'entityType': 'USER_PROFILE', // enum value
         'entityId': userId,
-        'fileCategory': 'profile_picture',
+        'fileCategory': 'PROFILE_PICTURE', // enum value
         'description': 'صورة الملف الشخصي',
       });
+      
+      debugPrint('📤 [UPLOAD_PROFILE_PICTURE] Uploading profile picture with:');
+      debugPrint('   - entityType: USER_PROFILE');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: PROFILE_PICTURE');
 
       // Use the correct endpoint that matches the backend
       debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
@@ -1028,11 +1114,16 @@ class LocalProfileService {
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'entityType': 'profile',
+        'entityType': 'USER_PROFILE', // enum value
         'entityId': userId,
-        'fileCategory': 'profile_picture',
+        'fileCategory': 'PROFILE_PICTURE', // enum value
         'description': 'صورة الملف الشخصي',
       });
+      
+      debugPrint('📤 [UPLOAD_PROFILE_PICTURE] Uploading profile picture with:');
+      debugPrint('   - entityType: USER_PROFILE');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: PROFILE_PICTURE');
 
       // Use the correct endpoint that matches the backend
       debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
@@ -1545,12 +1636,19 @@ class LocalProfileService {
 
         final formData = FormData.fromMap({
           'file': multipartFile,
-          'entityType': 'profile', // نوع الكيان
+          'entityType': 'USER_DOCUMENT', // نوع الكيان - enum value
           'entityId': userId, // معرف المستخدم الحقيقي
-          'fileCategory': fieldName, // فئة الملف
+          'fileCategory': fieldName, // فئة الملف (يجب أن تكون OTHER_DOCUMENT)
           'description':
               'Document uploaded from mobile app for profile review', // وصف الملف
         });
+        
+        // 🔍 DEBUG: طباعة تفاصيل الرفع
+        debugPrint('📤 [UPLOAD_DOCUMENT] Uploading document with:');
+        debugPrint('   - entityType: USER_DOCUMENT');
+        debugPrint('   - entityId: $userId');
+        debugPrint('   - fileCategory: $fieldName');
+        debugPrint('   - fileName: $fileName');
 
         final response = await _dio.post(
           '/api/v1/files/upload',
@@ -1767,12 +1865,19 @@ class LocalProfileService {
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'entityType': 'profile', // نوع الكيان
+        'entityType': 'USER_DOCUMENT', // نوع الكيان - enum value
         'entityId': userId, // معرف المستخدم الحقيقي
-        'fileCategory': fieldName, // فئة الملف
+        'fileCategory': fieldName, // فئة الملف (يجب أن تكون OTHER_DOCUMENT)
         'description':
             'Document uploaded from mobile app for profile review', // وصف الملف
       });
+      
+      // 🔍 DEBUG: طباعة تفاصيل الرفع
+      debugPrint('📤 [UPLOAD_DOCUMENT] Uploading document with:');
+      debugPrint('   - entityType: USER_DOCUMENT');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: $fieldName');
+      debugPrint('   - fileName: $fileName');
 
       final response = await _dio.post(
         '/api/v1/files/upload',
@@ -1967,11 +2072,56 @@ class LocalProfileService {
   static Future<void> clearCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final userIdKey = '${_cacheKey}_user_id';
+      
+      // مسح جميع المفاتيح المتعلقة بالكاش
       await prefs.remove(_cacheKey);
       await prefs.remove(_cacheTimestampKey);
+      await prefs.remove(userIdKey);
+      debugPrint('✅ Profile cache cleared from SharedPreferences');
+      
+      // على الويب، مسح localStorage أيضاً بشكل مباشر
+      if (kIsWeb) {
+        try {
+          // مسح المفاتيح الأساسية
+          html.window.localStorage.remove(_cacheKey);
+          html.window.localStorage.remove(_cacheTimestampKey);
+          html.window.localStorage.remove(userIdKey);
+          
+          // مسح جميع المفاتيح التي تبدأ بـ cached_ أو profile_
+          final keysToRemove = <String>[];
+          html.window.localStorage.forEach((key, value) {
+            if (key.startsWith('cached_') || 
+                key.startsWith('profile_') ||
+                key.contains('cached_profile') ||
+                key.contains('profile_cache') ||
+                key.contains('_user_id')) {
+              keysToRemove.add(key);
+            }
+          });
+          
+          for (final key in keysToRemove) {
+            html.window.localStorage.remove(key);
+          }
+          
+          // مسح من sessionStorage أيضاً
+          html.window.sessionStorage.remove(_cacheKey);
+          html.window.sessionStorage.remove(_cacheTimestampKey);
+          html.window.sessionStorage.remove(userIdKey);
+          
+          for (final key in keysToRemove) {
+            html.window.sessionStorage.remove(key);
+          }
+          
+          debugPrint('✅ Profile cache cleared from web storage (${keysToRemove.length + 3} keys)');
+        } catch (e) {
+          debugPrint('⚠️ Error clearing profile cache from web storage: $e');
+        }
+      }
+      
       debugPrint('✅ Profile cache cleared successfully');
     } catch (e) {
-      debugPrint('Error clearing profile cache: $e');
+      debugPrint('❌ Error clearing profile cache: $e');
     }
   }
 
@@ -2102,3 +2252,4 @@ class LocalProfileService {
     return completionPercentage;
   }
 }
+

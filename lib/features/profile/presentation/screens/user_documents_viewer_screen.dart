@@ -499,17 +499,34 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
         return;
       }
 
+      // 🔥 IMPORTANT: التحقق من أن fileId يعود للمستخدم الحالي
+      // الحصول على userId الحالي
+      final authService = CompatibleAuthService.instance;
+      final currentUser = authService.user;
+      
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('⚠️ [_ThumbnailImage] No authenticated user found, skipping thumbnail load');
+        if (mounted && widget.fileId == currentFileId) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
       final dio = EnhancedDioServiceV2.instance.dio;
 
-      // إضافة timestamp فريد لإجبار إعادة التحميل
+      // إضافة timestamp فريد لإجبار إعادة التحميل ومنع استخدام الكاش القديم
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await dio.get(
-        '${ApiConstants.baseUrl}/api/v1/files/${widget.fileId}/thumbnail?t=$timestamp',
+        '${ApiConstants.baseUrl}/api/v1/files/${widget.fileId}/thumbnail?t=$timestamp&userId=${currentUser.id}',
         options: Options(
           responseType: ResponseType.bytes,
           headers: {
             'Authorization': 'Bearer $token',
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         ),
       );

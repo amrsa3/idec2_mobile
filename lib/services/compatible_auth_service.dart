@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/user_model.dart';
@@ -14,6 +15,10 @@ import 'lazy_loading_service.dart';
 import 'platform_storage_service.dart';
 import 'unified_token_manager.dart';
 import '../features/profile/services/profile_service.dart' as profile_service;
+import 'image_cache_service.dart';
+import 'authenticated_image_service.dart';
+import 'provider_cleanup_service.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 // Conditional import for web
 import 'dart:html' as html;
@@ -198,12 +203,41 @@ class CompatibleAuthService {
         await _storage.delete('current_user');
         await _storage.delete('user_data');
         await _storage.deleteSecure('current_user');
+        
         // Clear profile cache
         try {
           await profile_service.LocalProfileService.clearCache();
+          debugPrint('✅ [COMPATIBLE_AUTH] Profile cache cleared');
         } catch (e) {
           debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing profile cache: $e');
         }
+        
+        // Clear lazy loading cache
+        try {
+          await LazyLoadingService.instance.clearAllCache();
+          debugPrint('✅ [COMPATIBLE_AUTH] Lazy loading cache cleared');
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing lazy loading cache: $e');
+        }
+        
+        // Clear image cache
+        try {
+          await ImageCacheService.clearAllCache();
+          AuthenticatedImageService.clearAllImageCache();
+          await DefaultCacheManager().emptyCache();
+          debugPrint('✅ [COMPATIBLE_AUTH] Image cache cleared');
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing image cache: $e');
+        }
+        
+        // Clear enhanced storage
+        try {
+          await EnhancedStorageService.instance.clearAllData();
+          debugPrint('✅ [COMPATIBLE_AUTH] Enhanced storage cleared');
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing enhanced storage: $e');
+        }
+        
         debugPrint('✅ [COMPATIBLE_AUTH] Old user data cleared');
       } catch (e) {
         debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing old data: $e');
@@ -1144,28 +1178,190 @@ class CompatibleAuthService {
       // مسح كاش الملف الشخصي
       debugPrint('🔐 [COMPATIBLE_AUTH] Clearing profile cache...');
       try {
-        // Import will be added at top of file
         await _clearProfileCache();
         debugPrint('✅ [COMPATIBLE_AUTH] Profile cache cleared');
       } catch (e) {
         debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing profile cache: $e');
       }
 
-      // مسح إضافي للويب - مسح جميع البيانات المخزنة
+      // مسح كاش الصور بشكل شامل
+      debugPrint('🔐 [COMPATIBLE_AUTH] Clearing image cache...');
+      try {
+        // مسح ImageCacheService
+        await ImageCacheService.clearAllCache();
+        debugPrint('✅ [COMPATIBLE_AUTH] ImageCacheService cleared');
+        
+        // مسح AuthenticatedImageService
+        AuthenticatedImageService.clearAllImageCache();
+        debugPrint('✅ [COMPATIBLE_AUTH] AuthenticatedImageService cleared');
+        
+        // مسح DefaultCacheManager
+        await DefaultCacheManager().emptyCache();
+        debugPrint('✅ [COMPATIBLE_AUTH] DefaultCacheManager cleared');
+      } catch (e) {
+        debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing image cache: $e');
+      }
+
+      // مسح إضافي للويب - مسح جميع البيانات المخزنة بشكل شامل
       if (kIsWeb) {
-        debugPrint('🌐 [COMPATIBLE_AUTH] Additional web cleanup...');
+        debugPrint('🌐 [COMPATIBLE_AUTH] Starting comprehensive web cleanup...');
         try {
-          // Clear all platform storage
+          // Clear all platform storage first
           await _storage.clearSecure();
           await _storage.clear();
           
-          // Clear browser storage
-          html.window.localStorage.clear();
-          html.window.sessionStorage.clear();
+          // Clear SharedPreferences keys from localStorage (profile cache, etc.)
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            // قائمة شاملة من المفاتيح التي يجب مسحها
+            final cachePatterns = [
+              'cached_',
+              'profile_',
+              'cache',
+              'lazy_cache_',
+              'secure_',
+              'user_',
+              'auth_',
+              'token_',
+              'session_',
+              'document_',
+              'registration_',
+              'conference_',
+            ];
+            
+            final keysToRemove = <String>[];
+            final allKeys = prefs.getKeys();
+            
+            // جمع جميع المفاتيح التي تطابق الأنماط
+            for (final key in allKeys) {
+              final keyLower = key.toLowerCase();
+              bool shouldRemove = false;
+              
+              // التحقق من الأنماط
+              for (final pattern in cachePatterns) {
+                if (keyLower.contains(pattern.toLowerCase()) || 
+                    keyLower.startsWith(pattern.toLowerCase())) {
+                  shouldRemove = true;
+                  break;
+                }
+              }
+              
+              // مسح أيضاً أي مفتاح يحتوي على "flutter" أو متعلق بالتطبيق
+              if (!shouldRemove && (keyLower.contains('flutter') || 
+                  keyLower.contains('idec') ||
+                  keyLower.contains('app_'))) {
+                shouldRemove = true;
+              }
+              
+              if (shouldRemove) {
+                keysToRemove.add(key);
+              }
+            }
+            
+            // مسح جميع المفاتيح
+            for (final key in keysToRemove) {
+              await prefs.remove(key);
+            }
+            debugPrint('✅ [COMPATIBLE_AUTH] Cleared ${keysToRemove.length} SharedPreferences keys');
+          } catch (e) {
+            debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing SharedPreferences: $e');
+          }
+          
+          // Clear browser storage - مسح localStorage بشكل مباشر وشامل
+          try {
+            final cachePatterns = [
+              'cached_',
+              'profile_',
+              'cache',
+              'lazy_cache_',
+              'secure_',
+              'user_',
+              'auth_',
+              'token_',
+              'session_',
+              'document_',
+              'registration_',
+              'conference_',
+              'flutter',
+              'idec',
+              'app_',
+            ];
+            
+            final keysToRemove = <String>[];
+            
+            // جمع جميع المفاتيح من localStorage
+            html.window.localStorage.forEach((key, value) {
+              final keyLower = key.toLowerCase();
+              bool shouldRemove = false;
+              
+              // التحقق من الأنماط
+              for (final pattern in cachePatterns) {
+                if (keyLower.contains(pattern.toLowerCase()) || 
+                    keyLower.startsWith(pattern.toLowerCase())) {
+                  shouldRemove = true;
+                  break;
+                }
+              }
+              
+              if (shouldRemove) {
+                keysToRemove.add(key);
+              }
+            });
+            
+            // مسح جميع المفاتيح من localStorage
+            for (final key in keysToRemove) {
+              html.window.localStorage.remove(key);
+            }
+            
+            // جمع جميع المفاتيح من sessionStorage
+            final sessionKeysToRemove = <String>[];
+            html.window.sessionStorage.forEach((key, value) {
+              final keyLower = key.toLowerCase();
+              bool shouldRemove = false;
+              
+              // التحقق من الأنماط
+              for (final pattern in cachePatterns) {
+                if (keyLower.contains(pattern.toLowerCase()) || 
+                    keyLower.startsWith(pattern.toLowerCase())) {
+                  shouldRemove = true;
+                  break;
+                }
+              }
+              
+              if (shouldRemove) {
+                sessionKeysToRemove.add(key);
+              }
+            });
+            
+            // مسح جميع المفاتيح من sessionStorage
+            for (final key in sessionKeysToRemove) {
+              html.window.sessionStorage.remove(key);
+            }
+            
+            debugPrint('✅ [COMPATIBLE_AUTH] Cleared ${keysToRemove.length} keys from localStorage and ${sessionKeysToRemove.length} keys from sessionStorage');
+          } catch (e) {
+            debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing localStorage/sessionStorage directly: $e');
+            // محاولة مسح كامل كحل بديل
+            try {
+              html.window.localStorage.clear();
+              html.window.sessionStorage.clear();
+              debugPrint('✅ [COMPATIBLE_AUTH] Cleared all localStorage and sessionStorage as fallback');
+            } catch (clearError) {
+              debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing all storage: $clearError');
+            }
+          }
           
           debugPrint('✅ [COMPATIBLE_AUTH] Web storage cleared successfully');
         } catch (e) {
           debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
+          // محاولة مسح كامل كحل بديل
+          try {
+            html.window.localStorage.clear();
+            html.window.sessionStorage.clear();
+            debugPrint('✅ [COMPATIBLE_AUTH] Cleared all web storage as fallback');
+          } catch (clearError) {
+            debugPrint('⚠️ [COMPATIBLE_AUTH] Error in fallback clear: $clearError');
+          }
         }
       }
       
@@ -1347,7 +1543,7 @@ final compatibleAuthServiceProvider = Provider<CompatibleAuthService>((ref) {
 final compatibleAuthProvider =
     StateNotifierProvider<CompatibleAuthNotifier, CompatibleAuthState>((ref) {
   final authService = ref.watch(compatibleAuthServiceProvider);
-  return CompatibleAuthNotifier(authService);
+  return CompatibleAuthNotifier(authService, ref);
 });
 
 /// حالة المصادقة المتوافقة
@@ -1395,8 +1591,9 @@ class CompatibleAuthState {
 /// Provider محسن لإدارة حالة المصادقة المتوافقة
 class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
   final CompatibleAuthService _authService;
+  final Ref _ref;
 
-  CompatibleAuthNotifier(this._authService) : super(CompatibleAuthState()) {
+  CompatibleAuthNotifier(this._authService, this._ref) : super(CompatibleAuthState()) {
     _initialize();
   }
 
@@ -1424,6 +1621,16 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// تسجيل الدخول بالهاتف
   Future<bool> loginWithPhone(String phone, String password) async {
+    // إلغاء تفعيل providers قبل login لضمان عدم استخدام بيانات قديمة
+    try {
+      debugPrint('🔄 [COMPATIBLE_AUTH] Invalidating providers before login...');
+      await ProviderCleanupService().invalidateAllUserProviders(_ref);
+      debugPrint('✅ [COMPATIBLE_AUTH] Providers invalidated before login');
+    } catch (e) {
+      debugPrint('⚠️ [COMPATIBLE_AUTH] Error invalidating providers before login: $e');
+      // لا نوقف login بسبب خطأ في invalidate providers
+    }
+    
     final previousState = state;
     final result = await _authService.loginWithPhone(phone, password);
     _updateState();
@@ -1508,6 +1715,16 @@ class CompatibleAuthNotifier extends StateNotifier<CompatibleAuthState> {
 
   /// تسجيل الخروج
   Future<bool> logout() async {
+    // إلغاء تفعيل جميع providers قبل logout
+    try {
+      debugPrint('🔄 [COMPATIBLE_AUTH] Invalidating providers before logout...');
+      await ProviderCleanupService().invalidateAllUserProviders(_ref);
+      debugPrint('✅ [COMPATIBLE_AUTH] Providers invalidated successfully');
+    } catch (e) {
+      debugPrint('⚠️ [COMPATIBLE_AUTH] Error invalidating providers: $e');
+      // لا نوقف logout بسبب خطأ في invalidate providers
+    }
+    
     final result = await _authService.logout();
     _updateState();
     return result;

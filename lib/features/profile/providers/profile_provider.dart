@@ -612,11 +612,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   /// Load governorates
-  Future<void> loadGovernorates() async {
+  Future<void> loadGovernorates({bool forceRefresh = false}) async {
     try {
       state = state.copyWith(isLoadingGovernorates: true, error: null);
 
-      debugPrint('🏛️ ProfileProvider: Loading governorates');
+      debugPrint('🏛️ ProfileProvider: Loading governorates (forceRefresh: $forceRefresh)');
 
       final governoratesData = await LocalProfileService.getGovernorates();
       final governorates = governoratesData
@@ -641,11 +641,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   /// Load qualifications
-  Future<void> loadQualifications() async {
+  Future<void> loadQualifications({bool forceRefresh = false}) async {
     try {
       state = state.copyWith(isLoadingQualifications: true, error: null);
 
-      debugPrint('🎓 ProfileProvider: Loading qualifications');
+      debugPrint('🎓 ProfileProvider: Loading qualifications (forceRefresh: $forceRefresh)');
 
       final qualificationsData = await LocalProfileService.getQualifications();
 
@@ -1512,6 +1512,16 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     try {
       debugPrint('🔄 ProfileProvider: Initializing profile page (forceRefresh: $forceRefresh)');
       
+      // Clear cache first if forceRefresh is true to ensure fresh data
+      if (forceRefresh) {
+        try {
+          await LocalProfileService.clearCache();
+          debugPrint('✅ ProfileProvider: Cache cleared before initialization');
+        } catch (e) {
+          debugPrint('⚠️ ProfileProvider: Error clearing cache: $e');
+        }
+      }
+      
       // First load profile data
       await loadCurrentProfile(forceRefresh: forceRefresh);
 
@@ -1519,9 +1529,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       await Future.delayed(const Duration(milliseconds: 200));
 
       // Then load other data in parallel (qualifications and governorates are critical for display)
+      // Use forceRefresh for qualifications and governorates too to ensure fresh data
       await Future.wait([
-        loadQualifications(),
-        loadGovernorates(),
+        loadQualifications(forceRefresh: forceRefresh),
+        loadGovernorates(forceRefresh: forceRefresh),
         loadVerificationRules(), // This can be in background
       ]);
       

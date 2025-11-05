@@ -398,39 +398,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
-  /// النظام الهرمي الجديد لتصنيف الملفات
-  /// المستوى الأول: الفئات الرئيسية (profile, documents, attachments, certificates)
-  /// المستوى الثاني: أنواع الملفات (image, pdf, word, excel, text)
-  /// المستوى الثالث: الترقيم (1, 2, 3...)
+  /// تحديد fileCategory للمستندات المرفوعة
+  /// جميع المستندات المرفوعة في صفحة تعديل الملف الشخصي يجب أن تكون:
+  /// fileCategory = OTHER_DOCUMENT
   String _getSmartFileCategory(int index, String fileName) {
-    final extension = fileName.toLowerCase().split('.').last;
-
-    // تحديد الفئة الرئيسية
-    String mainCategory;
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
-      mainCategory =
-          'documents'; // ال Photos يجب أن تظهر كـ documents في قائمة مستنداتي
-    } else {
-      mainCategory = 'documents'; // الوثائق المطلوبة
-    }
-
-    // تحديد نوع الملف
-    String fileType;
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
-      fileType = 'image';
-    } else if (extension == 'pdf') {
-      fileType = 'pdf';
-    } else if (['doc', 'docx'].contains(extension)) {
-      fileType = 'word';
-    } else if (['xls', 'xlsx'].contains(extension)) {
-      fileType = 'excel';
-    } else if (['txt', 'rtf'].contains(extension)) {
-      fileType = 'text';
-    } else {
-      fileType = 'other'; // أنواع أخرى
-    }
-
-    return '${mainCategory}_${fileType}_${index + 1}';
+    // جميع المستندات المرفوعة في صفحة تعديل الملف الشخصي
+    // يجب أن تكون fileCategory = OTHER_DOCUMENT
+    return 'OTHER_DOCUMENT';
   }
 
   /// الحصول على اسم عرضي للملف حسب فئته الذكية

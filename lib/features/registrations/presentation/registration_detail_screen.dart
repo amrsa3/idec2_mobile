@@ -15,6 +15,7 @@ import '../../../providers/conference_provider.dart';
 import '../widgets/payment_gateway_selector.dart';
 import '../widgets/payment_input_dialog.dart';
 import 'invoice_receipt_screen.dart';
+import 'my_registrations_screen.dart';
 
 final registrationDetailProvider =
     FutureProvider.family<RegistrationModel, String>(
@@ -682,6 +683,9 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
           // Refresh registration details
           ref.invalidate(registrationDetailProvider(widget.registrationId));
           ref.invalidate(registrationTimelineProvider(widget.registrationId));
+          
+          // Refresh my registrations list to show updated status
+          ref.invalidate(myRegistrationsProvider);
           
           // 🔥 IMPORTANT: Invalidate conference registration provider to update card on home screen
           if (conferenceId != null && conferenceId.isNotEmpty) {

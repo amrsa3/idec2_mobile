@@ -37,8 +37,11 @@ class ProfileSideDrawer extends ConsumerWidget {
     final currentProfile = profile ?? ref.watch(profileProvider).currentProfile;
 
     return Drawer(
-      child: Column(
-        children: [
+      semanticLabel: 'القائمة الجانبية',
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: [
           // رأس القائمة الجانبية
           DrawerHeader(
             decoration: BoxDecoration(
@@ -52,7 +55,7 @@ class ProfileSideDrawer extends ConsumerWidget {
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // صورة المستخدم
                 ProfileImageWidget(
@@ -91,7 +94,7 @@ class ProfileSideDrawer extends ConsumerWidget {
               children: [
                 // الملف الشخصي
                 ListTile(
-                  leading: Icon(
+                  trailing: Icon(
                     Icons.person_outline,
                     color: currentScreen == 'profile'
                         ? AppColors.primary
@@ -124,7 +127,7 @@ class ProfileSideDrawer extends ConsumerWidget {
                 // تعديل الملف الشخصي
                 if (currentProfile != null)
                   ListTile(
-                    leading: Icon(
+                    trailing: Icon(
                       Icons.edit_outlined,
                       color: currentScreen == 'edit'
                           ? AppColors.primary
@@ -157,7 +160,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // عرض المستندات
                 ListTile(
-                  leading: Icon(
+                  trailing: Icon(
                     Icons.folder_outlined,
                     color: currentScreen == 'documents'
                         ? AppColors.primary
@@ -189,7 +192,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // اشتراكاتي
                 ListTile(
-                  leading: Icon(
+                  trailing: Icon(
                     Icons.event_note,
                     color: currentScreen == 'registrations'
                         ? AppColors.primary
@@ -223,7 +226,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // الإعدادات
                 ListTile(
-                  leading: Icon(Icons.settings_outlined,
+                  trailing: Icon(Icons.settings_outlined,
                       color: AppColors.textSecondary),
                   title: const Text('الإعدادات'),
                   onTap: () {
@@ -237,7 +240,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // المساعدة
                 ListTile(
-                  leading:
+                  trailing:
                       Icon(Icons.help_outline, color: AppColors.textSecondary),
                   title: const Text('المساعدة'),
                   onTap: () {
@@ -253,7 +256,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // تسجيل الخروج
                 ListTile(
-                  leading: Icon(Icons.logout, color: AppColors.error),
+                  trailing: Icon(Icons.logout, color: AppColors.error),
                   title: Text(
                     l10n.logout,
                     style: TextStyle(color: AppColors.error),
@@ -291,6 +294,7 @@ class ProfileSideDrawer extends ConsumerWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

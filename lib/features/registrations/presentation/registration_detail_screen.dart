@@ -654,6 +654,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
         context,
         instruction,
         selectedGateway.displayName,
+        amount: invoice.amountDue,
+        currency: invoice.currencyCode,
       );
       
       if (inputData == null) {

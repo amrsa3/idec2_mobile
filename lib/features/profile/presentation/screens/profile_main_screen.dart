@@ -21,6 +21,7 @@ import '../../../../services/authenticated_image_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
+import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/profile_service.dart' as profile_service;
 import '../widgets/verification_status_badge.dart';
@@ -196,230 +197,32 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: CustomAppBar(
-        title: 'الملف الشخصي',
-        actions: [
-          if (currentProfile != null)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => _navigateToEditProfile(context, currentProfile),
-            ),
-          // زر القائمة الجانبية
-          Builder(
+        backgroundColor: AppColors.background,
+        appBar: CustomAppBar(
+          title: 'الملف الشخصي',
+          leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
-        ],
-      ),
-      // القائمة الجانبية
-      endDrawer: _buildSideDrawer(context, l10n, currentProfile),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(profileProvider.notifier).refresh(),
-        child: _buildBody(profileState),
-      ),
-    );
-  }
-
-  // إنشاء القائمة الجانبية
-  Widget _buildSideDrawer(
-      BuildContext context, AppLocalizations l10n, ProfileModel? profile) {
-    final authState = ref.watch(compatibleAuthProvider);
-    final user = authState.user;
-
-    return Drawer(
-      child: Column(
-        children: [
-          // رأس القائمة الجانبية
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary,
-                  AppColors.primary.withOpacity(0.8),
-                ],
+          actions: [
+            if (currentProfile != null)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _navigateToEditProfile(context, currentProfile),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // صورة المستخدم
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (profile != null) {
-                      _showProfileImageOptions(context, profile);
-                    }
-                  },
-                  child: ProfileImageWidget(
-                    imageUrl: user?.profile
-                        ?.profilePhotoUrl, // Use profile.profilePhotoUrl
-                    size: 60,
-                    fallbackText: user?.profile?.fullNameAr?.isNotEmpty == true
-                        ? user!.profile!.fullNameAr![0].toUpperCase()
-                        : (user?.profile?.fullNameEn?.isNotEmpty == true
-                            ? user!.profile!.fullNameEn![0].toUpperCase()
-                            : 'U'),
-                    showEditIcon: false,
-                    isEditable: false,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // اسم المستخدم
-                Text(
-                  user?.profile?.fullNameAr ??
-                      user?.profile?.fullNameEn ??
-                      'المستخدم',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // عناصر القائمة
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                // الملف الشخصي
-                ListTile(
-                  leading: Icon(Icons.person_outline, color: AppColors.primary),
-                  title: const Text('الملف الشخصي'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // نحن بالفعل في صفحة الملف الشخصي
-                  },
-                ),
-
-                // تعديل الملف الشخصي
-                if (profile != null)
-                  ListTile(
-                    leading:
-                        Icon(Icons.edit_outlined, color: AppColors.primary),
-                    title: const Text('تعديل البيانات'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _navigateToEditProfile(context, profile);
-                    },
-                  ),
-
-                // عرض المستندات
-                ListTile(
-                  leading:
-                      Icon(Icons.folder_outlined, color: AppColors.primary),
-                  title: const Text('مستنداتي'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserDocumentsViewerScreen(),
-                      ),
-                    );
-                  },
-                ),
-
-                // اشتراكاتي
-                ListTile(
-                  leading:
-                      Icon(Icons.event_note, color: AppColors.primary),
-                  title: const Text('اشتراكاتي'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MyRegistrationsScreen(),
-                      ),
-                    );
-                  },
-                ),
-
-                const Divider(),
-
-                // الإعدادات
-                ListTile(
-                  leading: Icon(Icons.settings_outlined,
-                      color: AppColors.textSecondary),
-                  title: const Text('الإعدادات'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: إضافة صفحة الإعدادات
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('سيتم إضافة صفحة الإعدادات قريباً')),
-                    );
-                  },
-                ),
-
-                // المساعدة
-                ListTile(
-                  leading:
-                      Icon(Icons.help_outline, color: AppColors.textSecondary),
-                  title: const Text('المساعدة'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: إضافة صفحة المساعدة
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('سيتم إضافة صفحة المساعدة قريباً')),
-                    );
-                  },
-                ),
-
-                const Divider(),
-
-                // تسجيل الخروج
-                ListTile(
-                  leading: Icon(Icons.logout, color: AppColors.error),
-                  title: Text(
-                    l10n.logout,
-                    style: TextStyle(color: AppColors.error),
-                  ),
-                  onTap: () => _showLogoutDialog(context, l10n),
-                ),
-              ],
-            ),
-          ),
-
-          // معلومات التطبيق في أسفل القائمة
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: FutureBuilder<PackageInfo>(
-              future: PackageInfo.fromPlatform(),
-              builder: (context, snapshot) {
-                final version = snapshot.hasData 
-                    ? snapshot.data!.version 
-                    : 'Loading...';
-                final buildNumber = snapshot.hasData && 
-                        snapshot.data!.buildNumber.isNotEmpty && 
-                        snapshot.data!.buildNumber != '0'
-                    ? ' (Build ${snapshot.data!.buildNumber})'
-                    : '';
-                
-                return Text(
-                  'تطبيق IDEC\nالإصدار $version$buildNumber',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
+        // القائمة الجانبية
+        drawer: ProfileSideDrawer(
+          currentScreen: 'profile',
+          profile: currentProfile,
+        ),
+        body: RefreshIndicator(
+          onRefresh: () => ref.read(profileProvider.notifier).refresh(),
+          child: _buildBody(profileState),
+        ),
     );
   }
 

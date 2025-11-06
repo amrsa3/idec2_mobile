@@ -107,43 +107,43 @@ class _UserDocumentsViewerScreenState
     final documentsAsync = ref.watch(userDocumentsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'مستنداتي',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.primary),
-            onPressed: () {
-              ref.invalidate(userDocumentsProvider);
-            },
-          ),
-          // زر القائمة الجانبية
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          title: const Text(
+            'مستنداتي',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
             ),
           ),
-        ],
-      ),
-      endDrawer: _buildSideDrawer(context, ref),
-      body: documentsAsync.when(
-        data: (documents) => _buildDocumentsList(documents),
-        loading: () => _buildLoadingState(),
-        error: (error, stack) => _buildErrorState(error),
-      ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              onPressed: () => Navigator.pop(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: AppColors.primary),
+              onPressed: () {
+                ref.invalidate(userDocumentsProvider);
+              },
+            ),
+          ],
+        ),
+        drawer: _buildSideDrawer(context, ref),
+        body: documentsAsync.when(
+          data: (documents) => _buildDocumentsList(documents),
+          loading: () => _buildLoadingState(),
+          error: (error, stack) => _buildErrorState(error),
+        ),
     );
   }
 

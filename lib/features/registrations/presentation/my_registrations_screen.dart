@@ -48,17 +48,15 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
       appBar: AppBar(
         title: const Text('اشتراكاتي'),
         centerTitle: true,
-        actions: [
-          // زر القائمة الجانبية
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
-            ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-        ],
+        ),
+        automaticallyImplyLeading: false,
       ),
-      endDrawer: _buildSideDrawer(context, ref),
+      drawer: _buildSideDrawer(context, ref),
       body: registrationsAsync.when(
         data: (registrations) {
           if (registrations.isEmpty) {

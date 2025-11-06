@@ -88,6 +88,9 @@ dependencies:
   # Share functionality
   share_plus: ^7.2.1
 
+  # URL Launcher
+  url_launcher: ^6.2.2
+
   # PDF generation
   printing: ^5.13.1
   pdf: ^3.11.1

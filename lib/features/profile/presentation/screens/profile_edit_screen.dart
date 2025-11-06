@@ -605,33 +605,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('تعديل الملف الشخصي'),
-        actions: [
-          // زر القائمة الجانبية
-          Builder(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('تعديل الملف الشخصي'),
+          leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
-        ],
-      ),
-      endDrawer: ProfileSideDrawer(
-        currentScreen: 'edit',
-        profile: widget.profile,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          // Refresh profile data and rules
-          await ref.read(profileProvider.notifier).refresh();
-          await ref
-              .read(profileRulesProvider.notifier)
-              .loadRulesForCurrentUser(forceRefresh: true);
-        },
-        child: _buildBody(profileState),
-      ),
+          automaticallyImplyLeading: false,
+        ),
+        drawer: ProfileSideDrawer(
+          currentScreen: 'edit',
+          profile: widget.profile,
+        ),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh profile data and rules
+            await ref.read(profileProvider.notifier).refresh();
+            await ref
+                .read(profileRulesProvider.notifier)
+                .loadRulesForCurrentUser(forceRefresh: true);
+          },
+          child: _buildBody(profileState),
+        ),
     );
   }
 

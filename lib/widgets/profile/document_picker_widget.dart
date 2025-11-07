@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -50,7 +51,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
         allowMultiple: true,
-        withData: kIsWeb, // في بيئة الويب، نحتاج البيانات
+        withData: true, // نحتاج البيانات للتعامل مع الملفات التي لا توفر مساراً مباشراً
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -80,7 +81,22 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
               debugPrint(
                   '📄 DocumentPickerWidget: Mobile file - preserving original name: ${platformFile.name}');
             } else {
-              continue;
+              if (platformFile.bytes != null) {
+                fileSize = platformFile.bytes!.length;
+                final tempDir = await getTemporaryDirectory();
+                final fileName = platformFile.name.isNotEmpty
+                    ? platformFile.name
+                    : 'document_${DateTime.now().millisecondsSinceEpoch}';
+                final tempPath = path.join(tempDir.path, fileName);
+                file = await File(tempPath).writeAsBytes(
+                  platformFile.bytes!,
+                  flush: true,
+                );
+                debugPrint(
+                    '📄 DocumentPickerWidget: Created temp file for camera capture: $tempPath');
+              } else {
+                continue;
+              }
             }
           }
 
@@ -103,7 +119,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             name: platformFile.name,
             type: path.extension(platformFile.name).toLowerCase(),
             size: fileSize,
-            bytes: kIsWeb ? platformFile.bytes : null,
+            bytes: platformFile.bytes,
           ));
         }
 

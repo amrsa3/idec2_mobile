@@ -271,7 +271,11 @@ class RegistrationService {
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'فشل في طلب إعادة التفعيل');
+        // Try to get Arabic message first, then English, then default
+        final message = errorData['messageAr'] ?? 
+                       errorData['message'] ?? 
+                       'فشل في طلب إعادة التفعيل';
+        throw Exception(message);
       }
     } catch (e) {
       throw Exception('Error requesting reactivation: $e');

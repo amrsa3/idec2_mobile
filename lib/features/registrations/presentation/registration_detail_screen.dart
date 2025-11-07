@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../models/invoice_model.dart';
 import '../../../models/payment_gateway_model.dart';
 import '../../../models/payment_instruction_model.dart';
 import '../../../models/registration_model.dart';
 import '../../../models/transaction_model.dart';
+import '../../../providers/conference_provider.dart';
 import '../../../services/payment_service.dart';
 import '../../../services/registration_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../providers/conference_provider.dart';
 import '../widgets/payment_gateway_selector.dart';
 import '../widgets/payment_input_dialog.dart';
 import 'invoice_receipt_screen.dart';
@@ -40,10 +40,12 @@ class RegistrationDetailScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<RegistrationDetailScreen> createState() => _RegistrationDetailScreenState();
+  ConsumerState<RegistrationDetailScreen> createState() =>
+      _RegistrationDetailScreenState();
 }
 
-class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScreen> {
+class _RegistrationDetailScreenState
+    extends ConsumerState<RegistrationDetailScreen> {
   bool _isProcessingPayment = false;
 
   @override
@@ -69,31 +71,33 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
           data: (registration) {
             return RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(registrationDetailProvider(widget.registrationId));
-                ref.invalidate(registrationTimelineProvider(widget.registrationId));
+                ref.invalidate(
+                    registrationDetailProvider(widget.registrationId));
+                ref.invalidate(
+                    registrationTimelineProvider(widget.registrationId));
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Card with Entity Info
                     _buildHeaderCard(registration),
                     const SizedBox(height: 16),
-                    
+
                     // Status Card
                     _buildStatusCard(registration),
                     const SizedBox(height: 16),
-                    
+
                     // Payment Information Card
                     _buildPaymentInfoCard(registration),
                     const SizedBox(height: 16),
-                    
+
                     // Action Buttons
                     _buildActionButtons(registration),
                     const SizedBox(height: 24),
-                    
+
                     // Timeline Section
                     _buildTimelineSection(timelineAsync),
                   ],
@@ -136,7 +140,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () {
-                      ref.invalidate(registrationDetailProvider(widget.registrationId));
+                      ref.invalidate(
+                          registrationDetailProvider(widget.registrationId));
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('إعادة المحاولة'),
@@ -192,8 +197,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    registration.isConference 
-                        ? Icons.business_center 
+                    registration.isConference
+                        ? Icons.business_center
                         : Icons.event,
                     color: Colors.white,
                     size: 28,
@@ -247,7 +252,7 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
           ),
         ],
       ),
-                    child: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,7 +330,7 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
   Widget _buildPaymentInfoCard(RegistrationModel registration) {
     final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
     final timeFormat = DateFormat('hh:mm a', 'ar');
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -366,10 +371,11 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
               children: [
                 Expanded(
                   child: _CompactInfoItem(
-                    icon: Icons.attach_money,
+                    icon: Icons.payments,
                     iconColor: Colors.green,
                     label: 'المبلغ المطلوب',
-                    value: '${registration.calculatedPrice.toStringAsFixed(2)} ${registration.currency ?? 'USD'}',
+                    value:
+                        '${registration.calculatedPrice.toStringAsFixed(2)} ${registration.currency ?? 'USD'}',
                     valueColor: Colors.green[700],
                   ),
                 ),
@@ -379,7 +385,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                     icon: Icons.calendar_today,
                     iconColor: Colors.grey,
                     label: 'تاريخ الاشتراك',
-                    value: '${dateFormat.format(registration.createdAt)}\n${timeFormat.format(registration.createdAt)}',
+                    value:
+                        '${dateFormat.format(registration.createdAt)}\n${timeFormat.format(registration.createdAt)}',
                   ),
                 ),
                 if (registration.updatedAt != null) ...[
@@ -389,24 +396,28 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                       icon: Icons.update,
                       iconColor: Colors.grey,
                       label: 'آخر تحديث',
-                      value: '${dateFormat.format(registration.updatedAt!)}\n${timeFormat.format(registration.updatedAt!)}',
+                      value:
+                          '${dateFormat.format(registration.updatedAt!)}\n${timeFormat.format(registration.updatedAt!)}',
                     ),
                   ),
                 ],
               ],
             ),
             if (registration.paymentDeadline != null) ...[
-                  const SizedBox(height: 16),
+              const SizedBox(height: 16),
               _InfoRow(
                 icon: Icons.access_time,
-                iconColor: registration.paymentDeadline!.isBefore(DateTime.now())
-                    ? Colors.red
-                    : Colors.orange,
+                iconColor:
+                    registration.paymentDeadline!.isBefore(DateTime.now())
+                        ? Colors.red
+                        : Colors.orange,
                 label: 'مهلة الدفع',
-                value: '${dateFormat.format(registration.paymentDeadline!)} ${timeFormat.format(registration.paymentDeadline!)}',
-                valueColor: registration.paymentDeadline!.isBefore(DateTime.now())
-                    ? Colors.red[700]
-                    : Colors.orange[700],
+                value:
+                    '${dateFormat.format(registration.paymentDeadline!)} ${timeFormat.format(registration.paymentDeadline!)}',
+                valueColor:
+                    registration.paymentDeadline!.isBefore(DateTime.now())
+                        ? Colors.red[700]
+                        : Colors.orange[700],
               ),
             ],
           ],
@@ -418,11 +429,11 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
   Widget _buildActionButtons(RegistrationModel registration) {
     return Column(
       children: [
-                  if (registration.isPaymentPending)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _handlePayment(context),
+        if (registration.isPaymentPending)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _handlePayment(context),
               icon: const Icon(Icons.payment, size: 24),
               label: const Text(
                 'إتمام الدفع',
@@ -431,30 +442,30 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                   fontWeight: FontWeight.bold,
                 ),
               ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 2,
-                        ),
-                      ),
-                    ),
-                  if (registration.isOnHold) ...[
+              ),
+            ),
+          ),
+        if (registration.isOnHold) ...[
           if (registration.isPaymentPending) const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          try {
-                            final service = RegistrationService();
-                            await service.requestReactivation(
-                              registrationId: registration.id,
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                try {
+                  final service = RegistrationService();
+                  await service.requestReactivation(
+                    registrationId: registration.id,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Row(
                           children: [
@@ -463,20 +474,21 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                             Text('تم إرسال طلب إعادة التفعيل بنجاح'),
                           ],
                         ),
-                                  backgroundColor: Colors.green,
+                        backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                                ),
-                              );
+                      ),
+                    );
                     // Refresh data
-                    ref.invalidate(registrationDetailProvider(widget.registrationId));
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                    ref.invalidate(
+                        registrationDetailProvider(widget.registrationId));
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
                         content: Row(
                           children: [
                             const Icon(Icons.error, color: Colors.white),
@@ -488,18 +500,18 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                             ),
                           ],
                         ),
-                                  backgroundColor: Colors.red,
+                        backgroundColor: Colors.red,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                                ),
-                              );
-                            }
-                          }
-                        },
+                      ),
+                    );
+                  }
+                }
+              },
               icon: const Icon(Icons.refresh, size: 20),
-                        label: const Text('طلب إعادة تفعيل'),
+              label: const Text('طلب إعادة تفعيل'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -508,20 +520,20 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-                      ),
-                    ),
-                  ],
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildTimelineSection(AsyncValue<Map<String, dynamic>> timelineAsync) {
     return timelineAsync.when(
-                    data: (timeline) {
-                      if (timeline['timeline'] == null ||
-                          (timeline['timeline'] as List).isEmpty) {
-                        return const SizedBox.shrink();
-                      }
+      data: (timeline) {
+        if (timeline['timeline'] == null ||
+            (timeline['timeline'] as List).isEmpty) {
+          return const SizedBox.shrink();
+        }
 
         return Container(
           decoration: BoxDecoration(
@@ -535,11 +547,11 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
               ),
             ],
           ),
-                        child: Padding(
+          child: Padding(
             padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
                     Icon(
@@ -548,29 +560,31 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                       size: 24,
                     ),
                     const SizedBox(width: 12),
-                              const Text(
+                    const Text(
                       'السجل الزمني',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
-                ...List.generate((timeline['timeline'] as List).length, (index) {
+                ...List.generate((timeline['timeline'] as List).length,
+                    (index) {
                   final item = (timeline['timeline'] as List)[index];
-                  final isLast = index == (timeline['timeline'] as List).length - 1;
+                  final isLast =
+                      index == (timeline['timeline'] as List).length - 1;
                   return _TimelineItem(
                     item: item,
                     isLast: isLast,
                   );
                 }),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+              ],
+            ),
+          ),
+        );
+      },
       loading: () => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -591,19 +605,23 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
     });
 
     try {
-      debugPrint('💳 [PAYMENT] Starting payment process for registration: ${widget.registrationId}');
+      debugPrint(
+          '💳 [PAYMENT] Starting payment process for registration: ${widget.registrationId}');
       final paymentService = PaymentService();
 
       // Step 1: Fetch invoice
       debugPrint('💳 [PAYMENT] Step 1: Fetching invoice...');
-      final invoice = await paymentService.getInvoiceByRegistrationId(widget.registrationId);
-      debugPrint('💳 [PAYMENT] Step 1: Invoice fetched successfully - Amount: ${invoice.amountDue}, Status: ${invoice.status}');
-      
+      final invoice = await paymentService
+          .getInvoiceByRegistrationId(widget.registrationId);
+      debugPrint(
+          '💳 [PAYMENT] Step 1: Invoice fetched successfully - Amount: ${invoice.amountDue}, Status: ${invoice.status}');
+
       // Step 2: Fetch active gateways
       debugPrint('💳 [PAYMENT] Step 2: Fetching active gateways...');
       final gateways = await paymentService.getActiveGateways();
-      debugPrint('💳 [PAYMENT] Step 2: Found ${gateways.length} active gateway(s)');
-      
+      debugPrint(
+          '💳 [PAYMENT] Step 2: Found ${gateways.length} active gateway(s)');
+
       if (gateways.isEmpty) {
         debugPrint('💳 [PAYMENT] ERROR: No active gateways available');
         if (context.mounted) {
@@ -629,13 +647,15 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
 
       // Step 3: Show gateway selector
       debugPrint('💳 [PAYMENT] Step 3: Showing gateway selector...');
-      final selectedGateway = await PaymentGatewaySelector.show(context, gateways);
-      
+      final selectedGateway =
+          await PaymentGatewaySelector.show(context, gateways);
+
       if (selectedGateway == null) {
         debugPrint('💳 [PAYMENT] Step 3: User cancelled gateway selection');
         return;
       }
-      debugPrint('💳 [PAYMENT] Step 3: Gateway selected: ${selectedGateway.displayName} (${selectedGateway.id})');
+      debugPrint(
+          '💳 [PAYMENT] Step 3: Gateway selected: ${selectedGateway.displayName} (${selectedGateway.id})');
 
       // Step 4: Initiate payment
       debugPrint('💳 [PAYMENT] Step 4: Initiating payment with gateway...');
@@ -643,10 +663,12 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
         invoiceId: invoice.id,
         gatewayId: selectedGateway.id,
       );
-      
+
       final transaction = initiateResult['transaction'] as TransactionModel;
-      final instruction = initiateResult['paymentInstruction'] as PaymentInstructionModel;
-      debugPrint('💳 [PAYMENT] Step 4: Payment initiated - Transaction ID: ${transaction.id}, Instruction type: ${instruction.type}');
+      final instruction =
+          initiateResult['paymentInstruction'] as PaymentInstructionModel;
+      debugPrint(
+          '💳 [PAYMENT] Step 4: Payment initiated - Transaction ID: ${transaction.id}, Instruction type: ${instruction.type}');
 
       // Step 5: Show input dialog
       debugPrint('💳 [PAYMENT] Step 5: Showing payment input dialog...');
@@ -657,12 +679,13 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
         amount: invoice.amountDue,
         currency: invoice.currencyCode,
       );
-      
+
       if (inputData == null) {
         debugPrint('💳 [PAYMENT] Step 5: User cancelled payment input');
         return;
       }
-      debugPrint('💳 [PAYMENT] Step 5: Payment input received - Fields: ${inputData.keys.join(", ")}');
+      debugPrint(
+          '💳 [PAYMENT] Step 5: Payment input received - Fields: ${inputData.keys.join(", ")}');
 
       // Step 6: Confirm payment
       debugPrint('💳 [PAYMENT] Step 6: Confirming payment with gateway...');
@@ -670,33 +693,36 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
         transactionId: transaction.id,
         inputData: inputData,
       );
-      debugPrint('💳 [PAYMENT] Step 6: Payment confirmation completed - Status: ${confirmedTransaction.status}, Gateway TXN ID: ${confirmedTransaction.gatewayTransactionId}');
+      debugPrint(
+          '💳 [PAYMENT] Step 6: Payment confirmation completed - Status: ${confirmedTransaction.status}, Gateway TXN ID: ${confirmedTransaction.gatewayTransactionId}');
 
       // Step 7: Handle result
       debugPrint('💳 [PAYMENT] Step 7: Processing payment result...');
       if (context.mounted) {
         if (confirmedTransaction.isSuccessful) {
           debugPrint('💳 [PAYMENT] ✅ SUCCESS: Payment completed successfully!');
-          
+
           // Get registration details to find conference ID
-          final registration = await ref.read(registrationDetailProvider(widget.registrationId).future);
+          final registration = await ref
+              .read(registrationDetailProvider(widget.registrationId).future);
           final conferenceId = registration.conferenceId;
-          
+
           // Refresh registration details
           ref.invalidate(registrationDetailProvider(widget.registrationId));
           ref.invalidate(registrationTimelineProvider(widget.registrationId));
-          
+
           // Refresh my registrations list to show updated status
           ref.invalidate(myRegistrationsProvider);
-          
+
           // 🔥 IMPORTANT: Invalidate conference registration provider to update card on home screen
           if (conferenceId != null && conferenceId.isNotEmpty) {
-            debugPrint('💳 [PAYMENT] Invalidating conference registration provider for conference: $conferenceId');
+            debugPrint(
+                '💳 [PAYMENT] Invalidating conference registration provider for conference: $conferenceId');
             ref.invalidate(conferenceRegistrationProvider(conferenceId));
             // Also invalidate active conference to ensure fresh data
             ref.invalidate(activeConferenceProvider);
           }
-          
+
           // Navigate to receipt
           Navigator.pushReplacement(
             context,
@@ -708,7 +734,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
             ),
           );
         } else {
-          debugPrint('💳 [PAYMENT] ❌ FAILED: Payment confirmation failed - Status: ${confirmedTransaction.status}, Error: ${confirmedTransaction.errorMessage}');
+          debugPrint(
+              '💳 [PAYMENT] ❌ FAILED: Payment confirmation failed - Status: ${confirmedTransaction.status}, Error: ${confirmedTransaction.errorMessage}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -716,7 +743,8 @@ class _RegistrationDetailScreenState extends ConsumerState<RegistrationDetailScr
                   const Icon(Icons.error, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(confirmedTransaction.errorMessage ?? 'فشل عملية الدفع'),
+                    child: Text(
+                        confirmedTransaction.errorMessage ?? 'فشل عملية الدفع'),
                   ),
                 ],
               ),
@@ -841,13 +869,13 @@ class _StatusBadge extends StatelessWidget {
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 8),
           Text(
-        text,
-        style: TextStyle(
-          color: color,
+            text,
+            style: TextStyle(
+              color: color,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
-        ),
+          ),
         ],
       ),
     );
@@ -904,9 +932,9 @@ class _InfoRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-          Text(
+                Text(
                   value,
-            style: TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: valueWeight ?? FontWeight.w600,
                     color: valueColor ?? Colors.grey[800],
@@ -1084,7 +1112,7 @@ class _TimelineItem extends StatelessWidget {
     final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
     final timeFormat = DateFormat('hh:mm a', 'ar');
     final timestamp = DateTime.parse(item['timestamp']);
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

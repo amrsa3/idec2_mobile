@@ -191,8 +191,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: AppRoutes.profile,
           name: 'profile',
-          builder: (context, state) =>
-              const ProfileMainScreen(showBottomNavigation: true),
+          builder: (context, state) => const ProfileMainScreen(),
         ),
 
         // Profile View Route (keeping for backward compatibility)

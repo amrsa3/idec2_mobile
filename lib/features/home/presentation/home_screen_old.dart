@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../features/main/presentation/main_screen.dart';
+import '../../main/providers/bottom_navigation_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/enhanced_auth_provider_v2.dart';

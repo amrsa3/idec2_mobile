@@ -33,7 +33,12 @@ class AppBottomNavigationBar extends ConsumerWidget {
         onTap: (index) {
           ref.read(bottomNavIndexProvider.notifier).state = index;
 
-          context.go(AppRoutes.main);
+          // Ensure we return to the main shell (remove pushed sub-pages)
+          Navigator.of(context, rootNavigator: true)
+              .popUntil((route) => route.isFirst);
+
+          // Navigate to main route so IndexedStack reflects the new tab
+          GoRouter.of(context).go(AppRoutes.main);
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,

@@ -17,6 +17,8 @@ import '../../../../shared/widgets/loading_button.dart';
 import '../../../../shared/widgets/upload_progress_dialog.dart';
 import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../../../widgets/profile/document_picker_widget.dart';
+import '../../../main/providers/bottom_navigation_provider.dart';
+import '../../../main/widgets/app_bottom_navigation_bar.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/profile_service.dart';
 
@@ -295,6 +297,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _failedDocuments.clear();
     _initializeForm();
     _loadData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(bottomNavIndexProvider.notifier).state = 4;
+      }
+    });
   }
 
   void _loadData() async {
@@ -629,6 +637,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 .loadRulesForCurrentUser(forceRefresh: true);
           },
           child: _buildBody(profileState),
+        ),
+        bottomNavigationBar: Consumer(
+          builder: (context, ref, _) {
+            final currentIndex = ref.watch(bottomNavIndexProvider);
+            return AppBottomNavigationBar(
+              currentIndexOverride: currentIndex,
+            );
+          },
         ),
     );
   }

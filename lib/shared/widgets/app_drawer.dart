@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
-import '../../features/main/presentation/main_screen.dart';
+import '../../features/main/providers/bottom_navigation_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/enhanced_auth_provider_v2.dart';
 

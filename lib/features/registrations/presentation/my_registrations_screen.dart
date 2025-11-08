@@ -151,7 +151,14 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNavigationBar(),
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final currentIndex = ref.watch(bottomNavIndexProvider);
+          return AppBottomNavigationBar(
+            currentIndexOverride: currentIndex,
+          );
+        },
+      ),
     );
   }
 

@@ -8,10 +8,11 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/profile_model.dart';
-import '../../services/compatible_auth_service.dart' show compatibleAuthProvider, CompatibleAuthState;
+import '../../services/compatible_auth_service.dart'
+    show compatibleAuthProvider;
+import '../../features/main/providers/bottom_navigation_provider.dart';
 import '../widgets/profile_image_widget.dart';
 import '../../../features/profile/presentation/screens/profile_edit_screen.dart';
-import '../../../features/profile/presentation/screens/profile_main_screen.dart';
 import '../../../features/profile/presentation/screens/user_documents_viewer_screen.dart';
 import '../../../features/profile/providers/profile_provider.dart';
 import '../../../features/registrations/presentation/my_registrations_screen.dart';
@@ -61,11 +62,18 @@ class ProfileSideDrawer extends ConsumerWidget {
                 ProfileImageWidget(
                   imageUrl: user?.profile?.profilePhotoUrl,
                   size: 60,
-                  fallbackText: user?.profile?.fullNameAr?.isNotEmpty == true
-                      ? user!.profile!.fullNameAr![0].toUpperCase()
-                      : (user?.profile?.fullNameEn?.isNotEmpty == true
-                          ? user!.profile!.fullNameEn![0].toUpperCase()
-                          : 'U'),
+                  fallbackText: () {
+                    final profile = user?.profile;
+                    final nameAr = profile?.fullNameAr;
+                    if (nameAr != null && nameAr.isNotEmpty) {
+                      return nameAr[0].toUpperCase();
+                    }
+                    final nameEn = profile?.fullNameEn;
+                    if (nameEn != null && nameEn.isNotEmpty) {
+                      return nameEn[0].toUpperCase();
+                    }
+                    return 'U';
+                  }(),
                   showEditIcon: false,
                   isEditable: false,
                 ),
@@ -114,12 +122,8 @@ class ProfileSideDrawer extends ConsumerWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentScreen != 'profile') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ProfileMainScreen(),
-                        ),
-                      );
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
+                      context.go(AppRoutes.main);
                     }
                   },
                 ),
@@ -147,11 +151,12 @@ class ProfileSideDrawer extends ConsumerWidget {
                     onTap: () {
                       Navigator.pop(context);
                       if (currentScreen != 'edit') {
+                        final profileData = currentProfile;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                ProfileEditScreen(profile: currentProfile!),
+                                ProfileEditScreen(profile: profileData),
                           ),
                         );
                       }
@@ -180,6 +185,7 @@ class ProfileSideDrawer extends ConsumerWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentScreen != 'documents') {
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -212,6 +218,7 @@ class ProfileSideDrawer extends ConsumerWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (currentScreen != 'registrations') {
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
                       Navigator.push(
                         context,
                         MaterialPageRoute(

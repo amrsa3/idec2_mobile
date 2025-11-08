@@ -127,6 +127,12 @@ class NavigationService {
   void clearAndGoTo(String route) {
     router?.go(route);
   }
+
+  /// Pop all routes until the root (first) route.
+  void popToRoot() {
+    final navigator = navigatorKey.currentState;
+    navigator?.popUntil((route) => route.isFirst);
+  }
   
   // Utility methods
   

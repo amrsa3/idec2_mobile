@@ -146,7 +146,14 @@ class _UserDocumentsViewerScreenState
         loading: () => _buildLoadingState(),
         error: (error, stack) => _buildErrorState(error),
       ),
-      bottomNavigationBar: const AppBottomNavigationBar(),
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final currentIndex = ref.watch(bottomNavIndexProvider);
+          return AppBottomNavigationBar(
+            currentIndexOverride: currentIndex,
+          );
+        },
+      ),
     );
   }
 

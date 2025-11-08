@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../models/invoice_model.dart';
 import '../../../models/payment_gateway_model.dart';
 import '../../../models/payment_instruction_model.dart';
 import '../../../models/registration_model.dart';
@@ -330,6 +329,15 @@ class _RegistrationDetailScreenState
   Widget _buildPaymentInfoCard(RegistrationModel registration) {
     final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
     final timeFormat = DateFormat('hh:mm a', 'ar');
+    final amountFormat = NumberFormat('#,##0.##', 'ar');
+
+    final formattedAmount = amountFormat.format(registration.calculatedPrice);
+    final currencyLabel = registration.currency?.toUpperCase() ?? 'USD';
+
+    final updatedAt = registration.updatedAt;
+    final updatedValue = updatedAt != null
+        ? '${dateFormat.format(updatedAt)}\n${timeFormat.format(updatedAt)}'
+        : 'لم يتم التحديث بعد';
 
     return Container(
       decoration: BoxDecoration(
@@ -366,20 +374,14 @@ class _RegistrationDetailScreenState
               ],
             ),
             const SizedBox(height: 20),
-            // Row with three items: المبلغ المطلوب, تاريخ الاشتراك, آخر تحديث
+            _AmountHighlightBox(
+              label: 'المبلغ المطلوب',
+              amount: formattedAmount,
+              currency: currencyLabel,
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                  child: _CompactInfoItem(
-                    icon: Icons.payments,
-                    iconColor: Colors.green,
-                    label: 'المبلغ المطلوب',
-                    value:
-                        '${registration.calculatedPrice.toStringAsFixed(2)} ${registration.currency ?? 'USD'}',
-                    valueColor: Colors.green[700],
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: _CompactInfoItem(
                     icon: Icons.calendar_today,
@@ -389,18 +391,17 @@ class _RegistrationDetailScreenState
                         '${dateFormat.format(registration.createdAt)}\n${timeFormat.format(registration.createdAt)}',
                   ),
                 ),
-                if (registration.updatedAt != null) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _CompactInfoItem(
-                      icon: Icons.update,
-                      iconColor: Colors.grey,
-                      label: 'آخر تحديث',
-                      value:
-                          '${dateFormat.format(registration.updatedAt!)}\n${timeFormat.format(registration.updatedAt!)}',
-                    ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _CompactInfoItem(
+                    icon: Icons.update,
+                    iconColor: Colors.grey,
+                    label: 'آخر تحديث',
+                    value: updatedValue,
+                    valueColor:
+                        updatedAt != null ? Colors.grey[800] : Colors.grey[500],
                   ),
-                ],
+                ),
               ],
             ),
             if (registration.paymentDeadline != null) ...[
@@ -888,7 +889,6 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
-  final FontWeight? valueWeight;
 
   const _InfoRow({
     required this.icon,
@@ -896,7 +896,6 @@ class _InfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.valueColor,
-    this.valueWeight,
   });
 
   @override
@@ -936,7 +935,7 @@ class _InfoRow extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: 15,
-                    fontWeight: valueWeight ?? FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                     color: valueColor ?? Colors.grey[800],
                   ),
                 ),
@@ -1020,6 +1019,85 @@ class _CompactInfoItem extends StatelessWidget {
   }
 }
 
+class _AmountHighlightBox extends StatelessWidget {
+  final String label;
+  final String amount;
+  final String currency;
+
+  const _AmountHighlightBox({
+    required this.label,
+    required this.amount,
+    required this.currency,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.grey[50]!,
+            Colors.grey[100]!,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                  height: 1,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                currency,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TimelineItem extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isLast;
@@ -1029,7 +1107,65 @@ class _TimelineItem extends StatelessWidget {
     required this.isLast,
   });
 
+  Map<String, dynamic>? get _metadata =>
+      item['metadata'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(item['metadata'] as Map)
+          : null;
+
+  bool get _isPaymentEvent {
+    final description =
+        (item['description'] ?? '').toString().toLowerCase().trim();
+    if (_metadata != null &&
+        (_metadata!.containsKey('invoiceNumber') ||
+            _metadata!.containsKey('invoiceId') ||
+            _metadata!.containsKey('paymentMethod'))) {
+      return true;
+    }
+    return description.contains('payment completed') ||
+        description.contains('تم إتمام الدفع') ||
+        description.contains('تم الدفع');
+  }
+
+  String? get _invoiceReference {
+    if (_metadata != null) {
+      final invoiceNumber = _metadata!['invoiceNumber'];
+      if (invoiceNumber is String && invoiceNumber.isNotEmpty) {
+        return invoiceNumber;
+      }
+      final invoiceId = _metadata!['invoiceId'];
+      if (invoiceId is String && invoiceId.isNotEmpty) {
+        return invoiceId;
+      }
+    }
+
+    final description = item['description']?.toString() ?? '';
+    final invoiceRegex = RegExp(r'(INV-\d{4}-\d{6})', caseSensitive: false);
+    final match = invoiceRegex.firstMatch(description);
+    if (match != null) {
+      return match.group(1);
+    }
+    return null;
+  }
+
+  String? get _paymentMethodLabel {
+    if (_metadata == null) return null;
+    final rawMethod = _metadata!['paymentMethod'];
+    if (rawMethod is! String) return null;
+
+    switch (rawMethod.toUpperCase()) {
+      case 'ELECTRONIC':
+        return 'دفع إلكتروني';
+      case 'CASH':
+        return 'دفع نقدي';
+      default:
+        return rawMethod;
+    }
+  }
+
   Color get _getStatusColor {
+    if (_isPaymentEvent) {
+      return Colors.green;
+    }
     if (item['type'] == 'STATUS_CHANGED') {
       switch (item['newStatus']) {
         case 'ACCEPTED':
@@ -1045,6 +1181,9 @@ class _TimelineItem extends StatelessWidget {
   }
 
   IconData get _getIcon {
+    if (_isPaymentEvent) {
+      return Icons.receipt_long;
+    }
     if (item['type'] == 'STATUS_CHANGED') {
       switch (item['newStatus']) {
         case 'ACCEPTED':
@@ -1061,6 +1200,10 @@ class _TimelineItem extends StatelessWidget {
 
   /// Translate timeline description to Arabic
   String _translateTimelineDescription(String description) {
+    if (_isPaymentEvent) {
+      return 'تم الدفع';
+    }
+
     // Translate common English phrases to Arabic
     final translations = {
       'Registration created': 'تم إنشاء طلب الاشتراك',
@@ -1112,6 +1255,8 @@ class _TimelineItem extends StatelessWidget {
     final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
     final timeFormat = DateFormat('hh:mm a', 'ar');
     final timestamp = DateTime.parse(item['timestamp']);
+    final invoiceReference = _invoiceReference;
+    final paymentMethodLabel = _paymentMethodLabel;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1159,6 +1304,50 @@ class _TimelineItem extends StatelessWidget {
                     color: Colors.black87,
                   ),
                 ),
+                if (_isPaymentEvent && invoiceReference != null) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        size: 14,
+                        color: Colors.grey[700],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'رقم الفاتورة: $invoiceReference',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_isPaymentEvent && paymentMethodLabel != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        paymentMethodLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 6),
                 Row(
                   children: [

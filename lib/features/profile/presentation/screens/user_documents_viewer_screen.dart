@@ -7,13 +7,14 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
-import '../../../../models/profile_model.dart';
 import '../../../../services/compatible_auth_service.dart';
 import '../../../../services/enhanced_dio_service_v2.dart';
 import '../../../../services/image_cache_service.dart';
 import '../../../../services/authenticated_image_service.dart';
 import '../../providers/smart_file_provider.dart';
 import '../../../../services/dio_service.dart';
+import '../../../../features/main/providers/bottom_navigation_provider.dart';
+import '../../../../features/main/widgets/app_bottom_navigation_bar.dart';
 import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../providers/profile_provider.dart' as profile_provider;
 
@@ -36,6 +37,7 @@ class _UserDocumentsViewerScreenState
       _listenToAuthChanges();
       // إجبار إعادة تحميل المستندات عند فتح الصفحة
       _forceRefreshDocuments();
+      ref.read(bottomNavIndexProvider.notifier).state = 4;
     });
   }
 
@@ -107,43 +109,44 @@ class _UserDocumentsViewerScreenState
     final documentsAsync = ref.watch(userDocumentsProvider);
 
     return Scaffold(
-        backgroundColor: Colors.grey.shade50,
-        appBar: AppBar(
-          title: const Text(
-            'مستنداتي',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-            ),
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text(
+          'مستنداتي',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
           ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-          automaticallyImplyLeading: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-              onPressed: () => Navigator.pop(context),
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh, color: AppColors.primary),
-              onPressed: () {
-                ref.invalidate(userDocumentsProvider);
-              },
-            ),
-          ],
         ),
-        drawer: _buildSideDrawer(context, ref),
-        body: documentsAsync.when(
-          data: (documents) => _buildDocumentsList(documents),
-          loading: () => _buildLoadingState(),
-          error: (error, stack) => _buildErrorState(error),
-        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.primary),
+            onPressed: () {
+              ref.invalidate(userDocumentsProvider);
+            },
+          ),
+        ],
+      ),
+      drawer: _buildSideDrawer(context, ref),
+      body: documentsAsync.when(
+        data: (documents) => _buildDocumentsList(documents),
+        loading: () => _buildLoadingState(),
+        error: (error, stack) => _buildErrorState(error),
+      ),
+      bottomNavigationBar: const AppBottomNavigationBar(),
     );
   }
 
@@ -463,12 +466,10 @@ class _ThumbnailImage extends StatefulWidget {
 class _ThumbnailImageState extends State<_ThumbnailImage> {
   Uint8List? _thumbnailBytes;
   bool _isLoading = true;
-  String? _lastFileId;
 
   @override
   void initState() {
     super.initState();
-    _lastFileId = widget.fileId;
     _loadThumbnail();
   }
 
@@ -477,7 +478,6 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
     super.didUpdateWidget(oldWidget);
     // إذا تغير fileId، أعد تحميل الصورة
     if (oldWidget.fileId != widget.fileId) {
-      _lastFileId = widget.fileId;
       _thumbnailBytes = null;
       _isLoading = true;
       _loadThumbnail();

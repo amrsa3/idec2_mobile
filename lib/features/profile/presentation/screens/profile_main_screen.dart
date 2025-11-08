@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -24,14 +23,16 @@ import '../../../../shared/widgets/profile_image_widget.dart';
 import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/profile_service.dart' as profile_service;
+import '../../../main/providers/bottom_navigation_provider.dart';
+import '../../../main/widgets/app_bottom_navigation_bar.dart';
 import '../widgets/verification_status_badge.dart';
-import '../../../registrations/presentation/my_registrations_screen.dart';
 import 'profile_edit_screen.dart';
-import 'user_documents_viewer_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
-  const ProfileMainScreen({super.key});
+  final bool showBottomNavigation;
+
+  const ProfileMainScreen({super.key, this.showBottomNavigation = false});
 
   @override
   ConsumerState<ProfileMainScreen> createState() => _ProfileMainScreenState();
@@ -50,6 +51,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       _loadProfileData();
       _listenToAuthChanges();
     });
+
+    if (widget.showBottomNavigation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(bottomNavIndexProvider.notifier).state = 4;
+        }
+      });
+    }
   }
   
   /// Listen to authentication changes to refresh profile when user logs in
@@ -197,32 +206,33 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: CustomAppBar(
-          title: 'الملف الشخصي',
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
+      backgroundColor: AppColors.background,
+      appBar: CustomAppBar(
+        title: 'الملف الشخصي',
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
-          actions: [
-            if (currentProfile != null)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => _navigateToEditProfile(context, currentProfile),
-              ),
-          ],
         ),
-        // القائمة الجانبية
-        drawer: ProfileSideDrawer(
-          currentScreen: 'profile',
-          profile: currentProfile,
-        ),
-        body: RefreshIndicator(
-          onRefresh: () => ref.read(profileProvider.notifier).refresh(),
-          child: _buildBody(profileState),
-        ),
+        actions: [
+          if (currentProfile != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _navigateToEditProfile(context, currentProfile),
+            ),
+        ],
+      ),
+      drawer: ProfileSideDrawer(
+        currentScreen: 'profile',
+        profile: currentProfile,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(profileProvider.notifier).refresh(),
+        child: _buildBody(profileState),
+      ),
+      bottomNavigationBar:
+          widget.showBottomNavigation ? const AppBottomNavigationBar() : null,
     );
   }
 

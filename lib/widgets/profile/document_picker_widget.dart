@@ -61,6 +61,13 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
           int fileSize;
           File? file;
 
+          final originalName = platformFile.name;
+          final originalExtension =
+              platformFile.extension?.toLowerCase() ??
+                  (originalName.contains('.')
+                      ? originalName.split('.').last.toLowerCase()
+                      : null);
+
           if (kIsWeb) {
             // في بيئة الويب، استخدم bytes
             if (platformFile.bytes != null) {
@@ -84,10 +91,15 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
               if (platformFile.bytes != null) {
                 fileSize = platformFile.bytes!.length;
                 final tempDir = await getTemporaryDirectory();
-                final fileName = platformFile.name.isNotEmpty
+                String tempFileName = platformFile.name.isNotEmpty
                     ? platformFile.name
                     : 'document_${DateTime.now().millisecondsSinceEpoch}';
-                final tempPath = path.join(tempDir.path, fileName);
+
+                if (!tempFileName.contains('.') && originalExtension != null) {
+                  tempFileName = '$tempFileName.$originalExtension';
+                }
+
+                final tempPath = path.join(tempDir.path, tempFileName);
                 file = await File(tempPath).writeAsBytes(
                   platformFile.bytes!,
                   flush: true,
@@ -114,10 +126,20 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             continue;
           }
 
+          final resolvedExtension =
+              originalExtension ??
+                  (file.path.contains('.')
+                      ? file.path.split('.').last.toLowerCase()
+                      : '');
+
           newDocuments.add(SelectedDocument(
             file: file,
-            name: platformFile.name,
-            type: path.extension(platformFile.name).toLowerCase(),
+            name: platformFile.name.isNotEmpty
+                ? platformFile.name
+                : file.path.split('/').last,
+            type: resolvedExtension.isNotEmpty
+                ? '.$resolvedExtension'
+                : path.extension(file.path).toLowerCase(),
             size: fileSize,
             bytes: platformFile.bytes,
           ));

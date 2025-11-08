@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../features/main/providers/bottom_navigation_provider.dart';
+import '../../../features/main/widgets/app_bottom_navigation_bar.dart';
+import '../../../features/profile/providers/profile_provider.dart';
 import '../../../models/registration_model.dart';
-import '../../../models/profile_model.dart';
 import '../../../services/registration_service.dart';
 import '../../../shared/widgets/profile_side_drawer.dart';
-import '../../../features/profile/providers/profile_provider.dart';
 import 'registration_detail_screen.dart';
 
 final myRegistrationsProvider =
@@ -37,6 +38,7 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // This will trigger the FutureProvider to load data if not already loaded
       ref.read(myRegistrationsProvider.future);
+      ref.read(bottomNavIndexProvider.notifier).state = 4;
     });
   }
 
@@ -149,13 +151,14 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: const AppBottomNavigationBar(),
     );
   }
 
   Widget _buildSideDrawer(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
     final currentProfile = profileState.currentProfile;
-    
+
     return ProfileSideDrawer(
       currentScreen: 'registrations',
       profile: currentProfile,
@@ -275,10 +278,10 @@ class _RegistrationCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.payments, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text(
-                    '${registration.calculatedPrice.toStringAsFixed(2)} ${registration.currency ?? 'USD'}',
+                    '${registration.calculatedPrice.toStringAsFixed(0)} ${registration.currency ?? 'YER'}',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[700],

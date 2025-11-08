@@ -27,15 +27,28 @@ if "!VERSION!"=="" (
     exit /b 1
 )
 
+REM Generate build timestamp and service worker version (guarantees cache busting)
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMddHHmmss"') do set BUILD_TIMESTAMP=%%i
+if "!BUILD_TIMESTAMP!"=="" (
+    echo ⚠️  Warning: Failed to generate build timestamp via PowerShell, using fallback.
+    set BUILD_TIMESTAMP=%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%%TIME:~0,2%%TIME:~3,2%%TIME:~6,2%
+    set BUILD_TIMESTAMP=!BUILD_TIMESTAMP: =0!
+)
+set SW_VERSION=!VERSION!-!BUILD_TIMESTAMP!
+echo 🕒 Build timestamp: !BUILD_TIMESTAMP!
+echo 🛰️ Service Worker Version: !SW_VERSION!
+
 REM Update source files in web\ directory BEFORE building (so they are correct)
 echo 🔄 Updating source files in web\ directory (before build)...
 if exist "web\index.html" (
     echo 📝 Updating web\index.html...
-    set "PS_SCRIPT=update_web_source.ps1"
-    (
+    set "PS_SCRIPT=%TEMP%\update_web_source_!RANDOM!.ps1"
+    > "!PS_SCRIPT!" (
         echo $version = '%VERSION%'
+        echo $swVersion = '%SW_VERSION%'
         echo $indexFile = 'web\index.html'
         echo $manifestFile = 'web\manifest.json'
+        echo $configFile = 'web\flutter_web_config.js'
         echo.
         echo Write-Host '🔄 Updating source files with version:' $version
         echo.
@@ -73,7 +86,22 @@ if exist "web\index.html" (
         echo } else {
         echo     Write-Host '⚠️  File not found: ' + $manifestFile
         echo }
-    ) > "!PS_SCRIPT!"
+        echo.
+        echo if ^(Test-Path $configFile^) {
+        echo     Write-Host '📝 Updating web\flutter_web_config.js...'
+        echo     $content = [System.IO.File]::ReadAllText($configFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "serviceWorkerVersion:\s*(['""])([^'""]*)\1", "serviceWorkerVersion: '$swVersion'"^)
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $configFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated web\flutter_web_config.js'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in web\flutter_web_config.js'
+        echo     }
+        echo } else {
+        echo     Write-Host '⚠️  File not found: ' + $configFile
+        echo }
+    )
     call powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
     if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
 )
@@ -134,11 +162,15 @@ if %BUILD_RESULT% equ 0 (
     
     REM Create temporary PowerShell script to update build files (as backup, in case Flutter modified them)
     echo 🔄 Updating build files (ensuring correct version)...
-    set PS_SCRIPT=update_version.ps1
-    (
+    set "PS_SCRIPT=%TEMP%\update_version_!RANDOM!.ps1"
+    > "!PS_SCRIPT!" (
         echo $version = '%VERSION%'
+        echo $swVersion = '%SW_VERSION%'
         echo $indexFile = 'build\web\index.html'
         echo $manifestFile = 'build\web\manifest.json'
+        echo $configFile = 'build\web\flutter_web_config.js'
+        echo $bootstrapFile = 'build\web\flutter_bootstrap.js'
+        echo $serviceWorkerFile = 'build\web\flutter_service_worker.js'
         echo.
         echo Write-Host '🔄 Updating files with version:' $version
         echo.
@@ -176,7 +208,54 @@ if %BUILD_RESULT% equ 0 (
         echo } else {
         echo     Write-Host '❌ File not found: ' + $manifestFile
         echo }
-    ) > "!PS_SCRIPT!"
+        echo.
+        echo if ^(Test-Path $configFile^) {
+        echo     Write-Host '📝 Updating flutter_web_config.js...'
+        echo     $content = [System.IO.File]::ReadAllText($configFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "serviceWorkerVersion:\s*(['""])([^'""]*)\1", "serviceWorkerVersion: '$swVersion'"^)
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $configFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated flutter_web_config.js'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in flutter_web_config.js'
+        echo     }
+        echo } else {
+        echo     Write-Host '❌ File not found: ' + $configFile
+        echo }
+        echo.
+        echo if ^(Test-Path $bootstrapFile^) {
+        echo     Write-Host '📝 Updating flutter_bootstrap.js service worker version...'
+        echo     $content = [System.IO.File]::ReadAllText($bootstrapFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "serviceWorkerVersion:\s*(['""])([^'""]*)\1", "serviceWorkerVersion: '$swVersion'"^)
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $bootstrapFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated flutter_bootstrap.js'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in flutter_bootstrap.js'
+        echo     }
+        echo } else {
+        echo     Write-Host '❌ File not found: ' + $bootstrapFile
+        echo }
+        echo.
+        echo if ^(Test-Path $serviceWorkerFile^) {
+        echo     Write-Host '📝 Updating flutter_service_worker.js cache names...'
+        echo     $content = [System.IO.File]::ReadAllText($serviceWorkerFile, [System.Text.Encoding]::UTF8^)
+        echo     $oldContent = $content
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "const MANIFEST = 'flutter-app-manifest[^']*';", "const MANIFEST = 'flutter-app-manifest-$swVersion';"^)
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "const TEMP = 'flutter-temp-cache[^']*';", "const TEMP = 'flutter-temp-cache-$swVersion';"^)
+        echo     $content = [System.Text.RegularExpressions.Regex]::Replace^($content, "const CACHE_NAME = 'flutter-app-cache[^']*';", "const CACHE_NAME = 'flutter-app-cache-$swVersion';"^)
+        echo     if ^($content -ne $oldContent^) {
+        echo         [System.IO.File]::WriteAllText((Resolve-Path $serviceWorkerFile^), $content, [System.Text.Encoding]::UTF8^)
+        echo         Write-Host '✅ Updated flutter_service_worker.js'
+        echo     } else {
+        echo         Write-Host '⚠️  No changes needed in flutter_service_worker.js'
+        echo     }
+        echo } else {
+        echo     Write-Host '❌ File not found: ' + $serviceWorkerFile
+        echo }
+    )
     
     REM Execute PowerShell script
     echo 🔄 Updating version in files...
@@ -199,7 +278,9 @@ if %BUILD_RESULT% equ 0 (
         echo 📋 Copying simplified index.html...
         copy /Y web\index_simple.html build\web\index.html >nul
         REM Re-run update script for copied file
-        (
+        set "PS_SCRIPT=%TEMP%\update_index_copy_!RANDOM!.ps1"
+        set "PS_SCRIPT=%TEMP%\update_index_copy_!RANDOM!.ps1"
+        > "!PS_SCRIPT!" (
             echo $version = '%VERSION%'
             echo $indexFile = 'build\web\index.html'
             echo if ^(Test-Path $indexFile^) {
@@ -213,7 +294,7 @@ if %BUILD_RESULT% equ 0 (
             echo     [System.IO.File]::WriteAllText((Resolve-Path $indexFile^), $content, [System.Text.Encoding]::UTF8^)
             echo     Write-Host '✅ Updated index.html (copied)'
             echo }
-        ) > "!PS_SCRIPT!"
+        )
         call powershell -NoProfile -ExecutionPolicy Bypass -File "!PS_SCRIPT!"
         if exist "!PS_SCRIPT!" del "!PS_SCRIPT!" >nul 2>&1
     )
@@ -234,12 +315,27 @@ if %BUILD_RESULT% equ 0 (
     ) else (
         echo ⚠️  Warning: Version !VERSION! not found in manifest.json
     )
+
+    findstr /C:"!SW_VERSION!" build\web\flutter_bootstrap.js >nul
+    if %errorlevel% equ 0 (
+        echo ✅ Service worker version !SW_VERSION! found in flutter_bootstrap.js
+    ) else (
+        echo ⚠️  Warning: Service worker version !SW_VERSION! not found in flutter_bootstrap.js
+    )
+
+    findstr /C:"!SW_VERSION!" build\web\flutter_service_worker.js >nul
+    if %errorlevel% equ 0 (
+        echo ✅ Cache version !SW_VERSION! found in flutter_service_worker.js
+    ) else (
+        echo ⚠️  Warning: Cache version !SW_VERSION! not found in flutter_service_worker.js
+    )
     
     echo.
     echo 🎉 Flutter Web application is ready for deployment!
     echo 📁 Build output: %CD%\\build\\web
     echo 🌐 Deploy the contents of build\web to your web server
     echo 📦 Version: !VERSION!
+    echo 🛰️ Service Worker Version: !SW_VERSION!
     echo.
     
 ) else (

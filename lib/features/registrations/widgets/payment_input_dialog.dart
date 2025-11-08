@@ -47,16 +47,30 @@ class PaymentInputDialog extends StatefulWidget {
 class _PaymentInputDialogState extends State<PaymentInputDialog> {
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, GlobalKey<FormState>> _formKeys = {};
-  final Map<String, String> _values = {};
+  PaymentFieldModel? _receiverMobileField;
   bool _instructionsExpanded = false;
 
   @override
   void initState() {
     super.initState();
     // Initialize controllers for each field
-    for (var field in widget.instruction.data.fields ?? []) {
+    final baseFields = widget.instruction.data.fields ?? [];
+    for (var field in baseFields) {
       _controllers[field.name] = TextEditingController();
       _formKeys[field.name] = GlobalKey<FormState>();
+    }
+
+    if (_isJawali() &&
+        baseFields.every((field) => field.name != 'receiverMobile')) {
+      _receiverMobileField = const PaymentFieldModel(
+        name: 'receiverMobile',
+        label: 'رقم المحفظة (رقم الهاتف)',
+        placeholder: 'أدخل رقم محفظة جوالي',
+        type: 'phone',
+        required: true,
+      );
+      _controllers['receiverMobile'] = TextEditingController();
+      _formKeys['receiverMobile'] = GlobalKey<FormState>();
     }
   }
 
@@ -69,9 +83,26 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
     super.dispose();
   }
 
+  List<PaymentFieldModel> get _allFields {
+    final fields =
+        List<PaymentFieldModel>.from(widget.instruction.data.fields ?? []);
+    if (_receiverMobileField != null &&
+        fields.every((field) => field.name != _receiverMobileField!.name)) {
+      fields.insert(0, _receiverMobileField!);
+    }
+    return fields;
+  }
+
   bool _isValid() {
-    for (var field in widget.instruction.data.fields ?? []) {
-      if (field.required && (_values[field.name] == null || _values[field.name]!.isEmpty)) {
+    for (var field in _allFields) {
+      final value = _controllers[field.name]?.text.trim() ?? '';
+      if (field.required && value.isEmpty) {
+        return false;
+      }
+      if (field.name == 'receiverMobile' &&
+          (value.length < 9 ||
+              value.length > 12 ||
+              !RegExp(r'^\d+$').hasMatch(value))) {
         return false;
       }
     }
@@ -80,7 +111,11 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
 
   void _submit() {
     if (_isValid()) {
-      Navigator.of(context).pop(_values);
+      final result = <String, String>{};
+      for (var field in _allFields) {
+        result[field.name] = _controllers[field.name]?.text.trim() ?? '';
+      }
+      Navigator.of(context).pop(result);
     }
   }
 
@@ -90,7 +125,7 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final fields = widget.instruction.data.fields ?? [];
+    final fields = _allFields;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -229,19 +264,26 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                           ),
                         ),
                         obscureText: field.type == 'password',
-                        keyboardType: _getKeyboardType(field.type),
-                        inputFormatters: field.type == 'number'
-                            ? [FilteringTextInputFormatter.digitsOnly]
-                            : null,
+                        keyboardType: _getKeyboardType(field.type, field.name),
+                        inputFormatters: _buildInputFormatters(field),
                         onChanged: (value) {
                           setState(() {
-                            _values[field.name] = value;
+                            // Trigger UI update for validation
                           });
                         },
                         validator: (value) {
                           if (field.required &&
                               (value == null || value.isEmpty)) {
                             return 'هذا الحقل مطلوب';
+                          }
+                          if (field.name == 'receiverMobile') {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.length < 9 || trimmed.length > 12) {
+                              return 'يرجى إدخال رقم محفظة صالح';
+                            }
+                            if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
+                              return 'يجب أن يحتوي رقم المحفظة على أرقام فقط';
+                            }
                           }
                           return null;
                         },
@@ -325,22 +367,44 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
         return Icons.lock;
       case 'number':
         return Icons.numbers;
+      case 'phone':
+        return Icons.phone_iphone;
       case 'text':
       default:
         return Icons.edit;
     }
   }
 
-  TextInputType _getKeyboardType(String? type) {
+  TextInputType _getKeyboardType(String? type, String fieldName) {
+    if (fieldName == 'receiverMobile') {
+      return TextInputType.phone;
+    }
     switch (type) {
       case 'number':
         return TextInputType.number;
+      case 'phone':
+        return TextInputType.phone;
       case 'password':
         return TextInputType.visiblePassword;
       case 'text':
       default:
         return TextInputType.text;
     }
+  }
+
+  List<TextInputFormatter>? _buildInputFormatters(PaymentFieldModel field) {
+    if (field.name == 'receiverMobile') {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(12),
+      ];
+    }
+
+    if (field.type == 'number') {
+      return [FilteringTextInputFormatter.digitsOnly];
+    }
+
+    return null;
   }
 
   bool _shouldShowInstructions() {
@@ -354,6 +418,13 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
   bool _isJeeb() {
     final gatewayName = widget.gatewayName.toLowerCase();
     return gatewayName.contains('جيب') || gatewayName.contains('jeeb');
+  }
+
+  bool _isJawali() {
+    final gatewayName = widget.gatewayName.toLowerCase();
+    return gatewayName.contains('جوالي') ||
+        gatewayName.contains('jwali') ||
+        gatewayName.contains('jawali');
   }
 
   /// Get gateway logo path based on gateway name

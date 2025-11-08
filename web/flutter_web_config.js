@@ -1,7 +1,8 @@
-// Fast Flutter Web Configuration
+﻿// Fast Flutter Web Configuration
 // Detect mobile device
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                 (window.innerWidth <= 768 && window.innerHeight <= 1024);
+const isMobile =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+  (window.innerWidth <= 768 && window.innerHeight <= 1024);
 
 window.flutterWebConfig = {
   renderer: 'html',
@@ -15,7 +16,7 @@ window.flutterWebConfig = {
   // Enable service worker on desktop, disable on mobile for better compatibility
   enableServiceWorker: !isMobile,
   serviceWorkerSettings: {
-    serviceWorkerVersion: null, // Will be set automatically by Flutter
+    serviceWorkerVersion: '2.0.7-20251109013046', // سيتم استبداله بقيمة فريدة أثناء البناء
     updateStrategy: 'on-download', // Immediate update when new version is downloaded
   },
 };

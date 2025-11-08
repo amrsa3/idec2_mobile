@@ -688,11 +688,41 @@ class _RegistrationDetailScreenState
       debugPrint(
           '💳 [PAYMENT] Step 5: Payment input received - Fields: ${inputData.keys.join(", ")}');
 
+      final mutableInputData = Map<String, dynamic>.from(inputData);
+      final gatewayNameLower =
+          selectedGateway.displayName.toLowerCase();
+      final isJawaliGateway = gatewayNameLower.contains('جوالي') ||
+          gatewayNameLower.contains('jwali') ||
+          gatewayNameLower.contains('jawali');
+
+      if (isJawaliGateway) {
+        final receiverMobileRaw =
+            (mutableInputData['receiverMobile'] as String?)?.trim() ?? '';
+        debugPrint(
+            '💳 [PAYMENT] Jawali detected. Entered receiverMobile: "$receiverMobileRaw"');
+        if (receiverMobileRaw.isEmpty) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('يرجى إدخال رقم المحفظة قبل المتابعة'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+
+        mutableInputData['receiverMobile'] = receiverMobileRaw;
+        mutableInputData['receiver_mobile'] = receiverMobileRaw;
+        debugPrint(
+            '💳 [PAYMENT] Using receiverMobile in payload: "$receiverMobileRaw"');
+      }
+
       // Step 6: Confirm payment
       debugPrint('💳 [PAYMENT] Step 6: Confirming payment with gateway...');
       final confirmedTransaction = await paymentService.confirmPayment(
         transactionId: transaction.id,
-        inputData: inputData,
+        inputData: mutableInputData,
       );
       debugPrint(
           '💳 [PAYMENT] Step 6: Payment confirmation completed - Status: ${confirmedTransaction.status}, Gateway TXN ID: ${confirmedTransaction.gatewayTransactionId}');

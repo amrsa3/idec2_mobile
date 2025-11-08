@@ -638,14 +638,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           },
           child: _buildBody(profileState),
         ),
-        bottomNavigationBar: Consumer(
-          builder: (context, ref, _) {
-            final currentIndex = ref.watch(bottomNavIndexProvider);
-            return AppBottomNavigationBar(
-              currentIndexOverride: currentIndex,
-            );
-          },
-        ),
+        bottomNavigationBar: const AppBottomNavigationBar(),
     );
   }
 

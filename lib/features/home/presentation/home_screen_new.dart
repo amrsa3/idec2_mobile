@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../features/main/presentation/main_screen.dart';
+import '../../../features/profile/providers/profile_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/enhanced_auth_provider_v2.dart';
@@ -13,7 +13,7 @@ import '../../../services/compatible_auth_service.dart';
 import '../../../services/lazy_loading_service.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../../shared/widgets/verification_notification_banner.dart';
-import '../../../features/profile/providers/profile_provider.dart';
+import '../../main/providers/bottom_navigation_provider.dart';
 import '../widgets/conference_card_new.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -90,25 +90,28 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // Refresh Icon
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white, size: 24),
+                  // Refresh button with icon and text
+                  TextButton(
                     onPressed: () async {
                       debugPrint('🔄 [HOME_SCREEN] Refresh button pressed');
                       try {
                         // Clear cache for fresh data
                         await LazyLoadingService.instance.clearAllCache();
                         debugPrint('✅ [HOME_SCREEN] Cache cleared');
-                        
+
                         // Refresh user authentication state
-                        ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+                        ref
+                            .read(compatibleAuthProvider.notifier)
+                            .refreshAuthState();
                         debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
-                        
+
                         // Refresh profile data - force reload from server
-                        final profileNotifier = ref.read(profileProvider.notifier);
-                        await profileNotifier.loadCurrentProfile(forceRefresh: true);
+                        final profileNotifier =
+                            ref.read(profileProvider.notifier);
+                        await profileNotifier.loadCurrentProfile(
+                            forceRefresh: true);
                         debugPrint('✅ [HOME_SCREEN] Profile data refreshed');
-                        
+
                         // Show success feedback
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -132,6 +135,24 @@ class HomeScreen extends ConsumerWidget {
                         }
                       }
                     },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'تحديث',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                   // Logo/User Photo on the right
                   GestureDetector(
@@ -186,21 +207,21 @@ class HomeScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async {
             debugPrint('🔄 [HOME_SCREEN] Pull to refresh triggered');
-            
+
             try {
               // Clear relevant cache for fresh data
               await LazyLoadingService.instance.clearAllCache();
               debugPrint('✅ [HOME_SCREEN] Cache cleared');
-              
+
               // Refresh user authentication state to get latest user data
               ref.read(compatibleAuthProvider.notifier).refreshAuthState();
               debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
-              
+
               // Refresh profile data - force reload from server
               final profileNotifier = ref.read(profileProvider.notifier);
               await profileNotifier.loadCurrentProfile(forceRefresh: true);
               debugPrint('✅ [HOME_SCREEN] Profile data refreshed');
-              
+
               // Small delay to show refresh animation
               await Future.delayed(const Duration(milliseconds: 500));
             } catch (e) {
@@ -223,9 +244,13 @@ class HomeScreen extends ConsumerWidget {
                     if (isAuthenticated) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         final profileState = ref.read(profileProvider);
-                        if (profileState.currentProfile == null && !profileState.isLoading) {
-                          debugPrint('🔄 [HOME_SCREEN] Loading profile data for verification banner...');
-                          ref.read(profileProvider.notifier).loadCurrentProfile();
+                        if (profileState.currentProfile == null &&
+                            !profileState.isLoading) {
+                          debugPrint(
+                              '🔄 [HOME_SCREEN] Loading profile data for verification banner...');
+                          ref
+                              .read(profileProvider.notifier)
+                              .loadCurrentProfile();
                         }
                       });
                     }

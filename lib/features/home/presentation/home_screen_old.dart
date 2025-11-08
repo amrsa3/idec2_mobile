@@ -4,15 +4,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../main/providers/bottom_navigation_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user_model.dart';
+import '../../../providers/conference_provider.dart';
 import '../../../providers/enhanced_auth_provider_v2.dart';
 import '../../../providers/language_provider.dart';
-import '../../../providers/conference_provider.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/lazy_loading_service.dart';
 import '../../../shared/widgets/app_drawer.dart';
+import '../../main/providers/bottom_navigation_provider.dart';
 import '../widgets/conference_card_new.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -89,27 +89,53 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // Refresh Icon
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white, size: 24),
-                    onPressed: () async {
+                  // Refresh button with icon + text
+                  GestureDetector(
+                    onTap: () async {
                       debugPrint('🔄 [HOME_SCREEN] Refresh button pressed');
                       try {
                         // Clear cache for fresh data
                         await LazyLoadingService.instance.clearAllCache();
                         debugPrint('✅ [HOME_SCREEN] Cache cleared');
-                        
+
                         // Refresh conference data
                         ref.invalidate(activeConferenceProvider);
                         debugPrint('✅ [HOME_SCREEN] Conference data refreshed');
-                        
+
                         // Refresh user authentication state
-                        ref.read(compatibleAuthProvider.notifier).refreshAuthState();
+                        ref
+                            .read(compatibleAuthProvider.notifier)
+                            .refreshAuthState();
                         debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
                       } catch (e) {
                         debugPrint('❌ [HOME_SCREEN] Refresh error: $e');
                       }
                     },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.refresh, color: Colors.white, size: 22),
+                          SizedBox(width: 6),
+                          Text(
+                            'تحديث',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   // Logo/User Photo on the right
                   GestureDetector(
@@ -164,20 +190,20 @@ class HomeScreen extends ConsumerWidget {
         child: RefreshIndicator(
           onRefresh: () async {
             debugPrint('🔄 [HOME_SCREEN] Pull to refresh triggered');
-            
+
             try {
               // Clear relevant cache for fresh data
               await LazyLoadingService.instance.clearAllCache();
               debugPrint('✅ [HOME_SCREEN] Cache cleared');
-              
+
               // Refresh user authentication state to get latest user data
               ref.read(compatibleAuthProvider.notifier).refreshAuthState();
               debugPrint('✅ [HOME_SCREEN] Auth state refreshed');
-              
+
               // Refresh conference data
               ref.invalidate(activeConferenceProvider);
               debugPrint('✅ [HOME_SCREEN] Conference data refreshed');
-              
+
               // Small delay to show refresh animation
               await Future.delayed(const Duration(milliseconds: 500));
             } catch (e) {

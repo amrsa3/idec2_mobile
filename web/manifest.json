@@ -1,52 +1,48 @@
 ﻿{
-    "name": "منصة IDEC ",
-    "short_name": "IDEC",
-    "version": "2.0.6",
-    "start_url": "/?v=2.0.6",
-    "display": "standalone",
-    "background_color": "#fe0303",
-    "theme_color": "#fe0303",
-    "description": "منصة معرض ومؤتمر IDEC  لطب الاسنان 2026",
-    "orientation": "portrait-primary",
-    "prefer_related_applications": false,
-    "lang": "ar",
-    "dir": "rtl",
-    "scope": "/",
-    "categories": [
-        "government",
-        "productivity",
-        "utilities"
-    ],
-    "screenshots": [
-        {
-            "src": "icons/Icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "form_factor": "wide"
-        }
-    ],
-    "icons": [
-        {
-            "src": "icons/Icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-maskable-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "icons/Icon-maskable-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable"
-        }
-    ]
+  "name": "منصة IDEC ",
+  "short_name": "IDEC",
+  "version": "2.0.7",
+  "start_url": "/?v=2.0.7",
+  "display": "standalone",
+  "background_color": "#fe0303",
+  "theme_color": "#fe0303",
+  "description": "منصة معرض ومؤتمر IDEC  لطب الاسنان 2026",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "lang": "ar",
+  "dir": "rtl",
+  "scope": "/",
+  "categories": ["government", "productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

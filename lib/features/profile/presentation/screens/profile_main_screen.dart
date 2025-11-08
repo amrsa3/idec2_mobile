@@ -30,7 +30,9 @@ import 'profile_edit_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
-  const ProfileMainScreen({super.key});
+  final bool showBottomNavigation;
+
+  const ProfileMainScreen({super.key, this.showBottomNavigation = false});
 
   @override
   ConsumerState<ProfileMainScreen> createState() => _ProfileMainScreenState();
@@ -50,11 +52,13 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       _listenToAuthChanges();
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(bottomNavIndexProvider.notifier).state = 4;
-      }
-    });
+    if (widget.showBottomNavigation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(bottomNavIndexProvider.notifier).state = 4;
+        }
+      });
+    }
   }
   
   /// Listen to authentication changes to refresh profile when user logs in
@@ -227,14 +231,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         onRefresh: () => ref.read(profileProvider.notifier).refresh(),
         child: _buildBody(profileState),
       ),
-      bottomNavigationBar: Consumer(
-        builder: (context, ref, _) {
-          final currentIndex = ref.watch(bottomNavIndexProvider);
-          return AppBottomNavigationBar(
-            currentIndexOverride: currentIndex,
-          );
-        },
-      ),
+      bottomNavigationBar:
+          widget.showBottomNavigation ? const AppBottomNavigationBar() : null,
     );
   }
 

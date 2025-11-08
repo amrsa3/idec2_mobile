@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/conference_model.dart';
+import '../../../models/profile_model.dart';
 import '../../../providers/conference_provider.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/conference_service.dart';
 import '../../../services/registration_service.dart';
+import '../../profile/presentation/screens/profile_edit_screen.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../registrations/presentation/my_registrations_screen.dart';
 
 /// New Conference Card matching HTML design exactly with real data
@@ -29,10 +32,16 @@ class ConferenceCardNew extends ConsumerWidget {
 
         // Show card only for statuses: SETUP, REGISTRATION_OPEN, ONGOING
         // Also show for DRAFT status for testing/development
-        final validStatuses = ['SETUP', 'REGISTRATION_OPEN', 'ONGOING', 'DRAFT'];
+        final validStatuses = [
+          'SETUP',
+          'REGISTRATION_OPEN',
+          'ONGOING',
+          'DRAFT'
+        ];
         if (!validStatuses.contains(conference.status)) {
           // Debug: Print why card is hidden
-          debugPrint('⚠️ Conference card hidden - Status: ${conference.status}');
+          debugPrint(
+              '⚠️ Conference card hidden - Status: ${conference.status}');
           return const SizedBox.shrink();
         }
 
@@ -320,6 +329,67 @@ class _SubscribeButtonBuilderState
     extends ConsumerState<_SubscribeButtonBuilder> {
   bool isLoading = false;
 
+  bool _isProfileVerified(ProfileModel? profile) {
+    if (profile == null) return false;
+    return profile.verificationStatus == VerificationStatus.verified;
+  }
+
+  void _showVerificationRequiredSnack(
+    BuildContext context,
+    WidgetRef ref,
+    VerificationStatus? status,
+  ) {
+    String message =
+        'حسابك غير موثق. يرجى استكمال البيانات لتتمكن من الاشتراك.';
+    switch (status) {
+      case VerificationStatus.underReview:
+        message = 'حسابك قيد المراجعة من قبل الإدارة.';
+        break;
+      case VerificationStatus.rejected:
+        message = 'تم رفض طلب التوثيق. يرجى تعديل بياناتك وإعادة الإرسال.';
+        break;
+      case VerificationStatus.verified:
+        message = 'حسابك موثق بالفعل.';
+        break;
+      case VerificationStatus.unverified:
+      case null:
+        break;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange[700],
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'توثيق الحساب',
+          textColor: Colors.white,
+          onPressed: () {
+            final profile = ref.read(profileProvider).currentProfile;
+            if (profile != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileEditScreen(profile: profile),
+                ),
+              );
+            } else {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('تعذر تحميل بيانات الملف الشخصي حالياً'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final conferenceAsync = ref.watch(activeConferenceProvider);
@@ -339,8 +409,9 @@ class _SubscribeButtonBuilderState
           data: (registration) {
             if (registration != null) {
               // User is already registered - show status
-              final statusInfo = _getRegistrationStatusInfo(registration.status);
-              
+              final statusInfo =
+                  _getRegistrationStatusInfo(registration.status);
+
               // Handle ON_HOLD status specially - show reactivation dialog
               if (registration.status == 'ON_HOLD') {
                 return SizedBox(
@@ -349,7 +420,8 @@ class _SubscribeButtonBuilderState
                   child: ElevatedButton.icon(
                     onPressed: isLoading
                         ? null
-                        : () => _showReactivationDialog(context, conference, registration.id),
+                        : () => _showReactivationDialog(
+                            context, conference, registration.id),
                     icon: Icon(statusInfo.icon, size: 20),
                     label: Text(
                       statusInfo.text,
@@ -369,7 +441,7 @@ class _SubscribeButtonBuilderState
                   ),
                 );
               }
-              
+
               // For other statuses, navigate to registrations screen
               return SizedBox(
                 width: double.infinity,
@@ -413,6 +485,20 @@ class _SubscribeButtonBuilderState
                     : () async {
                         setState(() => isLoading = true);
                         try {
+                          final currentProfile =
+                              ref.read(profileProvider).currentProfile;
+
+                          if (!_isProfileVerified(currentProfile)) {
+                            if (mounted) {
+                              _showVerificationRequiredSnack(
+                                context,
+                                ref,
+                                currentProfile?.verificationStatus,
+                              );
+                            }
+                            return;
+                          }
+
                           final service = ConferenceService();
                           await service.registerToConference(
                             conferenceId: conference.id,
@@ -445,7 +531,7 @@ class _SubscribeButtonBuilderState
                             } else {
                               errorMessage = e.toString();
                             }
-                            
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(errorMessage),
@@ -518,6 +604,20 @@ class _SubscribeButtonBuilderState
               onPressed: () async {
                 setState(() => isLoading = true);
                 try {
+                  final currentProfile =
+                      ref.read(profileProvider).currentProfile;
+
+                  if (!_isProfileVerified(currentProfile)) {
+                    if (mounted) {
+                      _showVerificationRequiredSnack(
+                        context,
+                        ref,
+                        currentProfile?.verificationStatus,
+                      );
+                    }
+                    return;
+                  }
+
                   final conferenceData = await ref.read(
                     activeConferenceProvider.future,
                   );
@@ -554,7 +654,7 @@ class _SubscribeButtonBuilderState
                     } else {
                       errorMessage = e.toString();
                     }
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(errorMessage),
@@ -637,7 +737,7 @@ class _SubscribeButtonBuilderState
 
     if (shouldRequest == true && mounted) {
       setState(() => isLoading = true);
-      
+
       try {
         final registrationService = RegistrationService();
         await registrationService.requestReactivation(
@@ -648,12 +748,13 @@ class _SubscribeButtonBuilderState
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('تم إرسال طلب إعادة التفعيل بنجاح. سيتم مراجعته من قبل الإدارة.'),
+              content: Text(
+                  'تم إرسال طلب إعادة التفعيل بنجاح. سيتم مراجعته من قبل الإدارة.'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 4),
             ),
           );
-          
+
           // Refresh registration status
           ref.invalidate(conferenceRegistrationProvider(conference.id));
         }
@@ -670,7 +771,7 @@ class _SubscribeButtonBuilderState
           } else {
             errorMessage = e.toString();
           }
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),

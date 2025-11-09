@@ -105,6 +105,11 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
               !RegExp(r'^\d+$').hasMatch(value))) {
         return false;
       }
+      if (field.name.toLowerCase() == 'pinpass') {
+        if (value.length != 4 || !RegExp(r'^\d{4}$').hasMatch(value)) {
+          return false;
+        }
+      }
     }
     return true;
   }
@@ -161,201 +166,211 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            // Enhanced Header with gradient - full width
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    AppColors.primary.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildGatewayLogo(),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'إدخال بيانات الدفع',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
+              // Enhanced Header with gradient - full width
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withOpacity(0.05),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.gatewayName,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
                   ),
-                ],
-              ),
-            ),
-            // Form fields
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ...fields.map((field) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: TextFormField(
-                        key: _formKeys[field.name],
-                        controller: _controllers[field.name],
-                        decoration: InputDecoration(
-                          labelText: field.label,
-                          hintText: field.placeholder,
-                          filled: true,
-                          fillColor: AppColors.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.border,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                          prefixIcon: Container(
-                            margin: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              _getFieldIcon(field.type),
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          suffixIcon: field.type == 'password'
-                              ? IconButton(
-                                  icon: const Icon(Icons.visibility_off),
-                                  color: AppColors.textSecondary,
-                                  onPressed: () {},
-                                )
-                              : null,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                        obscureText: field.type == 'password',
-                        keyboardType: _getKeyboardType(field.type, field.name),
-                        inputFormatters: _buildInputFormatters(field),
-                        onChanged: (value) {
-                          setState(() {
-                            // Trigger UI update for validation
-                          });
-                        },
-                        validator: (value) {
-                          if (field.required &&
-                              (value == null || value.isEmpty)) {
-                            return 'هذا الحقل مطلوب';
-                          }
-                          if (field.name == 'receiverMobile') {
-                            final trimmed = value?.trim() ?? '';
-                            if (trimmed.length < 9 || trimmed.length > 12) {
-                              return 'يرجى إدخال رقم محفظة صالح';
-                            }
-                            if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
-                              return 'يجب أن يحتوي رقم المحفظة على أرقام فقط';
-                            }
-                          }
-                          return null;
-                        },
+                    _buildGatewayLogo(),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'إدخال بيانات الدفع',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
-                    );
-                    }).toList(),
-                    // Instructions for Jeeb and Jeebly - collapsible (moved after fields)
-                    if (_shouldShowInstructions())
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 8),
-                        child: _buildInstructionsWidget(),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.gatewayName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
-            ),
-            // Buttons
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: AppColors.border, width: 1),
+              // Form fields
+              Flexible(
+                child: SingleChildScrollView(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...fields.map((field) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: TextFormField(
+                            key: _formKeys[field.name],
+                            controller: _controllers[field.name],
+                            decoration: InputDecoration(
+                              labelText: field.label,
+                              hintText: field.placeholder,
+                              filled: true,
+                              fillColor: AppColors.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Container(
+                                margin: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  _getFieldIcon(field.type),
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              suffixIcon: field.type == 'password'
+                                  ? IconButton(
+                                      icon: const Icon(Icons.visibility_off),
+                                      color: AppColors.textSecondary,
+                                      onPressed: () {},
+                                    )
+                                  : null,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                            obscureText: field.type == 'password',
+                            keyboardType:
+                                _getKeyboardType(field.type, field.name),
+                            inputFormatters: _buildInputFormatters(field),
+                            onChanged: (value) {
+                              setState(() {
+                                // Trigger UI update for validation
+                              });
+                            },
+                            validator: (value) {
+                              if (field.required &&
+                                  (value == null || value.isEmpty)) {
+                                return 'هذا الحقل مطلوب';
+                              }
+                              if (field.name == 'receiverMobile') {
+                                final trimmed = value?.trim() ?? '';
+                                if (trimmed.length < 9 || trimmed.length > 12) {
+                                  return 'يرجى إدخال رقم محفظة صالح';
+                                }
+                                if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
+                                  return 'يجب أن يحتوي رقم المحفظة على أرقام فقط';
+                                }
+                              }
+                              if (field.name.toLowerCase() == 'pinpass') {
+                                final trimmed = value?.trim() ?? '';
+                                if (!RegExp(r'^\d{4}$').hasMatch(trimmed)) {
+                                  return 'الرمز السري يجب أن يتكون من 4 أرقام';
+                                }
+                              }
+                              return null;
+                            },
+                          ),
+                        );
+                      }).toList(),
+                      // Instructions for Jeeb and Jeebly - collapsible (moved after fields)
+                      if (_shouldShowInstructions())
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 8),
+                          child: _buildInstructionsWidget(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _cancel,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+              // Buttons
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.border, width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _cancel,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: const BorderSide(color: AppColors.border),
                         ),
-                        side: const BorderSide(color: AppColors.border),
-                      ),
-                      child: const Text(
-                        'إلغاء',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        child: const Text(
+                          'إلغاء',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isValid() ? _submit : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isValid() ? _submit : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          disabledBackgroundColor: AppColors.textTertiary,
                         ),
-                        disabledBackgroundColor: AppColors.textTertiary,
-                      ),
-                      child: const Text(
-                        'تأكيد',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        child: const Text(
+                          'تأكيد',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -378,6 +393,9 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
   TextInputType _getKeyboardType(String? type, String fieldName) {
     if (fieldName == 'receiverMobile') {
       return TextInputType.phone;
+    }
+    if (fieldName.toLowerCase() == 'pinpass') {
+      return TextInputType.number;
     }
     switch (type) {
       case 'number':
@@ -404,15 +422,22 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
       return [FilteringTextInputFormatter.digitsOnly];
     }
 
+    if (field.name.toLowerCase() == 'pinpass') {
+      return [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(4),
+      ];
+    }
+
     return null;
   }
 
   bool _shouldShowInstructions() {
     final gatewayName = widget.gatewayName.toLowerCase();
-    return gatewayName.contains('جيب') || 
-           gatewayName.contains('جوالي') ||
-           gatewayName.contains('jeeb') ||
-           gatewayName.contains('jwali');
+    return gatewayName.contains('جيب') ||
+        gatewayName.contains('جوالي') ||
+        gatewayName.contains('jeeb') ||
+        gatewayName.contains('jwali');
   }
 
   bool _isJeeb() {
@@ -430,11 +455,16 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
   /// Get gateway logo path based on gateway name
   String _getGatewayLogoPath() {
     final gatewayName = widget.gatewayName.toLowerCase();
-    if (gatewayName.contains('جيب') || gatewayName.contains('jeeb') || gatewayName.contains('jaib')) {
+    if (gatewayName.contains('جيب') ||
+        gatewayName.contains('jeeb') ||
+        gatewayName.contains('jaib')) {
       return AppImages.jaibLogo;
-    } else if (gatewayName.contains('جوالي') || gatewayName.contains('jwali') || gatewayName.contains('jawali')) {
+    } else if (gatewayName.contains('جوالي') ||
+        gatewayName.contains('jwali') ||
+        gatewayName.contains('jawali')) {
       return AppImages.jawaliLogo;
-    } else if (gatewayName.contains('كريمي') || gatewayName.contains('kurimi')) {
+    } else if (gatewayName.contains('كريمي') ||
+        gatewayName.contains('kurimi')) {
       return AppImages.kurimiLogo;
     }
     return AppImages.placeholder;
@@ -443,11 +473,16 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
   /// Get gateway accent color based on gateway name
   Color _getGatewayAccentColor() {
     final gatewayName = widget.gatewayName.toLowerCase();
-    if (gatewayName.contains('جيب') || gatewayName.contains('jeeb') || gatewayName.contains('jaib')) {
+    if (gatewayName.contains('جيب') ||
+        gatewayName.contains('jeeb') ||
+        gatewayName.contains('jaib')) {
       return const Color(0xFFE53935); // Red
-    } else if (gatewayName.contains('جوالي') || gatewayName.contains('jwali') || gatewayName.contains('jawali')) {
+    } else if (gatewayName.contains('جوالي') ||
+        gatewayName.contains('jwali') ||
+        gatewayName.contains('jawali')) {
       return const Color(0xFFFF6B00); // Orange
-    } else if (gatewayName.contains('كريمي') || gatewayName.contains('kurimi')) {
+    } else if (gatewayName.contains('كريمي') ||
+        gatewayName.contains('kurimi')) {
       return const Color(0xFF6C3483); // Purple
     }
     return AppColors.primary;
@@ -542,7 +577,6 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
             'ادخل توليد كود شراء',
             'حدد المبلغ المطلوب ($amountText) وقم بتوليد كود دفع',
             'قم بنسخ كود الدفع والصقه هنا',
-            
           ]
         : [
             'قم بفتح تطبيق جوالي وتسجيل دخول',
@@ -610,7 +644,8 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                   if (isJeeb) ...[
                     const SizedBox(width: 8),
                     InkWell(
-                      onTap: () => _openVideoUrl('https://app.idec-ye.com/jaib.mp4'),
+                      onTap: () =>
+                          _openVideoUrl('https://app.idec-ye.com/jaib.mp4'),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -719,4 +754,3 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
     );
   }
 }
-

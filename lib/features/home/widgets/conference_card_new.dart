@@ -358,33 +358,37 @@ class _SubscribeButtonBuilderState
 
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
+    final snackBarAction = status == VerificationStatus.underReview
+        ? null
+        : SnackBarAction(
+            label: 'توثيق الحساب',
+            textColor: Colors.white,
+            onPressed: () {
+              final profile = ref.read(profileProvider).currentProfile;
+              if (profile != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileEditScreen(profile: profile),
+                  ),
+                );
+              } else {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('تعذر تحميل بيانات الملف الشخصي حالياً'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+          );
+
     messenger.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.orange[700],
         behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'توثيق الحساب',
-          textColor: Colors.white,
-          onPressed: () {
-            final profile = ref.read(profileProvider).currentProfile;
-            if (profile != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProfileEditScreen(profile: profile),
-                ),
-              );
-            } else {
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('تعذر تحميل بيانات الملف الشخصي حالياً'),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-            }
-          },
-        ),
+        action: snackBarAction,
         duration: const Duration(seconds: 4),
       ),
     );

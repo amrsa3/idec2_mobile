@@ -13,6 +13,8 @@ import '../../profile/presentation/screens/profile_edit_screen.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../registrations/presentation/my_registrations_screen.dart';
 
+enum _NameConfirmationAction { confirmed, edit }
+
 /// New Conference Card matching HTML design exactly with real data
 class ConferenceCardNew extends ConsumerWidget {
   const ConferenceCardNew({super.key});
@@ -329,6 +331,8 @@ class _SubscribeButtonBuilderState
     extends ConsumerState<_SubscribeButtonBuilder> {
   bool isLoading = false;
 
+  static const _dialogPrimaryColor = Color(0xFFEC1313);
+
   bool _isProfileVerified(ProfileModel? profile) {
     if (profile == null) return false;
     return profile.verificationStatus == VerificationStatus.verified;
@@ -391,6 +395,257 @@ class _SubscribeButtonBuilderState
         action: snackBarAction,
         duration: const Duration(seconds: 4),
       ),
+    );
+  }
+
+  Future<void> _handleConferenceSubscription(
+    BuildContext context,
+    ConferenceModel conference,
+  ) async {
+    if (isLoading) return;
+
+    final currentProfile = ref.read(profileProvider).currentProfile;
+
+    if (!_isProfileVerified(currentProfile)) {
+      if (mounted) {
+        _showVerificationRequiredSnack(
+          context,
+          ref,
+          currentProfile?.verificationStatus,
+        );
+      }
+      return;
+    }
+
+    if (currentProfile == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر تحميل بيانات الملف الشخصي حالياً'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    final confirmation = await _showNameConfirmationDialog(
+      context,
+      currentProfile,
+    );
+
+    if (!mounted) return;
+
+    if (confirmation == _NameConfirmationAction.edit) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileEditScreen(profile: currentProfile),
+        ),
+      );
+      return;
+    }
+
+    if (confirmation != _NameConfirmationAction.confirmed) {
+      return;
+    }
+
+    setState(() => isLoading = true);
+    try {
+      final service = ConferenceService();
+      await service.registerToConference(
+        conferenceId: conference.id,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم إرسال طلب التسجيل بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        ref.invalidate(
+          conferenceRegistrationProvider(conference.id),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'فشل في التسجيل';
+        if (e is Exception) {
+          final errorStr = e.toString();
+          if (errorStr.startsWith('Exception: ')) {
+            errorMessage = errorStr.substring(11);
+          } else {
+            errorMessage = errorStr;
+          }
+        } else {
+          errorMessage = e.toString();
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  Future<_NameConfirmationAction?> _showNameConfirmationDialog(
+    BuildContext context,
+    ProfileModel profile,
+  ) {
+    final theme = Theme.of(context);
+    final englishName = profile.fullNameEn.trim();
+    final displayName = englishName.isEmpty
+        ? (profile.fullNameAr.trim().isEmpty
+            ? 'لم يتم إدخال اسم باللغة الإنجليزية بعد'
+            : profile.fullNameAr.trim())
+        : englishName;
+    final isMissingEnglishName = englishName.isEmpty;
+
+    return showDialog<_NameConfirmationAction>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: _dialogPrimaryColor.withOpacity(0.12),
+                child: const Icon(
+                  Icons.badge_outlined,
+                  color: _dialogPrimaryColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'تأكيد الاسم بالإنجليزية',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              const Text(
+                'هل أنت متأكد من كتابة الاسم بالإنجليزية بالشكل الصحيح؟ سيتم طباعة شهادة المؤتمر بناءً على الاسم المدخل.',
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isMissingEnglishName) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'لم يتم إدخال اسم باللغة الإنجليزية بعد. ننصح بتعديله قبل تأكيد الاشتراك.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                        side: BorderSide(
+                          color: theme.colorScheme.primary.withOpacity(0.4),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogContext)
+                            .pop(_NameConfirmationAction.edit);
+                      },
+                      child: const Text(
+                        'تعديل',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _dialogPrimaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogContext)
+                            .pop(_NameConfirmationAction.confirmed);
+                      },
+                      child: const Text(
+                        'متأكد',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -487,68 +742,10 @@ class _SubscribeButtonBuilderState
                 onPressed: isLoading
                     ? null
                     : () async {
-                        setState(() => isLoading = true);
-                        try {
-                          final currentProfile =
-                              ref.read(profileProvider).currentProfile;
-
-                          if (!_isProfileVerified(currentProfile)) {
-                            if (mounted) {
-                              _showVerificationRequiredSnack(
-                                context,
-                                ref,
-                                currentProfile?.verificationStatus,
-                              );
-                            }
-                            return;
-                          }
-
-                          final service = ConferenceService();
-                          await service.registerToConference(
-                            conferenceId: conference.id,
-                          );
-
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('تم إرسال طلب التسجيل بنجاح'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            // Refresh registration status
-                            ref.invalidate(
-                              conferenceRegistrationProvider(conference.id),
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            // Extract error message from exception
-                            String errorMessage = 'فشل في التسجيل';
-                            if (e is Exception) {
-                              final errorStr = e.toString();
-                              // Remove "Exception: " prefix if present
-                              if (errorStr.startsWith('Exception: ')) {
-                                errorMessage = errorStr.substring(11);
-                              } else {
-                                errorMessage = errorStr;
-                              }
-                            } else {
-                              errorMessage = e.toString();
-                            }
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(errorMessage),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 5),
-                              ),
-                            );
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() => isLoading = false);
-                          }
-                        }
+                        await _handleConferenceSubscription(
+                          context,
+                          conference,
+                        );
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFEC1313),
@@ -606,71 +803,13 @@ class _SubscribeButtonBuilderState
             height: 48,
             child: ElevatedButton(
               onPressed: () async {
-                setState(() => isLoading = true);
-                try {
-                  final currentProfile =
-                      ref.read(profileProvider).currentProfile;
-
-                  if (!_isProfileVerified(currentProfile)) {
-                    if (mounted) {
-                      _showVerificationRequiredSnack(
-                        context,
-                        ref,
-                        currentProfile?.verificationStatus,
-                      );
-                    }
-                    return;
-                  }
-
-                  final conferenceData = await ref.read(
-                    activeConferenceProvider.future,
+                final conferenceData =
+                    await ref.read(activeConferenceProvider.future);
+                if (conferenceData != null && mounted) {
+                  await _handleConferenceSubscription(
+                    context,
+                    conferenceData,
                   );
-                  if (conferenceData != null) {
-                    final service = ConferenceService();
-                    await service.registerToConference(
-                      conferenceId: conferenceData.id,
-                    );
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تم إرسال طلب التسجيل بنجاح'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      ref.invalidate(
-                        conferenceRegistrationProvider(conferenceData.id),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    // Extract error message from exception
-                    String errorMessage = 'فشل في التسجيل';
-                    if (e is Exception) {
-                      final errorStr = e.toString();
-                      // Remove "Exception: " prefix if present
-                      if (errorStr.startsWith('Exception: ')) {
-                        errorMessage = errorStr.substring(11);
-                      } else {
-                        errorMessage = errorStr;
-                      }
-                    } else {
-                      errorMessage = e.toString();
-                    }
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(errorMessage),
-                        backgroundColor: Colors.red,
-                        duration: const Duration(seconds: 5),
-                      ),
-                    );
-                  }
-                } finally {
-                  if (mounted) {
-                    setState(() => isLoading = false);
-                  }
                 }
               },
               style: ElevatedButton.styleFrom(

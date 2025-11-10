@@ -18,6 +18,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../services/analytics_service.dart';
 import '../../services/compatible_auth_service.dart';
 
 // Route names
@@ -62,6 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       debugLogDiagnostics: true,
       // Listen to auth state changes to trigger router refresh
       refreshListenable: authNotifier,
+      observers: AnalyticsService.instance.navigatorObservers,
       // Deep linking configuration
       redirect: (context, state) {
         try {

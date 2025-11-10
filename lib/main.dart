@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,8 @@ import 'features/profile/presentation/widgets/verification_notification_banner.d
 import 'l10n/app_localizations.dart';
 import 'providers/enhanced_auth_provider_v2.dart';
 import 'providers/language_provider.dart';
+import 'models/auth_models.dart';
+import 'services/analytics_service.dart';
 import 'services/enhanced_dio_service_v2.dart';
 import 'services/enhanced_storage_service.dart';
 import 'services/notification_service.dart';
@@ -23,6 +26,7 @@ import 'services/storage_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
+import 'firebase_options.dart';
 
 void main() async {
   // Wrap everything in a try-catch to prevent black screen on initialization errors
@@ -87,6 +91,8 @@ void main() async {
             '🌐 [MAIN] Configured web app to use system fonts only - no external font loading');
       });
     }
+
+    await _initializeFirebaseAndAnalytics();
 
     // Initialize StorageService first with timeout
     try {
@@ -317,6 +323,7 @@ class IDECApp extends ConsumerStatefulWidget {
 
 class _IDECAppState extends ConsumerState<IDECApp> {
   late final ServiceStatusProvider _serviceStatusProvider;
+  ProviderSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
@@ -325,8 +332,20 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     // Initialize service status provider
     _serviceStatusProvider = ServiceStatusProvider();
 
+    // Sync analytics identity with authentication state
+    _authSubscription = ref.listenManual<AuthState>(
+      enhancedAuthProvider,
+      (previous, next) {
+        AnalyticsService.instance.handleAuthStateChange(previous, next);
+      },
+    );
+
     // Start verification notification service after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      AnalyticsService.instance.handleAuthStateChange(
+        null,
+        ref.read(enhancedAuthProvider),
+      );
       _initializeServices();
     });
   }
@@ -343,6 +362,9 @@ class _IDECAppState extends ConsumerState<IDECApp> {
 
   @override
   void dispose() {
+    // Dispose analytics listeners
+    _authSubscription?.close();
+
     // Stop verification notification service
     VerificationNotificationService.stopService();
 
@@ -411,5 +433,35 @@ class _IDECAppState extends ConsumerState<IDECApp> {
         );
       },
     );
+  }
+}
+
+Future<void> _initializeFirebaseAndAnalytics() async {
+  try {
+    FirebaseOptions? firebaseOptions;
+
+    try {
+      firebaseOptions = DefaultFirebaseOptions.currentPlatform;
+    } catch (e, stackTrace) {
+      debugPrint('⚠️ [Firebase] Default options unavailable: $e');
+      debugPrint('Stack trace: $stackTrace');
+    }
+
+    if (Firebase.apps.isEmpty) {
+      if (firebaseOptions != null) {
+        await Firebase.initializeApp(options: firebaseOptions);
+      } else {
+        await Firebase.initializeApp();
+      }
+      debugPrint('✅ [Firebase] Firebase initialized');
+    } else {
+      debugPrint('ℹ️ [Firebase] Using existing Firebase app');
+    }
+
+    await AnalyticsService.instance.ensureInitialized();
+    await AnalyticsService.instance.logAppStart();
+  } catch (e, stackTrace) {
+    debugPrint('❌ [Firebase] Initialization error: $e');
+    debugPrint('Stack trace: $stackTrace');
   }
 }

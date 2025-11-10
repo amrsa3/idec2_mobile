@@ -2,7 +2,7 @@ name: idec_conference_app
 description: 'معرض ومؤتمر IDEC لطب الاسنان 2026 - تطبيق Flutter احترافي لإدارة المؤتمر'
 publish_to: 'none'
 
-version: 2.0.7
+version: 2.0.8
 environment:
   sdk: '>=3.0.0 <4.0.0'
   flutter: '>=3.10.0'
@@ -20,6 +20,10 @@ dependencies:
   retrofit: ^4.1.0
   json_annotation: ^4.9.0
   http: ^1.1.0
+
+  # Analytics
+  firebase_core: ^3.7.0
+  firebase_analytics: ^11.3.0
 
   # UI & Navigation
   go_router: ^12.1.3

@@ -107,11 +107,14 @@ class ConferenceCardNew extends ConsumerWidget {
     final conferenceName =
         (isRTL ? conference.nameAr : conference.nameEn) ?? conference.nameAr;
 
+    final localStartDate = conference.startDate.toLocal();
+    final localEndDate = conference.endDate.toLocal();
+
     // Format dates: (26 الى 29) يناير 2026
-    final startDay = conference.startDate.day;
-    final endDay = conference.endDate.day;
-    final monthName = _getArabicMonthName(conference.startDate.month);
-    final year = conference.startDate.year;
+    final startDay = localStartDate.day;
+    final endDay = localEndDate.day;
+    final monthName = _getArabicMonthName(localStartDate.month);
+    final year = localStartDate.year;
 
     final dateText = '($startDay الى $endDay) $monthName $year';
 
@@ -150,6 +153,9 @@ class ConferenceCardNew extends ConsumerWidget {
   Widget _buildRegistrationCountdown(ConferenceModel conference) {
     final now = DateTime.now();
 
+    final localRegistrationStart = conference.registrationStartDate?.toLocal();
+    final localRegistrationEnd = conference.registrationEndDate?.toLocal();
+
     // Show countdown conditions:
     // 1. watchModeEnabled == true
     // 2. registrationStartDate != null
@@ -160,10 +166,9 @@ class ConferenceCardNew extends ConsumerWidget {
     // 3. conference.status == 'ONGOING'
 
     final shouldShowCountdown = conference.watchModeEnabled == true &&
-        conference.registrationStartDate != null &&
-        now.isBefore(conference.registrationStartDate!) &&
-        (conference.registrationEndDate == null ||
-            now.isBefore(conference.registrationEndDate!)) &&
+        localRegistrationStart != null &&
+        now.isBefore(localRegistrationStart) &&
+        (localRegistrationEnd == null || now.isBefore(localRegistrationEnd)) &&
         conference.status != 'ONGOING';
 
     if (!shouldShowCountdown) {
@@ -184,7 +189,7 @@ class ConferenceCardNew extends ConsumerWidget {
         const SizedBox(height: 12),
         // Countdown Boxes
         CountdownTimer(
-          endTime: conference.registrationStartDate!.millisecondsSinceEpoch,
+          endTime: localRegistrationStart.millisecondsSinceEpoch,
           widgetBuilder: (_, time) {
             if (time == null) return const SizedBox.shrink();
 
@@ -515,7 +520,8 @@ class _SubscribeButtonBuilderState
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           title: Row(

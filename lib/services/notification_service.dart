@@ -22,6 +22,7 @@ class NotificationService {
   // مثيل الإشعارات المحلية
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  static bool _initialized = false;
 
   /// الحصول على مفتاح ScaffoldMessenger
   static GlobalKey<ScaffoldMessengerState> get scaffoldMessengerKey =>
@@ -29,6 +30,10 @@ class NotificationService {
 
   /// تهيئة خدمة الإشعارات
   static Future<void> initialize() async {
+    if (_initialized) {
+      return;
+    }
+
     // تهيئة الإشعارات المحلية
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -49,6 +54,7 @@ class NotificationService {
     );
 
     debugPrint('✅ [NOTIFICATION] تم تهيئة خدمة الإشعارات');
+    _initialized = true;
   }
 
   /// معالج النقر على الإشعار

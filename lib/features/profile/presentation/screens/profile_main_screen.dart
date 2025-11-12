@@ -42,6 +42,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   // متغير لتتبع حالة ظهور إشعار التوثيق
   bool _showVerificationNotification = true;
   Timer? _verificationNotificationTimer;
+  ProviderSubscription<CompatibleAuthState>? _authSubscription;
 
   @override
   void initState() {
@@ -64,9 +65,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   /// Listen to authentication changes to refresh profile when user logs in
   void _listenToAuthChanges() {
     // Listen to auth state changes to refresh profile when login occurs
-    ref.listen<CompatibleAuthState>(
+    _authSubscription = ref.listenManual<CompatibleAuthState>(
       compatibleAuthProvider,
-      (previous, next) {
+      (previous, next) async {
         // If user just logged in, refresh profile data
         if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
           debugPrint('🔄 ProfileMainScreen: User logged in, refreshing profile data...');
@@ -196,6 +197,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   @override
   void dispose() {
     _verificationNotificationTimer?.cancel();
+    _authSubscription?.close();
     super.dispose();
   }
 

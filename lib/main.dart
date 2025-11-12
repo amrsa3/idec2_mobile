@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,22 +12,23 @@ import 'core/services/server_settings_service.dart';
 import 'core/services/version_check_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/profile/presentation/widgets/verification_notification_banner.dart';
+import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
+import 'models/auth_models.dart';
 import 'providers/enhanced_auth_provider_v2.dart';
 import 'providers/language_provider.dart';
-import 'models/auth_models.dart';
 import 'services/analytics_service.dart';
 import 'services/enhanced_dio_service_v2.dart';
 import 'services/enhanced_storage_service.dart';
 import 'services/notification_service.dart';
 import 'services/platform_storage_service.dart';
+import 'services/push_notification_service.dart';
 import 'services/registration_settings_service.dart';
 import 'services/retry_service.dart';
 import 'services/storage_service.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
-import 'firebase_options.dart';
 
 void main() async {
   // Wrap everything in a try-catch to prevent black screen on initialization errors
@@ -93,6 +95,7 @@ void main() async {
     }
 
     await _initializeFirebaseAndAnalytics();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     // Initialize StorageService first with timeout
     try {
@@ -355,6 +358,13 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       // Start verification notification service
       VerificationNotificationService.startService(ref);
       debugPrint('✅ Verification notification service started');
+
+      PushNotificationService.instance
+          .initialize(ref)
+          .catchError((error, stackTrace) {
+        debugPrint('❌ Error starting push notification service: $error');
+        debugPrint('$stackTrace');
+      });
     } catch (e) {
       debugPrint('❌ Error starting verification notification service: $e');
     }

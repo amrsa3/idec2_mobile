@@ -24,6 +24,7 @@ dependencies:
   # Analytics
   firebase_core: ^3.7.0
   firebase_analytics: ^11.3.0
+  firebase_messaging: ^15.0.4
 
   # UI & Navigation
   go_router: ^12.1.3

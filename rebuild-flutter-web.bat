@@ -9,6 +9,9 @@ echo 🚀 Starting Flutter Web rebuild for IDEC Mobile App...
 REM Navigate to mobile app directory (script is already in mobile-app)
 cd /d "%~dp0"
 
+REM Configure Firebase Web VAPID Key (embedded for release builds)
+set FIREBASE_WEB_VAPID_KEY=BLNkdbApNtiJ9JyXhWBcRufoZaq_yP7ayv-KebWfEMuhBvrtKgmMQF3Z-glAJFJlP4ITyrZwOnsXV_xp6PIHs-E
+
 REM Extract version from pubspec.yaml FIRST (before build)
 echo 📋 Extracting version from pubspec.yaml...
 set VERSION=
@@ -135,7 +138,7 @@ echo ========================================
 echo This may take several minutes, please wait...
 echo.
 echo Starting build command...
-call flutter build web --release --base-href /
+call flutter build web --release --base-href / --dart-define=FIREBASE_WEB_VAPID_KEY=%FIREBASE_WEB_VAPID_KEY%
 set BUILD_RESULT=%errorlevel%
 echo.
 echo Build command completed with exit code: %BUILD_RESULT%

@@ -339,5 +339,18 @@
       console.error('❌ Unhandled promise rejection:', e.reason);
     });
   </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('firebase-messaging-sw.js')
+      .then(function (registration) {
+        console.log('✅ Firebase messaging service worker registered', registration);
+      })
+      .catch(function (error) {
+        console.warn('⚠️ Failed to register firebase messaging service worker', error);
+      });
+  }
+</script>
 </body>
 </html>

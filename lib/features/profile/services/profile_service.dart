@@ -591,7 +591,10 @@ class LocalProfileService {
   }
 
   /// Get user documents
-  static Future<List<DocumentUploadModel>> getUserDocuments() async {
+  static Future<List<DocumentUploadModel>> getUserDocuments({
+    int page = 1,
+    int limit = 100,
+  }) async {
     try {
       debugPrint('📄 ProfileService: Fetching user documents');
 
@@ -602,77 +605,99 @@ class LocalProfileService {
         return [];
       }
 
-      final response = await _dio.get(
-        '/api/v1/files/upload',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
+      final allDocuments = <DocumentUploadModel>[];
+      int currentPage = page;
+      int safetyCounter = 0;
 
-      debugPrint(
-          '📄 ProfileService: Documents response status: ${response.statusCode}');
+      while (true) {
+        final response = await _dio.get(
+          '/api/v1/files/documents',
+          queryParameters: {
+            'page': currentPage,
+            'limit': limit,
+          },
+          options: Options(
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        debugPrint('📄 ProfileService: Documents received successfully');
+        debugPrint(
+            '📄 ProfileService: Documents response status (page $currentPage): ${response.statusCode}');
 
-        // التأكد من أن documents هو قائمة
-        dynamic documentsData = data['documents'];
-        List<dynamic> documentsJson = [];
-
-        if (documentsData is List) {
-          documentsJson = documentsData;
-        } else if (documentsData != null) {
+        if (response.statusCode != 200 && response.statusCode != 201) {
           debugPrint(
-              '⚠️ ProfileService: Documents is not a list, type: ${documentsData.runtimeType}, value: $documentsData');
-          // إذا كان documents ليس قائمة، نعيد قائمة فارغة
-          documentsJson = [];
+              '❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
+          break;
         }
 
-        return documentsJson
+        final responseData = response.data;
+        List<dynamic> filesJson = [];
+
+        if (responseData is Map<String, dynamic>) {
+          if (responseData['files'] is List) {
+            filesJson = responseData['files'] as List<dynamic>;
+          } else if (responseData['documents'] is List) {
+            filesJson = responseData['documents'] as List<dynamic>;
+          } else {
+            debugPrint(
+                '⚠️ ProfileService: No files/documents array in response: keys=${responseData.keys}');
+          }
+        } else if (responseData is List) {
+          filesJson = responseData;
+        } else {
+          debugPrint(
+              '⚠️ ProfileService: Unexpected documents response type: ${responseData.runtimeType}');
+        }
+
+        final pageDocuments = filesJson
             .map((json) {
               try {
-                // تحويل البيانات مع معالجة أفضل للأخطاء
-                final safeData = Map<String, dynamic>.from(json);
-
-                // التأكد من تحويل جميع الحقول للنوع الصحيح
-                if (safeData['userId'] != null) {
-                  safeData['userId'] = safeData['userId'].toString();
-                }
-                if (safeData['id'] != null) {
-                  safeData['id'] = safeData['id'].toString();
-                }
-                if (safeData['documentType'] != null) {
-                  safeData['documentType'] =
-                      safeData['documentType'].toString();
-                }
-                if (safeData['fileName'] != null) {
-                  safeData['fileName'] = safeData['fileName'].toString();
-                }
-                if (safeData['fileUrl'] != null) {
-                  safeData['fileUrl'] = safeData['fileUrl'].toString();
-                }
-                if (safeData['status'] != null) {
-                  safeData['status'] = safeData['status'].toString();
-                }
-
-                return DocumentUploadModel.fromJson(safeData);
+                final fileData =
+                    Map<String, dynamic>.from(json as Map<String, dynamic>);
+                return _convertFileResponseToDocumentModel(fileData);
               } catch (e) {
-                debugPrint('❌ ProfileService: Error converting document: $e');
                 debugPrint(
-                    '📊 ProfileService: Problematic document data: $json');
-                // تخطي هذه الوثيقة والمتابعة
+                    '❌ ProfileService: Error converting file to document: $e');
+                debugPrint('📊 ProfileService: Original file data: $json');
                 return null;
               }
             })
-            .where((doc) => doc != null)
-            .cast<DocumentUploadModel>()
+            .whereType<DocumentUploadModel>()
             .toList();
-      } else {
-        debugPrint(
-            '❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
-        return [];
+
+        if (pageDocuments.isEmpty) {
+          break;
+        }
+
+        // Avoid duplicates by ID
+        final existingIds = allDocuments.map((doc) => doc.id).toSet();
+        for (final doc in pageDocuments) {
+          if (existingIds.add(doc.id)) {
+            allDocuments.add(doc);
+          }
+        }
+
+        bool hasMore = false;
+        if (responseData is Map<String, dynamic>) {
+          final totalPages = responseData['totalPages'];
+          if (totalPages is num && currentPage < totalPages) {
+            hasMore = true;
+          } else if (totalPages == null && filesJson.length == limit) {
+            hasMore = true;
+          }
+        } else if (filesJson.length == limit) {
+          hasMore = true;
+        }
+
+        currentPage += 1;
+        safetyCounter += 1;
+
+        if (!hasMore || safetyCounter >= 10) {
+          break;
+        }
       }
+
+      return allDocuments;
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching documents: $e');
 
@@ -685,6 +710,52 @@ class LocalProfileService {
       }
 
       return [];
+    }
+  }
+
+  static DocumentUploadModel? _convertFileResponseToDocumentModel(
+      Map<String, dynamic> fileData) {
+    try {
+      final metadata = fileData['metadata'] is Map
+          ? Map<String, dynamic>.from(fileData['metadata'] as Map)
+          : null;
+
+      DateTime? uploadedAt;
+      if (fileData['createdAt'] != null) {
+        uploadedAt = DateTime.tryParse(fileData['createdAt'].toString());
+      }
+      uploadedAt ??= DateTime.now();
+
+      DateTime? reviewedAt;
+      if (metadata != null && metadata['reviewedAt'] != null) {
+        reviewedAt = DateTime.tryParse(metadata['reviewedAt'].toString());
+      }
+
+      final convertedData = <String, dynamic>{
+        'id': fileData['id']?.toString() ?? '',
+        'userId': fileData['entityId']?.toString() ??
+            fileData['uploadedBy']?.toString() ??
+            '',
+        'documentType': fileData['fileCategory']?.toString() ??
+            metadata?['documentType']?.toString() ??
+            'OTHER_DOCUMENT',
+        'fileName': fileData['originalName']?.toString() ??
+            fileData['fileName']?.toString() ??
+            '',
+        'fileUrl': fileData['url']?.toString() ?? '',
+        'status': metadata?['status']?.toString() ?? 'uploaded',
+        'uploadedAt': uploadedAt.toIso8601String(),
+        'rejectionReason': metadata?['rejectionReason']?.toString(),
+        'reviewedAt': reviewedAt?.toIso8601String(),
+        'reviewedBy': metadata?['reviewedBy']?.toString(),
+        'metadata': metadata,
+      };
+
+      return DocumentUploadModel.fromJson(convertedData);
+    } catch (e) {
+      debugPrint('❌ ProfileService: Failed to convert file data: $e');
+      debugPrint('📊 ProfileService: File data: $fileData');
+      return null;
     }
   }
 

@@ -236,6 +236,39 @@ class PaymentService {
     }
   }
 
+  /// Cancel electronic payment
+  Future<void> cancelTransaction({
+    required String transactionId,
+    String? reason,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final url =
+          '${ApiConstants.baseUrl}/api/v1/payments/transactions/$transactionId/cancel';
+
+      print('🛑 [PAYMENT_SERVICE] Cancelling transaction: $transactionId');
+
+      final body = reason != null ? {'reason': reason} : {};
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: json.encode(body),
+      );
+
+      print('🛑 [PAYMENT_SERVICE] Cancel response: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        final errorBody = json.decode(response.body);
+        final errorMessage =
+            errorBody['message'] ?? 'فشل إلغاء عملية الدفع';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('خطأ في إلغاء عملية الدفع: ${e.toString()}');
+    }
+  }
+
   /// Get transaction by ID
   Future<TransactionModel> getTransactionById(String transactionId) async {
     try {

@@ -6,6 +6,29 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/payment_instruction_model.dart';
 
+class PaymentInputResult {
+  final Map<String, String>? data;
+  final bool isCancelled;
+
+  const PaymentInputResult._({
+    required this.isCancelled,
+    this.data,
+  });
+
+  factory PaymentInputResult.submitted(Map<String, String> data) {
+    return PaymentInputResult._(
+      isCancelled: false,
+      data: data,
+    );
+  }
+
+  const PaymentInputResult.cancelled()
+      : data = null,
+        isCancelled = true;
+
+  bool get hasData => data != null && data!.isNotEmpty;
+}
+
 class PaymentInputDialog extends StatefulWidget {
   final PaymentInstructionModel instruction;
   final String gatewayName;
@@ -20,14 +43,14 @@ class PaymentInputDialog extends StatefulWidget {
     this.currency,
   });
 
-  static Future<Map<String, String>?> show(
+  static Future<PaymentInputResult?> show(
     BuildContext context,
     PaymentInstructionModel instruction,
     String gatewayName, {
     double? amount,
     String? currency,
   }) async {
-    return await showDialog<Map<String, String>>(
+    return await showDialog<PaymentInputResult>(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black54,
@@ -120,52 +143,57 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
       for (var field in _allFields) {
         result[field.name] = _controllers[field.name]?.text.trim() ?? '';
       }
-      Navigator.of(context).pop(result);
+      Navigator.of(context).pop(PaymentInputResult.submitted(result));
     }
   }
 
-  void _cancel() {
-    Navigator.of(context).pop();
+  Future<void> _cancel() async {
+    Navigator.of(context).pop(const PaymentInputResult.cancelled());
   }
 
   @override
   Widget build(BuildContext context) {
     final fields = _allFields;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: TweenAnimationBuilder<double>(
-        duration: const Duration(milliseconds: 300),
-        tween: Tween(begin: 0.0, end: 1.0),
-        curve: Curves.easeOutBack,
-        builder: (context, value, child) {
-          // Safe scale: ensure value is valid number and between 0.5 and 1.0
-          final safeScale = value.isNaN || value < 0.5 ? 1.0 : value;
-          return Transform.scale(
-            scale: safeScale,
-            child: Opacity(opacity: value, child: child),
-          );
-        },
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.9,
-            maxWidth: 500,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            color: AppColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+    return WillPopScope(
+      onWillPop: () async {
+        await _cancel();
+        return false;
+      },
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 300),
+          tween: Tween(begin: 0.0, end: 1.0),
+          curve: Curves.easeOutBack,
+          builder: (context, value, child) {
+            // Safe scale: ensure value is valid number and between 0.5 and 1.0
+            final safeScale = value.isNaN || value < 0.5 ? 1.0 : value;
+            return Transform.scale(
+              scale: safeScale,
+              child: Opacity(opacity: value, child: child),
+            );
+          },
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+              maxWidth: 500,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: AppColors.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // Enhanced Header with gradient - full width
               Container(
                 width: double.infinity,
@@ -315,61 +343,62 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                 ),
               ),
               // Buttons
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: AppColors.border, width: 1),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: AppColors.border, width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _cancel(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: const BorderSide(color: AppColors.border),
+                          ),
+                          child: const Text(
+                            'إلغاء',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isValid() ? _submit : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            disabledBackgroundColor: AppColors.textTertiary,
+                          ),
+                          child: const Text(
+                            'تأكيد',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _cancel,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: const BorderSide(color: AppColors.border),
-                        ),
-                        child: const Text(
-                          'إلغاء',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isValid() ? _submit : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          disabledBackgroundColor: AppColors.textTertiary,
-                        ),
-                        child: const Text(
-                          'تأكيد',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

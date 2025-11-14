@@ -673,7 +673,7 @@ class _RegistrationDetailScreenState
 
       // Step 5: Show input dialog
       debugPrint('💳 [PAYMENT] Step 5: Showing payment input dialog...');
-      final inputData = await PaymentInputDialog.show(
+      final inputResult = await PaymentInputDialog.show(
         context,
         instruction,
         selectedGateway.displayName,
@@ -681,10 +681,38 @@ class _RegistrationDetailScreenState
         currency: invoice.currencyCode,
       );
 
-      if (inputData == null) {
+      if (inputResult == null || inputResult.isCancelled) {
         debugPrint('💳 [PAYMENT] Step 5: User cancelled payment input');
+        await paymentService.cancelTransaction(
+          transactionId: transaction.id,
+          reason: 'User cancelled payment input',
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.white),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('تم إلغاء عملية الدفع'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.blueGrey,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
         return;
       }
+
+      final inputData = inputResult.data ?? {};
+
       debugPrint(
           '💳 [PAYMENT] Step 5: Payment input received - Fields: ${inputData.keys.join(", ")}');
 

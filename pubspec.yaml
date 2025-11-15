@@ -99,6 +99,8 @@ dependencies:
   # PDF generation
   printing: ^5.13.1
   pdf: ^3.11.1
+  image_gallery_saver: ^2.0.3
+  image: ^4.3.0
 
   cupertino_icons: ^1.0.8
 

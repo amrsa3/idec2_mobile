@@ -26,6 +26,7 @@ import '../../services/profile_service.dart' as profile_service;
 import '../../../main/providers/bottom_navigation_provider.dart';
 import '../../../main/widgets/app_bottom_navigation_bar.dart';
 import '../widgets/verification_status_badge.dart';
+import 'profile_badge_screen.dart';
 import 'profile_edit_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
@@ -558,8 +559,17 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
 
                     const SizedBox(height: 8),
 
-                    // حالة التوثيق
-                    VerificationStatusBadge(status: profile.verificationStatus),
+                    // حالة التوثيق مع اختصار لفتح صفحة الهوية
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _openBadgeScreen(profile),
+                      child: Tooltip(
+                        message: 'عرض هوية المشاركة الرسمية',
+                        child: VerificationStatusBadge(
+                          status: profile.verificationStatus,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -989,6 +999,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   // Navigation methods
+  void _openBadgeScreen(ProfileModel profile) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProfileBadgeScreen(profile: profile),
+      ),
+    );
+  }
+
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
     // الانتقال إلى شاشة التعديل مع callback لتحديث البيانات عند العودة
     Navigator.push(

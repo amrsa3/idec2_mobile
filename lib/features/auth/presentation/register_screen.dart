@@ -148,7 +148,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
+    // Build normalized international phone number
+    String normalizedDigits =
+        _phoneController.text.trim().replaceAll(RegExp(r'[^\d]'), '');
+    final countryDigits = _countryCode.replaceAll('+', '');
+
+    // If user already entered the country code manually, strip it to avoid duplication
+    if (normalizedDigits.startsWith(countryDigits)) {
+      normalizedDigits = normalizedDigits.substring(countryDigits.length);
+    }
+
+    // Remove leading zeros from the local part
+    normalizedDigits = normalizedDigits.replaceFirst(RegExp(r'^0+'), '');
+
+    if (normalizedDigits.isEmpty) {
+      await NotificationService.showError(
+        title: 'خطأ في البيانات',
+        message: 'يرجى إدخال رقم هاتف صحيح',
+      );
+      return;
+    }
+
+    final fullPhoneNumber = '$_countryCode$normalizedDigits';
 
     // Clear any previous errors
     ref.read(compatibleAuthProvider.notifier).clearError();

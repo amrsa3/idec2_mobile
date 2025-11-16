@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:image/image.dart' as img;
 
 import '../../../../core/theme/app_colors.dart';
@@ -29,6 +28,12 @@ class _ProfileBadgeScreenState extends State<ProfileBadgeScreen> {
   final GlobalKey _badgeKey = GlobalKey();
   bool _isSaving = false;
   final TransformationController _imageController = TransformationController();
+  final List<String> _frameAssets = const [
+    'assets/images/profile1.png',
+    'assets/images/profile2.png',
+    'assets/images/profile3.png',
+  ];
+  int _selectedFrameIndex = 0;
 
   @override
   void dispose() {
@@ -39,6 +44,7 @@ class _ProfileBadgeScreenState extends State<ProfileBadgeScreen> {
   @override
   Widget build(BuildContext context) {
     final initials = _extractInitials(widget.profile);
+    final selectedFrame = _frameAssets[_selectedFrameIndex];
 
     return Scaffold(
       backgroundColor: const Color(0xFF050505),
@@ -51,53 +57,68 @@ class _ProfileBadgeScreenState extends State<ProfileBadgeScreen> {
           padding: const EdgeInsets.all(20),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RepaintBoundary(
-                  key: _badgeKey,
-                  child: _BadgePreview(
-                    profile: widget.profile,
-                    initials: initials,
-                    controller: _imageController,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _downloadBadge,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RepaintBoundary(
+                    key: _badgeKey,
+                    child: _BadgePreview(
+                      profile: widget.profile,
+                      initials: initials,
+                      controller: _imageController,
+                      frameAsset: selectedFrame,
                     ),
                   ),
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.download),
-                  label: Text(
-                    _isSaving ? 'جاري تجهيز الهوية...' : 'تنزيل الهوية',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(height: 24),
+                  _FrameSelector(
+                    frameAssets: _frameAssets,
+                    selectedIndex: _selectedFrameIndex,
+                    onSelected: _onFrameSelected,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _downloadBadge,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.download),
+                    label: Text(
+                      _isSaving ? 'جاري تجهيز الهوية...' : 'تنزيل الهوية',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _onFrameSelected(int index) {
+    if (index == _selectedFrameIndex) return;
+    setState(() => _selectedFrameIndex = index);
   }
 
   Future<void> _downloadBadge() async {
@@ -180,11 +201,13 @@ class _BadgePreview extends StatelessWidget {
   final ProfileModel profile;
   final String initials;
   final TransformationController controller;
+  final String frameAsset;
 
   const _BadgePreview({
     required this.profile,
     required this.initials,
     required this.controller,
+    required this.frameAsset,
   });
 
   @override
@@ -234,7 +257,9 @@ class _BadgePreview extends StatelessWidget {
                 controller: controller,
               ),
             ),
-            const IgnorePointer(child: _BadgeFrame()),
+            IgnorePointer(
+              child: _BadgeFrame(assetPath: frameAsset),
+            ),
           ],
         ),
       ),
@@ -331,40 +356,27 @@ class _ProfileImageLayer extends StatelessWidget {
 }
 
 class _BadgeFrame extends StatelessWidget {
-  const _BadgeFrame();
+  final String assetPath;
 
-  Future<ByteData?> _loadFrame() async {
-    try {
-      return await rootBundle.load('assets/images/profile_badge_frame.png');
-    } catch (_) {
-      return null;
-    }
-  }
+  const _BadgeFrame({required this.assetPath});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ByteData?>(
-      future: _loadFrame(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData && snapshot.data != null) {
-          final bytes = snapshot.data!;
-          return IgnorePointer(
-            child: Image.memory(
-              bytes.buffer.asUint8List(),
-              fit: BoxFit.contain,
-              width: double.infinity,
-              height: double.infinity,
-            ),
-          );
-        }
-
-        return IgnorePointer(child: _FallbackFrame());
+    return Image.asset(
+      assetPath,
+      fit: BoxFit.contain,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return const _FallbackFrame();
       },
     );
   }
 }
 
 class _FallbackFrame extends StatelessWidget {
+  const _FallbackFrame();
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -406,4 +418,103 @@ class _FallbackFrame extends StatelessWidget {
   }
 }
 
+class _FrameSelector extends StatelessWidget {
+  final List<String> frameAssets;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
 
+  const _FrameSelector({
+    required this.frameAssets,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'اختر الإطار المفضل',
+          style: AppTextStyles.bodyLarge.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: frameAssets.asMap().entries.map((entry) {
+            final index = entry.key;
+            final asset = entry.value;
+            final isSelected = index == selectedIndex;
+            final isLast = index == frameAssets.length - 1;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: EdgeInsets.only(right: isLast ? 0 : 12),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.white24,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 12,
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Container(
+                            color: Colors.black,
+                            child: Image.asset(
+                              asset,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const _FallbackFrame();
+                              },
+                            ),
+                          ),
+                          if (isSelected)
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: Container(
+                                margin: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}

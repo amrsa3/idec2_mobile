@@ -233,7 +233,7 @@ class PushNotificationService {
     }
 
     if (kIsWeb) {
-      final vapidKey = FirebaseConstants.webVapidKey;
+      const vapidKey = FirebaseConstants.webVapidKey;
       if (vapidKey.isEmpty) {
         debugPrint(
             '⚠️ [FCM] FIREBASE_WEB_VAPID_KEY not provided; web push will be disabled.');

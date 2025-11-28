@@ -93,7 +93,7 @@ class UnifiedTokenManager {
       // استخدام مدة صلاحية refresh token من الخادم أو 30 يوم كافتراضي
       final refreshTokenExpiry = refreshExpiresIn != null
           ? now.add(Duration(seconds: refreshExpiresIn))
-          : now.add(Duration(days: 30));
+          : now.add(const Duration(days: 30));
 
       // Debug logging for token expiry calculation
       debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Token expiry calculation:');
@@ -295,8 +295,8 @@ class UnifiedTokenManager {
         },
         options: Options(
           headers: {'Content-Type': 'application/json'},
-          sendTimeout: Duration(seconds: 10),
-          receiveTimeout: Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
         ),
       );
 
@@ -595,8 +595,8 @@ class UnifiedTokenManager {
             },
             options: Options(
               headers: {'Content-Type': 'application/json'},
-              sendTimeout: Duration(seconds: 5),
-              receiveTimeout: Duration(seconds: 5),
+              sendTimeout: const Duration(seconds: 5),
+              receiveTimeout: const Duration(seconds: 5),
             ),
           );
         } catch (e) {

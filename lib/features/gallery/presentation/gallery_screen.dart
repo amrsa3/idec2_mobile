@@ -138,7 +138,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
             backgroundColor: AppColors.primary,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -231,7 +231,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                             color: AppColors.primary.withOpacity(0.3),
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'لا توجد ألبومات',
                             style: TextStyle(
                               fontSize: 18,

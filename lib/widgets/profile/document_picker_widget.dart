@@ -238,7 +238,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
         // عنوان القسم
         Row(
           children: [
-            Icon(
+            const Icon(
               Icons.attach_file,
               color: AppColors.primary,
               size: 20,
@@ -264,7 +264,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             label: const Text('إرفاق وثيقة'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              side: BorderSide(color: AppColors.primary),
+              side: const BorderSide(color: AppColors.primary),
               foregroundColor: AppColors.primary,
             ),
           ),
@@ -337,7 +337,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ] else ...[
           // رسالة عدم وجود ملفات
           Container(
@@ -350,7 +350,7 @@ class _DocumentPickerWidgetState extends ConsumerState<DocumentPickerWidget> {
             ),
             child: Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.cloud_upload_outlined,
                   size: 48,
                   color: AppColors.textSecondary,

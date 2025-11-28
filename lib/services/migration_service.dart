@@ -9,7 +9,6 @@ import 'enhanced_session_manager.dart';
 import 'platform_storage_service.dart';
 import 'web_compatible_storage.dart';
 import 'token_manager.dart';
-import 'session_manager.dart';
 
 /// Migration service to handle transition from old token/session system to new enhanced system
 class MigrationService {

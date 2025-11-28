@@ -9,13 +9,13 @@ class OfflineBanner extends StatefulWidget {
   final Duration animationDuration;
 
   const OfflineBanner({
-    Key? key,
+    super.key,
     this.child,
     this.backgroundColor,
     this.textColor,
     this.message,
     this.animationDuration = const Duration(milliseconds: 300),
-  }) : super(key: key);
+  });
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();
@@ -155,11 +155,11 @@ class SimpleOfflineBanner extends StatelessWidget {
   final Color? textColor;
 
   const SimpleOfflineBanner({
-    Key? key,
+    super.key,
     this.message,
     this.backgroundColor,
     this.textColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

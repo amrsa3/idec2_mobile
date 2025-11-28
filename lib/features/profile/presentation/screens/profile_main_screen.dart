@@ -341,7 +341,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: AppColors.error,
@@ -398,7 +398,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.person_outline,
                 size: 64,
                 color: AppColors.textSecondary,
@@ -970,7 +970,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       final governorate = governorates.firstWhere(
         (g) => g.id == governorateId,
         orElse: () =>
-            GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
+            const GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
       );
       return governorate.nameAr;
     }
@@ -982,7 +982,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     if (qualifications != null && qualificationId != null) {
       final qualification = qualifications.firstWhere(
         (q) => q.id == qualificationId,
-        orElse: () => QualificationModel(
+        orElse: () => const QualificationModel(
           id: '',
           nameAr: 'غير محدد',
           nameEn: '',

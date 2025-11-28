@@ -494,7 +494,7 @@ class _FrameSelector extends StatelessWidget {
                               child: Container(
                                 margin: const EdgeInsets.all(8),
                                 padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color: AppColors.primary,
                                   shape: BoxShape.circle,
                                 ),

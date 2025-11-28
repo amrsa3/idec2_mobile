@@ -25,36 +25,72 @@ class ConferenceService {
 
   Future<ConferenceModel?> getActiveConference() async {
     try {
-      print(
-          '🔍 Fetching active conference from: ${ApiConstants.baseUrl}/api/v1/events/conferences/active');
+      final url = '${ApiConstants.baseUrl}/api/v1/events/conferences/active';
+      print('🔍 [CONFERENCE_SERVICE] Fetching active conference from: $url');
+      
       final headers = await _getHeaders();
+      print('🔍 [CONFERENCE_SERVICE] Headers: ${headers.keys.toList()}');
+      
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/api/v1/events/conferences/active'),
+        Uri.parse(url),
         headers: headers,
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('❌ [CONFERENCE_SERVICE] Request timeout');
+          throw Exception('Request timeout - لم يتم استلام رد من الخادم');
+        },
       );
 
-      print('📊 Response status: ${response.statusCode}');
-      print('📄 Response body: ${response.body}');
+      print('📊 [CONFERENCE_SERVICE] Response status: ${response.statusCode}');
+      print('📄 [CONFERENCE_SERVICE] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data.isEmpty || data['id'] == null) {
-          print('⚠️ Empty or null conference data');
+        final responseBody = response.body;
+        if (responseBody.isEmpty) {
+          print('⚠️ [CONFERENCE_SERVICE] Empty response body');
           return null;
         }
-        print('✅ Conference found: ${data['nameAr']} (${data['status']})');
+        
+        final dynamic decodedData = json.decode(responseBody);
+        print('📦 [CONFERENCE_SERVICE] Decoded data type: ${decodedData.runtimeType}');
+        
+        Map<String, dynamic> data;
+        if (decodedData is Map<String, dynamic>) {
+          data = decodedData;
+        } else if (decodedData is List && decodedData.isNotEmpty) {
+          // If it's a list, take the first item
+          data = decodedData[0] as Map<String, dynamic>;
+        } else {
+          print('⚠️ [CONFERENCE_SERVICE] Unexpected response format');
+          return null;
+        }
+        
+        if (data.isEmpty || data['id'] == null) {
+          print('⚠️ [CONFERENCE_SERVICE] Empty or null conference data');
+          return null;
+        }
+        print('✅ [CONFERENCE_SERVICE] Conference found: ${data['nameAr'] ?? data['name']} (${data['status'] ?? 'N/A'})');
         return ConferenceModel.fromJson(data);
       } else if (response.statusCode == 404) {
-        print('❌ No active conference found (404)');
+        print('❌ [CONFERENCE_SERVICE] No active conference found (404)');
         return null;
       } else {
-        print('❌ Error loading conference: ${response.statusCode}');
-        throw Exception(
-            'Failed to load active conference: ${response.statusCode}');
+        print('❌ [CONFERENCE_SERVICE] Error response: ${response.statusCode}');
+        print('❌ [CONFERENCE_SERVICE] Response body: ${response.body}');
+        try {
+          final errorBody = json.decode(response.body);
+          final errorMessage = errorBody['message'] ?? 'فشل جلب المؤتمر النشط';
+          throw Exception(errorMessage);
+        } catch (parseError) {
+          throw Exception('فشل جلب المؤتمر النشط: ${response.statusCode}');
+        }
       }
     } catch (e) {
-      print('❌ Exception fetching active conference: $e');
-      throw Exception('Error fetching active conference: $e');
+      print('❌ [CONFERENCE_SERVICE] Exception: $e');
+      print('❌ [CONFERENCE_SERVICE] Exception type: ${e.runtimeType}');
+      if (e is Exception) rethrow;
+      throw Exception('خطأ في جلب المؤتمر النشط: ${e.toString()}');
     }
   }
 

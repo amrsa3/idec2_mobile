@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -8,7 +7,6 @@ import 'package:file_picker/file_picker.dart' show PlatformFile;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
-import '../../core/constants/app_constants.dart';
 import '../../core/constants/api_constants.dart';
 import '../../services/platform_storage_service.dart';
 

@@ -35,7 +35,7 @@ class UnifiedAuthService {
       StreamController<ConnectivityStatus>.broadcast();
 
   // Current state
-  AuthState _currentAuthState = AuthState.initial();
+  AuthState _currentAuthState = const AuthState.initial();
 
   // Configuration
   static const Duration _tokenRefreshThreshold =
@@ -64,7 +64,7 @@ class UnifiedAuthService {
       _initializeAsyncServices();
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Core initialization error: $e');
-      _updateAuthState(AuthState.error('خطأ في تهيئة النظام'));
+      _updateAuthState(const AuthState.error('خطأ في تهيئة النظام'));
     }
   }
 
@@ -100,7 +100,7 @@ class UnifiedAuthService {
       debugPrint('✅ [UNIFIED_AUTH] Async services initialized successfully');
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Async initialization error: $e');
-      _updateAuthState(AuthState.error('خطأ في تهيئة النظام'));
+      _updateAuthState(const AuthState.error('خطأ في تهيئة النظام'));
     }
   }
 
@@ -124,7 +124,7 @@ class UnifiedAuthService {
     try {
       debugPrint('🔐 [UNIFIED_AUTH] Starting login for: $phone');
 
-      _updateAuthState(AuthState.loading('جاري تسجيل الدخول...'));
+      _updateAuthState(const AuthState.loading('جاري تسجيل الدخول...'));
 
       // Check connectivity
       final isOnline = await _connectivityService.checkConnection();
@@ -185,7 +185,7 @@ class UnifiedAuthService {
       return _handleLoginError(e);
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Login error: $e');
-      _updateAuthState(AuthState.error('خطأ في تسجيل الدخول'));
+      _updateAuthState(const AuthState.error('خطأ في تسجيل الدخول'));
       return AuthResult.error('خطأ في تسجيل الدخول: $e');
     }
   }
@@ -198,25 +198,25 @@ class UnifiedAuthService {
       // Check if we have cached auth data
       final cachedAuthData = await _offlineStorage.getCachedAuthData();
       if (cachedAuthData == null) {
-        return AuthResult.error('لا يمكن تسجيل الدخول بدون اتصال بالإنترنت');
+        return const AuthResult.error('لا يمكن تسجيل الدخول بدون اتصال بالإنترنت');
       }
 
       // Verify credentials match cached data
       if (cachedAuthData['phone'] != phone ||
           cachedAuthData['password'] != password) {
-        return AuthResult.error('بيانات تسجيل الدخول غير صحيحة');
+        return const AuthResult.error('بيانات تسجيل الدخول غير صحيحة');
       }
 
       // Get cached user data
       final cachedUser = await _offlineStorage.getCachedUserData();
       if (cachedUser == null) {
-        return AuthResult.error('لا توجد بيانات مستخدم محفوظة');
+        return const AuthResult.error('لا توجد بيانات مستخدم محفوظة');
       }
 
       // Check if tokens are still valid
       final hasValidTokens = await _tokenManager.hasValidTokens();
       if (!hasValidTokens) {
-        return AuthResult.error('انتهت صلاحية الجلسة، يرجى الاتصال بالإنترنت');
+        return const AuthResult.error('انتهت صلاحية الجلسة، يرجى الاتصال بالإنترنت');
       }
 
       final user = UserModel.fromJsonSafe(cachedUser);
@@ -225,7 +225,7 @@ class UnifiedAuthService {
           user, 'تم تسجيل الدخول في وضع عدم الاتصال');
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Offline login error: $e');
-      return AuthResult.error('خطأ في تسجيل الدخول في وضع عدم الاتصال');
+      return const AuthResult.error('خطأ في تسجيل الدخول في وضع عدم الاتصال');
     }
   }
 
@@ -240,12 +240,12 @@ class UnifiedAuthService {
     try {
       debugPrint('🔐 [UNIFIED_AUTH] Starting registration for: $phone');
 
-      _updateAuthState(AuthState.loading('جاري إنشاء الحساب...'));
+      _updateAuthState(const AuthState.loading('جاري إنشاء الحساب...'));
 
       // Check connectivity
       final isOnline = await _connectivityService.checkConnection();
       if (!isOnline) {
-        return AuthResult.error('يجب الاتصال بالإنترنت لإنشاء حساب جديد');
+        return const AuthResult.error('يجب الاتصال بالإنترنت لإنشاء حساب جديد');
       }
 
       final response = await _dio.post(
@@ -262,7 +262,7 @@ class UnifiedAuthService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data as Map<String, dynamic>;
 
-        _updateAuthState(AuthState.registered());
+        _updateAuthState(const AuthState.registered());
         return AuthResult.success(
             null, data['message'] ?? 'تم إنشاء الحساب بنجاح');
       } else {
@@ -272,7 +272,7 @@ class UnifiedAuthService {
       return _handleRegistrationError(e);
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Registration error: $e');
-      _updateAuthState(AuthState.error('خطأ في إنشاء الحساب'));
+      _updateAuthState(const AuthState.error('خطأ في إنشاء الحساب'));
       return AuthResult.error('خطأ في إنشاء الحساب: $e');
     }
   }
@@ -288,7 +288,7 @@ class UnifiedAuthService {
       // Check connectivity
       final isOnline = await _connectivityService.checkConnection();
       if (!isOnline) {
-        return AuthResult.error('يجب الاتصال بالإنترنت لطلب رمز التحقق');
+        return const AuthResult.error('يجب الاتصال بالإنترنت لطلب رمز التحقق');
       }
 
       final response = await _dio.post(
@@ -325,7 +325,7 @@ class UnifiedAuthService {
       // Check connectivity
       final isOnline = await _connectivityService.checkConnection();
       if (!isOnline) {
-        return AuthResult.error('يجب الاتصال بالإنترنت للتحقق من الرمز');
+        return const AuthResult.error('يجب الاتصال بالإنترنت للتحقق من الرمز');
       }
 
       final response = await _dio.post(
@@ -380,7 +380,7 @@ class UnifiedAuthService {
     try {
       debugPrint('🔐 [UNIFIED_AUTH] Logging out...');
 
-      _updateAuthState(AuthState.loading('جاري تسجيل الخروج...'));
+      _updateAuthState(const AuthState.loading('جاري تسجيل الخروج...'));
 
       // Check connectivity
       final isOnline = await _connectivityService.checkConnection();
@@ -405,17 +405,17 @@ class UnifiedAuthService {
       await _sessionManager.endSession();
       await _offlineStorage.clearAuthData();
 
-      _updateAuthState(AuthState.unauthenticated());
+      _updateAuthState(const AuthState.unauthenticated());
 
       debugPrint('✅ [UNIFIED_AUTH] Logout successful');
-      return AuthResult.success(null, 'تم تسجيل الخروج بنجاح');
+      return const AuthResult.success(null, 'تم تسجيل الخروج بنجاح');
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Logout error: $e');
       // Force logout even if there's an error
       await _tokenManager.clearTokens();
       await _sessionManager.endSession();
-      _updateAuthState(AuthState.unauthenticated());
-      return AuthResult.success(null, 'تم تسجيل الخروج');
+      _updateAuthState(const AuthState.unauthenticated());
+      return const AuthResult.success(null, 'تم تسجيل الخروج');
     }
   }
 
@@ -534,19 +534,19 @@ class UnifiedAuthService {
         _updateAuthState(AuthState.authenticated(user));
         debugPrint('✅ [UNIFIED_AUTH] Session restored successfully');
       } else {
-        _updateAuthState(AuthState.unauthenticated());
+        _updateAuthState(const AuthState.unauthenticated());
         debugPrint('ℹ️ [UNIFIED_AUTH] No valid session to restore');
       }
     } catch (e) {
       debugPrint('❌ [UNIFIED_AUTH] Session restoration error: $e');
-      _updateAuthState(AuthState.unauthenticated());
+      _updateAuthState(const AuthState.unauthenticated());
     }
   }
 
   /// بدء الخدمات الخلفية
   void _startBackgroundServices() {
     // Token refresh monitoring
-    Timer.periodic(Duration(minutes: 1), (timer) async {
+    Timer.periodic(const Duration(minutes: 1), (timer) async {
       try {
         final isOnline = await _connectivityService.checkConnection();
         if (isOnline) {
@@ -558,7 +558,7 @@ class UnifiedAuthService {
     });
 
     // Session monitoring
-    Timer.periodic(Duration(minutes: 5), (timer) async {
+    Timer.periodic(const Duration(minutes: 5), (timer) async {
       try {
         await _monitorSession();
       } catch (e) {

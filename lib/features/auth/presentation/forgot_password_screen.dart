@@ -328,7 +328,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       elevation: authState.isLoading ? 0 : 2,
                     ),
                     child: authState.isLoading
-                        ? Row(
+                        ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               SizedBox(
@@ -341,7 +341,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Text(
                                 'جاري الإرسال...',
                                 style: TextStyle(
@@ -351,7 +351,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                               ),
                             ],
                           )
-                        : Text(
+                        : const Text(
                             'إرسال رمز التحقق',
                             style: TextStyle(
                               fontSize: 16,
@@ -369,9 +369,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     onPressed: () {
                       context.go(AppRoutes.login);
                     },
-                    child: Text(
+                    child: const Text(
                       'العودة لتسجيل الدخول',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w500,
                       ),

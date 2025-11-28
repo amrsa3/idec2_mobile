@@ -331,7 +331,7 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                             },
                           ),
                         );
-                      }).toList(),
+                      }),
                       // Instructions for Jeeb and Jeebly - collapsible (moved after fields)
                       if (_shouldShowInstructions())
                         Padding(
@@ -554,7 +554,7 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                   ],
                 ),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.account_balance_wallet,
                 color: Colors.white,
                 size: 32,
@@ -704,7 +704,7 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                         child: child,
                       );
                     },
-                    child: Icon(
+                    child: const Icon(
                       Icons.expand_more,
                       color: AppColors.info,
                       size: 20,
@@ -772,7 +772,7 @@ class _PaymentInputDialogState extends State<PaymentInputDialog> {
                               ],
                             ),
                           );
-                        }).toList(),
+                        }),
                       ],
                     ),
                   )

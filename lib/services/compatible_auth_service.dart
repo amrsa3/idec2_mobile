@@ -281,52 +281,50 @@ class CompatibleAuthService {
               userData = data;
             }
 
-            if (userData != null) {
-              debugPrint(
-                  '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages data');
-              _currentUser = UserModel.fromJsonSafe(userData);
+            debugPrint(
+                '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages data');
+            _currentUser = UserModel.fromJsonSafe(userData);
 
-              // Extract tokens from new structure
-              String? accessToken;
-              String? refreshToken;
-              Map<String, dynamic>? tokensMap;
+            // Extract tokens from new structure
+            String? accessToken;
+            String? refreshToken;
+            Map<String, dynamic>? tokensMap;
 
-              if (data.containsKey('tokens')) {
-                tokensMap = data['tokens'] as Map<String, dynamic>;
-                accessToken = tokensMap['accessToken'] as String?;
-                refreshToken = tokensMap['refreshToken'] as String?;
-              }
-
-              // Save tokens using existing method
-              if (accessToken != null) {
-                final expiresIn = _extractExpiresIn(tokensMap, data);
-                final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
-                await _tokenManager.saveTokens(
-                  accessToken: accessToken,
-                  refreshToken: refreshToken ?? '',
-                  expiresIn: expiresIn,
-                  refreshExpiresIn: refreshExpiresIn,
-                );
-                await _storage.setString('access_token', accessToken);
-                debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
-              }
-              if (refreshToken != null) {
-                await _storage.setString('refresh_token', refreshToken);
-              }
-
-              await _storage.writeSecure(
-                  'current_user', _currentUser!.toJson().toString());
-              await _storage.setString(
-                  'user_data', _currentUser!.toJson().toString());
-
-              // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
-              await _updateSessionExpiryState();
-
-              _isLoading = false;
-              debugPrint('✅ [COMPATIBLE_AUTH] Smart Messages login successful');
-              return true;
+            if (data.containsKey('tokens')) {
+              tokensMap = data['tokens'] as Map<String, dynamic>;
+              accessToken = tokensMap['accessToken'] as String?;
+              refreshToken = tokensMap['refreshToken'] as String?;
             }
-          } else {
+
+            // Save tokens using existing method
+            if (accessToken != null) {
+              final expiresIn = _extractExpiresIn(tokensMap, data);
+              final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
+              await _tokenManager.saveTokens(
+                accessToken: accessToken,
+                refreshToken: refreshToken ?? '',
+                expiresIn: expiresIn,
+                refreshExpiresIn: refreshExpiresIn,
+              );
+              await _storage.setString('access_token', accessToken);
+              debugPrint('🔐 [COMPATIBLE_AUTH] Smart Messages tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
+            }
+            if (refreshToken != null) {
+              await _storage.setString('refresh_token', refreshToken);
+            }
+
+            await _storage.writeSecure(
+                'current_user', _currentUser!.toJson().toString());
+            await _storage.setString(
+                'user_data', _currentUser!.toJson().toString());
+
+            // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
+            await _updateSessionExpiryState();
+
+            _isLoading = false;
+            debugPrint('✅ [COMPATIBLE_AUTH] Smart Messages login successful');
+            return true;
+                    } else {
             // Handle error from Smart Messages System
             final errorMessage = _selectMessageByLanguage(messageAr, messageEn, null);
             
@@ -363,68 +361,61 @@ class CompatibleAuthService {
           userData = responseData;
         }
 
-        if (userData != null) {
-          debugPrint('🔐 [COMPATIBLE_AUTH] Creating user from data: $userData');
-          _currentUser = UserModel.fromJsonSafe(userData);
-          debugPrint(
-              '🔐 [COMPATIBLE_AUTH] User created: ${_currentUser?.phone}');
-          debugPrint(
-              '🔐 [COMPATIBLE_AUTH] User authenticated: ${_currentUser != null}');
+        debugPrint('🔐 [COMPATIBLE_AUTH] Creating user from data: $userData');
+        _currentUser = UserModel.fromJsonSafe(userData);
+        debugPrint(
+            '🔐 [COMPATIBLE_AUTH] User created: ${_currentUser?.phone}');
+        debugPrint(
+            '🔐 [COMPATIBLE_AUTH] User authenticated: ${_currentUser != null}');
 
-          // Extract tokens - check both possible structures
-          String? accessToken;
-          String? refreshToken;
-          Map<String, dynamic>? tokensMap;
+        // Extract tokens - check both possible structures
+        String? accessToken;
+        String? refreshToken;
+        Map<String, dynamic>? tokensMap;
 
-          if (responseData.containsKey('tokens')) {
-            tokensMap = responseData['tokens'] as Map<String, dynamic>;
-            accessToken = tokensMap['accessToken'] as String?;
-            refreshToken = tokensMap['refreshToken'] as String?;
-          } else {
-            accessToken = responseData['access_token'] as String?;
-            refreshToken = responseData['refresh_token'] as String?;
-          }
-
-          // حفظ التوكنات - استخدام UnifiedTokenManager
-          if (accessToken != null) {
-            final expiresIn = _extractExpiresIn(tokensMap, responseData);
-            final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, responseData);
-            await _tokenManager.saveTokens(
-              accessToken: accessToken,
-              refreshToken: refreshToken ?? '',
-              expiresIn: expiresIn,
-              refreshExpiresIn: refreshExpiresIn,
-            );
-            // أيضاً احفظ في المفاتيح القديمة للتوافق
-            await _storage.setString('access_token', accessToken);
-            debugPrint(
-                '🔐 [COMPATIBLE_AUTH] Access token saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
-          }
-          if (refreshToken != null) {
-            await _storage.setString('refresh_token', refreshToken);
-            debugPrint('🔐 [COMPATIBLE_AUTH] Refresh token saved');
-          }
-          await _storage.writeSecure(
-              'current_user', _currentUser!.toJson().toString());
-          await _storage.setString(
-              'user_data', _currentUser!.toJson().toString());
-          debugPrint('🔐 [COMPATIBLE_AUTH] User data saved');
-
-          // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
-          await _updateSessionExpiryState();
-
-          _isLoading = false;
-          debugPrint('✅ [COMPATIBLE_AUTH] Login successful for: $phone');
-          debugPrint(
-              '✅ [COMPATIBLE_AUTH] Final auth state - isAuthenticated: ${_currentUser != null}');
-          return true;
+        if (responseData.containsKey('tokens')) {
+          tokensMap = responseData['tokens'] as Map<String, dynamic>;
+          accessToken = tokensMap['accessToken'] as String?;
+          refreshToken = tokensMap['refreshToken'] as String?;
         } else {
-          _error = 'بيانات المستخدم غير صحيحة';
-          _isLoading = false;
-          debugPrint('❌ [COMPATIBLE_AUTH] Invalid user data structure');
-          return false;
+          accessToken = responseData['access_token'] as String?;
+          refreshToken = responseData['refresh_token'] as String?;
         }
-      } else {
+
+        // حفظ التوكنات - استخدام UnifiedTokenManager
+        if (accessToken != null) {
+          final expiresIn = _extractExpiresIn(tokensMap, responseData);
+          final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, responseData);
+          await _tokenManager.saveTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken ?? '',
+            expiresIn: expiresIn,
+            refreshExpiresIn: refreshExpiresIn,
+          );
+          // أيضاً احفظ في المفاتيح القديمة للتوافق
+          await _storage.setString('access_token', accessToken);
+          debugPrint(
+              '🔐 [COMPATIBLE_AUTH] Access token saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
+        }
+        if (refreshToken != null) {
+          await _storage.setString('refresh_token', refreshToken);
+          debugPrint('🔐 [COMPATIBLE_AUTH] Refresh token saved');
+        }
+        await _storage.writeSecure(
+            'current_user', _currentUser!.toJson().toString());
+        await _storage.setString(
+            'user_data', _currentUser!.toJson().toString());
+        debugPrint('🔐 [COMPATIBLE_AUTH] User data saved');
+
+        // تحديث حالة الجلسة بعد تسجيل الدخول الناجح
+        await _updateSessionExpiryState();
+
+        _isLoading = false;
+        debugPrint('✅ [COMPATIBLE_AUTH] Login successful for: $phone');
+        debugPrint(
+            '✅ [COMPATIBLE_AUTH] Final auth state - isAuthenticated: ${_currentUser != null}');
+        return true;
+            } else {
         _error = 'فشل في تسجيل الدخول';
         _isLoading = false;
         debugPrint(
@@ -718,49 +709,47 @@ class CompatibleAuthService {
               userData = data;
             }
 
-            if (userData != null) {
-              debugPrint(
-                  '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages OTP data');
-              _currentUser = UserModel.fromJsonSafe(userData);
+            debugPrint(
+                '🔐 [COMPATIBLE_AUTH] Creating user from Smart Messages OTP data');
+            _currentUser = UserModel.fromJsonSafe(userData);
 
-              // Extract tokens from new structure
-              String? accessToken;
-              String? refreshToken;
-              Map<String, dynamic>? tokensMap;
+            // Extract tokens from new structure
+            String? accessToken;
+            String? refreshToken;
+            Map<String, dynamic>? tokensMap;
 
-              if (data.containsKey('tokens')) {
-                tokensMap = data['tokens'] as Map<String, dynamic>;
-                accessToken = tokensMap['accessToken'] as String?;
-                refreshToken = tokensMap['refreshToken'] as String?;
-              }
-
-              // Save tokens using existing method
-              if (accessToken != null) {
-                final expiresIn = _extractExpiresIn(tokensMap, data);
-                final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
-                await _tokenManager.saveTokens(
-                  accessToken: accessToken,
-                  refreshToken: refreshToken ?? '',
-                  expiresIn: expiresIn,
-                  refreshExpiresIn: refreshExpiresIn,
-                );
-                await _storage.setString('access_token', accessToken);
-                debugPrint(
-                    '🔐 [COMPATIBLE_AUTH] Smart Messages OTP tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
-              }
-              if (refreshToken != null) {
-                await _storage.setString('refresh_token', refreshToken);
-              }
-
-              await _storage.writeSecure(
-                  'current_user', _currentUser!.toJson().toString());
-              await _storage.setString(
-                  'user_data', _currentUser!.toJson().toString());
-              
-              // تحديث حالة الجلسة بعد التحقق الناجح
-              await _updateSessionExpiryState();
+            if (data.containsKey('tokens')) {
+              tokensMap = data['tokens'] as Map<String, dynamic>;
+              accessToken = tokensMap['accessToken'] as String?;
+              refreshToken = tokensMap['refreshToken'] as String?;
             }
-          } else if (!success) {
+
+            // Save tokens using existing method
+            if (accessToken != null) {
+              final expiresIn = _extractExpiresIn(tokensMap, data);
+              final refreshExpiresIn = _extractRefreshExpiresIn(tokensMap, data);
+              await _tokenManager.saveTokens(
+                accessToken: accessToken,
+                refreshToken: refreshToken ?? '',
+                expiresIn: expiresIn,
+                refreshExpiresIn: refreshExpiresIn,
+              );
+              await _storage.setString('access_token', accessToken);
+              debugPrint(
+                  '🔐 [COMPATIBLE_AUTH] Smart Messages OTP tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "30 days"}');
+            }
+            if (refreshToken != null) {
+              await _storage.setString('refresh_token', refreshToken);
+            }
+
+            await _storage.writeSecure(
+                'current_user', _currentUser!.toJson().toString());
+            await _storage.setString(
+                'user_data', _currentUser!.toJson().toString());
+            
+            // تحديث حالة الجلسة بعد التحقق الناجح
+            await _updateSessionExpiryState();
+                    } else if (!success) {
             // Handle error from Smart Messages System
             _error = _selectMessageByLanguage(messageAr, messageEn, null);
             _isLoading = false;

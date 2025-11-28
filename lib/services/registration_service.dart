@@ -232,6 +232,33 @@ class RegistrationService {
     }
   }
 
+  /// Get user registration status for an event
+  Future<Map<String, dynamic>?> getEventRegistrationStatus(String eventId) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/events/registrations/my-status/$eventId'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return data;
+      } else if (response.statusCode == 404) {
+        // User not registered
+        return null;
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to get registration status');
+      }
+    } catch (e) {
+      if (e is Exception && e.toString().contains('404')) {
+        return null; // Not registered
+      }
+      throw Exception('Error fetching registration status: $e');
+    }
+  }
+
   /// Get registration timeline
   Future<Map<String, dynamic>> getRegistrationTimeline(
       String registrationId) async {

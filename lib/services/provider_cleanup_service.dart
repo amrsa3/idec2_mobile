@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/profile/providers/profile_provider.dart';
 import '../features/profile/providers/smart_file_provider.dart' as smart_file_provider;

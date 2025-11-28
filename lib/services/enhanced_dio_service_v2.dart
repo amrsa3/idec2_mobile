@@ -216,7 +216,7 @@ class EnhancedDioServiceV2 {
           if (connectivityResult == ConnectivityResult.none) {
             final networkError = DioException(
               requestOptions: error.requestOptions,
-              error: NetworkError(
+              error: const NetworkError(
                 message: 'لا يوجد اتصال بالإنترنت',
                 code: 'NO_CONNECTION',
                 isConnectionError: true,
@@ -236,7 +236,7 @@ class EnhancedDioServiceV2 {
               error.type == DioExceptionType.sendTimeout) {
             final timeoutError = DioException(
               requestOptions: error.requestOptions,
-              error: NetworkError(
+              error: const NetworkError(
                 message: 'انتهت مهلة الاتصال',
                 code: 'TIMEOUT',
                 isConnectionError: false,

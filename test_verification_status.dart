@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'lib/models/profile_model.dart';
 
 void main() {

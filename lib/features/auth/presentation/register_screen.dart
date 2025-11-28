@@ -551,18 +551,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
-                    decoration: InputDecoration(
+                    initialValue: _selectedGender,
+                    decoration: const InputDecoration(
                       labelText: 'الجنس',
                       hintText: 'اختر الجنس',
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      prefixIcon: const Icon(Icons.person_outline),
-                      labelStyle: const TextStyle(
+                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      prefixIcon: Icon(Icons.person_outline),
+                      labelStyle: TextStyle(
                         fontFamily: 'Cairo',
                         fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
                       ),
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         fontFamily: 'Cairo',
                         fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
                       ),

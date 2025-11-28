@@ -108,7 +108,7 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -304,8 +304,9 @@ class _DocumentUploadWidgetState extends State<DocumentUploadWidget> {
 
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes بايت';
-    if (bytes < 1024 * 1024)
+    if (bytes < 1024 * 1024) {
       return '${(bytes / 1024).toStringAsFixed(1)} كيلوبايت';
+    }
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} ميجابايت';
   }
 
@@ -589,7 +590,7 @@ class CompactDocumentUpload extends StatelessWidget {
                 ),
                 children: [
                   if (isRequired)
-                    TextSpan(
+                    const TextSpan(
                       text: ' *',
                       style: TextStyle(
                         color: AppColors.error,

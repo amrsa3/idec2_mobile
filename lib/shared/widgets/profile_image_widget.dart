@@ -280,7 +280,7 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
               const SizedBox(height: 20),
 
               // العنوان
-              Text(
+              const Text(
                 'اختر مصدر الصورة',
                 style: TextStyle(
                   fontSize: 18,

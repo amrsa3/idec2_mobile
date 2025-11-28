@@ -133,7 +133,7 @@ class RegistrationSettingsService {
       );
 
       if (response.data == null) {
-        throw NetworkError(
+        throw const NetworkError(
           message: 'No data received from server',
           code: 'NO_DATA',
         );
@@ -197,7 +197,7 @@ class RegistrationSettingsService {
       );
 
       if (response.data == null) {
-        throw NetworkError(
+        throw const NetworkError(
           message: 'No data received from server',
           code: 'NO_DATA',
         );
@@ -301,7 +301,7 @@ class RegistrationSettingsService {
       );
 
       if (response.data == null) {
-        throw NetworkError(
+        throw const NetworkError(
           message: 'No data received from server',
           code: 'NO_DATA',
         );

@@ -111,7 +111,7 @@ class SystemTestService {
 
   /// Test PlatformStorageService
   Future<void> _testPlatformStorage() async {
-    final testName = 'PlatformStorageService';
+    const testName = 'PlatformStorageService';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -166,7 +166,7 @@ class SystemTestService {
 
   /// Test UnifiedTokenManager
   Future<void> _testUnifiedTokenManager() async {
-    final testName = 'UnifiedTokenManager';
+    const testName = 'UnifiedTokenManager';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -223,7 +223,7 @@ class SystemTestService {
 
   /// Test EnhancedSessionManager
   Future<void> _testEnhancedSessionManager() async {
-    final testName = 'EnhancedSessionManager';
+    const testName = 'EnhancedSessionManager';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -276,7 +276,7 @@ class SystemTestService {
 
   /// Test SilentTokenRefreshService
   Future<void> _testSilentTokenRefreshService() async {
-    final testName = 'SilentTokenRefreshService';
+    const testName = 'SilentTokenRefreshService';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -290,7 +290,7 @@ class SystemTestService {
       }
 
       // Test configuration
-      final config = SilentRefreshConfig(
+      const config = SilentRefreshConfig(
         refreshThresholdMinutes: 5,
         maxRetryAttempts: 3,
         retryDelaySeconds: 2,
@@ -301,12 +301,12 @@ class SystemTestService {
       await refreshService.updateConfiguration(config);
 
       // Test pause/resume
-      await refreshService.pause();
+      refreshService.pause();
       if (!refreshService.isPaused) {
         throw Exception('Service should be paused');
       }
 
-      await refreshService.resume();
+      refreshService.resume();
       if (refreshService.isPaused) {
         throw Exception('Service should not be paused after resume');
       }
@@ -328,7 +328,7 @@ class SystemTestService {
 
   /// Test EnhancedDioServiceV2
   Future<void> _testEnhancedDioServiceV2() async {
-    final testName = 'EnhancedDioServiceV2';
+    const testName = 'EnhancedDioServiceV2';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -368,17 +368,17 @@ class SystemTestService {
 
   /// Test UniversalAuthProvider
   Future<void> _testUniversalAuthProvider() async {
-    final testName = 'UniversalAuthProvider';
+    const testName = 'UniversalAuthProvider';
     final stopwatch = Stopwatch()..start();
 
     try {
       // Test platform detection (using hardcoded values for testing)
-      final hasRememberMe = kIsWeb;
-      final hasOfflineMode = !kIsWeb;
-      final hasCrossTabSync = kIsWeb;
+      const hasRememberMe = kIsWeb;
+      const hasOfflineMode = !kIsWeb;
+      const hasCrossTabSync = kIsWeb;
 
       // These should return boolean values
-      if (hasRememberMe is! bool || hasCrossTabSync is! bool) {
+      if (hasCrossTabSync is! bool) {
         throw Exception('Platform feature detection failed');
       }
 
@@ -405,7 +405,7 @@ class SystemTestService {
 
   /// Test TokenManager and SessionManager integration
   Future<void> _testTokenManagerSessionIntegration() async {
-    final testName = 'TokenManager-SessionManager Integration';
+    const testName = 'TokenManager-SessionManager Integration';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -453,7 +453,7 @@ class SystemTestService {
 
   /// Test DioService and TokenManager integration
   Future<void> _testDioServiceTokenIntegration() async {
-    final testName = 'DioService-TokenManager Integration';
+    const testName = 'DioService-TokenManager Integration';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -493,13 +493,13 @@ class SystemTestService {
 
   /// Test AuthProvider integration
   Future<void> _testAuthProviderIntegration() async {
-    final testName = 'AuthProvider Integration';
+    const testName = 'AuthProvider Integration';
     final stopwatch = Stopwatch()..start();
 
     try {
       // Test platform-specific features (using hardcoded values for testing)
-      final supportsRememberMe = kIsWeb;
-      final supportsOfflineMode = !kIsWeb;
+      const supportsRememberMe = kIsWeb;
+      const supportsOfflineMode = !kIsWeb;
 
       // Verify feature flags are properly set
       if (kIsWeb) {
@@ -536,7 +536,7 @@ class SystemTestService {
 
   /// Test storage performance
   Future<void> _testStoragePerformance() async {
-    final testName = 'Storage Performance';
+    const testName = 'Storage Performance';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -572,12 +572,12 @@ class SystemTestService {
       // Performance thresholds (adjust as needed)
       if (avgWriteTime > 10000) {
         // 10ms
-        throw Exception('Write performance too slow: ${avgWriteTime}μs');
+        throw Exception('Write performance too slow: $avgWriteTimeμs');
       }
 
       if (avgReadTime > 5000) {
         // 5ms
-        throw Exception('Read performance too slow: ${avgReadTime}μs');
+        throw Exception('Read performance too slow: $avgReadTimeμs');
       }
 
       stopwatch.stop();
@@ -592,7 +592,7 @@ class SystemTestService {
 
   /// Test token operation performance
   Future<void> _testTokenOperationPerformance() async {
-    final testName = 'Token Operation Performance';
+    const testName = 'Token Operation Performance';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -622,7 +622,7 @@ class SystemTestService {
       if (avgOperationTime > 15000) {
         // 15ms
         throw Exception(
-            'Token operation performance too slow: ${avgOperationTime}μs');
+            'Token operation performance too slow: $avgOperationTimeμs');
       }
 
       // Cleanup
@@ -640,7 +640,7 @@ class SystemTestService {
 
   /// Test session performance
   Future<void> _testSessionPerformance() async {
-    final testName = 'Session Performance';
+    const testName = 'Session Performance';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -668,7 +668,7 @@ class SystemTestService {
       // Performance threshold
       if (avgSessionTime > 20000) {
         // 20ms
-        throw Exception('Session performance too slow: ${avgSessionTime}μs');
+        throw Exception('Session performance too slow: $avgSessionTimeμs');
       }
 
       stopwatch.stop();
@@ -691,7 +691,7 @@ class SystemTestService {
 
   /// Test concurrent operations
   Future<void> _testConcurrentOperations() async {
-    final testName = 'Concurrent Operations Stress Test';
+    const testName = 'Concurrent Operations Stress Test';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -733,7 +733,7 @@ class SystemTestService {
 
   /// Test memory usage
   Future<void> _testMemoryUsage() async {
-    final testName = 'Memory Usage Test';
+    const testName = 'Memory Usage Test';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -780,7 +780,7 @@ class SystemTestService {
 
   /// Test migration service
   Future<void> _testMigrationService() async {
-    final testName = 'Migration Service';
+    const testName = 'Migration Service';
     final stopwatch = Stopwatch()..start();
 
     try {
@@ -796,7 +796,7 @@ class SystemTestService {
       final isValid = await migrationService.validateMigration();
       // Note: This might fail if no migration has been performed, which is okay
 
-      debugPrint('📊 Migration Status: ${status}');
+      debugPrint('📊 Migration Status: $status');
       debugPrint('✅ Migration Validation: $isValid');
 
       stopwatch.stop();

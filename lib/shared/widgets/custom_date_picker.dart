@@ -104,7 +104,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -186,13 +186,12 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: AppColors.textPrimary,
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -305,7 +304,7 @@ class _CustomDateRangePickerState extends State<CustomDateRangePicker> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -387,13 +386,12 @@ class _CustomDateRangePickerState extends State<CustomDateRangePicker> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: AppColors.textPrimary,
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -491,7 +489,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -580,13 +578,12 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: AppColors.textPrimary,
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );

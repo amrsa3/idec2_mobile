@@ -31,7 +31,7 @@ class ApiConstants {
     if (_baseUrl.contains('localhost') && !_baseUrl.contains(':3000')) {
       debugPrint(
           '⚠️ [API_CONSTANTS] Port missing for localhost: $_baseUrl, fixing...');
-      _baseUrl = _baseUrl.replaceAll(RegExp(r':\d+'), '') + ':3000';
+      _baseUrl = '${_baseUrl.replaceAll(RegExp(r':\d+'), '')}:3000';
     }
 
     // Validate HTTPS for production API only
@@ -122,7 +122,7 @@ class ApiConstants {
 
   /// Get fallback URL based on build mode
   static String _getFallbackUrl() {
-    final fallback = kDebugMode ? devUrl : productionUrl;
+    const fallback = kDebugMode ? devUrl : productionUrl;
     debugPrint(
         '🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)');
     return fallback;

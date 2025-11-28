@@ -121,7 +121,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: const Text(
                           'متقدم',
                           style: TextStyle(
                             color: AppColors.primary,
@@ -150,7 +150,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: AppColors.primary.withOpacity(0.1),
-                            child: Icon(Icons.person,
+                            child: const Icon(Icons.person,
                                 color: AppColors.primary, size: 20),
                           ),
                           const SizedBox(width: 12),
@@ -301,11 +301,11 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                             color: AppColors.primary, size: 40),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'د. سارة القحطاني',
                               style: TextStyle(
                                 fontSize: 18,
@@ -313,20 +313,20 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
+                            SizedBox(height: 4),
+                            Text(
                               'خبيرة في طب الأسنان التجميلي',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Row(
                               children: [
                                 Icon(Icons.star, color: Colors.amber, size: 16),
-                                const SizedBox(width: 4),
-                                const Text(
+                                SizedBox(width: 4),
+                                Text(
                                   '4.8 (120 تقييم)',
                                   style: TextStyle(
                                     fontSize: 14,
@@ -493,7 +493,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.check,
               size: 16,
               color: AppColors.primary,

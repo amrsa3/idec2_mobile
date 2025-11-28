@@ -21,7 +21,7 @@ class AnalyticsService {
       _observer ??= FirebaseAnalyticsObserver(analytics: _analytics!);
 
       // Disable analytics in debug builds to keep production metrics clean.
-      final shouldCollect = !kDebugMode;
+      const shouldCollect = !kDebugMode;
       await _analytics?.setAnalyticsCollectionEnabled(shouldCollect);
 
       debugPrint(

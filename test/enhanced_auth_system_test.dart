@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import '../lib/models/auth_models.dart';
-import '../lib/models/user_model.dart';
-import '../lib/services/connectivity_service.dart';
-import '../lib/services/offline_storage_service.dart';
-import '../lib/services/secure_token_manager.dart';
-import '../lib/services/session_manager.dart';
-import '../lib/services/unified_auth_service.dart';
+import 'package:idec_conference_app/models/auth_models.dart';
+import 'package:idec_conference_app/models/user_model.dart';
+import 'package:idec_conference_app/services/connectivity_service.dart';
+import 'package:idec_conference_app/services/offline_storage_service.dart';
+import 'package:idec_conference_app/services/secure_token_manager.dart';
+import 'package:idec_conference_app/services/session_manager.dart';
+import 'package:idec_conference_app/services/unified_auth_service.dart';
 // Generate mocks
 @GenerateMocks([
   UnifiedAuthService,
@@ -78,7 +78,7 @@ void main() {
           password: anyNamed('password'),
           rememberMe: anyNamed('rememberMe'),
         )).thenAnswer((_) async =>
-            AuthResult.error('رقم الهاتف أو كلمة المرور غير صحيحة'));
+            const AuthResult.error('رقم الهاتف أو كلمة المرور غير صحيحة'));
 
         // Act
         final result = await mockAuthService.login(
@@ -102,7 +102,7 @@ void main() {
           lastName: anyNamed('lastName'),
           email: anyNamed('email'),
         )).thenAnswer(
-            (_) async => AuthResult.success(null, 'تم إنشاء الحساب بنجاح'));
+            (_) async => const AuthResult.success(null, 'تم إنشاء الحساب بنجاح'));
 
         // Act
         final result = await mockAuthService.register(
@@ -124,7 +124,7 @@ void main() {
           phone: anyNamed('phone'),
           purpose: anyNamed('purpose'),
         )).thenAnswer(
-            (_) async => AuthResult.success(null, 'تم إرسال رمز التحقق'));
+            (_) async => const AuthResult.success(null, 'تم إرسال رمز التحقق'));
 
         // Act
         final result = await mockAuthService.requestOtp(
@@ -169,7 +169,7 @@ void main() {
         // Arrange
         when(mockAuthService.logout(fromAllDevices: anyNamed('fromAllDevices')))
             .thenAnswer(
-                (_) async => AuthResult.success(null, 'تم تسجيل الخروج بنجاح'));
+                (_) async => const AuthResult.success(null, 'تم تسجيل الخروج بنجاح'));
 
         // Act
         final result = await mockAuthService.logout(fromAllDevices: false);
@@ -535,7 +535,7 @@ void main() {
           password: anyNamed('password'),
           rememberMe: anyNamed('rememberMe'),
         )).thenAnswer(
-            (_) async => AuthResult.error('خطأ في الاتصال بالإنترنت'));
+            (_) async => const AuthResult.error('خطأ في الاتصال بالإنترنت'));
 
         // Act
         final isConnected = await mockConnectivityService.isConnected();
@@ -559,7 +559,7 @@ void main() {
             .thenAnswer((_) async => false);
         when(mockTokenManager.getRefreshToken()).thenAnswer((_) async => null);
         when(mockAuthService.logout()).thenAnswer(
-            (_) async => AuthResult.success(null, 'تم تسجيل الخروج'));
+            (_) async => const AuthResult.success(null, 'تم تسجيل الخروج'));
 
         // Act
         final isTokenValid = await mockTokenManager.isAccessTokenValid();
@@ -597,7 +597,7 @@ void main() {
           rememberMe: anyNamed('rememberMe'),
         )).thenAnswer((_) async {
           // Simulate network delay
-          await Future.delayed(Duration(milliseconds: 100));
+          await Future.delayed(const Duration(milliseconds: 100));
           return AuthResult.success(user, 'تم تسجيل الدخول بنجاح');
         });
 
@@ -650,7 +650,7 @@ void performanceTests() {
 
       // Simulate high load
       final futures = List.generate(100, (index) async {
-        await Future.delayed(Duration(milliseconds: 1));
+        await Future.delayed(const Duration(milliseconds: 1));
         return index;
       });
 

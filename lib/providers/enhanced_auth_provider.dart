@@ -31,7 +31,7 @@ class EnhancedAuthProvider extends StateNotifier<AuthState> {
     bool rememberMe = true,
   }) async {
     try {
-      state = AuthState.loading('جاري تسجيل الدخول...');
+      state = const AuthState.loading('جاري تسجيل الدخول...');
 
       final result = await _authService.login(
         phone: phone,
@@ -42,7 +42,7 @@ class EnhancedAuthProvider extends StateNotifier<AuthState> {
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_PROVIDER] Login error: $e');
-      state = AuthState.error('خطأ في تسجيل الدخول');
+      state = const AuthState.error('خطأ في تسجيل الدخول');
       return AuthResult.error('خطأ في تسجيل الدخول: $e');
     }
   }
@@ -56,7 +56,7 @@ class EnhancedAuthProvider extends StateNotifier<AuthState> {
     String? email,
   }) async {
     try {
-      state = AuthState.loading('جاري إنشاء الحساب...');
+      state = const AuthState.loading('جاري إنشاء الحساب...');
 
       final result = await _authService.register(
         phone: phone,
@@ -69,7 +69,7 @@ class EnhancedAuthProvider extends StateNotifier<AuthState> {
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_PROVIDER] Registration error: $e');
-      state = AuthState.error('خطأ في إنشاء الحساب');
+      state = const AuthState.error('خطأ في إنشاء الحساب');
       return AuthResult.error('خطأ في إنشاء الحساب: $e');
     }
   }
@@ -109,14 +109,14 @@ class EnhancedAuthProvider extends StateNotifier<AuthState> {
   /// تسجيل الخروج
   Future<AuthResult> logout({bool fromAllDevices = false}) async {
     try {
-      state = AuthState.loading('جاري تسجيل الخروج...');
+      state = const AuthState.loading('جاري تسجيل الخروج...');
 
       final result = await _authService.logout(fromAllDevices: fromAllDevices);
 
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_PROVIDER] Logout error: $e');
-      state = AuthState.error('خطأ في تسجيل الخروج');
+      state = const AuthState.error('خطأ في تسجيل الخروج');
       return AuthResult.error('خطأ في تسجيل الخروج: $e');
     }
   }

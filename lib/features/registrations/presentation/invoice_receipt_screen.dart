@@ -87,7 +87,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: AppColors.border, width: 1),
+                side: const BorderSide(color: AppColors.border, width: 1),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -508,7 +508,7 @@ class _InvoiceReceiptScreenState extends State<InvoiceReceiptScreen> {
                     // Title
                     pw.Row(
                       children: [
-                        pw.Icon(pw.IconData(0xe263), size: 24, color: PdfColors.blue900),
+                        pw.Icon(const pw.IconData(0xe263), size: 24, color: PdfColors.blue900),
                         pw.SizedBox(width: 12),
                         pw.Text(
                           'تفاصيل الإيصال',

@@ -387,7 +387,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _validateOtp() ?? '',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.error,
                         fontSize: 12,
                       ),
@@ -513,7 +513,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       elevation: authState.isLoading ? 0 : 2,
                     ),
                     child: authState.isLoading
-                        ? Row(
+                        ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               SizedBox(
@@ -526,7 +526,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Text(
                                 'جاري إعادة التعيين...',
                                 style: TextStyle(
@@ -536,7 +536,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                               ),
                             ],
                           )
-                        : Text(
+                        : const Text(
                             'إعادة تعيين كلمة المرور',
                             style: TextStyle(
                               fontSize: 16,
@@ -553,7 +553,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   child: TextButton(
                     onPressed: _isResendingOtp ? null : _resendOtp,
                     child: _isResendingOtp
-                        ? Row(
+                        ? const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               SizedBox(
@@ -566,7 +566,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 'جاري الإرسال...',
                                 style: TextStyle(
@@ -576,7 +576,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                               ),
                             ],
                           )
-                        : Text(
+                        : const Text(
                             'إعادة إرسال رمز التحقق',
                             style: TextStyle(
                               color: AppColors.primary,
@@ -594,9 +594,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     onPressed: () {
                       context.go(AppRoutes.login);
                     },
-                    child: Text(
+                    child: const Text(
                       'العودة لتسجيل الدخول',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.textSecondary,
                       ),
                     ),

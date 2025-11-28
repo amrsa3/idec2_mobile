@@ -85,6 +85,24 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
   Future<void> _loadImage() async {
     if (!mounted) return;
     
+    final fullUrl = AuthenticatedImageService.getFullImageUrl(widget.imageUrl);
+    
+    // محاولة استخدام الكاش أولاً إذا كان موجوداً
+    final cachedImage = AuthenticatedImageService.getCachedImage(fullUrl);
+    if (cachedImage != null && !widget.forceReload) {
+      debugPrint('📦 AuthenticatedImageWidget: Using cached image for: ${widget.imageUrl}');
+      if (mounted) {
+        setState(() {
+          _imageData = cachedImage;
+          _isLoading = false;
+          _hasError = false;
+          _lastLoadedUrl = widget.imageUrl;
+          _lastReloadKey = widget.reloadKey;
+        });
+      }
+      return;
+    }
+    
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -92,25 +110,26 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
     });
 
     try {
-      // مسح cache للصورة الحالية أولاً
-      AuthenticatedImageService.clearImageCache(widget.imageUrl);
-      
-      // إضافة timestamp لتجنب مشاكل cache
-      String urlWithTimestamp = widget.imageUrl;
-      if (widget.forceReload || _reloadCounter > 0 || widget.reloadKey != null) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final separator = widget.imageUrl.contains('?') ? '&' : '?';
-        urlWithTimestamp = '${widget.imageUrl}${separator}t=$timestamp&reload=$_reloadCounter';
-        if (widget.reloadKey != null) {
-          urlWithTimestamp += '&key=${widget.reloadKey}';
-        }
-        debugPrint('🔄 AuthenticatedImageWidget: Added timestamp to URL: $urlWithTimestamp');
+      // مسح cache فقط إذا طُلب force reload
+      if (widget.forceReload) {
+        AuthenticatedImageService.clearImageCache(widget.imageUrl);
       }
       
-      final fullUrl = AuthenticatedImageService.getFullImageUrl(urlWithTimestamp);
+      // إضافة timestamp فقط عند force reload
+      String urlToLoad = widget.imageUrl;
+      if (widget.forceReload) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final separator = widget.imageUrl.contains('?') ? '&' : '?';
+        urlToLoad = '${widget.imageUrl}${separator}t=$timestamp&reload=$_reloadCounter';
+        if (widget.reloadKey != null) {
+          urlToLoad += '&key=${widget.reloadKey}';
+        }
+        debugPrint('🔄 AuthenticatedImageWidget: Force reload with timestamp: $urlToLoad');
+      }
+      
       debugPrint('🖼️ AuthenticatedImageWidget: Loading image: $fullUrl');
 
-      final imageData = await AuthenticatedImageService.loadImageWithAuth(fullUrl);
+      final imageData = await AuthenticatedImageService.loadImageWithAuth(urlToLoad);
       
       if (mounted) {
         setState(() {

@@ -301,7 +301,7 @@ class _UserDocumentsViewerScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 64,
               color: AppColors.error,
@@ -573,7 +573,7 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Center(
+        child: const Center(
           child: SizedBox(
             width: 20,
             height: 20,
@@ -606,7 +606,7 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
         color: Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
+      child: const Icon(
         Icons.image_outlined,
         color: Colors.blue,
         size: 28,
@@ -743,17 +743,17 @@ class _ImageFullScreenViewerState extends State<_ImageFullScreenViewer> {
     }
 
     if (_imageBytes == null) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.image_not_supported,
               size: 64,
               color: Colors.white70,
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'لا توجد بيانات للصورة',
               style: TextStyle(color: Colors.white70),
             ),

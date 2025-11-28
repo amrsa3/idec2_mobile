@@ -9,6 +9,26 @@ class AuthenticatedImageService {
   // Cache للصور المحملة
   static final Map<String, Uint8List> _imageCache = {};
   
+  /// الحصول على صورة من الكاش
+  static Uint8List? getCachedImage(String imageUrl) {
+    final fullUrl = getFullImageUrl(imageUrl);
+    
+    // البحث في الكاش بدون query parameters
+    final baseUrl = fullUrl.split('?')[0];
+    
+    // البحث عن مفتاح يحتوي على baseUrl
+    for (final key in _imageCache.keys) {
+      final keyBase = key.split('?')[0];
+      if (keyBase == baseUrl) {
+        debugPrint('📦 AuthenticatedImageService: Found cached image for: $fullUrl');
+        return _imageCache[key];
+      }
+    }
+    
+    debugPrint('📦 AuthenticatedImageService: No cached image found for: $fullUrl');
+    return null;
+  }
+  
   /// مسح cache صورة معينة
   static void clearImageCache(String imageUrl) {
     final fullUrl = getFullImageUrl(imageUrl);

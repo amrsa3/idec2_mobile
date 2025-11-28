@@ -233,7 +233,7 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // الإعدادات
                 ListTile(
-                  trailing: Icon(Icons.settings_outlined,
+                  trailing: const Icon(Icons.settings_outlined,
                       color: AppColors.textSecondary),
                   title: const Text('الإعدادات'),
                   onTap: () {
@@ -248,7 +248,7 @@ class ProfileSideDrawer extends ConsumerWidget {
                 // المساعدة
                 ListTile(
                   trailing:
-                      Icon(Icons.help_outline, color: AppColors.textSecondary),
+                      const Icon(Icons.help_outline, color: AppColors.textSecondary),
                   title: const Text('المساعدة'),
                   onTap: () {
                     Navigator.pop(context);
@@ -263,10 +263,10 @@ class ProfileSideDrawer extends ConsumerWidget {
 
                 // تسجيل الخروج
                 ListTile(
-                  trailing: Icon(Icons.logout, color: AppColors.error),
+                  trailing: const Icon(Icons.logout, color: AppColors.error),
                   title: Text(
                     l10n.logout,
-                    style: TextStyle(color: AppColors.error),
+                    style: const TextStyle(color: AppColors.error),
                   ),
                   onTap: () => _showLogoutDialog(context, ref, l10n),
                 ),
@@ -292,7 +292,7 @@ class ProfileSideDrawer extends ConsumerWidget {
                 return Text(
                   'تطبيق IDEC\nالإصدار $version$buildNumber',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
                   ),

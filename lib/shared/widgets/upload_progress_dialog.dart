@@ -323,7 +323,7 @@ class UploadProgressDialog extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.warning,
                     color: AppColors.error,
                     size: 20,
@@ -466,9 +466,9 @@ class UploadProgressDialog extends ConsumerWidget {
       BuildContext context, WidgetRef ref, UploadProgressState state) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),

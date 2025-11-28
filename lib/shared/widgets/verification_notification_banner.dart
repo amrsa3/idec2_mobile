@@ -36,8 +36,8 @@ class VerificationNotificationBanner extends ConsumerWidget {
     ProfileModel? profileForNavigation;
     
     // محاولة 1: من user.profile.status مباشرة
-    if (user!.profile != null) {
-      final status = user!.profile!.status;
+    if (user.profile != null) {
+      final status = user.profile!.status;
       debugPrint('🔍 [VERIFICATION_BANNER] User profile exists, status: $status');
       
       if (status != null) {

@@ -134,7 +134,7 @@ class DemoConferenceCard extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.person_add,
                         color: Colors.white,
                         size: 20,
@@ -188,7 +188,7 @@ class DemoConferenceCard extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.send,
                       size: 20,
                     ),

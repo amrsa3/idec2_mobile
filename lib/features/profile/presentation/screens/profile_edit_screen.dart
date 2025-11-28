@@ -54,18 +54,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   String? _selectedCategoryId; // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
 
   // متغيرات لحالة التحميل والأخطاء
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isSaving = false;
-  Map<String, String> _fieldErrors = {};
-  Map<String, bool> _fieldEditability = {};
+  final Map<String, String> _fieldErrors = {};
+  final Map<String, bool> _fieldEditability = {};
 
   // متغيرات لتتبع حالة رفع الملفات
-  Map<int, double> _uploadProgress = {}; // تقدم رفع كل ملف
-  Map<int, bool> _uploadSuccess = {}; // نجاح رفع كل ملف
-  Map<int, String> _uploadErrors = {}; // أخطاء رفع كل ملف
+  final Map<int, double> _uploadProgress = {}; // تقدم رفع كل ملف
+  final Map<int, bool> _uploadSuccess = {}; // نجاح رفع كل ملف
+  final Map<int, String> _uploadErrors = {}; // أخطاء رفع كل ملف
   bool _isUploadingFiles = false;
 
-  List<String> _missingRequiredFields = [];
+  final List<String> _missingRequiredFields = [];
 
   // قائمة الملفات المختارة للرفع
   List<SelectedDocument> _selectedDocuments = [];
@@ -79,7 +79,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   // دالة لتوليد قائمة السنوات
   List<DropdownMenuItem<int>> _getGraduationYearItems() {
     final currentYear = DateTime.now().year;
-    final startYear = 1950;
+    const startYear = 1950;
     final endYear = currentYear + 5;
 
     List<DropdownMenuItem<int>> items = [];
@@ -189,12 +189,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   bool _hasDocumentRequiringChanges(WidgetRef ref) {
     try {
       // التحقق من صحة البيانات الأساسية
-      if (widget.profile == null) {
-        debugPrint('⚠️ لا يمكن التحقق من التغييرات: الملف الشخصي غير متاح');
-        return false;
-      }
-
-      // قائمة الحقول التي قد تتطلب وثائق
       final fieldsToCheck = [
         'fullNameAr',
         'fullNameEn',
@@ -484,7 +478,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           format: extension == 'png' ? CompressFormat.png : CompressFormat.jpeg,
         );
 
-        if (compressedFile != null && compressedFile.length > 0) {
+        if (compressedFile != null && compressedFile.isNotEmpty) {
           final compressedSize = compressedFile.length;
           debugPrint(
               '✅ ProfileEditScreen: Image compressed to ${compressedSize ~/ 1024}KB (reduced by ${((fileSize - compressedSize) / fileSize * 100).toStringAsFixed(1)}%)');
@@ -827,7 +821,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               color: AppColors.success.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.verified_user,
               color: AppColors.success,
               size: 24,
@@ -936,7 +930,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               label: 'البريد الإلكتروني',
               keyboardType: TextInputType.emailAddress,
               enabled: isEditable,
-              suffixIcon: Icon(
+              suffixIcon: const Icon(
                 Icons.email_outlined,
                 color: AppColors.textSecondary,
                 size: 20,
@@ -1088,10 +1082,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       orElse: () => state.qualifications!.first,
                     );
                     
-                    if (selectedQualification.categoryId != null && 
-                        selectedQualification.categoryId!.isNotEmpty) {
+                    if (selectedQualification.categoryId.isNotEmpty) {
                       _selectedCategoryId = selectedQualification.categoryId;
-                      debugPrint('✅ تم تحديث الفئة الرئيسية تلقائياً إلى: "${_selectedCategoryId}" من المؤهل: "${selectedQualification.nameAr}"');
+                      debugPrint('✅ تم تحديث الفئة الرئيسية تلقائياً إلى: "$_selectedCategoryId" من المؤهل: "${selectedQualification.nameAr}"');
                     }
                   } else {
                     _selectedCategoryId = null;
@@ -1229,7 +1222,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.attach_file,
                 color: AppColors.primary,
                 size: 20,
@@ -1643,7 +1636,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'إجمالي التقدم:',
                     style: AppTextStyles.bodyMedium,
                   ),
@@ -1819,7 +1812,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             final smartCategory = _getSmartFileCategory(i, fileName);
 
             debugPrint(
-                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
             debugPrint(
                 '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
 
@@ -1946,10 +1939,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         qualificationId: updatedProfile.qualificationId,
         categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
-        university: updatedProfile.university?.isEmpty == true
+        university: updatedProfile.university.isEmpty == true
             ? null
             : updatedProfile.university,
-        workplace: updatedProfile.workplace?.isEmpty == true
+        workplace: updatedProfile.workplace.isEmpty == true
             ? null
             : updatedProfile.workplace,
       );
@@ -2015,7 +2008,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             final smartCategory = _getSmartFileCategory(i, fileName);
 
             debugPrint(
-                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
             debugPrint(
                 '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
 
@@ -2105,10 +2098,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         qualificationId: updatedProfile.qualificationId,
         categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
-        university: updatedProfile.university?.isEmpty == true
+        university: updatedProfile.university.isEmpty == true
             ? null
             : updatedProfile.university,
-        workplace: updatedProfile.workplace?.isEmpty == true
+        workplace: updatedProfile.workplace.isEmpty == true
             ? null
             : updatedProfile.workplace,
         // لا نرسل attached_documents لأن الخادم لا يدعمها في هذا endpoint
@@ -2244,10 +2237,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         qualificationId: updatedProfile.qualificationId,
         categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
-        university: updatedProfile.university?.isEmpty == true
+        university: updatedProfile.university.isEmpty == true
             ? null
             : updatedProfile.university,
-        workplace: updatedProfile.workplace?.isEmpty == true
+        workplace: updatedProfile.workplace.isEmpty == true
             ? null
             : updatedProfile.workplace,
       );
@@ -2297,7 +2290,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             final smartCategory = _getSmartFileCategory(i, fileName);
 
             debugPrint(
-                '📄 ProfileEditScreen: Smart file category for ${fileName}: $smartCategory');
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
             debugPrint(
                 '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
 
@@ -2402,7 +2395,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.info_outline,
                 color: AppColors.warning,
                 size: 20,
@@ -2513,7 +2506,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
     // إذا كان الحقل غير قابل للتعديل
     if (!isEditable) {
-      return Tooltip(
+      return const Tooltip(
         message: 'هذا الحقل غير قابل للتعديل حسب قواعد الملف الشخصي',
         child: Icon(
           Icons.lock,

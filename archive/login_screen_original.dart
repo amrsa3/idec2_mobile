@@ -391,7 +391,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       elevation: authState.isLoading ? 0 : 2,
                     ),
                     child: authState.isLoading
-                        ? Row(
+                        ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               SizedBox(
@@ -404,7 +404,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Text(
                                 'جاري تسجيل الدخول...',
                                 style: TextStyle(
@@ -416,7 +416,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           )
                         : Text(
                             l10n.login,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

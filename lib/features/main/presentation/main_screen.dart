@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/courses/presentation/courses_screen.dart';
 import '../../../features/main/widgets/app_bottom_navigation_bar.dart';
 import '../../../features/profile/presentation/screens/profile_main_screen.dart';
-import '../../../features/schedule/presentation/schedule_screen.dart';
+import '../../../features/sessions/presentation/sessions_screen.dart';
 import '../../../features/speakers/presentation/speakers_screen.dart';
 import '../../../services/back_button_service.dart';
 import '../../home/presentation/home_screen_old.dart';
@@ -18,9 +18,9 @@ class MainScreen extends ConsumerWidget {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
     // List of screens
-    final screens = const [
+    const screens = [
       HomeScreen(),
-      ScheduleScreen(),
+      SessionsScreen(),
       SpeakersScreen(),
       CoursesScreen(),
       ProfileMainScreen(),

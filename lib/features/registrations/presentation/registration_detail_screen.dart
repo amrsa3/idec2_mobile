@@ -256,15 +256,15 @@ class _RegistrationDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(
                   Icons.info_outline,
                   color: AppColors.primary,
                   size: 24,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   'حالة الاشتراك',
                   style: TextStyle(
                     fontSize: 18,
@@ -356,15 +356,15 @@ class _RegistrationDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(
                   Icons.payment,
                   color: AppColors.primary,
                   size: 24,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   'معلومات الدفع',
                   style: TextStyle(
                     fontSize: 18,
@@ -516,7 +516,7 @@ class _RegistrationDetailScreenState
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: AppColors.primary, width: 2),
+                side: const BorderSide(color: AppColors.primary, width: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -553,15 +553,15 @@ class _RegistrationDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
                     Icon(
                       Icons.timeline,
                       color: AppColors.primary,
                       size: 24,
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
+                    SizedBox(width: 12),
+                    Text(
                       'السجل الزمني',
                       style: TextStyle(
                         fontSize: 18,
@@ -691,11 +691,11 @@ class _RegistrationDetailScreenState
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(
+              content: const Row(
                 children: [
-                  const Icon(Icons.info, color: Colors.white),
-                  const SizedBox(width: 8),
-                  const Expanded(
+                  Icon(Icons.info, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
                     child: Text('تم إلغاء عملية الدفع'),
                   ),
                 ],

@@ -118,7 +118,7 @@ class ServiceStatusBanner extends StatelessWidget {
                 if (estimatedEndTime != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${AppLocalizations.of(context)!.estimatedTime}: ${_formatDateTime(estimatedEndTime!)}',
+                    '${AppLocalizations.of(context).estimatedTime}: ${_formatDateTime(estimatedEndTime!)}',
                     style: TextStyle(
                       color: _getTextColor().withOpacity(0.8),
                       fontSize: 12,
@@ -158,7 +158,7 @@ class ServiceStatusBanner extends StatelessWidget {
   }
 
   String _getTitle(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     switch (status) {
       case ServiceStatus.operational:

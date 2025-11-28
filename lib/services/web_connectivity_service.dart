@@ -198,14 +198,14 @@ class WebConnectivityService {
           }
           
           // معالجة خاصة لأخطاء الشبكة (silent)
-          if (error.type == DioErrorType.connectionTimeout ||
-              error.type == DioErrorType.receiveTimeout ||
-              error.type == DioErrorType.sendTimeout) {
+          if (error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.receiveTimeout ||
+              error.type == DioExceptionType.sendTimeout) {
             // debugPrint('🔴 Network timeout error in web environment');
           }
           
           // معالجة خاصة لأخطاء الاتصال (silent)
-          if (error.type == DioErrorType.connectionError) {
+          if (error.type == DioExceptionType.connectionError) {
             // debugPrint('🔴 Connection error - check network and server availability');
           }
           

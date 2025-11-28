@@ -392,7 +392,7 @@ class SessionManager {
   void _startSessionMonitoring() {
     _stopSessionMonitoring();
 
-    _sessionTimer = Timer.periodic(Duration(minutes: 1), (timer) async {
+    _sessionTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
       try {
         final isActive = await isSessionActive();
         if (!isActive) {

@@ -394,7 +394,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         // Reload completion status - تعطيل مؤقت بسبب خطأ 404
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
-        final completionStatus = null;
+        const completionStatus = null;
 
         _safeUpdateState(() => state.copyWith(
               completionStatus: completionStatus,
@@ -458,7 +458,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         // Reload completion status - تعطيل مؤقت بسبب خطأ 404
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
-        final completionStatus = null;
+        const completionStatus = null;
 
         _safeUpdateState(() => state.copyWith(
               documents: updatedDocuments,
@@ -505,7 +505,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
         // Reload completion status - تعطيل مؤقت بسبب خطأ 404
         // final completionStatus = await LocalProfileService.getProfileCompletionStatus();
-        final completionStatus = null;
+        const completionStatus = null;
 
         _safeUpdateState(() => state.copyWith(
               documents: updatedDocuments,

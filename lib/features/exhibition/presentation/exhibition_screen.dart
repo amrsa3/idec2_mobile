@@ -229,7 +229,7 @@ class _ExhibitionScreenState extends ConsumerState<ExhibitionScreen> {
                         ),
                         child: Text(
                           exhibitor['category']!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -239,7 +239,7 @@ class _ExhibitionScreenState extends ConsumerState<ExhibitionScreen> {
                       const Spacer(),
                       Row(
                         children: [
-                          Icon(Icons.location_on,
+                          const Icon(Icons.location_on,
                               size: 16, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
@@ -264,7 +264,7 @@ class _ExhibitionScreenState extends ConsumerState<ExhibitionScreen> {
                       label: const Text('عرض التفاصيل'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary),
+                        side: const BorderSide(color: AppColors.primary),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

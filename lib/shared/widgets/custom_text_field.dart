@@ -146,7 +146,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -311,13 +311,13 @@ class SearchTextField extends StatelessWidget {
       hint: hint ?? 'البحث...',
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      prefixIcon: Icon(
+      prefixIcon: const Icon(
         Icons.search,
         color: AppColors.textSecondary,
       ),
       suffixIcon: controller?.text.isNotEmpty == true
           ? IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.clear,
                 color: AppColors.textSecondary,
               ),

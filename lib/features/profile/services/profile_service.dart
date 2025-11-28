@@ -70,7 +70,7 @@ class LocalProfileService {
       
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString(_cacheKey);
-      final userIdKey = '${_cacheKey}_user_id';
+      const userIdKey = '${_cacheKey}_user_id';
       final cachedUserId = prefs.getString(userIdKey);
 
       // التحقق من تطابق userId قبل استخدام الكاش
@@ -147,7 +147,7 @@ class LocalProfileService {
       final profileJson = json.encode(profile.toJson());
       
       // حفظ userId مع الكاش للتحقق لاحقاً
-      final userIdKey = '${_cacheKey}_user_id';
+      const userIdKey = '${_cacheKey}_user_id';
       await prefs.setString(_cacheKey, profileJson);
       await prefs.setString(userIdKey, profile.userId);
       await prefs.setInt(
@@ -2135,7 +2135,7 @@ class LocalProfileService {
   static Future<void> clearCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userIdKey = '${_cacheKey}_user_id';
+      const userIdKey = '${_cacheKey}_user_id';
       
       // مسح جميع المفاتيح المتعلقة بالكاش
       await prefs.remove(_cacheKey);

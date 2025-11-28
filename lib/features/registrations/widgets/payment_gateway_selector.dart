@@ -63,7 +63,7 @@ class PaymentGatewaySelector extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
+                          gradient: const LinearGradient(
                             colors: [
                               AppColors.primary,
                               AppColors.primaryLight,

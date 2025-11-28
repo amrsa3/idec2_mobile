@@ -331,7 +331,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.access_time,
+                        const Icon(Icons.access_time,
                             size: 12, color: AppColors.textTertiary),
                         const SizedBox(width: 4),
                         Text(
@@ -352,7 +352,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                             ),
                             child: Text(
                               notification['action'],
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,

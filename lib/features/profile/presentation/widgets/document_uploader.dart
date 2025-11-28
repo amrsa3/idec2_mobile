@@ -343,7 +343,7 @@ class _DocumentUploaderState extends State<DocumentUploader> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.cloud_upload,
                       size: 32,
                       color: AppColors.primary,

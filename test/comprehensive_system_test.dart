@@ -3,12 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 
 // Import all the services we need to test
-import '../lib/services/platform_storage_service.dart';
-import '../lib/services/unified_token_manager.dart';
-import '../lib/services/enhanced_session_manager.dart';
-import '../lib/services/enhanced_dio_service_v2.dart';
-import '../lib/services/silent_token_refresh_service.dart';
-import '../lib/services/system_test_service.dart';
+import 'package:idec_conference_app/services/platform_storage_service.dart';
+import 'package:idec_conference_app/services/unified_token_manager.dart';
+import 'package:idec_conference_app/services/enhanced_session_manager.dart';
+import 'package:idec_conference_app/services/enhanced_dio_service_v2.dart';
+import 'package:idec_conference_app/services/silent_token_refresh_service.dart';
+import 'package:idec_conference_app/services/system_test_service.dart';
 
 void main() {
   group('Comprehensive System Test - النظام الموحد الجديد', () {
@@ -99,7 +99,7 @@ void main() {
         expect(dioService, isNotNull);
         
         // انتظار قصير للتهيئة
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 500));
         
         debugPrint('✅ EnhancedDioServiceV2 تم إنشاؤه بنجاح');
       } catch (e) {

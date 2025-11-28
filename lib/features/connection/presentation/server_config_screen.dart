@@ -258,11 +258,11 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                               if (_currentConfig!.lastTested != null)
                                 Text('Last tested: ${_currentConfig!.lastTested}'),
                               if (_currentConfig!.isReachable)
-                                Row(
+                                const Row(
                                   children: [
                                     Icon(Icons.check_circle, 
                                          color: AppColors.success, size: 16),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text('Reachable', 
                                          style: TextStyle(color: AppColors.success)),
                                   ],
@@ -309,7 +309,7 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                       subtitle: const Text('Enable secure connection'),
                       value: _isSecure,
                       onChanged: (value) => setState(() => _isSecure = value),
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                     const SizedBox(height: 24),
 

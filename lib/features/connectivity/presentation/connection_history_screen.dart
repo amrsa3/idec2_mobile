@@ -105,7 +105,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -114,7 +114,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
             size: 64,
             color: AppColors.textSecondary,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'لا يوجد سجل اتصال',
             style: TextStyle(
@@ -123,7 +123,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'سيتم عرض سجل الاتصال هنا بعد إجراء اختبارات الاتصال',
             textAlign: TextAlign.center,
@@ -203,7 +203,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
               const SizedBox(height: 8),
               const Divider(),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'نتائج الاختبارات:',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -225,12 +225,12 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error, color: AppColors.error, size: 16),
+                    const Icon(Icons.error, color: AppColors.error, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         entry.error!,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.error,
                           fontSize: 12,
                         ),
@@ -272,7 +272,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
             ),
@@ -305,7 +305,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
           Expanded(
             child: Text(
               test.testName,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -314,7 +314,7 @@ class _ConnectionHistoryScreenState extends ConsumerState<ConnectionHistoryScree
           if (test.duration != null)
             Text(
               '${test.duration!.inMilliseconds}ms',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),

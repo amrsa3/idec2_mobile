@@ -126,10 +126,7 @@ class PlatformStorageService {
         // Read from localStorage first (secure storage)
         try {
           value = html.window.localStorage['secure_$key'];
-          if (value == null) {
-            // Fallback to sessionStorage
-            value = html.window.sessionStorage['secure_$key'];
-          }
+          value ??= html.window.sessionStorage['secure_$key'];
         } catch (e) {
           if (kDebugMode) {
             debugPrint('🔐 [PLATFORM_STORAGE] Error reading from web storage: $e');
@@ -335,10 +332,7 @@ class PlatformStorageService {
         String? value;
         try {
           value = html.window.localStorage[key];
-          if (value == null) {
-            // Fallback to sessionStorage
-            value = html.window.sessionStorage[key];
-          }
+          value ??= html.window.sessionStorage[key];
           if (kDebugMode) {
             debugPrint('📝 [PLATFORM_STORAGE] Retrieved from web storage: $key = ${value != null ? "found" : "null"}');
           }

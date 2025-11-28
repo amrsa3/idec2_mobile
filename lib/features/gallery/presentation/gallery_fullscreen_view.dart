@@ -252,12 +252,12 @@ class _GalleryFullscreenViewState extends ConsumerState<GalleryFullscreenView> {
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: AppColors.primary,
-                  child: Column(
+                  child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.image, color: Colors.white, size: 60),
-                      const SizedBox(height: 16),
-                      const Text(
+                      Icon(Icons.image, color: Colors.white, size: 60),
+                      SizedBox(height: 16),
+                      Text(
                         'فشل تحميل الصورة',
                         style: TextStyle(color: Colors.white),
                       ),

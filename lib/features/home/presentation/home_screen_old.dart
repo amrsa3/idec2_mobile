@@ -120,9 +120,9 @@ class HomeScreen extends ConsumerWidget {
                         color: Colors.white.withOpacity(0.14),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Icon(Icons.refresh, color: Colors.white, size: 22),
                           SizedBox(width: 6),
                           Text(

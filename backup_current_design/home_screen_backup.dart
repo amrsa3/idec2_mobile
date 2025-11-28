@@ -26,10 +26,11 @@ class HomeScreen extends ConsumerWidget {
           : (user.fullNameEn ?? user.profile?.fullNameEn ?? '');
       if (fullName.isNotEmpty) {
         final parts = fullName.trim().split(' ');
-        if (parts.length > 1)
+        if (parts.length > 1) {
           displayName = '${parts.first} ${parts.last}';
-        else
+        } else {
           displayName = parts.first;
+        }
       }
     }
 
@@ -508,8 +509,8 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildDrawer(BuildContext context, user, bool isRTL, WidgetRef ref) {
     return Drawer(
       child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFFEC1313), Colors.white],

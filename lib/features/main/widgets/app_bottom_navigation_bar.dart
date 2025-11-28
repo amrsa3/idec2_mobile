@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../core/router/app_router.dart';
 import '../providers/bottom_navigation_provider.dart';
 
 class AppBottomNavigationBar extends ConsumerWidget {
@@ -53,19 +53,19 @@ class AppBottomNavigationBar extends ConsumerWidget {
             activeIcon: const Icon(Icons.home),
             label: l10n.home,
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.schedule_outlined),
-            activeIcon: const Icon(Icons.schedule),
-            label: l10n.schedule,
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.event_note_outlined),
+            activeIcon: Icon(Icons.event_note),
+            label: 'الجلسات',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.people_outline),
             activeIcon: const Icon(Icons.people),
             label: l10n.speakers,
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.school_outlined),
-            activeIcon: const Icon(Icons.school),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.school_outlined),
+            activeIcon: Icon(Icons.school),
             label: 'الدورات',
           ),
           BottomNavigationBarItem(

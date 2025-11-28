@@ -52,7 +52,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ],
         
         DropdownButtonFormField<T>(
-          value: _getValidValue(),
+          initialValue: _getValidValue(),
           items: widget.items,
           onChanged: widget.enabled ? widget.onChanged : null,
           validator: widget.validator,
@@ -138,7 +138,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -289,7 +289,7 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                                 style: AppTextStyles.bodySmall,
                               ),
                               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                              deleteIcon: Icon(
+                              deleteIcon: const Icon(
                                 Icons.close,
                                 size: 16,
                                 color: AppColors.primary,
@@ -331,7 +331,7 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -362,9 +362,9 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                 value: isSelected,
                 onChanged: (selected) {
                   if (selected == true) {
-                    _addItem(item.value!);
+                    _addItem(item.value as T);
                   } else {
-                    _removeItem(item.value!);
+                    _removeItem(item.value as T);
                   }
                 },
                 activeColor: AppColors.primary,
@@ -519,7 +519,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -558,7 +558,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                   onChanged: (value) {
                     setState(() {
                       _filteredItems = widget.items.where((item) {
-                        final searchText = widget.itemSearchText(item.value!);
+                        final searchText = widget.itemSearchText(item.value as T);
                         return searchText.toLowerCase().contains(value.toLowerCase());
                       }).toList();
                     });

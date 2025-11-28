@@ -116,8 +116,9 @@ extension UserProfileExtendedX on UserProfileExtended {
     if (email != null && email!.isNotEmpty) completedFields++;
     if (birthDate != null) completedFields++;
     if (governorateId != null && governorateId!.isNotEmpty) completedFields++;
-    if (qualificationId != null && qualificationId!.isNotEmpty)
+    if (qualificationId != null && qualificationId!.isNotEmpty) {
       completedFields++;
+    }
     if (graduationYear != null && graduationYear! > 0) completedFields++;
     if (university != null && university!.isNotEmpty) completedFields++;
 

@@ -28,7 +28,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
     bool rememberMe = true,
   }) async {
     try {
-      state = AuthState.loading('جاري تسجيل الدخول...');
+      state = const AuthState.loading('جاري تسجيل الدخول...');
       final result = await _authService.login(
         phone: phone,
         password: password,
@@ -37,7 +37,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_NOTIFIER] Login error: $e');
-      state = AuthState.error('خطأ في تسجيل الدخول');
+      state = const AuthState.error('خطأ في تسجيل الدخول');
       return AuthResult.error('خطأ في تسجيل الدخول: $e');
     }
   }
@@ -51,7 +51,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
     String? email,
   }) async {
     try {
-      state = AuthState.loading('جاري إنشاء الحساب...');
+      state = const AuthState.loading('جاري إنشاء الحساب...');
       final result = await _authService.register(
         phone: phone,
         password: password,
@@ -62,7 +62,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_NOTIFIER] Registration error: $e');
-      state = AuthState.error('خطأ في إنشاء الحساب');
+      state = const AuthState.error('خطأ في إنشاء الحساب');
       return AuthResult.error('خطأ في إنشاء الحساب: $e');
     }
   }
@@ -70,7 +70,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
   /// طلب رمز التحقق
   Future<AuthResult> requestOtp(String phone) async {
     try {
-      state = AuthState.loading('جاري إرسال رمز التحقق...');
+      state = const AuthState.loading('جاري إرسال رمز التحقق...');
       final result = await _authService.requestOtp(phone: phone);
       return result;
     } catch (e) {
@@ -86,7 +86,7 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
     bool isLogin = false,
   }) async {
     try {
-      state = AuthState.loading('جاري التحقق من الرمز...');
+      state = const AuthState.loading('جاري التحقق من الرمز...');
       final result = await _authService.verifyOtp(
         phone: phone,
         otp: otp,
@@ -101,12 +101,12 @@ class EnhancedAuthNotifier extends StateNotifier<AuthState> {
   /// تسجيل الخروج
   Future<AuthResult> logout({bool fromAllDevices = false}) async {
     try {
-      state = AuthState.loading('جاري تسجيل الخروج...');
+      state = const AuthState.loading('جاري تسجيل الخروج...');
       final result = await _authService.logout(fromAllDevices: fromAllDevices);
       return result;
     } catch (e) {
       debugPrint('❌ [ENHANCED_AUTH_NOTIFIER] Logout error: $e');
-      state = AuthState.error('خطأ في تسجيل الخروج');
+      state = const AuthState.error('خطأ في تسجيل الخروج');
       return AuthResult.error('خطأ في تسجيل الخروج: $e');
     }
   }

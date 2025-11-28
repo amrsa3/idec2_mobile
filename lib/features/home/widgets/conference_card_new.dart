@@ -564,7 +564,7 @@ class _SubscribeButtonBuilderState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(

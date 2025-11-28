@@ -114,7 +114,7 @@ class _HeaderCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'الموضوع العام ${state.broadcastTopic} مفعّل تلقائياً لاستقبال الإشعارات الحرجة مثل التنبيهات الأمنية وتحديثات المؤتمر.',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.primaryDark,
                         ),
@@ -165,7 +165,7 @@ class _TopicTile extends StatelessWidget {
                 style: const TextStyle(fontSize: 13),
               )
             : null,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../services/registration_service.dart';
 
 class CourseDetailsScreen extends ConsumerStatefulWidget {
   final String courseId;
@@ -22,6 +23,47 @@ class CourseDetailsScreen extends ConsumerStatefulWidget {
 
 class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
   bool isRegistered = false;
+  bool isLoading = false;
+  final RegistrationService _registrationService = RegistrationService();
+
+  Future<void> _handleRegistration() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await _registrationService.registerToEvent(eventId: widget.courseId);
+      
+      setState(() {
+        isRegistered = true;
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم التسجيل بنجاح'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فشل التسجيل: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -351,34 +393,26 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          isRegistered = !isRegistered;
-                        });
-                        if (!isRegistered) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('تم إلغاء التسجيل'),
-                              backgroundColor: Colors.orange,
+                      onPressed: isLoading || isRegistered ? null : _handleRegistration,
+                      icon: isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Icon(
+                              isRegistered
+                                  ? Icons.check_circle
+                                  : Icons.add_circle_outline,
+                              size: 24,
                             ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('تم التسجيل بنجاح'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      },
-                      icon: Icon(
-                        isRegistered
-                            ? Icons.check_circle
-                            : Icons.add_circle_outline,
-                        size: 24,
-                      ),
                       label: Text(
-                        isRegistered ? 'أنت مسجل' : 'سجل في الدورة',
+                        isLoading
+                            ? 'جاري التسجيل...'
+                            : (isRegistered ? 'أنت مسجل' : 'سجل في الدورة'),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -392,6 +426,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 0,
+                        disabledBackgroundColor: Colors.grey,
                       ),
                     ),
                   ),

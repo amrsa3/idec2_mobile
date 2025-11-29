@@ -107,8 +107,16 @@ class ConferenceService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data.isEmpty) return null;
-        return RegistrationStatusModel.fromJson(data);
+        
+        // Debug: Log the raw response
+        print('🔵 [CONFERENCE_SERVICE] Raw registration response: $data');
+        print('🔵 [CONFERENCE_SERVICE] Status from response: ${data['status']}');
+        
+        final registration = RegistrationStatusModel.fromJson(data);
+        print('🔵 [CONFERENCE_SERVICE] Parsed registration status: ${registration.status}');
+        return registration;
       } else if (response.statusCode == 404) {
+        print('🔵 [CONFERENCE_SERVICE] No registration found (404)');
         return null;
       } else {
         throw Exception('Failed to load registration: ${response.statusCode}');

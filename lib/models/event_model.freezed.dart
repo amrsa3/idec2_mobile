@@ -25,11 +25,13 @@ mixin _$EventModel {
   String get conferenceId => throw _privateConstructorUsedError;
   String get type =>
       throw _privateConstructorUsedError; // 'COURSE' | 'WORKSHOP' | 'SEMINAR'
+  @CategoryConverter()
   String? get category => throw _privateConstructorUsedError;
   @JsonKey(name: 'categoryId')
   String? get categoryId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  String? get location => throw _privateConstructorUsedError;
   @JsonKey(name: 'startTime')
   DateTime get startTime => throw _privateConstructorUsedError;
   @JsonKey(name: 'endTime')
@@ -67,6 +69,7 @@ mixin _$EventModel {
   @JsonKey(name: 'paymentMethods')
   List<String>? get paymentMethods => throw _privateConstructorUsedError;
   @JsonKey(name: 'subscriptionRules')
+  @SubscriptionRulesConverter()
   String? get subscriptionRules => throw _privateConstructorUsedError;
   @JsonKey(name: 'createdAt')
   DateTime get createdAt => throw _privateConstructorUsedError;
@@ -96,10 +99,11 @@ abstract class $EventModelCopyWith<$Res> {
       {String id,
       @JsonKey(name: 'conferenceId') String conferenceId,
       String type,
-      String? category,
+      @CategoryConverter() String? category,
       @JsonKey(name: 'categoryId') String? categoryId,
       String title,
       String? description,
+      String? location,
       @JsonKey(name: 'startTime') DateTime startTime,
       @JsonKey(name: 'endTime') DateTime endTime,
       double? duration,
@@ -122,7 +126,9 @@ abstract class $EventModelCopyWith<$Res> {
       @JsonKey(name: 'paymentDeadlineEnabled') bool? paymentDeadlineEnabled,
       @JsonKey(name: 'paymentDeadlineDays') int? paymentDeadlineDays,
       @JsonKey(name: 'paymentMethods') List<String>? paymentMethods,
-      @JsonKey(name: 'subscriptionRules') String? subscriptionRules,
+      @JsonKey(name: 'subscriptionRules')
+      @SubscriptionRulesConverter()
+      String? subscriptionRules,
       @JsonKey(name: 'createdAt') DateTime createdAt,
       @JsonKey(name: 'updatedAt') DateTime updatedAt,
       Map<String, dynamic>? conference,
@@ -151,6 +157,7 @@ class _$EventModelCopyWithImpl<$Res, $Val extends EventModel>
     Object? categoryId = freezed,
     Object? title = null,
     Object? description = freezed,
+    Object? location = freezed,
     Object? startTime = null,
     Object? endTime = null,
     Object? duration = freezed,
@@ -209,6 +216,10 @@ class _$EventModelCopyWithImpl<$Res, $Val extends EventModel>
       description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      location: freezed == location
+          ? _value.location
+          : location // ignore: cast_nullable_to_non_nullable
               as String?,
       startTime: null == startTime
           ? _value.startTime
@@ -342,10 +353,11 @@ abstract class _$$EventModelImplCopyWith<$Res>
       {String id,
       @JsonKey(name: 'conferenceId') String conferenceId,
       String type,
-      String? category,
+      @CategoryConverter() String? category,
       @JsonKey(name: 'categoryId') String? categoryId,
       String title,
       String? description,
+      String? location,
       @JsonKey(name: 'startTime') DateTime startTime,
       @JsonKey(name: 'endTime') DateTime endTime,
       double? duration,
@@ -368,7 +380,9 @@ abstract class _$$EventModelImplCopyWith<$Res>
       @JsonKey(name: 'paymentDeadlineEnabled') bool? paymentDeadlineEnabled,
       @JsonKey(name: 'paymentDeadlineDays') int? paymentDeadlineDays,
       @JsonKey(name: 'paymentMethods') List<String>? paymentMethods,
-      @JsonKey(name: 'subscriptionRules') String? subscriptionRules,
+      @JsonKey(name: 'subscriptionRules')
+      @SubscriptionRulesConverter()
+      String? subscriptionRules,
       @JsonKey(name: 'createdAt') DateTime createdAt,
       @JsonKey(name: 'updatedAt') DateTime updatedAt,
       Map<String, dynamic>? conference,
@@ -395,6 +409,7 @@ class __$$EventModelImplCopyWithImpl<$Res>
     Object? categoryId = freezed,
     Object? title = null,
     Object? description = freezed,
+    Object? location = freezed,
     Object? startTime = null,
     Object? endTime = null,
     Object? duration = freezed,
@@ -453,6 +468,10 @@ class __$$EventModelImplCopyWithImpl<$Res>
       description: freezed == description
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      location: freezed == location
+          ? _value.location
+          : location // ignore: cast_nullable_to_non_nullable
               as String?,
       startTime: null == startTime
           ? _value.startTime
@@ -581,10 +600,11 @@ class _$EventModelImpl implements _EventModel {
       {required this.id,
       @JsonKey(name: 'conferenceId') required this.conferenceId,
       required this.type,
-      this.category,
+      @CategoryConverter() this.category,
       @JsonKey(name: 'categoryId') this.categoryId,
       required this.title,
       this.description,
+      this.location,
       @JsonKey(name: 'startTime') required this.startTime,
       @JsonKey(name: 'endTime') required this.endTime,
       this.duration,
@@ -608,7 +628,9 @@ class _$EventModelImpl implements _EventModel {
       this.paymentDeadlineEnabled = false,
       @JsonKey(name: 'paymentDeadlineDays') this.paymentDeadlineDays,
       @JsonKey(name: 'paymentMethods') final List<String>? paymentMethods,
-      @JsonKey(name: 'subscriptionRules') this.subscriptionRules,
+      @JsonKey(name: 'subscriptionRules')
+      @SubscriptionRulesConverter()
+      this.subscriptionRules,
       @JsonKey(name: 'createdAt') required this.createdAt,
       @JsonKey(name: 'updatedAt') required this.updatedAt,
       final Map<String, dynamic>? conference,
@@ -634,6 +656,7 @@ class _$EventModelImpl implements _EventModel {
   final String type;
 // 'COURSE' | 'WORKSHOP' | 'SEMINAR'
   @override
+  @CategoryConverter()
   final String? category;
   @override
   @JsonKey(name: 'categoryId')
@@ -642,6 +665,8 @@ class _$EventModelImpl implements _EventModel {
   final String title;
   @override
   final String? description;
+  @override
+  final String? location;
   @override
   @JsonKey(name: 'startTime')
   final DateTime startTime;
@@ -720,6 +745,7 @@ class _$EventModelImpl implements _EventModel {
 
   @override
   @JsonKey(name: 'subscriptionRules')
+  @SubscriptionRulesConverter()
   final String? subscriptionRules;
   @override
   @JsonKey(name: 'createdAt')
@@ -773,7 +799,7 @@ class _$EventModelImpl implements _EventModel {
 
   @override
   String toString() {
-    return 'EventModel(id: $id, conferenceId: $conferenceId, type: $type, category: $category, categoryId: $categoryId, title: $title, description: $description, startTime: $startTime, endTime: $endTime, duration: $duration, price: $price, currency: $currency, capacity: $capacity, isActive: $isActive, status: $status, instructorId: $instructorId, requirements: $requirements, courseDetails: $courseDetails, courseLevel: $courseLevel, promotionalImages: $promotionalImages, promotionalVideo: $promotionalVideo, certificate: $certificate, notes: $notes, subscriptionPolicy: $subscriptionPolicy, processingMechanism: $processingMechanism, submissionPolicy: $submissionPolicy, paymentDeadlineEnabled: $paymentDeadlineEnabled, paymentDeadlineDays: $paymentDeadlineDays, paymentMethods: $paymentMethods, subscriptionRules: $subscriptionRules, createdAt: $createdAt, updatedAt: $updatedAt, conference: $conference, instructor: $instructor, speakers: $speakers, count: $count)';
+    return 'EventModel(id: $id, conferenceId: $conferenceId, type: $type, category: $category, categoryId: $categoryId, title: $title, description: $description, location: $location, startTime: $startTime, endTime: $endTime, duration: $duration, price: $price, currency: $currency, capacity: $capacity, isActive: $isActive, status: $status, instructorId: $instructorId, requirements: $requirements, courseDetails: $courseDetails, courseLevel: $courseLevel, promotionalImages: $promotionalImages, promotionalVideo: $promotionalVideo, certificate: $certificate, notes: $notes, subscriptionPolicy: $subscriptionPolicy, processingMechanism: $processingMechanism, submissionPolicy: $submissionPolicy, paymentDeadlineEnabled: $paymentDeadlineEnabled, paymentDeadlineDays: $paymentDeadlineDays, paymentMethods: $paymentMethods, subscriptionRules: $subscriptionRules, createdAt: $createdAt, updatedAt: $updatedAt, conference: $conference, instructor: $instructor, speakers: $speakers, count: $count)';
   }
 
   @override
@@ -792,6 +818,8 @@ class _$EventModelImpl implements _EventModel {
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.location, location) ||
+                other.location == location) &&
             (identical(other.startTime, startTime) ||
                 other.startTime == startTime) &&
             (identical(other.endTime, endTime) || other.endTime == endTime) &&
@@ -857,6 +885,7 @@ class _$EventModelImpl implements _EventModel {
         categoryId,
         title,
         description,
+        location,
         startTime,
         endTime,
         duration,
@@ -907,10 +936,11 @@ abstract class _EventModel implements EventModel {
       {required final String id,
       @JsonKey(name: 'conferenceId') required final String conferenceId,
       required final String type,
-      final String? category,
+      @CategoryConverter() final String? category,
       @JsonKey(name: 'categoryId') final String? categoryId,
       required final String title,
       final String? description,
+      final String? location,
       @JsonKey(name: 'startTime') required final DateTime startTime,
       @JsonKey(name: 'endTime') required final DateTime endTime,
       final double? duration,
@@ -934,7 +964,9 @@ abstract class _EventModel implements EventModel {
       final bool? paymentDeadlineEnabled,
       @JsonKey(name: 'paymentDeadlineDays') final int? paymentDeadlineDays,
       @JsonKey(name: 'paymentMethods') final List<String>? paymentMethods,
-      @JsonKey(name: 'subscriptionRules') final String? subscriptionRules,
+      @JsonKey(name: 'subscriptionRules')
+      @SubscriptionRulesConverter()
+      final String? subscriptionRules,
       @JsonKey(name: 'createdAt') required final DateTime createdAt,
       @JsonKey(name: 'updatedAt') required final DateTime updatedAt,
       final Map<String, dynamic>? conference,
@@ -954,6 +986,7 @@ abstract class _EventModel implements EventModel {
   @override
   String get type;
   @override // 'COURSE' | 'WORKSHOP' | 'SEMINAR'
+  @CategoryConverter()
   String? get category;
   @override
   @JsonKey(name: 'categoryId')
@@ -962,6 +995,8 @@ abstract class _EventModel implements EventModel {
   String get title;
   @override
   String? get description;
+  @override
+  String? get location;
   @override
   @JsonKey(name: 'startTime')
   DateTime get startTime;
@@ -1022,6 +1057,7 @@ abstract class _EventModel implements EventModel {
   List<String>? get paymentMethods;
   @override
   @JsonKey(name: 'subscriptionRules')
+  @SubscriptionRulesConverter()
   String? get subscriptionRules;
   @override
   @JsonKey(name: 'createdAt')

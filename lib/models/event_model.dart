@@ -1,7 +1,45 @@
+import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'event_model.freezed.dart';
 part 'event_model.g.dart';
+
+class CategoryConverter implements JsonConverter<String?, dynamic> {
+  const CategoryConverter();
+
+  @override
+  String? fromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is String) return json;
+    if (json is Map<String, dynamic>) {
+      // It's a CourseCategory object, extract name
+      return json['nameAr'] as String? ?? json['nameEn'] as String?;
+    }
+    return null;
+  }
+
+  @override
+  dynamic toJson(String? object) => object;
+}
+
+class SubscriptionRulesConverter implements JsonConverter<String?, dynamic> {
+  const SubscriptionRulesConverter();
+
+  @override
+  String? fromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is String) return json;
+    // If it's an object or array, convert to JSON string
+    try {
+      return jsonEncode(json);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  dynamic toJson(String? object) => object;
+}
 
 @freezed
 class EventModel with _$EventModel {
@@ -9,10 +47,11 @@ class EventModel with _$EventModel {
     required String id,
     @JsonKey(name: 'conferenceId') required String conferenceId,
     required String type, // 'COURSE' | 'WORKSHOP' | 'SEMINAR'
-    String? category,
+    @CategoryConverter() String? category,
     @JsonKey(name: 'categoryId') String? categoryId,
     required String title,
     String? description,
+    String? location,
     @JsonKey(name: 'startTime') required DateTime startTime,
     @JsonKey(name: 'endTime') required DateTime endTime,
     double? duration,
@@ -35,7 +74,7 @@ class EventModel with _$EventModel {
     @JsonKey(name: 'paymentDeadlineEnabled') @Default(false) bool? paymentDeadlineEnabled,
     @JsonKey(name: 'paymentDeadlineDays') int? paymentDeadlineDays,
     @JsonKey(name: 'paymentMethods') List<String>? paymentMethods,
-    @JsonKey(name: 'subscriptionRules') String? subscriptionRules,
+    @JsonKey(name: 'subscriptionRules') @SubscriptionRulesConverter() String? subscriptionRules,
     @JsonKey(name: 'createdAt') required DateTime createdAt,
     @JsonKey(name: 'updatedAt') required DateTime updatedAt,
     // Relations

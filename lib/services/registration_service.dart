@@ -106,13 +106,46 @@ class RegistrationService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         // Handle ApiResponse structure: { success, messageAr, messageEn, code, data: { registration: {...} } }
+        Map<String, dynamic> registrationData;
+        
         if (data.containsKey('data') && data['data'] is Map) {
           final dataMap = data['data'] as Map<String, dynamic>;
           if (dataMap.containsKey('registration')) {
-            return RegistrationModel.fromJson(dataMap['registration']);
+            registrationData = dataMap['registration'] as Map<String, dynamic>;
+          } else {
+            registrationData = dataMap;
           }
+        } else {
+          registrationData = data;
         }
-        return RegistrationModel.fromJson(data);
+        
+        // Backend now sends all required fields, but we keep minimal defaults as fallback for edge cases
+        // Only apply defaults if field is truly missing (not just null, which is valid)
+        final completeRegistrationData = <String, dynamic>{
+          ...registrationData,
+        };
+        
+        // Only set defaults if field is completely missing (not null)
+        if (!completeRegistrationData.containsKey('userId') || completeRegistrationData['userId'] == null) {
+          completeRegistrationData['userId'] = '';
+        }
+        if (!completeRegistrationData.containsKey('registrationType') || completeRegistrationData['registrationType'] == null) {
+          completeRegistrationData['registrationType'] = 'EVENT';
+        }
+        if (!completeRegistrationData.containsKey('status') || completeRegistrationData['status'] == null) {
+          completeRegistrationData['status'] = 'UNDER_REVIEW';
+        }
+        if (!completeRegistrationData.containsKey('calculatedPrice') || completeRegistrationData['calculatedPrice'] == null) {
+          completeRegistrationData['calculatedPrice'] = 0.0;
+        }
+        if (!completeRegistrationData.containsKey('currency') || completeRegistrationData['currency'] == null) {
+          completeRegistrationData['currency'] = 'YER';
+        }
+        if (!completeRegistrationData.containsKey('createdAt') || completeRegistrationData['createdAt'] == null) {
+          completeRegistrationData['createdAt'] = DateTime.now().toIso8601String();
+        }
+        
+        return RegistrationModel.fromJson(completeRegistrationData);
       } else {
         final errorData = json.decode(response.body);
         
@@ -235,23 +268,33 @@ class RegistrationService {
   /// Get user registration status for an event
   Future<Map<String, dynamic>?> getEventRegistrationStatus(String eventId) async {
     try {
+      print('🔵 [REGISTRATION_SERVICE] Getting registration status for event: $eventId');
       final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}/api/v1/events/registrations/my-status/$eventId'),
         headers: headers,
       );
 
+      print('🔵 [REGISTRATION_SERVICE] Response status code: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
+        print('🔵 [REGISTRATION_SERVICE] Registration status data: $data');
+        print('🔵 [REGISTRATION_SERVICE] Registration ID: ${data['id']}');
+        print('🔵 [REGISTRATION_SERVICE] Registration status: ${data['status']}');
         return data;
       } else if (response.statusCode == 404) {
         // User not registered
+        print('🔵 [REGISTRATION_SERVICE] User not registered (404)');
         return null;
       } else {
         final errorData = json.decode(response.body);
+        print('❌ [REGISTRATION_SERVICE] Error response: $errorData');
         throw Exception(errorData['message'] ?? 'Failed to get registration status');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [REGISTRATION_SERVICE] Exception getting registration status: $e');
+      print('❌ [REGISTRATION_SERVICE] Stack trace: $stackTrace');
       if (e is Exception && e.toString().contains('404')) {
         return null; // Not registered
       }

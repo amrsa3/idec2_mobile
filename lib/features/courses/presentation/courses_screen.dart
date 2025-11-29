@@ -5,9 +5,12 @@ import 'dart:math' as math;
 
 import '../../../core/theme/app_colors.dart';
 import '../../../models/event_model.dart';
+import '../../../providers/registration_provider.dart';
 import '../../../services/course_category_service.dart';
 import '../../../services/event_service.dart';
+import '../../../services/registration_service.dart';
 import '../../../shared/widgets/authenticated_image_widget.dart';
+import '../../registrations/presentation/my_registrations_screen.dart';
 import '../../schedule/presentation/event_details_screen.dart';
 
 // Provider for all events
@@ -60,6 +63,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
   ViewMode _viewMode = ViewMode.grid;
+  final Map<String, bool> _processingRegistrations = {};
 
   final Map<String, String> _eventTypeLabels = {
     'COURSE': 'دورات',
@@ -194,8 +198,27 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                   }
                   return RefreshIndicator(
                     onRefresh: () async {
+                      // Invalidate providers to force refresh
                       ref.invalidate(coursesProvider(providerKey));
                       ref.invalidate(courseCategoriesProvider);
+                      
+                      // Wait for providers to refresh
+                      final refreshedData = await ref.read(coursesProvider(providerKey).future);
+                      await ref.read(courseCategoriesProvider.future);
+                      
+                      // Refresh registration status for all displayed events
+                      final refreshedEvents = (refreshedData['data'] as List<EventModel>);
+                      final eventsToRefresh = refreshedEvents.where((e) => e.type == type).toList();
+                      if (type == 'COURSE') {
+                        final categoryFiltered = _filterEventsByCategory(eventsToRefresh, _selectedCategoryId);
+                        for (final event in categoryFiltered) {
+                          ref.invalidate(eventRegistrationStatusProvider(event.id));
+                        }
+                      } else {
+                        for (final event in eventsToRefresh) {
+                          ref.invalidate(eventRegistrationStatusProvider(event.id));
+                        }
+                      }
                     },
                     child: _buildEventsView(context, filteredEvents),
                   );
@@ -211,11 +234,30 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             
             return RefreshIndicator(
               onRefresh: () async {
+                // Invalidate providers to force refresh
                 ref.invalidate(coursesProvider(providerKey));
                 ref.invalidate(courseCategoriesProvider);
+                
+                // Wait for providers to refresh
+                final refreshedData = await ref.read(coursesProvider(providerKey).future);
+                await ref.read(courseCategoriesProvider.future);
+                
+                // Refresh registration status for all displayed events
+                final refreshedEvents = (refreshedData['data'] as List<EventModel>);
+                final refreshedFiltered = _filterEventsByStatus(refreshedEvents);
+                final eventsToRefresh = availableTypes.length <= 1
+                    ? (availableTypes.isNotEmpty && availableTypes.first == 'COURSE'
+                        ? _filterEventsByCategory(refreshedFiltered, _selectedCategoryId)
+                        : refreshedFiltered)
+                    : refreshedFiltered;
+                
+                for (final event in eventsToRefresh) {
+                  ref.invalidate(eventRegistrationStatusProvider(event.id));
+                }
               },
               child: CustomScrollView(
                 controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   _buildSliverAppBar(availableTypes),
                   if (availableTypes.isNotEmpty && availableTypes.first == 'COURSE')
@@ -407,12 +449,13 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   Widget _buildGridView(List<EventModel> events) {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.82,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
+      physics: const AlwaysScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.82,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
       itemCount: events.length,
       itemBuilder: (context, index) {
         return _buildGridCard(context, events[index], index);
@@ -423,6 +466,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   Widget _buildListView(List<EventModel> events) {
     return ListView.builder(
       padding: const EdgeInsets.all(8),
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: events.length,
       itemBuilder: (context, index) {
         return Padding(
@@ -436,6 +480,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   Widget _buildCompactView(List<EventModel> events) {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
+      physics: const AlwaysScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.75,
@@ -496,11 +541,161 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
     }
   }
 
+  // Helper method to check if event should show registration button
+  bool _shouldShowRegistrationButton(EventModel event) {
+    final status = event.status?.toUpperCase();
+    return status == 'REGISTRATION_OPEN' || status == 'ONGOING';
+  }
+
+  // Helper method to get registration button info
+  Map<String, dynamic> _getRegistrationButtonInfo(
+    Map<String, dynamic>? registrationStatus,
+    EventModel event,
+  ) {
+    if (registrationStatus == null) {
+      // Not registered - show register button if status allows
+      if (_shouldShowRegistrationButton(event)) {
+        return {
+          'text': 'اشترك',
+          'color': AppColors.primary,
+          'icon': Icons.how_to_reg,
+          'action': 'register',
+        };
+      }
+      return {'show': false};
+    }
+
+    final status = registrationStatus['status'] as String?;
+    switch (status) {
+      case 'PAYMENT_PENDING':
+        return {
+          'text': 'بإنتظار الدفع',
+          'color': AppColors.warning,
+          'icon': Icons.payment,
+          'action': 'payment',
+          'registrationId': registrationStatus['registrationId'],
+        };
+      case 'UNDER_REVIEW':
+        return {
+          'text': 'قيد المراجعة',
+          'color': AppColors.info,
+          'icon': Icons.hourglass_empty,
+          'action': 'none',
+        };
+      case 'ACTIVE_PARTICIPANT':
+        return {
+          'text': 'مشترك',
+          'color': AppColors.success,
+          'icon': Icons.check_circle,
+          'action': 'none',
+        };
+      default:
+        return {'show': false};
+    }
+  }
+
+  // Handle registration button tap
+  Future<void> _handleRegistrationButtonTap(
+    BuildContext context,
+    EventModel event,
+    Map<String, dynamic> buttonInfo,
+  ) async {
+    final action = buttonInfo['action'] as String?;
+    
+    if (action == 'register') {
+      // Register to event
+      setState(() {
+        _processingRegistrations[event.id] = true;
+      });
+
+      try {
+        final registrationService = RegistrationService();
+        final registration = await registrationService.registerToEvent(
+          eventId: event.id,
+        );
+
+        // Refresh registration status
+        ref.invalidate(eventRegistrationStatusProvider(event.id));
+
+        // Check if payment is required
+        if (registration.status == 'PAYMENT_PENDING') {
+          // Navigate to my registrations screen
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyRegistrationsScreen(),
+              ),
+            );
+          }
+        } else {
+          // Show success message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('تم التسجيل في الفعالية بنجاح'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          String errorMessage = 'فشل في التسجيل';
+          if (e is Exception) {
+            final errorStr = e.toString();
+            if (errorStr.startsWith('Exception: ')) {
+              errorMessage = errorStr.substring(11);
+            } else {
+              errorMessage = errorStr;
+            }
+          } else {
+            errorMessage = e.toString();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _processingRegistrations[event.id] = false;
+          });
+        }
+      }
+    } else if (action == 'payment') {
+      // Navigate to my registrations screen
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MyRegistrationsScreen(),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildGridCard(BuildContext context, EventModel course, int index) {
     final speakerName = _getSpeakerName(course);
     final description = course.description;
     final typeColor = _getTypeColor(course.type ?? '');
     final isFree = course.price == null || course.price! <= 0;
+    
+    // Get registration status
+    final registrationStatusAsync = ref.watch(eventRegistrationStatusProvider(course.id));
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -625,7 +820,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          isFree ? 'مجاني' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
+                          isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 8,
@@ -725,11 +920,11 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           Text(
                             description,
                             style: TextStyle(
-                              fontSize: 8,
+                              fontSize: 10,
                               color: AppColors.textSecondary.withOpacity(0.8),
                               height: 1.3,
                             ),
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -756,35 +951,145 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.primary, AppColors.primaryLight],
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _navigateToDetails(context, course.id),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(Icons.how_to_reg, color: Colors.white, size: 12),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'اشترك',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
+                        registrationStatusAsync.when(
+                          data: (status) {
+                            final buttonInfo = _getRegistrationButtonInfo(status, course);
+                            if (buttonInfo['show'] == false) {
+                              // No button to show - just show details button
+                              return Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppColors.primary, AppColors.primaryLight],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _navigateToDetails(context, course.id),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 6),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: const [
+                                          Icon(Icons.info_outline, color: Colors.white, size: 12),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'التفاصيل',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final isProcessing = _processingRegistrations[course.id] ?? false;
+                            return Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (isProcessing)
+                                          const SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        else
+                                          Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 12),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          buttonInfo['text'] as String,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [AppColors.primary, AppColors.primaryLight],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          error: (_, __) => Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [AppColors.primary, AppColors.primaryLight],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _navigateToDetails(context, course.id),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.how_to_reg, color: Colors.white, size: 12),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'اشترك',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -807,6 +1112,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
     final description = course.description;
     final typeColor = _getTypeColor(course.type ?? '');
     final isFree = course.price == null || course.price! <= 0;
+    
+    // Get registration status
+    final registrationStatusAsync = ref.watch(eventRegistrationStatusProvider(course.id));
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -920,7 +1228,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                isFree ? 'مجاني' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
+                                isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
@@ -1024,6 +1332,53 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        registrationStatusAsync.when(
+                          data: (status) {
+                            final buttonInfo = _getRegistrationButtonInfo(status, course);
+                            if (buttonInfo['show'] == false) {
+                              return const SizedBox.shrink();
+                            }
+
+                            final isProcessing = _processingRegistrations[course.id] ?? false;
+                            return SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                                icon: isProcessing
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : Icon(buttonInfo['icon'] as IconData, size: 14),
+                                label: Text(
+                                  buttonInfo['text'] as String,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: buttonInfo['color'] as Color,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => const SizedBox(
+                            width: double.infinity,
+                            child: Center(
+                              child: SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
                       ],
                     ),
                   ),
@@ -1039,6 +1394,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   Widget _buildCompactCard(BuildContext context, EventModel course, int index) {
     final typeColor = _getTypeColor(course.type ?? '');
     final isFree = course.price == null || course.price! <= 0;
+    
+    // Get registration status
+    final registrationStatusAsync = ref.watch(eventRegistrationStatusProvider(course.id));
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -1134,7 +1492,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isFree ? 'مجاني' : '${course.price!.toStringAsFixed(0)}',
+                          isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 7,
@@ -1184,6 +1542,82 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 4),
+                      registrationStatusAsync.when(
+                        data: (status) {
+                          final buttonInfo = _getRegistrationButtonInfo(status, course);
+                          if (buttonInfo['show'] == false) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final isProcessing = _processingRegistrations[course.id] ?? false;
+                          return Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      if (isProcessing)
+                                        const SizedBox(
+                                          width: 8,
+                                          height: 8,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      else
+                                        Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 8),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        buttonInfo['text'] as String,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        loading: () => Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary, AppColors.primaryLight],
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 8,
+                              height: 8,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
                     ],
                   ),

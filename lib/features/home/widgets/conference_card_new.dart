@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -674,8 +675,24 @@ class _SubscribeButtonBuilderState
           data: (registration) {
             if (registration != null) {
               // User is already registered - show status
-              final statusInfo =
-                  _getRegistrationStatusInfo(registration.status);
+              // Debug: Log the registration object completely
+              debugPrint('🔵 [CONFERENCE_CARD] ========== REGISTRATION DATA ==========');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration ID: ${registration.id}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration status RAW: "${registration.status}"');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration status type: ${registration.status.runtimeType}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration status length: ${registration.status.length}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration status codeUnits: ${registration.status.codeUnits}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration calculatedPrice: ${registration.calculatedPrice}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration registrationDate: ${registration.registrationDate}');
+              debugPrint('🔵 [CONFERENCE_CARD] Registration paymentDeadline: ${registration.paymentDeadline}');
+              debugPrint('🔵 [CONFERENCE_CARD] ========================================');
+              
+              final statusInfo = _getRegistrationStatusInfo(registration.status);
+              
+              debugPrint('🔵 [CONFERENCE_CARD] Status info result:');
+              debugPrint('🔵 [CONFERENCE_CARD]   - Text: "${statusInfo.text}"');
+              debugPrint('🔵 [CONFERENCE_CARD]   - Color: ${statusInfo.color}');
+              debugPrint('🔵 [CONFERENCE_CARD]   - Icon: ${statusInfo.icon}');
 
               // Handle ON_HOLD status specially - show reactivation dialog
               if (registration.status == 'ON_HOLD') {
@@ -939,7 +956,27 @@ class _SubscribeButtonBuilderState
 
   /// Get registration status information (text, color, icon)
   _RegistrationStatusInfo _getRegistrationStatusInfo(String status) {
-    switch (status) {
+    // Normalize status: remove spaces, convert to uppercase, replace dashes with underscores
+    final normalizedStatus = status
+        .toUpperCase()
+        .trim()
+        .replaceAll(' ', '_')
+        .replaceAll('-', '_');
+    
+    debugPrint('🔵 [CONFERENCE_CARD] Getting status info for: "$status" (normalized: "$normalizedStatus")');
+    debugPrint('🔵 [CONFERENCE_CARD] Status length: ${status.length}, bytes: ${status.codeUnits}');
+    
+    // Validate status is not empty
+    if (normalizedStatus.isEmpty) {
+      debugPrint('❌ [CONFERENCE_CARD] Empty status received!');
+      return _RegistrationStatusInfo(
+        text: 'حالة غير صحيحة',
+        color: Colors.grey,
+        icon: Icons.error_outline,
+      );
+    }
+    
+    switch (normalizedStatus) {
       case 'UNDER_REVIEW':
         return _RegistrationStatusInfo(
           text: 'قيد المراجعة',
@@ -989,9 +1026,11 @@ class _SubscribeButtonBuilderState
           icon: Icons.check_circle_outline,
         );
       default:
+        // Log unknown status for debugging
+        debugPrint('⚠️ [CONFERENCE_CARD] Unknown registration status: "$status" (normalized: "$normalizedStatus")');
         return _RegistrationStatusInfo(
-          text: 'مسجل',
-          color: Colors.green,
+          text: 'حالة غير معروفة: $status',
+          color: Colors.grey,
           icon: Icons.info,
         );
     }

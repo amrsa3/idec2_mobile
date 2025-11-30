@@ -316,7 +316,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
       toolbarHeight: kToolbarHeight,
       pinned: true,
       floating: false,
-      elevation: 0,
+        elevation: 0,
       backgroundColor: AppColors.surface,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
@@ -326,10 +326,10 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             color: AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: TextField(
-            controller: _searchController,
+            child: TextField(
+              controller: _searchController,
             style: const TextStyle(fontSize: 14),
-            decoration: InputDecoration(
+              decoration: InputDecoration(
               hintText: 'ابحث في الفعاليات...',
               hintStyle: TextStyle(
                 color: AppColors.textSecondary.withOpacity(0.6),
@@ -343,14 +343,14 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               isDense: true,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.isEmpty ? null : value;
+                });
+              },
             ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value.isEmpty ? null : value;
-              });
-            },
           ),
-        ),
         centerTitle: false,
       ),
     );
@@ -382,7 +382,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 ),
                 child: Text(
                   _eventTypeLabels[type] ?? type,
-                  style: TextStyle(
+                          style: TextStyle(
                     color: isSelected ? Colors.white : AppColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
@@ -398,9 +398,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           isScrollable: availableTypes.length > 2,
           labelPadding: const EdgeInsets.symmetric(horizontal: 4),
         ),
-      ),
-    );
-  }
+                    ),
+                  );
+                }
 
   Widget _buildSliverCategoryFilter(AsyncValue<List<CourseCategoryModel>> categoriesAsync) {
     return SliverPersistentHeader(
@@ -457,7 +457,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
         mainAxisSpacing: 8,
       ),
       itemCount: events.length,
-      itemBuilder: (context, index) {
+                    itemBuilder: (context, index) {
         return _buildGridCard(context, events[index], index);
       },
     );
@@ -552,33 +552,35 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
     Map<String, dynamic>? registrationStatus,
     EventModel event,
   ) {
-    if (registrationStatus == null) {
-      // Not registered - show register button if status allows
-      if (_shouldShowRegistrationButton(event)) {
-        return {
-          'text': 'اشترك',
-          'color': AppColors.primary,
-          'icon': Icons.how_to_reg,
-          'action': 'register',
-        };
-      }
+    // Check if event status allows registration
+    if (!_shouldShowRegistrationButton(event)) {
       return {'show': false};
     }
 
+    if (registrationStatus == null) {
+      // Not registered - show register button
+      return {
+        'text': 'اشترك',
+        'color': AppColors.primary,
+        'icon': Icons.how_to_reg,
+        'action': 'register',
+      };
+    }
+
     final status = registrationStatus['status'] as String?;
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case 'PAYMENT_PENDING':
         return {
           'text': 'بإنتظار الدفع',
-          'color': AppColors.warning,
+          'color': Colors.blue,
           'icon': Icons.payment,
           'action': 'payment',
-          'registrationId': registrationStatus['registrationId'],
+          'registrationId': registrationStatus['registrationId'] ?? registrationStatus['id'],
         };
       case 'UNDER_REVIEW':
         return {
           'text': 'قيد المراجعة',
-          'color': AppColors.info,
+          'color': Colors.orange,
           'icon': Icons.hourglass_empty,
           'action': 'none',
         };
@@ -724,7 +726,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 ),
               ],
             ),
-            child: Column(
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Image section
@@ -787,14 +789,14 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
+                    children: [
+                      Icon(
                               _getTypeIcon(course.type ?? ''),
                               color: Colors.white,
                               size: 9,
                             ),
                             const SizedBox(width: 2),
-                            Text(
+                      Text(
                               course.typeLabel,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -857,7 +859,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                 size: 8,
                               ),
                               const SizedBox(width: 3),
-                              Text(
+                      Text(
                                 _getCourseLevelLabel(course.courseLevel)!,
                                 style: const TextStyle(
                                   color: Colors.white,
@@ -882,7 +884,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                         Text(
                           course.title,
                           style: const TextStyle(
-                            fontSize: 12,
+                          fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                             height: 1.2,
@@ -905,15 +907,15 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                   speakerName,
                                   style: TextStyle(
                                     fontSize: 9,
-                                    color: AppColors.textSecondary,
+                          color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                            ],
-                          ),
+                      ),
+                    ],
+                  ),
                         ],
                         if (description != null && description.isNotEmpty) ...[
                           const SizedBox(height: 4),
@@ -951,34 +953,49 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           ],
                         ),
                         const SizedBox(height: 6),
-                        registrationStatusAsync.when(
-                          data: (status) {
-                            final buttonInfo = _getRegistrationButtonInfo(status, course);
-                            if (buttonInfo['show'] == false) {
-                              // No button to show - just show details button
+                        // Only show registration button if event status is REGISTRATION_OPEN or ONGOING
+                        if (_shouldShowRegistrationButton(course))
+                          registrationStatusAsync.when(
+                            data: (status) {
+                              final buttonInfo = _getRegistrationButtonInfo(status, course);
+                              if (buttonInfo['show'] == false) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final isProcessing = _processingRegistrations[course.id] ?? false;
                               return Container(
                                 width: double.infinity,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppColors.primary, AppColors.primaryLight],
+                                    colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
                                   ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Material(
                                   color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: () => _navigateToDetails(context, course.id),
+      child: InkWell(
+                                    onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
                                     borderRadius: BorderRadius.circular(8),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 6),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
-                                        children: const [
-                                          Icon(Icons.info_outline, color: Colors.white, size: 12),
-                                          SizedBox(width: 4),
+                                        children: [
+                                          if (isProcessing)
+                                            const SizedBox(
+                                              width: 12,
+                                              height: 12,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          else
+                                            Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 12),
+                                          const SizedBox(width: 4),
                                           Text(
-                                            'التفاصيل',
-                                            style: TextStyle(
+                                            buttonInfo['text'] as String,
+                                            style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,
@@ -988,113 +1005,33 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }
-
-                            final isProcessing = _processingRegistrations[course.id] ?? false;
-                            return Container(
+            ),
+          );
+        },
+                            loading: () => Container(
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
+                                  colors: [AppColors.primary, AppColors.primaryLight],
                                 ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 6),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        if (isProcessing)
-                                          const SizedBox(
-                                            width: 12,
-                                            height: 12,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        else
-                                          Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 12),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          buttonInfo['text'] as String,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                          loading: () => Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [AppColors.primary, AppColors.primaryLight],
-                              ),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            error: (_, __) => const SizedBox.shrink(),
                           ),
-                          error: (_, __) => Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [AppColors.primary, AppColors.primaryLight],
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => _navigateToDetails(context, course.id),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 6),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.how_to_reg, color: Colors.white, size: 12),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'اشترك',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -1143,25 +1080,25 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                // Image
-                ClipRRect(
+        child: Row(
+          children: [
+            // Image
+              ClipRRect(
                   borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                  child: SizedBox(
-                    width: 120,
+                child: SizedBox(
+                  width: 120,
                     height: 140,
                     child: course.firstPromotionalImage != null
                         ? AuthenticatedImageWidget(
-                            imageUrl: course.firstPromotionalImage!,
-                            fit: BoxFit.cover,
+                    imageUrl: course.firstPromotionalImage!,
+                    fit: BoxFit.cover,
                             width: 120,
                             height: 140,
-                          )
+              )
                         : Container(
-                            width: 120,
+                width: 120,
                             height: 140,
-                            decoration: BoxDecoration(
+                decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -1169,28 +1106,28 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                   typeColor.withOpacity(0.3),
                                   typeColor.withOpacity(0.1),
                                 ],
-                              ),
-                            ),
-                            child: Icon(
+                  ),
+                ),
+                child: Icon(
                               Icons.event,
                               size: 40,
                               color: typeColor.withOpacity(0.5),
                             ),
                           ),
-                  ),
                 ),
-                // Content
-                Expanded(
-                  child: Padding(
+              ),
+            // Content
+            Expanded(
+              child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                         Row(
                           children: [
-                            Container(
+                    Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [typeColor, typeColor.withOpacity(0.8)],
                                 ),
@@ -1210,9 +1147,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                                 ],
                               ),
                             ),
@@ -1239,17 +1176,17 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          course.title,
-                          style: const TextStyle(
+                    Text(
+                      course.title,
+                      style: const TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                             height: 1.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                         if (speakerName != null && speakerName.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Row(
@@ -1265,7 +1202,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                   speakerName,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.textSecondary,
+                          color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
@@ -1283,11 +1220,11 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                               fontSize: 10,
                               color: AppColors.textSecondary.withOpacity(0.8),
                               height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                         if (_getCourseLevelLabel(course.courseLevel) != null) ...[
                           const SizedBox(height: 6),
                           Container(
@@ -1315,15 +1252,15 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           ),
                         ],
                         const SizedBox(height: 8),
-                        Row(
-                          children: [
+                    Row(
+                      children: [
                             _buildInfoChip(
                               icon: Icons.calendar_today_outlined,
                               text: DateFormat('d MMM yyyy', 'ar').format(course.localStartTime),
                               color: AppColors.primary,
                               size: 'medium',
                             ),
-                            const SizedBox(width: 6),
+                        const SizedBox(width: 6),
                             _buildInfoChip(
                               icon: Icons.access_time,
                               text: DateFormat('HH:mm', 'ar').format(course.localStartTime),
@@ -1491,15 +1428,15 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           ),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(
+                          child: Text(
                           isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)}',
-                          style: const TextStyle(
+                            style: const TextStyle(
                             color: Colors.white,
                             fontSize: 7,
                             fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
                     ),
                   ],
                 ),
@@ -1509,9 +1446,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                          Text(
                         course.title,
-                        style: const TextStyle(
+                            style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -1526,7 +1463,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 8,
-                            color: AppColors.textSecondary,
+                              color: AppColors.textSecondary,
                           ),
                           const SizedBox(width: 2),
                           Expanded(
@@ -1569,7 +1506,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
+                        children: [
                                       if (isProcessing)
                                         const SizedBox(
                                           width: 8,
@@ -1582,9 +1519,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                       else
                                         Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 8),
                                       const SizedBox(width: 2),
-                                      Text(
+                          Text(
                                         buttonInfo['text'] as String,
-                                        style: const TextStyle(
+                            style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 7,
                                           fontWeight: FontWeight.bold,
@@ -1792,10 +1729,10 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             'تحقق مرة أخرى لاحقاً',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
       ),
     );
   }
@@ -1867,9 +1804,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 ),
               ),
             ),
-          ],
-        ),
-      ),
+                  ],
+                ),
+              ),
     );
   }
 }

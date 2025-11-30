@@ -16,7 +16,7 @@ window.flutterWebConfig = {
   // Enable service worker on desktop, disable on mobile for better compatibility
   enableServiceWorker: !isMobile,
   serviceWorkerSettings: {
-    serviceWorkerVersion: '2.0.11-20251129071338', // سيتم استبداله بقيمة فريدة أثناء البناء
+    serviceWorkerVersion: '2.0.11-20251129180234', // سيتم استبداله بقيمة فريدة أثناء البناء
     updateStrategy: 'on-download', // Immediate update when new version is downloaded
   },
 };

@@ -1,25 +1,19 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/registration_model.dart';
-import 'platform_storage_service.dart';
+import 'enhanced_dio_service_v2.dart';
 
 class RegistrationService {
   static final RegistrationService _instance = RegistrationService._internal();
   factory RegistrationService() => _instance;
   RegistrationService._internal();
 
-  final PlatformStorageService _storageService =
-      PlatformStorageService.instance;
-
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await _storageService.getAccessToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
+  // Use EnhancedDioServiceV2 which has automatic token refresh interceptor
+  Future<Dio> get _dio async {
+    final dioService = EnhancedDioServiceV2.instance;
+    await dioService.initialize();
+    return dioService.dio;
   }
 
   /// Register to a conference
@@ -28,18 +22,16 @@ class RegistrationService {
     String? notes,
   }) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/conferences/$conferenceId/register'),
-        headers: headers,
-        body: json.encode({
+      final dio = await _dio;
+      final response = await dio.post(
+        '/api/v1/events/conferences/$conferenceId/register',
+        data: {
           if (notes != null && notes.isNotEmpty) 'notes': notes,
-        }),
+        },
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         // Handle ApiResponse structure: { success, messageAr, messageEn, code, data: { registration: {...} } }
         if (data.containsKey('data') && data['data'] is Map) {
           final dataMap = data['data'] as Map<String, dynamic>;
@@ -49,39 +41,39 @@ class RegistrationService {
         }
         return RegistrationModel.fromJson(data);
       } else {
-        final errorData = json.decode(response.body);
-        
-        // Check for Smart Messages System error response
-        String errorMessage = 'فشل في التسجيل';
-        
-        if (errorData is Map<String, dynamic>) {
-          // Check for messageAr/messageEn (from ApiResponse)
-          if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
-            final messageAr = errorData['messageAr'] as String? ?? '';
-            final messageEn = errorData['messageEn'] as String? ?? '';
+        throw Exception('Failed to register to conference');
+      }
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      String errorMessage = 'فشل في التسجيل';
+      
+      if (errorData is Map<String, dynamic>) {
+        // Check for messageAr/messageEn (from ApiResponse)
+        if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
+          final messageAr = errorData['messageAr'] as String? ?? '';
+          final messageEn = errorData['messageEn'] as String? ?? '';
+          errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+        }
+        // Check for error.message (from HttpExceptionFilter)
+        else if (errorData.containsKey('error') && errorData['error'] is Map) {
+          final errorObj = errorData['error'] as Map<String, dynamic>;
+          if (errorObj.containsKey('message')) {
+            errorMessage = errorObj['message'] as String? ?? errorMessage;
+          }
+          // Also check for messageAr/messageEn in error object
+          if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
+            final messageAr = errorObj['messageAr'] as String? ?? '';
+            final messageEn = errorObj['messageEn'] as String? ?? '';
             errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
           }
-          // Check for error.message (from HttpExceptionFilter)
-          else if (errorData.containsKey('error') && errorData['error'] is Map) {
-            final errorObj = errorData['error'] as Map<String, dynamic>;
-            if (errorObj.containsKey('message')) {
-              errorMessage = errorObj['message'] as String? ?? errorMessage;
-            }
-            // Also check for messageAr/messageEn in error object
-            if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
-              final messageAr = errorObj['messageAr'] as String? ?? '';
-              final messageEn = errorObj['messageEn'] as String? ?? '';
-              errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
-            }
-          }
-          // Fallback to top-level message
-          else if (errorData.containsKey('message')) {
-            errorMessage = errorData['message'] as String? ?? errorMessage;
-          }
         }
-        
-        throw Exception(errorMessage);
+        // Fallback to top-level message
+        else if (errorData.containsKey('message')) {
+          errorMessage = errorData['message'] as String? ?? errorMessage;
+        }
       }
+      
+      throw Exception(errorMessage);
     } catch (e) {
       throw Exception('Error registering to conference: $e');
     }
@@ -93,18 +85,17 @@ class RegistrationService {
     String? notes,
   }) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/api/v1/events/registrations'),
-        headers: headers,
-        body: json.encode({
+      final dio = await _dio;
+      final response = await dio.post(
+        '/api/v1/events/registrations',
+        data: {
           'eventId': eventId,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
-        }),
+        },
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         // Handle ApiResponse structure: { success, messageAr, messageEn, code, data: { registration: {...} } }
         Map<String, dynamic> registrationData;
         
@@ -147,39 +138,41 @@ class RegistrationService {
         
         return RegistrationModel.fromJson(completeRegistrationData);
       } else {
-        final errorData = json.decode(response.body);
-        
-        // Check for Smart Messages System error response
-        String errorMessage = 'فشل في التسجيل';
-        
-        if (errorData is Map<String, dynamic>) {
-          // Check for messageAr/messageEn (from ApiResponse)
-          if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
-            final messageAr = errorData['messageAr'] as String? ?? '';
-            final messageEn = errorData['messageEn'] as String? ?? '';
+        throw Exception('Failed to register to event');
+      }
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      
+      // Check for Smart Messages System error response
+      String errorMessage = 'فشل في التسجيل';
+      
+      if (errorData is Map<String, dynamic>) {
+        // Check for messageAr/messageEn (from ApiResponse)
+        if (errorData.containsKey('messageAr') || errorData.containsKey('messageEn')) {
+          final messageAr = errorData['messageAr'] as String? ?? '';
+          final messageEn = errorData['messageEn'] as String? ?? '';
+          errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
+        }
+        // Check for error.message (from HttpExceptionFilter)
+        else if (errorData.containsKey('error') && errorData['error'] is Map) {
+          final errorObj = errorData['error'] as Map<String, dynamic>;
+          if (errorObj.containsKey('message')) {
+            errorMessage = errorObj['message'] as String? ?? errorMessage;
+          }
+          // Also check for messageAr/messageEn in error object
+          if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
+            final messageAr = errorObj['messageAr'] as String? ?? '';
+            final messageEn = errorObj['messageEn'] as String? ?? '';
             errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
           }
-          // Check for error.message (from HttpExceptionFilter)
-          else if (errorData.containsKey('error') && errorData['error'] is Map) {
-            final errorObj = errorData['error'] as Map<String, dynamic>;
-            if (errorObj.containsKey('message')) {
-              errorMessage = errorObj['message'] as String? ?? errorMessage;
-            }
-            // Also check for messageAr/messageEn in error object
-            if (errorObj.containsKey('messageAr') || errorObj.containsKey('messageEn')) {
-              final messageAr = errorObj['messageAr'] as String? ?? '';
-              final messageEn = errorObj['messageEn'] as String? ?? '';
-              errorMessage = messageAr.isNotEmpty ? messageAr : messageEn;
-            }
-          }
-          // Fallback to top-level message
-          else if (errorData.containsKey('message')) {
-            errorMessage = errorData['message'] as String? ?? errorMessage;
-          }
         }
-        
-        throw Exception(errorMessage);
+        // Fallback to top-level message
+        else if (errorData.containsKey('message')) {
+          errorMessage = errorData['message'] as String? ?? errorMessage;
+        }
       }
+      
+      throw Exception(errorMessage);
     } catch (e) {
       // If it's already an Exception with a message, rethrow it
       if (e is Exception && !e.toString().contains('Error registering to event')) {
@@ -192,21 +185,11 @@ class RegistrationService {
   /// Get user's registrations
   Future<List<RegistrationModel>> getMyRegistrations() async {
     try {
-      final headers = await _getHeaders();
-      final url = '${ApiConstants.baseUrl}/api/v1/events/registrations/my-registrations';
-      print('📋 [REGISTRATION_SERVICE] Fetching registrations from: $url');
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
-
-      print('📋 [REGISTRATION_SERVICE] Response status: ${response.statusCode}');
-      print('📋 [REGISTRATION_SERVICE] Response body length: ${response.body.length}');
+      final dio = await _dio;
+      final response = await dio.get('/api/v1/events/registrations/my-registrations');
 
       if (response.statusCode == 200) {
-        final dynamic decoded = json.decode(response.body);
-        print('📋 [REGISTRATION_SERVICE] Decoded type: ${decoded.runtimeType}');
+        final dynamic decoded = response.data;
         
         List<dynamic> data;
         if (decoded is List) {
@@ -214,30 +197,24 @@ class RegistrationService {
         } else if (decoded is Map && decoded.containsKey('data') && decoded['data'] is List) {
           data = decoded['data'] as List;
         } else {
-          print('❌ [REGISTRATION_SERVICE] Unexpected response format: $decoded');
           throw Exception('Unexpected response format from server');
         }
         
-        print('📋 [REGISTRATION_SERVICE] Parsing ${data.length} registrations');
         final registrations = data.map((json) {
           try {
             return RegistrationModel.fromJson(json as Map<String, dynamic>);
           } catch (e) {
-            print('❌ [REGISTRATION_SERVICE] Error parsing registration: $e');
-            print('❌ [REGISTRATION_SERVICE] Registration JSON: $json');
-            rethrow;
+            throw Exception('Error parsing registration: $e');
           }
         }).toList();
         
-        print('✅ [REGISTRATION_SERVICE] Successfully loaded ${registrations.length} registrations');
         return registrations;
       } else {
-        print('❌ [REGISTRATION_SERVICE] Failed with status ${response.statusCode}');
-        print('❌ [REGISTRATION_SERVICE] Response body: ${response.body}');
-        throw Exception('Failed to load registrations: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load registrations: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      throw Exception('Error fetching registrations: ${e.response?.data?['message'] ?? e.message}');
     } catch (e) {
-      print('❌ [REGISTRATION_SERVICE] Exception: $e');
       throw Exception('Error fetching registrations: $e');
     }
   }
@@ -246,20 +223,18 @@ class RegistrationService {
   Future<RegistrationModel> getRegistrationDetails(
       String registrationId) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/registrations/$registrationId'),
-        headers: headers,
-      );
+      final dio = await _dio;
+      final response = await dio.get('/api/v1/events/registrations/$registrationId');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         return RegistrationModel.fromJson(data);
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to load registration');
+        throw Exception('Failed to load registration');
       }
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      throw Exception(errorData?['message'] ?? 'Failed to load registration');
     } catch (e) {
       throw Exception('Error fetching registration details: $e');
     }
@@ -268,34 +243,24 @@ class RegistrationService {
   /// Get user registration status for an event
   Future<Map<String, dynamic>?> getEventRegistrationStatus(String eventId) async {
     try {
-      print('🔵 [REGISTRATION_SERVICE] Getting registration status for event: $eventId');
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/api/v1/events/registrations/my-status/$eventId'),
-        headers: headers,
-      );
-
-      print('🔵 [REGISTRATION_SERVICE] Response status code: ${response.statusCode}');
+      final dio = await _dio;
+      final response = await dio.get('/api/v1/events/registrations/my-status/$eventId');
       
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        print('🔵 [REGISTRATION_SERVICE] Registration status data: $data');
-        print('🔵 [REGISTRATION_SERVICE] Registration ID: ${data['id']}');
-        print('🔵 [REGISTRATION_SERVICE] Registration status: ${data['status']}');
+        final Map<String, dynamic> data = response.data;
         return data;
-      } else if (response.statusCode == 404) {
-        // User not registered
-        print('🔵 [REGISTRATION_SERVICE] User not registered (404)');
-        return null;
       } else {
-        final errorData = json.decode(response.body);
-        print('❌ [REGISTRATION_SERVICE] Error response: $errorData');
-        throw Exception(errorData['message'] ?? 'Failed to get registration status');
+        throw Exception('Failed to get registration status');
       }
-    } catch (e, stackTrace) {
-      print('❌ [REGISTRATION_SERVICE] Exception getting registration status: $e');
-      print('❌ [REGISTRATION_SERVICE] Stack trace: $stackTrace');
-      if (e is Exception && e.toString().contains('404')) {
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // User not registered
+        return null;
+      }
+      final errorData = e.response?.data;
+      throw Exception(errorData?['message'] ?? 'Failed to get registration status');
+    } catch (e) {
+      if (e.toString().contains('404')) {
         return null; // Not registered
       }
       throw Exception('Error fetching registration status: $e');
@@ -306,18 +271,16 @@ class RegistrationService {
   Future<Map<String, dynamic>> getRegistrationTimeline(
       String registrationId) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/registrations/$registrationId/timeline'),
-        headers: headers,
-      );
+      final dio = await _dio;
+      final response = await dio.get('/api/v1/events/registrations/$registrationId/timeline');
 
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        return response.data;
       } else {
         throw Exception('Failed to load timeline: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Error fetching timeline');
     } catch (e) {
       throw Exception('Error fetching timeline: $e');
     }
@@ -329,24 +292,28 @@ class RegistrationService {
     String? reason,
   }) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/registrations/$registrationId/request-reactivation'),
-        headers: headers,
-        body: json.encode({
+      final dio = await _dio;
+      final response = await dio.post(
+        '/api/v1/events/registrations/$registrationId/request-reactivation',
+        data: {
           if (reason != null && reason.isNotEmpty) 'reason': reason,
-        }),
+        },
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        final errorData = json.decode(response.body);
+        final errorData = response.data;
         // Try to get Arabic message first, then English, then default
         final message = errorData['messageAr'] ?? 
                        errorData['message'] ?? 
                        'فشل في طلب إعادة التفعيل';
         throw Exception(message);
       }
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      final message = errorData?['messageAr'] ?? 
+                     errorData?['message'] ?? 
+                     'فشل في طلب إعادة التفعيل';
+      throw Exception(message);
     } catch (e) {
       throw Exception('Error requesting reactivation: $e');
     }
@@ -359,21 +326,22 @@ class RegistrationService {
     String? transactionId,
   }) async {
     try {
-      final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/events/registrations/$registrationId/payment-completed'),
-        headers: headers,
-        body: json.encode({
+      final dio = await _dio;
+      final response = await dio.post(
+        '/api/v1/events/registrations/$registrationId/payment-completed',
+        data: {
           if (paymentId != null) 'paymentId': paymentId,
           if (transactionId != null) 'transactionId': transactionId,
-        }),
+        },
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        final errorData = json.decode(response.body);
+        final errorData = response.data;
         throw Exception(errorData['message'] ?? 'فشل في تسجيل الدفع');
       }
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      throw Exception(errorData?['message'] ?? 'فشل في تسجيل الدفع');
     } catch (e) {
       throw Exception('Error completing payment: $e');
     }

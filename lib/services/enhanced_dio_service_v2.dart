@@ -41,11 +41,31 @@ class EnhancedDioServiceV2 {
   DateTime? _lastRequestTime;
 
   EnhancedDioServiceV2._internal() {
+    // Create Dio instance synchronously first (without interceptors)
+    _dio = Dio(BaseOptions(
+      baseUrl: ApiConstants.baseUrl,
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 300),
+      sendTimeout: const Duration(seconds: 300),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ));
+    
+    // Then initialize async parts (interceptors, dependencies)
     _initializeDio();
   }
 
   /// Get the Dio instance
-  Dio get dio => _dio;
+  Dio get dio {
+    return _dio;
+  }
+  
+  /// Ensure service is initialized before use
+  Future<void> ensureInitialized() async {
+    await _ensureInitialized();
+  }
 
   /// Check if service is initialized
   bool get isInitialized => _isInitialized;
@@ -68,25 +88,10 @@ class EnhancedDioServiceV2 {
         'interceptorStats': _tokenInterceptor.getStatistics(),
       };
 
-  /// Initialize Dio with enhanced configuration
+  /// Initialize Dio with enhanced configuration (interceptors and dependencies)
   Future<void> _initializeDio() async {
     try {
       debugPrint('🚀 [ENHANCED_DIO_V2] Initializing service...');
-
-      // Create Dio instance with base configuration
-      _dio = Dio(BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout:
-            const Duration(seconds: 60), // زيادة وقت الاتصال للأحمال الكبيرة
-        receiveTimeout:
-            const Duration(seconds: 300), // زيادة وقت الاستقبال لملفات كبيرة
-        sendTimeout:
-            const Duration(seconds: 300), // زيادة وقت الإرسال لملفات كبيرة
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ));
 
       // Initialize token interceptor
       _tokenInterceptor = EnhancedTokenInterceptor(

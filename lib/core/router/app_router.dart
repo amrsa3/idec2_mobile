@@ -14,10 +14,13 @@ import '../../features/language/presentation/language_selection_screen.dart';
 import '../../features/main/presentation/main_screen.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
+import '../../features/notifications/presentation/enhanced_notifications_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../features/schedule/presentation/event_details_screen.dart';
+import '../../features/registrations/presentation/registration_detail_screen.dart';
 import '../../services/analytics_service.dart';
 import '../../services/compatible_auth_service.dart';
 
@@ -39,6 +42,12 @@ class AppRoutes {
   static const String errorReporting = '/error-reporting';
   static const String notifications = '/notifications';
   static const String notificationsTest = '/notifications-test';
+  
+  // Deep linking routes
+  static const String event = '/event/:id';
+  static const String registration = '/registration/:id';
+  static const String conference = '/conference/:id';
+  static const String payment = '/payment/:id';
 }
 
 // Auth change notifier for GoRouter
@@ -236,13 +245,54 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: AppRoutes.notifications,
           name: 'notifications',
-          builder: (context, state) => const NotificationsPage(),
+          builder: (context, state) => const EnhancedNotificationsScreen(),
         ),
 
         GoRoute(
           path: AppRoutes.notificationsTest,
           name: 'notifications-test',
           builder: (context, state) => const NotificationsTestScreen(),
+        ),
+
+        // Deep Linking Routes
+        GoRoute(
+          path: AppRoutes.event,
+          name: 'event-details',
+          builder: (context, state) {
+            final eventId = state.pathParameters['id']!;
+            return EventDetailsScreen(eventId: eventId);
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.registration,
+          name: 'registration-details',
+          builder: (context, state) {
+            final registrationId = state.pathParameters['id']!;
+            return RegistrationDetailScreen(registrationId: registrationId);
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.conference,
+          name: 'conference-details',
+          builder: (context, state) {
+            final conferenceId = state.pathParameters['id']!;
+            // TODO: Import and use ConferenceDetailsScreen when available
+            // For now, redirect to main screen
+            return const MainScreen();
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.payment,
+          name: 'payment-details',
+          builder: (context, state) {
+            final transactionId = state.pathParameters['id']!;
+            // TODO: Import and use PaymentDetailScreen when available
+            // For now, redirect to main screen
+            return const MainScreen();
+          },
         ),
       ],
 

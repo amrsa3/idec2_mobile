@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/main/providers/bottom_navigation_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/enhanced_auth_provider_v2.dart';
+import '../../shared/widgets/notification_badge.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -61,7 +64,8 @@ class AppDrawer extends ConsumerWidget {
                     context, Icons.notifications_outlined, l10n.notifications,
                     () {
                   Navigator.pop(context);
-                }),
+                  context.push(AppRoutes.notifications);
+                }, showBadge: true),
                 const Divider(),
                 _buildDrawerItem(
                     context, Icons.settings_outlined, l10n.settings, () {
@@ -133,9 +137,14 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildDrawerItem(
-      BuildContext context, IconData icon, String title, VoidCallback onTap) {
+      BuildContext context, IconData icon, String title, VoidCallback onTap, {bool showBadge = false}) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.primary, size: 28),
+      leading: showBadge
+          ? NotificationBadge(
+              badgeColor: Colors.red,
+              child: Icon(icon, color: AppColors.primary, size: 28),
+            )
+          : Icon(icon, color: AppColors.primary, size: 28),
       title: Text(title,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
       onTap: onTap,

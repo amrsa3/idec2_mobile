@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/profile/providers/profile_provider.dart';
+import '../../../features/settings/widgets/web_notification_permission_card.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/enhanced_auth_provider_v2.dart';

@@ -13,8 +13,13 @@ import '../core/utils/storage_helper.dart';
 import '../features/notifications/providers/push_topics_provider.dart';
 import '../firebase_options.dart';
 import '../models/auth_models.dart';
+import '../core/router/deep_link_handler.dart';
 import '../providers/enhanced_auth_provider_v2.dart';
+import '../providers/registration_provider.dart';
+import '../providers/conference_provider.dart';
+import '../features/profile/providers/profile_provider.dart';
 import '../services/compatible_auth_service.dart';
+import '../services/navigation_service.dart';
 import 'notification_service.dart';
 import 'push_api_service.dart';
 import 'push/service_worker_registration_stub.dart'
@@ -68,7 +73,14 @@ class PushNotificationService {
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    await _requestPermission();
+    // على Web، لا نطلب الأذونات تلقائياً - يجب أن يتم من خلال user gesture
+    if (!kIsWeb) {
+      await _requestPermission();
+    } else {
+      debugPrint('🌐 [FCM] Web platform detected - skipping automatic permission request');
+      debugPrint('💡 [FCM] Use WebNotificationPermissionCard widget to request permissions');
+    }
+    
     await _registerForegroundHandlers();
     await _syncTokenWithServer();
 
@@ -122,9 +134,40 @@ class PushNotificationService {
   Future<void> _requestPermission() async {
     try {
       if (kIsWeb) {
-        final status = await _messaging.requestPermission();
-        debugPrint(
-            '✅ [FCM] Web notification permission: ${status.authorizationStatus}');
+        // Check current permission status first
+        final currentStatus = await _messaging.getNotificationSettings();
+        debugPrint('🔍 [FCM] Current web notification permission: ${currentStatus.authorizationStatus}');
+        
+        if (currentStatus.authorizationStatus == AuthorizationStatus.authorized) {
+          debugPrint('✅ [FCM] Web notification permission already granted');
+          return;
+        }
+        
+        if (currentStatus.authorizationStatus == AuthorizationStatus.denied) {
+          debugPrint('⚠️ [FCM] Web notification permission was denied. Requesting again...');
+        }
+        
+        final status = await _messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+        
+        debugPrint('✅ [FCM] Web notification permission request result: ${status.authorizationStatus}');
+        
+        if (status.authorizationStatus == AuthorizationStatus.authorized) {
+          debugPrint('✅ [FCM] Web notification permission granted successfully');
+        } else if (status.authorizationStatus == AuthorizationStatus.denied) {
+          debugPrint('❌ [FCM] Web notification permission denied by user');
+        } else if (status.authorizationStatus == AuthorizationStatus.notDetermined) {
+          debugPrint('⚠️ [FCM] Web notification permission not determined');
+        } else {
+          debugPrint('⚠️ [FCM] Web notification permission: ${status.authorizationStatus}');
+        }
         return;
       }
 
@@ -139,8 +182,9 @@ class PushNotificationService {
       );
       debugPrint(
           '✅ [FCM] Authorization granted: ${settings.authorizationStatus}');
-    } catch (error) {
+    } catch (error, stackTrace) {
       debugPrint('❌ [FCM] Permission request failed: $error');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -150,6 +194,15 @@ class PushNotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) async {
+      // Handle deep linking when notification is tapped
+      final deepLinkHandler = DeepLinkHandler();
+      final navigatorKey = NavigationService.navigatorKey;
+      if (navigatorKey.currentContext != null) {
+        await deepLinkHandler.handlePushDataDeepLink(
+          navigatorKey.currentContext!,
+          message.data,
+        );
+      }
       await _handleIncomingMessage(message, foreground: false);
     });
 
@@ -187,12 +240,106 @@ class PushNotificationService {
     final container = _ref;
     if (container != null) {
       container.read(pushTopicsProvider.notifier).refreshFromServer();
+      
+      // Update relevant providers based on notification data
+      final data = message.data;
+      
+      // Debounce provider invalidation to prevent excessive updates
+      // Use Future.delayed to batch multiple invalidations
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          // Handle event registration updates
+          if (data.containsKey('eventId') || data.containsKey('registrationId')) {
+            final eventId = data['eventId'] as String?;
+            final registrationId = data['registrationId'] as String?;
+            
+            if (eventId != null && eventId.isNotEmpty) {
+              container.invalidate(eventRegistrationStatusProvider(eventId));
+              debugPrint('🔄 [FCM] Invalidated registration status for event: $eventId');
+            }
+            
+            if (registrationId != null && registrationId.isNotEmpty) {
+              debugPrint('🔄 [FCM] Registration updated: $registrationId');
+              // Could invalidate registration detail provider if available
+            }
+          }
+          
+          // Handle conference registration updates
+          if (data.containsKey('conferenceId')) {
+            final conferenceId = data['conferenceId'] as String?;
+            if (conferenceId != null && conferenceId.isNotEmpty) {
+              container.invalidate(conferenceRegistrationProvider(conferenceId));
+              debugPrint('🔄 [FCM] Invalidated conference registration for: $conferenceId');
+            }
+          }
+          
+          // Handle profile updates
+          if (data.containsKey('profileId')) {
+            final profileId = data['profileId'] as String?;
+            if (profileId != null && profileId.isNotEmpty) {
+              container.invalidate(profileProvider);
+              debugPrint('🔄 [FCM] Invalidated user profile provider');
+            }
+          }
+          
+          // Handle transaction updates
+          if (data.containsKey('transactionId')) {
+            final transactionId = data['transactionId'] as String?;
+            if (transactionId != null && transactionId.isNotEmpty) {
+              debugPrint('🔄 [FCM] Transaction updated: $transactionId');
+              // Could invalidate transaction detail provider if available
+            }
+          }
+        } catch (e, stackTrace) {
+          debugPrint('⚠️ [FCM] Error invalidating providers: $e');
+          debugPrint('$stackTrace');
+        }
+      });
+    }
+  }
+
+  /// Public method to sync a specific token with server
+  Future<void> syncTokenWithServer(String token) async {
+    try {
+      if (token.isEmpty) {
+        debugPrint('⚠️ [FCM] Empty token provided');
+        return;
+      }
+
+      final container = _ref;
+      if (container == null) {
+        debugPrint('⚠️ [FCM] Cannot sync token: container is null');
+        return;
+      }
+
+      final enhancedState = container.read(enhancedAuthProvider);
+      final compatibleState = container.read(compatibleAuthProvider);
+      final isAuthenticated = enhancedState.maybeWhen(
+            authenticated: (_) => true,
+            orElse: () => false,
+          ) ||
+          compatibleState.isAuthenticated;
+      
+      if (!isAuthenticated) {
+        debugPrint('⚠️ [FCM] User not authenticated, skipping server sync');
+        return;
+      }
+
+      debugPrint('📤 [FCM] Syncing token with backend...');
+      await _registerToken(token);
+      _currentToken = token;
+      await StorageHelper.setString(_fcmTokenStorageKey, token);
+      debugPrint('✅ [FCM] Token synced successfully');
+    } catch (error, stackTrace) {
+      debugPrint('❌ [FCM] Failed to sync token: $error');
+      debugPrint('$stackTrace');
     }
   }
 
   Future<void> _syncTokenWithServer() async {
     final container = _ref;
     if (container == null) {
+      debugPrint('⚠️ [FCM] Cannot sync token: container is null');
       return;
     }
 
@@ -208,18 +355,25 @@ class PushNotificationService {
       return;
     }
 
+    debugPrint('🔄 [FCM] Starting token sync...');
     try {
       final token = await _getToken();
       if (token == null || token.isEmpty) {
         debugPrint('⚠️ [FCM] No token returned from Firebase');
+        if (kIsWeb) {
+          debugPrint('⚠️ [FCM] Web: Check if notification permission is granted');
+          final settings = await _messaging.getNotificationSettings();
+          debugPrint('⚠️ [FCM] Web notification permission: ${settings.authorizationStatus}');
+        }
         return;
       }
 
       if (_currentToken == token) {
+        debugPrint('ℹ️ [FCM] Token unchanged, skipping registration');
         return;
       }
 
-      await _registerToken(token);
+      await syncTokenWithServer(token);
     } catch (error, stackTrace) {
       debugPrint('❌ [FCM] Token sync failed: $error');
       debugPrint('$stackTrace');
@@ -230,22 +384,34 @@ class PushNotificationService {
     final storedToken = await StorageHelper.getString(_fcmTokenStorageKey);
     if (storedToken != null && storedToken.isNotEmpty) {
       _currentToken = storedToken;
+      debugPrint('📱 [FCM] Using stored token: ${storedToken.substring(0, 8)}...');
     }
 
     if (kIsWeb) {
+      // Check permission first
+      final settings = await _messaging.getNotificationSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+        debugPrint('❌ [FCM] Cannot get token: permission not granted (${settings.authorizationStatus})');
+        return _currentToken;
+      }
+      
       const vapidKey = FirebaseConstants.webVapidKey;
       if (vapidKey.isEmpty) {
         debugPrint(
             '⚠️ [FCM] FIREBASE_WEB_VAPID_KEY not provided; web push will be disabled.');
         return _currentToken;
       }
+      
+      debugPrint('🔧 [FCM] Registering service worker...');
       final registration = await sw.ensureFirebaseMessagingServiceWorker();
       if (registration == null) {
         debugPrint(
             '❌ [FCM] Unable to register firebase-messaging service worker; skipping token retrieval.');
         return _currentToken;
       }
+      debugPrint('✅ [FCM] Service worker registered successfully');
 
+      debugPrint('🔑 [FCM] Requesting FCM token...');
       String? token = await _messaging.getToken(vapidKey: vapidKey);
 
       if (token == null || token.isEmpty) {
@@ -270,6 +436,7 @@ class PushNotificationService {
   Future<void> _registerToken(String token) async {
     final container = _ref;
     if (container == null) {
+      debugPrint('⚠️ [FCM] Cannot register token: container is null');
       return;
     }
 
@@ -290,13 +457,14 @@ class PushNotificationService {
     final deviceInfo = await _collectDeviceInfo();
 
     try {
+      debugPrint('📤 [FCM] Registering token with backend (platform: ${platform.serverValue})...');
       await PushApiService.instance.registerToken(
         token: token,
         platform: platform,
         deviceInfo: deviceInfo,
       );
       final preview = token.length > 8 ? token.substring(0, 8) : token;
-      debugPrint('✅ [FCM] Token registered with backend ($preview...)');
+      debugPrint('✅ [FCM] Token registered with backend successfully ($preview...)');
     } catch (error, stackTrace) {
       debugPrint('❌ [FCM] Failed to register token with backend: $error');
       debugPrint('$stackTrace');
@@ -308,6 +476,7 @@ class PushNotificationService {
 
     container.read(pushTokenProvider.notifier).state = token;
     await container.read(pushTopicsProvider.notifier).syncWithServer(token);
+    debugPrint('✅ [FCM] Token stored and topics synced');
   }
 
   Future<void> _unregisterCurrentToken() async {

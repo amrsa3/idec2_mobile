@@ -99,6 +99,26 @@ class NavigationService {
     router?.go(AppRoutes.notificationsTest);
   }
   
+  /// Navigate to event details
+  void goToEvent(String eventId) {
+    router?.go('/event/$eventId');
+  }
+  
+  /// Navigate to registration details
+  void goToRegistration(String registrationId) {
+    router?.go('/registration/$registrationId');
+  }
+  
+  /// Navigate to conference details
+  void goToConference(String conferenceId) {
+    router?.go('/conference/$conferenceId');
+  }
+  
+  /// Navigate to payment details
+  void goToPayment(String transactionId) {
+    router?.go('/payment/$transactionId');
+  }
+  
   // Push methods (for modal navigation)
   
   /// Push a route onto the navigation stack

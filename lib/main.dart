@@ -26,6 +26,7 @@ import 'services/push_notification_service.dart';
 import 'services/registration_settings_service.dart';
 import 'services/retry_service.dart';
 import 'services/storage_service.dart';
+import 'services/web_notification_manager.dart';
 import 'shared/services/verification_notification_service.dart';
 import 'shared/widgets/error_boundary.dart';
 import 'shared/widgets/service_status_banner.dart';
@@ -365,6 +366,43 @@ class _IDECAppState extends ConsumerState<IDECApp> {
         debugPrint('❌ Error starting push notification service: $error');
         debugPrint('$stackTrace');
       });
+      
+      // محاولة تسجيل Token تلقائياً بعد تسجيل الدخول (للويب)
+      if (kIsWeb) {
+        Future.delayed(const Duration(seconds: 2), () async {
+          try {
+            final authState = ref.read(enhancedAuthProvider);
+            final isAuthenticated = authState.maybeWhen(
+              authenticated: (_) => true,
+              orElse: () => false,
+            );
+            
+            if (isAuthenticated) {
+              debugPrint('🔄 [MAIN] Checking web notification status...');
+              
+              // فحص حالة Token
+              final status = await WebNotificationManager.instance.checkTokenStatus();
+              
+              if (status == TokenStatus.notRequested || status == TokenStatus.permissionGrantedButNotRegistered) {
+                debugPrint('🔔 [MAIN] Requesting notification permission automatically...');
+                final result = await WebNotificationManager.instance.requestPermissionAndRegisterToken();
+                
+                if (result.success) {
+                  debugPrint('✅ [MAIN] Notification permission granted and token registered');
+                } else {
+                  debugPrint('⚠️ [MAIN] Notification permission request failed: ${result.message}');
+                }
+              } else if (status == TokenStatus.registered) {
+                debugPrint('✅ [MAIN] Notification token already registered');
+              } else {
+                debugPrint('ℹ️ [MAIN] Notification status: $status');
+              }
+            }
+          } catch (e) {
+            debugPrint('⚠️ [MAIN] Auto-register token failed: $e');
+          }
+        });
+      }
     } catch (e) {
       debugPrint('❌ Error starting verification notification service: $e');
     }

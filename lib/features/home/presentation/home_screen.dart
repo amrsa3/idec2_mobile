@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/main/presentation/main_screen.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/notification_badge.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -140,8 +143,9 @@ class HomeScreen extends ConsumerWidget {
                     subtitle: l10n.viewNotifications,
                     color: Colors.purple,
                     onTap: () {
-                      // TODO: Navigate to notifications
+                      context.push(AppRoutes.notifications);
                     },
+                    showBadge: true,
                   ),
                 ],
               ),
@@ -201,6 +205,7 @@ class HomeScreen extends ConsumerWidget {
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
+    bool showBadge = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -220,18 +225,32 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 24,
+                  ),
+                ),
+                if (showBadge)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: NotificationBadge(
+                      badgeColor: Colors.red,
+                      child: const SizedBox.shrink(),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             Text(

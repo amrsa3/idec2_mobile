@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Conditional import for web
-import 'dart:html' as html show window;
+import 'platform_storage_service_stub.dart'
+    if (dart.library.html) 'platform_storage_service_web.dart' as web_storage;
 
 /// Unified storage service that handles secure storage across all platforms
 /// Uses FlutterSecureStorage for mobile and localStorage/sessionStorage for web
@@ -56,7 +57,7 @@ class PlatformStorageService {
       if (kIsWeb) {
         // Use localStorage for secure storage on web
         try {
-          html.window.localStorage['secure_$key'] = value;
+          web_storage.window.localStorage['secure_$key'] = value;
           if (kDebugMode) {
             debugPrint('🔐 [PLATFORM_STORAGE] Stored in localStorage (secure): $key');
           }
@@ -66,7 +67,7 @@ class PlatformStorageService {
           }
           // Fallback: try sessionStorage
           try {
-            html.window.sessionStorage['secure_$key'] = value;
+            web_storage.window.sessionStorage['secure_$key'] = value;
             if (kDebugMode) {
               debugPrint('🔐 [PLATFORM_STORAGE] Stored in sessionStorage (secure): $key');
             }
@@ -125,8 +126,8 @@ class PlatformStorageService {
       if (kIsWeb) {
         // Read from localStorage first (secure storage)
         try {
-          value = html.window.localStorage['secure_$key'];
-          value ??= html.window.sessionStorage['secure_$key'];
+          value = web_storage.window.localStorage['secure_$key'];
+          value ??= web_storage.window.sessionStorage['secure_$key'];
         } catch (e) {
           if (kDebugMode) {
             debugPrint('🔐 [PLATFORM_STORAGE] Error reading from web storage: $e');
@@ -188,8 +189,8 @@ class PlatformStorageService {
       if (kIsWeb) {
         // Delete from both localStorage and sessionStorage
         try {
-          html.window.localStorage.remove('secure_$key');
-          html.window.sessionStorage.remove('secure_$key');
+          web_storage.window.localStorage.remove('secure_$key');
+          web_storage.window.sessionStorage.remove('secure_$key');
           if (kDebugMode) {
             debugPrint('🔐 [PLATFORM_STORAGE] Deleted from web storage (secure): $key');
           }
@@ -234,24 +235,24 @@ class PlatformStorageService {
         // Clear all keys starting with 'secure_' from localStorage
         try {
           final keysToRemove = <String>[];
-          html.window.localStorage.forEach((key, value) {
+          web_storage.window.localStorage.forEach((key, value) {
             if (key.startsWith('secure_')) {
               keysToRemove.add(key);
             }
           });
           for (final key in keysToRemove) {
-            html.window.localStorage.remove(key);
+            web_storage.window.localStorage.remove(key);
           }
           
           // Also clear from sessionStorage
           final sessionKeysToRemove = <String>[];
-          html.window.sessionStorage.forEach((key, value) {
+          web_storage.window.sessionStorage.forEach((key, value) {
             if (key.startsWith('secure_')) {
               sessionKeysToRemove.add(key);
             }
           });
           for (final key in sessionKeysToRemove) {
-            html.window.sessionStorage.remove(key);
+            web_storage.window.sessionStorage.remove(key);
           }
           
           // Clear in-memory cache
@@ -290,7 +291,7 @@ class PlatformStorageService {
       if (kIsWeb) {
         // Use localStorage for regular storage on web
         try {
-          html.window.localStorage[key] = value;
+          web_storage.window.localStorage[key] = value;
           if (kDebugMode) {
             debugPrint('📝 [PLATFORM_STORAGE] Stored in localStorage: $key');
           }
@@ -300,7 +301,7 @@ class PlatformStorageService {
           }
           // Fallback: try sessionStorage
           try {
-            html.window.sessionStorage[key] = value;
+            web_storage.window.sessionStorage[key] = value;
             if (kDebugMode) {
               debugPrint('📝 [PLATFORM_STORAGE] Stored in sessionStorage: $key');
             }
@@ -331,8 +332,8 @@ class PlatformStorageService {
         // Read from localStorage first
         String? value;
         try {
-          value = html.window.localStorage[key];
-          value ??= html.window.sessionStorage[key];
+          value = web_storage.window.localStorage[key];
+          value ??= web_storage.window.sessionStorage[key];
           if (kDebugMode) {
             debugPrint('📝 [PLATFORM_STORAGE] Retrieved from web storage: $key = ${value != null ? "found" : "null"}');
           }
@@ -362,8 +363,8 @@ class PlatformStorageService {
       if (kIsWeb) {
         // Delete from both localStorage and sessionStorage
         try {
-          html.window.localStorage.remove(key);
-          html.window.sessionStorage.remove(key);
+          web_storage.window.localStorage.remove(key);
+          web_storage.window.sessionStorage.remove(key);
           if (kDebugMode) {
             debugPrint('📝 [PLATFORM_STORAGE] Deleted from web storage: $key');
           }
@@ -393,24 +394,24 @@ class PlatformStorageService {
         try {
           // Clear all non-secure keys from localStorage
           final keysToRemove = <String>[];
-          html.window.localStorage.forEach((key, value) {
+          web_storage.window.localStorage.forEach((key, value) {
             if (!key.startsWith('secure_')) {
               keysToRemove.add(key);
             }
           });
           for (final key in keysToRemove) {
-            html.window.localStorage.remove(key);
+            web_storage.window.localStorage.remove(key);
           }
           
           // Clear all non-secure keys from sessionStorage
           final sessionKeysToRemove = <String>[];
-          html.window.sessionStorage.forEach((key, value) {
+          web_storage.window.sessionStorage.forEach((key, value) {
             if (!key.startsWith('secure_')) {
               sessionKeysToRemove.add(key);
             }
           });
           for (final key in sessionKeysToRemove) {
-            html.window.sessionStorage.remove(key);
+            web_storage.window.sessionStorage.remove(key);
           }
           
           // Clear in-memory cache
@@ -440,7 +441,7 @@ class PlatformStorageService {
       if (kIsWeb) {
         final keys = <String>{};
         try {
-          html.window.localStorage.forEach((key, value) {
+          web_storage.window.localStorage.forEach((key, value) {
             // Remove 'secure_' prefix for secure keys
             if (key.startsWith('secure_')) {
               keys.add(key.substring(7)); // Remove 'secure_' prefix
@@ -448,7 +449,7 @@ class PlatformStorageService {
               keys.add(key);
             }
           });
-          html.window.sessionStorage.forEach((key, value) {
+          web_storage.window.sessionStorage.forEach((key, value) {
             if (key.startsWith('secure_')) {
               keys.add(key.substring(7));
             } else {
@@ -483,13 +484,13 @@ class PlatformStorageService {
       if (kIsWeb) {
         try {
           // Check localStorage first
-          if (html.window.localStorage.containsKey(key) || 
-              html.window.localStorage.containsKey('secure_$key')) {
+          if (web_storage.window.localStorage.containsKey(key) || 
+              web_storage.window.localStorage.containsKey('secure_$key')) {
             return true;
           }
           // Check sessionStorage
-          if (html.window.sessionStorage.containsKey(key) || 
-              html.window.sessionStorage.containsKey('secure_$key')) {
+          if (web_storage.window.sessionStorage.containsKey(key) || 
+              web_storage.window.sessionStorage.containsKey('secure_$key')) {
             return true;
           }
         } catch (e) {

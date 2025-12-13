@@ -17,6 +17,7 @@ import '../../../../providers/profile_rules_provider.dart';
 import '../../../../services/compatible_auth_service.dart';
 import '../../../../services/image_cache_service.dart';
 import '../../../../services/authenticated_image_service.dart';
+import '../../../../services/push_notification_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
@@ -44,6 +45,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   bool _showVerificationNotification = true;
   Timer? _verificationNotificationTimer;
   ProviderSubscription<CompatibleAuthState>? _authSubscription;
+  ProviderSubscription<ProfileState>? _profileSubscription;
+  StreamSubscription<Map<String, dynamic>>? _pushNotificationSubscription;
 
   @override
   void initState() {
@@ -52,6 +55,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
       _listenToAuthChanges();
+      _listenToProfileStatusUpdates();
     });
 
     if (widget.showBottomNavigation) {
@@ -60,6 +64,69 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           ref.read(bottomNavIndexProvider.notifier).state = 4;
         }
       });
+    }
+  }
+  
+  /// الاستماع لتحديثات حالة الملف الشخصي من Push Notifications
+  void _listenToProfileStatusUpdates() {
+    // الاستماع لتحديثات profileProvider للكشف عن تغييرات الحالة
+    _profileSubscription = ref.listenManual<ProfileState>(
+      profileProvider,
+      (previous, next) {
+        if (previous?.currentProfile?.verificationStatus != 
+            next.currentProfile?.verificationStatus) {
+          final oldStatus = previous?.currentProfile?.verificationStatus;
+          final newStatus = next.currentProfile?.verificationStatus;
+          debugPrint('🔄 [PROFILE_SCREEN] Verification status changed: $oldStatus -> $newStatus');
+          
+          // إذا تغيرت الحالة إلى verified، قم بتحديث UI
+          if (newStatus == VerificationStatus.verified && 
+              oldStatus != VerificationStatus.verified) {
+            debugPrint('✅ [PROFILE_SCREEN] Profile verified! Updating UI...');
+            if (mounted) {
+              setState(() {
+                // إعادة بناء الصفحة لعرض الحالة الجديدة
+                _showVerificationNotification = true;
+              });
+            }
+          } else if (newStatus == VerificationStatus.rejected && 
+                     oldStatus != VerificationStatus.rejected) {
+            debugPrint('⚠️ [PROFILE_SCREEN] Profile rejected! Updating UI...');
+            if (mounted) {
+              setState(() {
+                // إعادة بناء الصفحة لعرض الحالة الجديدة
+              });
+            }
+          }
+        }
+      },
+    );
+    
+    // أيضاً الاستماع لإشعارات Push مباشرة
+    try {
+      _pushNotificationSubscription = PushNotificationService.instance.onNotificationReceived.listen(
+        (data) {
+          if (data.containsKey('_profileStatusUpdated') || 
+              data.containsKey('profileStatus')) {
+            debugPrint('🔄 [PROFILE_SCREEN] Profile status update received via push notification');
+            debugPrint('🔄 [PROFILE_SCREEN] Data: $data');
+            if (mounted) {
+              // إعادة تحميل البيانات للتأكد من التزامن
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+                  debugPrint('🔄 [PROFILE_SCREEN] Profile reloaded after push notification');
+                }
+              });
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('⚠️ [PROFILE_SCREEN] Error in push notification stream: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('⚠️ [PROFILE_SCREEN] Error listening to push notifications: $e');
     }
   }
   
@@ -199,6 +266,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   void dispose() {
     _verificationNotificationTimer?.cancel();
     _authSubscription?.close();
+    _profileSubscription?.close();
+    _pushNotificationSubscription?.cancel();
     super.dispose();
   }
 

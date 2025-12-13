@@ -49,11 +49,25 @@ class RegistrationModel with _$RegistrationModel {
 
 extension RegistrationModelExtensions on RegistrationModel {
   String get entityTitle {
+    // ✅ إصلاح: تحديد entityTitle بناءً على البيانات المتاحة
+    // أولاً: محاولة استخدام registrationType
     if (registrationType == 'CONFERENCE') {
       return conference?['nameAr'] ?? conference?['nameEn'] ?? 'مؤتمر';
-    } else {
-      return event?['title'] ?? event?['nameAr'] ?? 'فعالية';
+    } else if (registrationType == 'EVENT') {
+      return event?['title'] ?? event?['nameAr'] ?? event?['nameEn'] ?? 'فعالية';
     }
+    
+    // Fallback: تحديد النوع بناءً على eventId و conferenceId
+    if (conferenceId != null && conferenceId!.isNotEmpty) {
+      // مؤتمر
+      return conference?['nameAr'] ?? conference?['nameEn'] ?? 'مؤتمر';
+    } else if (eventId != null && eventId!.isNotEmpty) {
+      // فعالية
+      return event?['title'] ?? event?['nameAr'] ?? event?['nameEn'] ?? 'فعالية';
+    }
+    
+    // Default fallback
+    return 'فعالية/مؤتمر';
   }
 
   bool get isConference => registrationType == 'CONFERENCE';

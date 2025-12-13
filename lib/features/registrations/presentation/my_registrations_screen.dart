@@ -61,6 +61,22 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
       drawer: _buildSideDrawer(context, ref),
       body: registrationsAsync.when(
         data: (registrations) {
+          // ✅ إصلاح: إضافة logging لمعرفة التسجيلات المستلمة
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] Received ${registrations.length} registrations');
+          final eventRegistrations = registrations.where((r) => r.isEvent && !r.isConference).toList();
+          final conferenceRegistrations = registrations.where((r) => r.isConference).toList();
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] - Events: ${eventRegistrations.length}');
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] - Conferences: ${conferenceRegistrations.length}');
+          
+          for (final reg in registrations) {
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN] Registration ${reg.id}:');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Type: ${reg.registrationType}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Status: ${reg.status}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Entity Title: ${reg.entityTitle}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Event ID: ${reg.eventId}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Conference ID: ${reg.conferenceId}');
+          }
+          
           if (registrations.isEmpty) {
             return Center(
               child: Column(
@@ -330,6 +346,33 @@ class _RegistrationCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ],
+              // ✅ إضافة زر إتمام الدفع مباشرة في الكارد للتسجيلات في انتظار الدفع
+              if (registration.isPaymentPending) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: onTap, // الانتقال إلى صفحة التفاصيل التي تحتوي على زر الدفع
+                    icon: const Icon(Icons.payment, size: 20),
+                    label: const Text(
+                      'إتمام الدفع',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
                   ),
                 ),
               ],

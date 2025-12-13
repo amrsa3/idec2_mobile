@@ -52,39 +52,101 @@ class EnhancedTokenInterceptor extends Interceptor {
       // Get access token (سيتم تجديده تلقائياً إذا كان منتهي)
       String? accessToken = await _tokenManager.getValidAccessToken();
       
-      // إذا لم يكن هناك access token صالح، حاول refresh قبل إرسال الطلب
+      // إذا لم يكن هناك access token صالح بعد محاولة التحديث التلقائي
       if (accessToken == null || accessToken.isEmpty) {
-        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No valid access token, attempting refresh before request');
+        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No valid access token after auto-refresh attempt');
         
         // تحقق من وجود refresh token صالح
         final hasValidRefresh = await _tokenManager.hasValidRefreshToken();
-        if (hasValidRefresh) {
-          debugPrint('🔄 [TOKEN_INTERCEPTOR] Refresh token available, refreshing access token...');
-          final refreshSuccess = await _tokenManager.refreshAccessToken();
-          
-          if (refreshSuccess) {
-            accessToken = await _tokenManager.getValidAccessToken();
+        if (!hasValidRefresh) {
+          debugPrint('❌ [TOKEN_INTERCEPTOR] No valid refresh token - cannot refresh');
+          // رفض الطلب بـ 401 - سيتم التعامل معه في _handle401Error
+          final error = DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            response: Response(
+              requestOptions: options,
+              statusCode: 401,
+              statusMessage: 'Unauthorized - No valid access token',
+            ),
+          );
+          handler.reject(error);
+          return;
+        }
+        
+        // إذا كان هناك refresh token صالح، حاول تحديث الـ token مرة أخرى
+        debugPrint('🔄 [TOKEN_INTERCEPTOR] Refresh token available, attempting refresh...');
+        final refreshSuccess = await _tokenManager.refreshAccessToken();
+        
+        if (refreshSuccess) {
+          accessToken = await _tokenManager.getValidAccessToken();
+          if (accessToken != null && accessToken.isNotEmpty) {
             debugPrint('✅ [TOKEN_INTERCEPTOR] Token refreshed successfully before request');
           } else {
-            debugPrint('❌ [TOKEN_INTERCEPTOR] Failed to refresh token before request');
+            debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh succeeded but no token returned');
+            // رفض الطلب بـ 401
+            final error = DioException(
+              requestOptions: options,
+              type: DioExceptionType.badResponse,
+              response: Response(
+                requestOptions: options,
+                statusCode: 401,
+                statusMessage: 'Unauthorized - Token refresh failed',
+              ),
+            );
+            handler.reject(error);
+            return;
           }
         } else {
-          debugPrint('❌ [TOKEN_INTERCEPTOR] No valid refresh token available');
+          debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh failed');
+          // رفض الطلب بـ 401 - سيتم التعامل معه في _handle401Error
+          final error = DioException(
+            requestOptions: options,
+            type: DioExceptionType.badResponse,
+            response: Response(
+              requestOptions: options,
+              statusCode: 401,
+              statusMessage: 'Unauthorized - Token refresh failed',
+            ),
+          );
+          handler.reject(error);
+          return;
         }
       }
       
+      // إضافة الـ token للطلب
       if (accessToken != null && accessToken.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $accessToken';
         debugPrint('🔐 [TOKEN_INTERCEPTOR] Token added to request');
+        handler.next(options);
       } else {
-        debugPrint('⚠️ [TOKEN_INTERCEPTOR] No access token available - request will be sent without token');
-        // لا نمنع الطلب - سنترك interceptor آخر (401 handler) يتعامل معه
+        // هذا لا يجب أن يحدث أبداً، لكن للاحتياط
+        debugPrint('❌ [TOKEN_INTERCEPTOR] No access token available - rejecting request');
+        final error = DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          response: Response(
+            requestOptions: options,
+            statusCode: 401,
+            statusMessage: 'Unauthorized - No access token',
+          ),
+        );
+        handler.reject(error);
       }
-
-      handler.next(options);
     } catch (e) {
       debugPrint('❌ [TOKEN_INTERCEPTOR] Error in onRequest: $e');
-      handler.next(options);
+      // في حالة الخطأ غير المتوقع، رفض الطلب بـ 401 للسماح لـ _handle401Error بالتعامل معه
+      final error = DioException(
+        requestOptions: options,
+        type: DioExceptionType.badResponse,
+        response: Response(
+          requestOptions: options,
+          statusCode: 401,
+          statusMessage: 'Unauthorized - Request error: ${e.toString()}',
+        ),
+        error: e,
+      );
+      handler.reject(error);
     }
   }
 

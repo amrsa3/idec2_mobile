@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/constants/api_constants.dart';
 import '../models/registration_model.dart';
@@ -207,6 +208,27 @@ class RegistrationService {
             throw Exception('Error parsing registration: $e');
           }
         }).toList();
+        
+        // ✅ إصلاح: إضافة logging لمعرفة أنواع التسجيلات المستلمة
+        final eventRegistrations = registrations.where((r) => r.isEvent && !r.isConference).length;
+        final conferenceRegistrations = registrations.where((r) => r.isConference).length;
+        final eventInConferenceRegistrations = registrations.where((r) => r.isEvent && r.isConference).length;
+        
+        debugPrint('📋 [MY_REGISTRATIONS] Received ${registrations.length} registrations:');
+        debugPrint('📋 [MY_REGISTRATIONS] - Events only: $eventRegistrations');
+        debugPrint('📋 [MY_REGISTRATIONS] - Conferences only: $conferenceRegistrations');
+        debugPrint('📋 [MY_REGISTRATIONS] - Events in conference: $eventInConferenceRegistrations');
+        
+        // Log details for each registration
+        for (final reg in registrations) {
+          debugPrint('📋 [MY_REGISTRATIONS] Registration ${reg.id}:');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Type: ${reg.registrationType}');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Status: ${reg.status}');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Entity Title: ${reg.entityTitle}');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Event ID: ${reg.eventId}');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Conference ID: ${reg.conferenceId}');
+          debugPrint('📋 [MY_REGISTRATIONS]   - Price: ${reg.calculatedPrice} ${reg.currency}');
+        }
         
         return registrations;
       } else {

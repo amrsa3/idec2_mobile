@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../models/invoice_model.dart';
 import '../../../models/payment_gateway_model.dart';
 import '../../../models/payment_instruction_model.dart';
 import '../../../models/registration_model.dart';
@@ -434,23 +435,37 @@ class _RegistrationDetailScreenState
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _handlePayment(context),
-              icon: const Icon(Icons.payment, size: 24),
-              label: const Text(
-                'إتمام الدفع',
-                style: TextStyle(
+              // ✅ تعطيل الزر إذا كان في حالة معالجة
+              onPressed: _isProcessingPayment 
+                  ? null 
+                  : () => _handlePayment(context),
+              icon: _isProcessingPayment
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.payment, size: 24),
+              label: Text(
+                _isProcessingPayment ? 'جاري المعالجة...' : 'إتمام الدفع',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: _isProcessingPayment 
+                    ? Colors.grey 
+                    : Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 2,
+                elevation: _isProcessingPayment ? 0 : 2,
               ),
             ),
           ),
@@ -601,6 +616,13 @@ class _RegistrationDetailScreenState
   }
 
   Future<void> _handlePayment(BuildContext context) async {
+    // ✅ فحص مسبق لمنع التكرار
+    if (_isProcessingPayment) {
+      debugPrint('💳 [PAYMENT] Payment already in progress, ignoring duplicate request');
+      return;
+    }
+
+    // ✅ الآن آمن للبدء
     setState(() {
       _isProcessingPayment = true;
     });
@@ -612,10 +634,80 @@ class _RegistrationDetailScreenState
 
       // Step 1: Fetch invoice
       debugPrint('💳 [PAYMENT] Step 1: Fetching invoice...');
-      final invoice = await paymentService
-          .getInvoiceByRegistrationId(widget.registrationId);
-      debugPrint(
-          '💳 [PAYMENT] Step 1: Invoice fetched successfully - Amount: ${invoice.amountDue}, Status: ${invoice.status}');
+      InvoiceModel? invoice;
+      try {
+        invoice = await paymentService
+            .getInvoiceByRegistrationId(widget.registrationId);
+        debugPrint(
+            '💳 [PAYMENT] Step 1: Invoice fetched successfully - Amount: ${invoice.amountDue}, Status: ${invoice.status}');
+      } catch (e) {
+        debugPrint('💳 [PAYMENT] Step 1: Failed to fetch invoice: $e');
+        // ✅ إصلاح: إذا لم توجد فاتورة، حاول إنشاء واحدة
+        if (context.mounted) {
+          final shouldCreate = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('فاتورة غير موجودة'),
+              content: const Text(
+                'لم يتم العثور على فاتورة لهذا التسجيل. هل تريد إنشاء فاتورة جديدة؟',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('إنشاء فاتورة'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldCreate == true) {
+            // محاولة إنشاء فاتورة من خلال API
+            try {
+              // TODO: إضافة endpoint لإنشاء فاتورة إذا لم تكن موجودة
+              // في الوقت الحالي، نعرض رسالة للمستخدم
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('يرجى المحاولة مرة أخرى بعد قليل. إذا استمرت المشكلة، يرجى التواصل مع الدعم الفني.'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 5),
+                  ),
+                );
+              }
+            } catch (createError) {
+              debugPrint('💳 [PAYMENT] Failed to create invoice: $createError');
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('فشل إنشاء الفاتورة: ${createError.toString()}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            }
+          }
+        }
+        return; // إيقاف العملية إذا لم توجد فاتورة
+      }
+      
+      if (invoice == null) {
+        debugPrint('💳 [PAYMENT] ERROR: Invoice is null after fetch attempt');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('لم يتم العثور على فاتورة لهذا التسجيل. يرجى التواصل مع الدعم الفني.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
 
       // Step 2: Fetch active gateways
       debugPrint('💳 [PAYMENT] Step 2: Fetching active gateways...');
@@ -659,6 +751,20 @@ class _RegistrationDetailScreenState
           '💳 [PAYMENT] Step 3: Gateway selected: ${selectedGateway.displayName} (${selectedGateway.id})');
 
       // Step 4: Initiate payment
+      // ✅ إصلاح: التأكد من أن invoice ليس null قبل الاستخدام
+      if (invoice == null) {
+        debugPrint('💳 [PAYMENT] ERROR: Invoice is null, cannot proceed');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('خطأ: لم يتم العثور على الفاتورة'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      
       debugPrint('💳 [PAYMENT] Step 4: Initiating payment with gateway...');
       final initiateResult = await paymentService.initiatePayment(
         invoiceId: invoice.id,
@@ -672,6 +778,20 @@ class _RegistrationDetailScreenState
           '💳 [PAYMENT] Step 4: Payment initiated - Transaction ID: ${transaction.id}, Instruction type: ${instruction.type}');
 
       // Step 5: Show input dialog
+      // ✅ إصلاح: التأكد من أن invoice ليس null قبل الاستخدام
+      if (invoice == null) {
+        debugPrint('💳 [PAYMENT] ERROR: Invoice is null, cannot proceed');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('خطأ: لم يتم العثور على الفاتورة'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      
       debugPrint('💳 [PAYMENT] Step 5: Showing payment input dialog...');
       final inputResult = await PaymentInputDialog.show(
         context,
@@ -783,11 +903,25 @@ class _RegistrationDetailScreenState
           }
 
           // Navigate to receipt
+          // ✅ إصلاح: التأكد من أن invoice ليس null قبل الاستخدام
+          if (invoice == null) {
+            debugPrint('💳 [PAYMENT] ERROR: Invoice is null, cannot navigate to receipt');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('خطأ: لم يتم العثور على الفاتورة'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+          
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => InvoiceReceiptScreen(
-                invoice: invoice,
+                invoice: invoice!,
                 transaction: confirmedTransaction,
               ),
             ),

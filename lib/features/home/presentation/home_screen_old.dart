@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,9 +12,23 @@ import '../../../providers/enhanced_auth_provider_v2.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/compatible_auth_service.dart';
 import '../../../services/lazy_loading_service.dart';
+import '../../../services/navigation_service.dart';
+import '../../../services/notification_center_api_service.dart';
 import '../../../shared/widgets/app_drawer.dart';
 import '../../main/providers/bottom_navigation_provider.dart';
+import '../../notifications/widgets/smart_notification_banner.dart';
 import '../widgets/conference_card_new.dart';
+
+// Provider for notification unread count
+final _notificationUnreadCountProvider = FutureProvider<int>((ref) async {
+  try {
+    final count = await NotificationCenterApiService.getUnreadCount();
+    return count;
+  } catch (e) {
+    debugPrint('❌ [HOME_SCREEN] Error getting unread count: $e');
+    return 0;
+  }
+});
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -137,6 +152,102 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // Notifications button with badge (بجوار زر التحديث)
+                  const SizedBox(width: 8),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      // Check authentication inside Consumer
+                      final authState = ref.watch(enhancedAuthProvider);
+                      final isAuth = authState.maybeWhen(
+                        authenticated: (_) => true,
+                        orElse: () => false,
+                      );
+                      
+                      if (!isAuth) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      // Get unread count from NotificationCenter
+                      final unreadCountFuture = ref.watch(_notificationUnreadCountProvider);
+                      return unreadCountFuture.when(
+                        data: (unreadCount) {
+                          return GestureDetector(
+                            onTap: () {
+                              NavigationService.instance.goToNotifications();
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.14),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                if (unreadCount > 0)
+                                  Positioned(
+                                    right: -2,
+                                    top: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 18,
+                                        minHeight: 18,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          unreadCount > 99 ? '99+' : '$unreadCount',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                        loading: () => Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        error: (_, __) => Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   // Logo/User Photo on the right
                   GestureDetector(
                     onTap: () {
@@ -218,6 +329,10 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Smart Notification Banner (للويب فقط)
+                if (kIsWeb) const SmartNotificationBanner(),
+                if (kIsWeb) const SizedBox(height: 12),
+                
                 // Conference Card
                 const ConferenceCardNew(),
 

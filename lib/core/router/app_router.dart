@@ -15,6 +15,7 @@ import '../../features/main/presentation/main_screen.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
 import '../../features/notifications/presentation/enhanced_notifications_screen.dart';
+import '../../features/notifications/presentation/professional_notifications_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
 // Import screens
@@ -241,11 +242,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           },
         ),
 
-        // Notifications Routes
+        // Notifications Routes - Using NotificationCenter API
         GoRoute(
           path: AppRoutes.notifications,
           name: 'notifications',
-          builder: (context, state) => const EnhancedNotificationsScreen(),
+          builder: (context, state) => const ProfessionalNotificationsScreen(),
         ),
 
         GoRoute(

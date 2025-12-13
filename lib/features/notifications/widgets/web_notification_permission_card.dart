@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/push_notification_service.dart';
+import '../../../services/push_api_service.dart';
 
 /// بطاقة طلب أذونات الإشعارات على الويب
 /// تحل مشكلة User Gesture المطلوبة للمتصفحات
@@ -29,6 +30,8 @@ class _WebNotificationPermissionCardState
     with SingleTickerProviderStateMixin {
   bool _isLoading = false;
   bool _isDismissed = false;
+  bool _isChecking = false;
+  bool _tokenRegistered = false;
   NotificationSettings? _currentSettings;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -52,6 +55,7 @@ class _WebNotificationPermissionCardState
     );
     _animationController.forward();
     _checkCurrentPermissionStatus();
+    _checkTokenStatus();
   }
 
   @override
@@ -71,6 +75,63 @@ class _WebNotificationPermissionCardState
       });
     } catch (error) {
       debugPrint('⚠️ [WEB_PERMISSION] Error checking permission: $error');
+    }
+  }
+
+  /// فحص حالة التوكن في النظام
+  Future<void> _checkTokenStatus() async {
+    if (!kIsWeb) return;
+
+    setState(() {
+      _isChecking = true;
+    });
+
+    try {
+      // 1. فحص حالة الأذونات
+      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      
+      if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+        setState(() {
+          _tokenRegistered = false;
+          _isChecking = false;
+        });
+        return;
+      }
+
+      // 2. فحص إذا كان التوكن موجود محلياً
+      final localToken = await FirebaseMessaging.instance.getToken();
+      
+      if (localToken == null || localToken.isEmpty) {
+        setState(() {
+          _tokenRegistered = false;
+          _isChecking = false;
+        });
+        return;
+      }
+
+      // 3. فحص إذا كان التوكن موجود في النظام (API call)
+      try {
+        final serverToken = await PushApiService.instance.getDeviceToken(localToken);
+        setState(() {
+          _tokenRegistered = serverToken != null;
+          _isChecking = false;
+        });
+        
+        debugPrint('✅ [WEB_PERMISSION] Token status checked: ${_tokenRegistered ? "Registered" : "Not registered"}');
+      } catch (e) {
+        // إذا كان الخطأ 404، يعني التوكن غير موجود
+        debugPrint('⚠️ [WEB_PERMISSION] Token not found in server: $e');
+        setState(() {
+          _tokenRegistered = false;
+          _isChecking = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ [WEB_PERMISSION] Error checking token status: $e');
+      setState(() {
+        _tokenRegistered = false;
+        _isChecking = false;
+      });
     }
   }
 
@@ -102,6 +163,23 @@ class _WebNotificationPermissionCardState
         // تهيئة Push Notification Service
         await PushNotificationService.instance.initialize(ref);
         
+        // الحصول على التوكن وتسجيله مباشرة
+        try {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null && token.isNotEmpty) {
+            debugPrint('📤 [WEB_PERMISSION] Token received, syncing with server...');
+            await PushNotificationService.instance.syncTokenWithServer(token);
+            debugPrint('✅ [WEB_PERMISSION] Token synced successfully');
+            
+            // إعادة فحص حالة التوكن
+            await _checkTokenStatus();
+          } else {
+            debugPrint('⚠️ [WEB_PERMISSION] No token received from Firebase');
+          }
+        } catch (e) {
+          debugPrint('❌ [WEB_PERMISSION] Error syncing token: $e');
+        }
+        
         // عرض رسالة نجاح
         if (mounted) {
           NotificationService.showSuccess(
@@ -112,12 +190,14 @@ class _WebNotificationPermissionCardState
 
         widget.onPermissionGranted?.call();
 
-        // إخفاء البطاقة
-        await _animationController.reverse();
-        if (mounted) {
-          setState(() {
-            _isDismissed = true;
-          });
+        // إخفاء البطاقة فقط إذا كان التوكن مسجل
+        if (_tokenRegistered) {
+          await _animationController.reverse();
+          if (mounted) {
+            setState(() {
+              _isDismissed = true;
+            });
+          }
         }
       } else if (settings.authorizationStatus == AuthorizationStatus.denied) {
         debugPrint('❌ [WEB_PERMISSION] Permission denied');
@@ -163,10 +243,15 @@ class _WebNotificationPermissionCardState
       return const SizedBox.shrink();
     }
 
-    // إذا تم رفض أو منح الأذونات، لا تعرض
-    if (_currentSettings?.authorizationStatus == AuthorizationStatus.authorized ||
-        _currentSettings?.authorizationStatus == AuthorizationStatus.denied ||
+    // إذا تم رفض الأذونات أو تم إخفاء البطاقة، لا تعرض
+    if (_currentSettings?.authorizationStatus == AuthorizationStatus.denied ||
         _isDismissed) {
+      return const SizedBox.shrink();
+    }
+
+    // إذا كانت الأذونات ممنوحة والتوكن مسجل، لا تعرض
+    if (_currentSettings?.authorizationStatus == AuthorizationStatus.authorized &&
+        _tokenRegistered) {
       return const SizedBox.shrink();
     }
 
@@ -236,7 +321,7 @@ class _WebNotificationPermissionCardState
 
                       // الوصف
                       Text(
-                        'احصل على تحديثات فورية حول تسجيلاتك والفعاليات والمدفوعات',
+                        'يرجى تفعيل الإشعارات لتصلك التحديثات والتنبيهات الفورية حول اشتراكاتك والفعاليات',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.textSecondary,
                               height: 1.5,
@@ -444,6 +529,15 @@ class _WebNotificationPermissionToastState
     );
   }
 }
+
+
+
+
+
+
+
+
+
 
 
 

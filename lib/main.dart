@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -19,7 +21,9 @@ import 'providers/enhanced_auth_provider_v2.dart';
 import 'providers/language_provider.dart';
 import 'services/analytics_service.dart';
 import 'services/enhanced_dio_service_v2.dart';
+import 'services/enhanced_session_manager.dart';
 import 'services/enhanced_storage_service.dart';
+import 'services/navigation_service.dart';
 import 'services/notification_service.dart';
 import 'services/platform_storage_service.dart';
 import 'services/push_notification_service.dart';
@@ -328,6 +332,7 @@ class IDECApp extends ConsumerStatefulWidget {
 class _IDECAppState extends ConsumerState<IDECApp> {
   late final ServiceStatusProvider _serviceStatusProvider;
   ProviderSubscription<AuthState>? _authSubscription;
+  StreamSubscription<SessionExpiredEvent>? _sessionExpiredSubscription;
 
   @override
   void initState() {
@@ -344,6 +349,9 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       },
     );
 
+    // Listen to session expiration events and redirect to login
+    _setupSessionExpirationListener();
+
     // Start verification notification service after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AnalyticsService.instance.handleAuthStateChange(
@@ -352,6 +360,41 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       );
       _initializeServices();
     });
+  }
+
+  /// Setup listener for session expiration events
+  void _setupSessionExpirationListener() {
+    _sessionExpiredSubscription = EnhancedSessionManager.instance.sessionExpiredStream.listen(
+      (event) {
+        debugPrint('🔐 [MAIN] Session expired event received: ${event.reason}');
+        debugPrint('🔐 [MAIN] Should redirect to login: ${event.shouldRedirectToLogin}');
+        
+        if (event.shouldRedirectToLogin) {
+          // Navigate to login screen
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              final router = ref.read(routerProvider);
+              debugPrint('🔐 [MAIN] Navigating to login screen due to session expiration: ${event.reason}');
+              // Use AppRoutes.login constant for consistency
+              router.go(AppRoutes.login);
+            } catch (e, stackTrace) {
+              debugPrint('❌ [MAIN] Error navigating to login: $e');
+              debugPrint('Stack trace: $stackTrace');
+              // Fallback: try using NavigationService
+              try {
+                NavigationService.instance.goToLogin();
+              } catch (e2) {
+                debugPrint('❌ [MAIN] NavigationService also failed: $e2');
+              }
+            }
+          });
+        }
+      },
+      onError: (error) {
+        debugPrint('❌ [MAIN] Error in session expiration stream: $error');
+      },
+    );
+    debugPrint('✅ [MAIN] Session expiration listener setup completed');
   }
 
   void _initializeServices() {
@@ -412,6 +455,9 @@ class _IDECAppState extends ConsumerState<IDECApp> {
   void dispose() {
     // Dispose analytics listeners
     _authSubscription?.close();
+
+    // Dispose session expiration listener
+    _sessionExpiredSubscription?.cancel();
 
     // Stop verification notification service
     VerificationNotificationService.stopService();

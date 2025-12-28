@@ -54,6 +54,11 @@ class AppBottomNavigationBar extends ConsumerWidget {
             label: l10n.home,
           ),
           const BottomNavigationBarItem(
+            icon: Icon(Icons.article_outlined),
+            activeIcon: Icon(Icons.article),
+            label: 'الأخبار',
+          ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.event_note_outlined),
             activeIcon: Icon(Icons.event_note),
             label: 'الجلسات',

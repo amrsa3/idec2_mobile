@@ -200,6 +200,13 @@ class EnhancedSessionManager {
         reason: reason ?? 'Session ended',
       ));
 
+      // إشعار بانتهاء الجلسة مع طلب إعادة التوجيه إلى صفحة تسجيل الدخول
+      _notifySessionExpired(SessionExpiredEvent(
+        reason: reason ?? 'Session ended',
+        timestamp: DateTime.now(),
+        shouldRedirectToLogin: true,
+      ));
+
       if (_isOnline && sessionData != null) {
         await _sendSessionEndToServer(sessionData, reason);
       } else if (sessionData != null) {

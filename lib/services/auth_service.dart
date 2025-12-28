@@ -209,6 +209,8 @@ class AuthService {
           // Extract tokens
           String accessToken = '';
           String refreshToken = '';
+          int expiresIn = 900; // Default 15 minutes (900 seconds)
+          int? refreshExpiresIn;
 
           debugPrint('🔍 [AUTH_DEBUG] Extracting tokens...');
 
@@ -242,6 +244,48 @@ class AuthService {
                       '🔍 [AUTH_DEBUG] Refresh token: ${refreshToken.isNotEmpty ? 'present' : 'empty'}');
                 }
               }
+              // استخراج expiresIn من tokens object
+              if (tokensData.containsKey('expiresIn')) {
+                try {
+                  expiresIn = tokensData['expiresIn'] as int? ?? 900;
+                  debugPrint('🔍 [AUTH_DEBUG] Got expiresIn from tokens: $expiresIn seconds');
+                } catch (e) {
+                  debugPrint('⚠️ [AUTH_DEBUG] Error parsing expiresIn: $e');
+                }
+              }
+              // استخراج refreshExpiresIn من tokens object
+              if (tokensData.containsKey('refreshExpiresIn')) {
+                try {
+                  refreshExpiresIn = tokensData['refreshExpiresIn'] as int?;
+                  if (refreshExpiresIn != null) {
+                    debugPrint('🔍 [AUTH_DEBUG] Got refreshExpiresIn from tokens: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ [AUTH_DEBUG] Error parsing refreshExpiresIn: $e');
+                }
+              }
+            }
+          }
+          
+          // محاولة استخراج expiresIn من المستوى العلوي أيضاً
+          if (responseData.containsKey('expiresIn')) {
+            try {
+              expiresIn = responseData['expiresIn'] as int? ?? 900;
+              debugPrint('🔍 [AUTH_DEBUG] Got expiresIn from response: $expiresIn seconds');
+            } catch (e) {
+              debugPrint('⚠️ [AUTH_DEBUG] Error parsing expiresIn from response: $e');
+            }
+          }
+          
+          // محاولة استخراج refreshExpiresIn من المستوى العلوي أيضاً
+          if (refreshExpiresIn == null && responseData.containsKey('refreshExpiresIn')) {
+            try {
+              refreshExpiresIn = responseData['refreshExpiresIn'] as int?;
+              if (refreshExpiresIn != null) {
+                debugPrint('🔍 [AUTH_DEBUG] Got refreshExpiresIn from response: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+              }
+            } catch (e) {
+              debugPrint('⚠️ [AUTH_DEBUG] Error parsing refreshExpiresIn from response: $e');
             }
           }
 
@@ -255,9 +299,10 @@ class AuthService {
               await UnifiedTokenManager.instance.saveTokens(
                 accessToken: accessToken,
                 refreshToken: refreshToken,
-                expiresIn:
-                    2592000, // 30 days (30 * 24 * 60 * 60 = 2592000 seconds) - تغيير من ساعة إلى 30 يوم
+                expiresIn: expiresIn,
+                refreshExpiresIn: refreshExpiresIn,
               );
+              debugPrint('🔍 [AUTH_DEBUG] Tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "fallback"} seconds');
 
               // Use safe storage method
               final storageSuccess = await _safeStoreUserData(user);

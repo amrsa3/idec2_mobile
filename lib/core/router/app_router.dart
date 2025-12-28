@@ -22,6 +22,10 @@ import '../../features/profile/presentation/screens/profile_main_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/schedule/presentation/event_details_screen.dart';
 import '../../features/registrations/presentation/registration_detail_screen.dart';
+import '../../features/news/presentation/screens/news_list_screen.dart';
+import '../../features/news/presentation/screens/news_detail_screen.dart';
+import '../../features/gallery/presentation/gallery_screen.dart';
+import '../../features/gallery/presentation/gallery_album_view.dart';
 import '../../services/analytics_service.dart';
 import '../../services/compatible_auth_service.dart';
 
@@ -49,6 +53,10 @@ class AppRoutes {
   static const String registration = '/registration/:id';
   static const String conference = '/conference/:id';
   static const String payment = '/payment/:id';
+  static const String news = '/news';
+  static const String newsDetail = '/news/:id';
+  static const String gallery = '/gallery';
+  static const String galleryAlbum = '/gallery/album/:id';
 }
 
 // Auth change notifier for GoRouter
@@ -293,6 +301,38 @@ final routerProvider = Provider<GoRouter>((ref) {
             // TODO: Import and use PaymentDetailScreen when available
             // For now, redirect to main screen
             return const MainScreen();
+          },
+        ),
+
+        // News Routes
+        GoRoute(
+          path: AppRoutes.news,
+          name: 'news',
+          builder: (context, state) => const NewsListScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.newsDetail,
+          name: 'news-detail',
+          builder: (context, state) {
+            final articleId = state.pathParameters['id']!;
+            return NewsDetailScreen(articleId: articleId);
+          },
+        ),
+
+        // Gallery Routes
+        GoRoute(
+          path: AppRoutes.gallery,
+          name: 'gallery',
+          builder: (context, state) => const GalleryScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.galleryAlbum,
+          name: 'gallery-album',
+          builder: (context, state) {
+            final albumId = state.pathParameters['id']!;
+            return GalleryAlbumView(albumId: albumId);
           },
         ),
       ],

@@ -59,7 +59,8 @@ class EnhancedTokenInterceptor extends Interceptor {
         // تحقق من وجود refresh token صالح
         final hasValidRefresh = await _tokenManager.hasValidRefreshToken();
         if (!hasValidRefresh) {
-          debugPrint('❌ [TOKEN_INTERCEPTOR] No valid refresh token - cannot refresh');
+          debugPrint('❌ [TOKEN_INTERCEPTOR] No valid refresh token - cannot refresh, ending session');
+          await _sessionManager.endSession();
           // رفض الطلب بـ 401 - سيتم التعامل معه في _handle401Error
           final error = DioException(
             requestOptions: options,
@@ -82,8 +83,10 @@ class EnhancedTokenInterceptor extends Interceptor {
           accessToken = await _tokenManager.getValidAccessToken();
           if (accessToken != null && accessToken.isNotEmpty) {
             debugPrint('✅ [TOKEN_INTERCEPTOR] Token refreshed successfully before request');
+            // Continue with the request using the new token
           } else {
-            debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh succeeded but no token returned');
+            debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh succeeded but no token returned, ending session');
+            await _sessionManager.endSession();
             // رفض الطلب بـ 401
             final error = DioException(
               requestOptions: options,
@@ -98,7 +101,8 @@ class EnhancedTokenInterceptor extends Interceptor {
             return;
           }
         } else {
-          debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh failed');
+          debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh failed, ending session');
+          await _sessionManager.endSession();
           // رفض الطلب بـ 401 - سيتم التعامل معه في _handle401Error
           final error = DioException(
             requestOptions: options,
@@ -164,13 +168,20 @@ class EnhancedTokenInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    debugPrint('❌ [TOKEN_INTERCEPTOR] Error intercepted: ${err.response?.statusCode} - ${err.message}');
+    final statusCode = err.response?.statusCode;
+    debugPrint('❌ [TOKEN_INTERCEPTOR] Error intercepted: $statusCode - ${err.message}');
+    debugPrint('❌ [TOKEN_INTERCEPTOR] Request path: ${err.requestOptions.path}');
+    debugPrint('❌ [TOKEN_INTERCEPTOR] Request method: ${err.requestOptions.method}');
     
-    // Handle token-related errors
+    // Handle token-related errors (401, 403)
     if (_isTokenError(err)) {
+      debugPrint('🔄 [TOKEN_INTERCEPTOR] Token error detected ($statusCode), attempting to handle...');
       final handled = await _handleTokenError(err, handler);
       if (handled) {
+        debugPrint('✅ [TOKEN_INTERCEPTOR] Token error handled successfully');
         return; // Error was handled, don't propagate
+      } else {
+        debugPrint('❌ [TOKEN_INTERCEPTOR] Token error could not be handled');
       }
     }
     
@@ -211,58 +222,113 @@ class EnhancedTokenInterceptor extends Interceptor {
 
   /// Handle 401 Unauthorized errors
   Future<bool> _handle401Error(DioException err, ErrorInterceptorHandler handler) async {
-    debugPrint('🔄 [TOKEN_INTERCEPTOR] Handling 401 error - attempting token refresh');
-    debugPrint('🔄 [TOKEN_INTERCEPTOR] Request path: ${err.requestOptions.path}');
-    debugPrint('🔄 [TOKEN_INTERCEPTOR] Request method: ${err.requestOptions.method}');
+    final errorId = DateTime.now().millisecondsSinceEpoch.toString();
+    final errorTime = DateTime.now();
+    
+    debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING START ==========');
+    debugPrint('🔄 [401_ERROR_LOG] Error ID: $errorId');
+    debugPrint('🔄 [401_ERROR_LOG] Error Time: ${errorTime.toIso8601String()}');
+    debugPrint('🔄 [401_ERROR_LOG] Original Request:');
+    debugPrint('   - Path: ${err.requestOptions.path}');
+    debugPrint('   - Method: ${err.requestOptions.method}');
+    debugPrint('   - Base URL: ${err.requestOptions.baseUrl}');
+    debugPrint('   - Full URL: ${err.requestOptions.uri}');
+    debugPrint('   - Status Code: ${err.response?.statusCode ?? "N/A"}');
+    debugPrint('   - Error Message: ${err.message}');
+    debugPrint('   - Response Data: ${err.response?.data}');
     
     try {
       // Check if we have a refresh token
+      debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Checking refresh token availability...');
       final refreshToken = await _tokenManager.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
-        debugPrint('❌ [TOKEN_INTERCEPTOR] No refresh token available, ending session');
+        debugPrint('❌ [401_ERROR_LOG] Error $errorId: No refresh token available, ending session');
         await _sessionManager.endSession();
         handler.next(err); // Propagate error
+        debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (NO_REFRESH_TOKEN) ==========');
         return false;
       }
+
+      debugPrint('✅ [401_ERROR_LOG] Error $errorId: Refresh token found (length: ${refreshToken.length})');
 
       // Check if refresh token is still valid
+      debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Checking refresh token validity...');
       final hasValidRefresh = await _tokenManager.hasValidRefreshToken();
       if (!hasValidRefresh) {
-        debugPrint('❌ [TOKEN_INTERCEPTOR] Refresh token expired, ending session');
+        debugPrint('❌ [401_ERROR_LOG] Error $errorId: Refresh token expired, ending session');
         await _sessionManager.endSession();
         handler.next(err); // Propagate error
+        debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (REFRESH_TOKEN_EXPIRED) ==========');
         return false;
       }
 
-      debugPrint('✅ [TOKEN_INTERCEPTOR] Refresh token available and valid, attempting refresh...');
+      debugPrint('✅ [401_ERROR_LOG] Error $errorId: Refresh token available and valid, attempting refresh...');
 
       // Attempt token refresh
+      final refreshStartTime = DateTime.now();
       final refreshSuccess = await _performTokenRefresh();
+      final refreshDuration = DateTime.now().difference(refreshStartTime);
+      
+      debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Token refresh attempt completed');
+      debugPrint('   - Success: $refreshSuccess');
+      debugPrint('   - Duration: ${refreshDuration.inMilliseconds}ms');
       
       if (refreshSuccess) {
-        debugPrint('✅ [TOKEN_INTERCEPTOR] Token refresh successful, retrying original request...');
-        // Retry the original request with new token
-        final retrySuccess = await _retryRequest(err.requestOptions, handler);
+        debugPrint('✅ [401_ERROR_LOG] Error $errorId: Token refresh successful, retrying original request...');
+        debugPrint('🔄 [401_ERROR_LOG] Error $errorId: About to call _retryRequest...');
+        debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Original request path: ${err.requestOptions.path}');
+        debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Original request method: ${err.requestOptions.method}');
         
-        if (retrySuccess) {
-          debugPrint('✅ [TOKEN_INTERCEPTOR] Retry successful after token refresh');
-          return true;
-        } else {
-          debugPrint('❌ [TOKEN_INTERCEPTOR] Retry failed after token refresh');
+        // Retry the original request with new token
+        final retryStartTime = DateTime.now();
+        try {
+          final retrySuccess = await _retryRequest(err.requestOptions, handler);
+          final retryDuration = DateTime.now().difference(retryStartTime);
+          
+          debugPrint('🔄 [401_ERROR_LOG] Error $errorId: Retry attempt completed');
+          debugPrint('   - Success: $retrySuccess');
+          debugPrint('   - Duration: ${retryDuration.inMilliseconds}ms');
+          
+          if (retrySuccess) {
+            final totalDuration = DateTime.now().difference(errorTime);
+            debugPrint('✅ [401_ERROR_LOG] Error $errorId: Retry successful after token refresh');
+            debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+            debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (SUCCESS) ==========');
+            return true;
+          } else {
+            debugPrint('❌ [401_ERROR_LOG] Error $errorId: Retry failed after token refresh');
+            handler.next(err); // Propagate original error
+            debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (RETRY_FAILED) ==========');
+            return false;
+          }
+        } catch (retryError, retryStackTrace) {
+          final retryDuration = DateTime.now().difference(retryStartTime);
+          debugPrint('❌ [401_ERROR_LOG] Error $errorId: Exception during retry');
+          debugPrint('   - Exception Type: ${retryError.runtimeType}');
+          debugPrint('   - Exception: $retryError');
+          debugPrint('   - Stack Trace: $retryStackTrace');
+          debugPrint('   - Duration: ${retryDuration.inMilliseconds}ms');
           handler.next(err); // Propagate original error
+          debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (RETRY_EXCEPTION) ==========');
           return false;
         }
       } else {
-        debugPrint('❌ [TOKEN_INTERCEPTOR] Token refresh failed, ending session');
+        debugPrint('❌ [401_ERROR_LOG] Error $errorId: Token refresh failed, ending session');
         await _sessionManager.endSession();
         handler.next(err); // Propagate error
+        debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (REFRESH_FAILED) ==========');
         return false;
       }
-    } catch (e) {
-      debugPrint('❌ [TOKEN_INTERCEPTOR] Error handling 401: $e');
-      debugPrint('❌ [TOKEN_INTERCEPTOR] Stack trace: ${StackTrace.current}');
+    } catch (e, stackTrace) {
+      final totalDuration = DateTime.now().difference(errorTime);
+      debugPrint('❌ [401_ERROR_LOG] Error $errorId: Exception handling 401');
+      debugPrint('   - Exception Type: ${e.runtimeType}');
+      debugPrint('   - Exception: $e');
+      debugPrint('   - Stack Trace: $stackTrace');
+      debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
       await _sessionManager.endSession();
       handler.next(err); // Propagate error
+      debugPrint('🔄 [401_ERROR_LOG] ========== 401 ERROR HANDLING END (EXCEPTION) ==========');
       return false;
     }
   }
@@ -346,52 +412,93 @@ class EnhancedTokenInterceptor extends Interceptor {
 
   /// Retry the original request with new token
   Future<bool> _retryRequest(RequestOptions originalOptions, ErrorInterceptorHandler handler) async {
+    final retryId = DateTime.now().millisecondsSinceEpoch.toString();
+    final retryTime = DateTime.now();
+    
     try {
-      debugPrint('🔄 [TOKEN_INTERCEPTOR] Retrying original request: ${originalOptions.method} ${originalOptions.path}');
+      debugPrint('🔄 [RETRY_LOG] ========== RETRY REQUEST START ==========');
+      debugPrint('🔄 [RETRY_LOG] Retry ID: $retryId');
+      debugPrint('🔄 [RETRY_LOG] Retry Time: ${retryTime.toIso8601String()}');
+      debugPrint('🔄 [RETRY_LOG] Original Request:');
+      debugPrint('   - Method: ${originalOptions.method}');
+      debugPrint('   - Path: ${originalOptions.path}');
+      debugPrint('   - Base URL: ${originalOptions.baseUrl}');
+      debugPrint('   - Full URL: ${originalOptions.uri}');
+      debugPrint('   - Has Data: ${originalOptions.data != null}');
+      debugPrint('   - Data Type: ${originalOptions.data?.runtimeType ?? "N/A"}');
+      debugPrint('   - Query Parameters: ${originalOptions.queryParameters}');
+      
       _retryCount++;
       
       // Get new access token
+      debugPrint('🔄 [RETRY_LOG] Retry $retryId: Getting new access token...');
       final newToken = await _tokenManager.getValidAccessToken();
       if (newToken == null || newToken.isEmpty) {
-        debugPrint('❌ [TOKEN_INTERCEPTOR] No new token available for retry');
+        debugPrint('❌ [RETRY_LOG] Retry $retryId: No new token available for retry');
+        debugPrint('🔄 [RETRY_LOG] ========== RETRY REQUEST END (NO_TOKEN) ==========');
         return false;
       }
       
-      debugPrint('✅ [TOKEN_INTERCEPTOR] New token obtained, retrying request...');
-      
-      // Update authorization header
-      originalOptions.headers['Authorization'] = 'Bearer $newToken';
+      debugPrint('✅ [RETRY_LOG] Retry $retryId: New token obtained');
+      debugPrint('   - Token Length: ${newToken.length}');
+      debugPrint('   - Token (first 20 chars): ${newToken.substring(0, newToken.length > 20 ? 20 : newToken.length)}...');
       
       // Create new Dio instance to avoid interceptor loops
       final dio = Dio();
       
-      // Use baseUrl from original options, or construct full URL if path is absolute
-      String requestUrl;
-      if (originalOptions.path.startsWith('http://') || originalOptions.path.startsWith('https://')) {
-        requestUrl = originalOptions.path;
-      } else {
-        final baseUrl = originalOptions.baseUrl.isNotEmpty 
-            ? originalOptions.baseUrl 
-            : 'https://api.idec-ye.com';
-        requestUrl = baseUrl + (originalOptions.path.startsWith('/') ? '' : '/') + originalOptions.path;
+      // Determine base URL - use original baseUrl or default from ApiConstants
+      String baseUrl = originalOptions.baseUrl;
+      if (baseUrl.isEmpty) {
+        baseUrl = 'https://api.idec-ye.com'; // Default fallback
       }
       
-      dio.options.baseUrl = originalOptions.baseUrl.isNotEmpty 
-          ? originalOptions.baseUrl 
-          : 'https://api.idec-ye.com';
+      dio.options.baseUrl = baseUrl;
       dio.options.connectTimeout = originalOptions.connectTimeout;
       dio.options.receiveTimeout = originalOptions.receiveTimeout;
       dio.options.sendTimeout = originalOptions.sendTimeout;
       
-      // Copy all headers except Authorization (which we already set)
+      // Copy all headers and update Authorization
       final headers = Map<String, dynamic>.from(originalOptions.headers);
       headers['Authorization'] = 'Bearer $newToken';
       
-      debugPrint('🔄 [TOKEN_INTERCEPTOR] Making retry request to: $requestUrl');
+      debugPrint('🔄 [RETRY_LOG] Retry $retryId: Request configuration:');
+      debugPrint('   - Base URL: $baseUrl');
+      debugPrint('   - Headers: ${headers.keys.toList()}');
+      debugPrint('   - Authorization Header: Bearer ${newToken.substring(0, 20)}...');
+      
+      // Determine request path
+      String requestPath = originalOptions.path;
+      
+      // If path is absolute URL, extract path from it
+      if (requestPath.startsWith('http://') || requestPath.startsWith('https://')) {
+        final uri = Uri.parse(requestPath);
+        requestPath = uri.path;
+        if (uri.queryParameters.isNotEmpty) {
+          // Append query parameters if any
+          final queryString = uri.queryParameters.entries
+              .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+              .join('&');
+          requestPath = '$requestPath?$queryString';
+        }
+      }
+      
+      // Ensure path starts with /
+      if (!requestPath.startsWith('/')) {
+        requestPath = '/$requestPath';
+      }
+      
+      final fullUrl = '$baseUrl$requestPath';
+      debugPrint('🔄 [RETRY_LOG] Retry $retryId: Making request...');
+      debugPrint('   - Full URL: $fullUrl');
+      debugPrint('   - Method: ${originalOptions.method}');
+      debugPrint('   - Path: $requestPath');
+      debugPrint('   - Has data: ${originalOptions.data != null}');
+      
+      final requestStartTime = DateTime.now();
       
       // Make the retry request
       final response = await dio.request(
-        originalOptions.path,
+        requestPath,
         data: originalOptions.data,
         queryParameters: originalOptions.queryParameters,
         options: Options(
@@ -404,16 +511,43 @@ class EnhancedTokenInterceptor extends Interceptor {
         ),
       );
       
-      debugPrint('✅ [TOKEN_INTERCEPTOR] Retry request successful: ${response.statusCode}');
+      final requestDuration = DateTime.now().difference(requestStartTime);
+      final totalDuration = DateTime.now().difference(retryTime);
+      
+      debugPrint('✅ [RETRY_LOG] Retry $retryId: Request successful');
+      debugPrint('   - Status Code: ${response.statusCode}');
+      debugPrint('   - Request Duration: ${requestDuration.inMilliseconds}ms');
+      debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+      debugPrint('   - Response Time: ${DateTime.now().toIso8601String()}');
+      debugPrint('🔄 [RETRY_LOG] ========== RETRY REQUEST END (SUCCESS) ==========');
+      
       handler.resolve(response);
       return true;
-    } catch (e) {
-      debugPrint('❌ [TOKEN_INTERCEPTOR] Retry request failed: $e');
+    } catch (e, stackTrace) {
+      final totalDuration = DateTime.now().difference(retryTime);
+      
+      debugPrint('❌ [RETRY_LOG] Retry $retryId: Request failed');
+      debugPrint('   - Error Type: ${e.runtimeType}');
+      debugPrint('   - Error: $e');
+      debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+      
       if (e is DioException) {
-        debugPrint('❌ [TOKEN_INTERCEPTOR] DioException details: ${e.response?.statusCode} - ${e.message}');
-        debugPrint('❌ [TOKEN_INTERCEPTOR] Request path: ${originalOptions.path}');
-        debugPrint('❌ [TOKEN_INTERCEPTOR] Base URL: ${originalOptions.baseUrl}');
+        debugPrint('❌ [RETRY_LOG] Retry $retryId: DioException details:');
+        debugPrint('   - Status: ${e.response?.statusCode ?? "N/A"}');
+        debugPrint('   - Message: ${e.message}');
+        debugPrint('   - Type: ${e.type}');
+        debugPrint('   - Request Path: ${originalOptions.path}');
+        debugPrint('   - Base URL: ${originalOptions.baseUrl}');
+        debugPrint('   - Request URL: ${e.requestOptions.uri}');
+        if (e.response != null) {
+          debugPrint('   - Response Data: ${e.response?.data}');
+          debugPrint('   - Response Headers: ${e.response?.headers}');
+        }
+      } else {
+        debugPrint('❌ [RETRY_LOG] Retry $retryId: Non-DioException');
+        debugPrint('   - Stack Trace: $stackTrace');
       }
+      debugPrint('🔄 [RETRY_LOG] ========== RETRY REQUEST END (FAILED) ==========');
       return false;
     }
   }

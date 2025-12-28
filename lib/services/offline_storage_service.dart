@@ -465,6 +465,55 @@ class OfflineStorageService {
     }
   }
 
+  /// حفظ بيانات عامة (generic storage)
+  Future<void> set(String key, String value) async {
+    await _ensureInitialized();
+    
+    if (kIsWeb) {
+      // Use PlatformStorageService for web
+      await _storage.writeSecure(key, value);
+      return;
+    }
+    
+    try {
+      final offlineData = OfflineData(
+        key: key,
+        data: {'value': value},
+        timestamp: DateTime.now(),
+        type: OfflineDataType.fileData,
+      );
+      await _offlineBox.put(key, offlineData);
+    } catch (e) {
+      debugPrint('❌ [OFFLINE_STORAGE] Error setting data: $e');
+    }
+  }
+
+  /// جلب بيانات عامة (generic storage)
+  Future<String?> get(String key) async {
+    await _ensureInitialized();
+    
+    if (kIsWeb) {
+      // Use PlatformStorageService for web
+      return await _storage.readSecure(key);
+    }
+    
+    try {
+      final offlineData = _offlineBox.get(key) as OfflineData?;
+      if (offlineData == null) return null;
+      
+      // Check if data is expired
+      if (_isDataExpired(offlineData.timestamp)) {
+        await _offlineBox.delete(key);
+        return null;
+      }
+      
+      return offlineData.data['value'] as String?;
+    } catch (e) {
+      debugPrint('❌ [OFFLINE_STORAGE] Error getting data: $e');
+      return null;
+    }
+  }
+
   /// تنظيف الموارد
   Future<void> dispose() async {
     try {

@@ -17,6 +17,9 @@ export 'session_model.dart';
 export 'speaker_model.dart';
 export 'user_model.dart' hide DocumentModel, $DocumentModelCopyWith;
 export 'user_profile_extended.dart';
+export 'news_article_model.dart';
+export 'news_category_model.dart';
+export 'news_comment_model.dart';
 export 'verification_model.dart'
     hide
         VerificationRequestModel,

@@ -69,6 +69,14 @@ class NotificationRouterService {
           }
           break;
 
+        case 'VIEW_NEWS':
+          final articleId = actionData['articleId'] as String?;
+          if (articleId != null) {
+            context.push('/news/$articleId');
+            debugPrint('🔄 [NOTIFICATION_ROUTER] Navigating to news article: $articleId');
+          }
+          break;
+
         default:
           debugPrint('⚠️ [NOTIFICATION_ROUTER] Unknown actionType: $actionType');
       }
@@ -112,6 +120,13 @@ class NotificationRouterService {
           final transactionId = data['transactionId'] as String?;
           if (transactionId != null) {
             context.push('/payment/$transactionId');
+            return;
+          }
+        }
+        if (data.containsKey('articleId')) {
+          final articleId = data['articleId'] as String?;
+          if (articleId != null) {
+            context.push('/news/$articleId');
             return;
           }
         }

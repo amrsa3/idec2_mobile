@@ -86,6 +86,14 @@ class DeepLinkHandler {
         }
       }
 
+      if (path.startsWith('/news/')) {
+        final articleId = path.split('/news/')[1];
+        if (articleId.isNotEmpty) {
+          context.push('/news/$articleId');
+          return;
+        }
+      }
+
       if (path == '/profile') {
         context.push(AppRoutes.profile);
         return;

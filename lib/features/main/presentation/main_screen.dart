@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/courses/presentation/courses_screen.dart';
 import '../../../features/main/widgets/app_bottom_navigation_bar.dart';
+import '../../../features/news/presentation/screens/news_list_screen.dart';
 import '../../../features/profile/presentation/screens/profile_main_screen.dart';
 import '../../../features/sessions/presentation/sessions_screen.dart';
 import '../../../features/speakers/presentation/speakers_screen.dart';
@@ -20,6 +21,7 @@ class MainScreen extends ConsumerWidget {
     // List of screens
     const screens = [
       HomeScreen(),
+      NewsListScreen(),
       SessionsScreen(),
       SpeakersScreen(),
       CoursesScreen(),

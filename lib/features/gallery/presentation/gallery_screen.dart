@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../models/gallery_album_model.dart';
+import '../providers/gallery_provider.dart';
+import '../widgets/lazy_image_widget.dart';
 import 'gallery_album_view.dart';
+import '../../../services/connectivity_service.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
@@ -16,75 +19,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTabIndex = 0;
+  bool _isOffline = false;
 
-  final List<String> _categories = ['الكل', 'المؤتمر', 'المعرض', 'الورش'];
-
-  final List<GalleryAlbumModel> _albums = [
-    GalleryAlbumModel(
-      id: '1',
-      title: 'اليوم الأول',
-      description: 'صور المؤتمر - اليوم الأول',
-      coverImageUrl: 'https://picsum.photos/400/300?random=1',
-      photoCount: 45,
-      category: 'conference',
-    ),
-    GalleryAlbumModel(
-      id: '2',
-      title: 'اليوم الثاني',
-      description: 'صور المؤتمر - اليوم الثاني',
-      coverImageUrl: 'https://picsum.photos/400/300?random=2',
-      photoCount: 38,
-      category: 'conference',
-    ),
-    GalleryAlbumModel(
-      id: '3',
-      title: 'اليوم الثالث',
-      description: 'صور المؤتمر - اليوم الثالث',
-      coverImageUrl: 'https://picsum.photos/400/300?random=3',
-      photoCount: 42,
-      category: 'conference',
-    ),
-    GalleryAlbumModel(
-      id: '4',
-      title: 'المعرض التجاري',
-      description: 'صور المعرض التجاري',
-      coverImageUrl: 'https://picsum.photos/400/300?random=4',
-      photoCount: 28,
-      category: 'exhibition',
-    ),
-    GalleryAlbumModel(
-      id: '5',
-      title: 'مؤتمر 2024',
-      description: 'الاحتفال بافتتاح المؤتمر',
-      coverImageUrl: 'https://picsum.photos/400/300?random=5',
-      photoCount: 52,
-      category: 'conference',
-    ),
-    GalleryAlbumModel(
-      id: '6',
-      title: 'مؤتمر 2025',
-      description: 'مؤتمر العام الحالي',
-      coverImageUrl: 'https://picsum.photos/400/300?random=6',
-      photoCount: 60,
-      category: 'conference',
-    ),
-    GalleryAlbumModel(
-      id: '7',
-      title: 'ورشة العمل الأولى',
-      description: 'ورشة عمل تبييض الأسنان',
-      coverImageUrl: 'https://picsum.photos/400/300?random=7',
-      photoCount: 24,
-      category: 'workshops',
-    ),
-    GalleryAlbumModel(
-      id: '8',
-      title: 'ورشة العمل الثانية',
-      description: 'ورشة عمل التقنيات الحديثة',
-      coverImageUrl: 'https://picsum.photos/400/300?random=8',
-      photoCount: 19,
-      category: 'workshops',
-    ),
-  ];
+  final List<String> _categories = ['الكل', 'المؤتمر', 'الفعالية', 'المعرض', 'المتحدث', 'عام'];
+  final Map<int, String?> _categoryMap = {
+    0: null, // الكل
+    1: 'CONFERENCE',
+    2: 'EVENT',
+    3: 'EXHIBITION',
+    4: 'SPEAKER',
+    5: 'GENERAL',
+  };
 
   @override
   void initState() {
@@ -95,6 +40,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
         _selectedTabIndex = _tabController.index;
       });
     });
+    _checkConnectivity();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final connectivityService = ConnectivityService.instance;
+    await connectivityService.initialize();
+    final isConnected = connectivityService.isConnected;
+    setState(() {
+      _isOffline = !isConnected;
+    });
   }
 
   @override
@@ -103,29 +58,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
     super.dispose();
   }
 
-  List<GalleryAlbumModel> get _filteredAlbums {
-    if (_selectedTabIndex == 0) {
-      return _albums;
-    }
-
-    String categoryFilter = '';
-    switch (_selectedTabIndex) {
-      case 1:
-        categoryFilter = 'conference';
-        break;
-      case 2:
-        categoryFilter = 'exhibition';
-        break;
-      case 3:
-        categoryFilter = 'workshops';
-        break;
-    }
-
-    return _albums.where((album) => album.category == categoryFilter).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final category = _categoryMap[_selectedTabIndex];
+    final albumsAsync = category == null
+        ? ref.watch(galleryAlbumsProvider)
+        : ref.watch(galleryAlbumsByCategoryProvider(category));
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -167,27 +106,62 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                               ),
                             ),
                             const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'معرض الصور',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'معرض الصور',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_albums.length} ألبوم • ${_albums.fold<int>(0, (sum, album) => sum + album.photoCount)} صورة',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 13,
+                                  const SizedBox(height: 4),
+                                  albumsAsync.when(
+                                    data: (albums) => Text(
+                                      '${albums.length} ألبوم • ${albums.fold<int>(0, (sum, album) => sum + album.photoCount)} صورة',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            if (_isOffline)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_off,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'غير متصل',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
                       ],
@@ -204,22 +178,23 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
               color: Colors.white,
               child: TabBar(
                 controller: _tabController,
+                isScrollable: true,
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.textSecondary,
-                labelStyle:
-                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                tabs:
-                    _categories.map((category) => Tab(text: category)).toList(),
+                labelStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: _categories.map((category) => Tab(text: category)).toList(),
               ),
             ),
           ),
 
           // Albums Grid
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: _filteredAlbums.isEmpty
+          albumsAsync.when(
+            data: (albums) => albums.isEmpty
                 ? SliverFillRemaining(
                     child: Center(
                       child: Column(
@@ -231,33 +206,104 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                             color: AppColors.primary.withOpacity(0.3),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'لا توجد ألبومات',
-                            style: TextStyle(
+                          Text(
+                            _isOffline
+                                ? 'لا توجد ألبومات محفوظة محلياً'
+                                : 'لا توجد ألبومات',
+                            style: const TextStyle(
                               fontSize: 18,
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          if (_isOffline) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'يرجى الاتصال بالإنترنت لعرض الألبومات',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   )
-                : SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.75,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final album = _filteredAlbums[index];
-                        return _buildAlbumCard(context, album);
-                      },
-                      childCount: _filteredAlbums.length,
+                : SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.75,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final album = albums[index];
+                          return _buildAlbumCard(context, album);
+                        },
+                        childCount: albums.length,
+                      ),
                     ),
                   ),
+            loading: () => SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'جاري تحميل الألبومات...',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            error: (error, stack) => SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[300],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'حدث خطأ في تحميل الألبومات',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.red[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.invalidate(galleryAlbumsProvider);
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -296,16 +342,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    album.coverImageUrl,
+                  LazyImageWidget(
+                    imageUrl: album.coverImageUrl ?? '',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.primary,
-                        child: const Icon(Icons.image,
-                            color: Colors.white, size: 60),
-                      );
-                    },
+                    errorWidget: Container(
+                      color: AppColors.primary,
+                      child: const Icon(
+                        Icons.image,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
                   ),
                   // Gradient Overlay
                   Container(
@@ -326,7 +373,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                     left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(12),
@@ -334,8 +383,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.photo,
-                              size: 14, color: Colors.white),
+                          const Icon(
+                            Icons.photo,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${album.photoCount}',

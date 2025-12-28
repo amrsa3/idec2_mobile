@@ -90,7 +90,9 @@ class UnifiedTokenManager {
     try {
       final now = DateTime.now();
       final accessTokenExpiry = now.add(Duration(seconds: expiresIn));
-      // استخدام مدة صلاحية refresh token من الخادم أو 30 يوم كافتراضي
+      // استخدام مدة صلاحية refresh token من الخادم دائماً (يجب أن يكون موجوداً في الاستجابة)
+      // إذا لم يكن موجوداً، نستخدم قيمة احتياطية كبيرة (30 يوم) لتجنب إنهاء الجلسة بالخطأ
+      // لكن هذا يجب ألا يحدث في الوضع الطبيعي لأن الخادم يرسل refreshExpiresIn دائماً
       final refreshTokenExpiry = refreshExpiresIn != null
           ? now.add(Duration(seconds: refreshExpiresIn))
           : now.add(const Duration(days: 30));
@@ -215,15 +217,22 @@ class UnifiedTokenManager {
       final expiry = DateTime.parse(expiryString);
       final now = DateTime.now();
       
-      // التحقق فقط من أن التوكن لم ينتهي بعد (لا نستخدم buffer)
-      final isValid = now.isBefore(expiry);
+      // إضافة buffer time (60 ثانية) لتجنب مشاكل اختلاف التوقيت بين التطبيق والخادم
+      // هذا يضمن أن التوكن لا يُعتبر صالحاً إذا كان على وشك الانتهاء
+      // تم زيادة Buffer من 30 إلى 60 ثانية لضمان تجديد التوكن قبل انتهائه بوقت كاف
+      const bufferTime = Duration(seconds: 60);
+      final effectiveExpiry = expiry.subtract(bufferTime);
+      final isValid = now.isBefore(effectiveExpiry);
       final timeUntilExpiry = expiry.difference(now);
+      final timeUntilEffectiveExpiry = effectiveExpiry.difference(now);
 
       // Debug logging for token validity check
       if (timeUntilExpiry.isNegative) {
         debugPrint('🔐 [TOKEN_DEBUG] ❌ Token expired ${timeUntilExpiry.abs().inMinutes} minutes ago');
+      } else if (timeUntilEffectiveExpiry.isNegative || timeUntilEffectiveExpiry.inSeconds < 60) {
+        debugPrint('🔐 [TOKEN_DEBUG] ⚠️ Token expires soon (${timeUntilExpiry.inSeconds} seconds) - considered invalid due to 60s buffer');
       } else {
-        debugPrint('🔐 [TOKEN_DEBUG] ✅ Token valid, expires in ${timeUntilExpiry.inMinutes} minutes');
+        debugPrint('🔐 [TOKEN_DEBUG] ✅ Token valid, expires in ${timeUntilExpiry.inMinutes} minutes (effective: ${timeUntilEffectiveExpiry.inMinutes} minutes with buffer)');
       }
 
       return isValid;
@@ -260,8 +269,12 @@ class UnifiedTokenManager {
   Future<bool> refreshAccessToken() async {
     await _ensureInitialized();
 
+    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
+    final requestTime = DateTime.now();
+
     // Prevent concurrent refresh attempts
     if (_isRefreshing) {
+      debugPrint('⏳ [REFRESH_TOKEN_LOG] Request $requestId: Refresh already in progress, queuing...');
       final completer = Completer<String?>();
       _refreshQueue.add(completer);
       final result = await completer.future;
@@ -271,28 +284,83 @@ class UnifiedTokenManager {
     _isRefreshing = true;
 
     try {
-      final refreshToken = await _storage.readSecure(_refreshTokenKey);
-      if (refreshToken == null) {
-        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] No refresh token found');
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] ========== REFRESH TOKEN REQUEST START ==========');
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Request ID: $requestId');
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Request Time: ${requestTime.toIso8601String()}');
+      
+      // Get current token states
+      final currentAccessToken = await _storage.readSecure(_accessTokenKey);
+      final currentRefreshToken = await _storage.readSecure(_refreshTokenKey);
+      final accessExpiry = await _storage.readSecure(_tokenExpiryKey);
+      final refreshExpiry = await _storage.readSecure(_refreshTokenExpiryKey);
+      
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Current State:');
+      debugPrint('   - Has Access Token: ${currentAccessToken != null}');
+      debugPrint('   - Access Token Length: ${currentAccessToken?.length ?? 0}');
+      debugPrint('   - Access Token Expiry: ${accessExpiry ?? "N/A"}');
+      if (accessExpiry != null) {
+        try {
+          final expiry = DateTime.parse(accessExpiry);
+          final now = DateTime.now();
+          final timeUntilExpiry = expiry.difference(now);
+          debugPrint('   - Time Until Access Expiry: ${timeUntilExpiry.inMinutes} minutes');
+        } catch (e) {
+          debugPrint('   - Error parsing access expiry: $e');
+        }
+      }
+      debugPrint('   - Has Refresh Token: ${currentRefreshToken != null}');
+      debugPrint('   - Refresh Token Length: ${currentRefreshToken?.length ?? 0}');
+      debugPrint('   - Refresh Token Expiry: ${refreshExpiry ?? "N/A"}');
+      if (refreshExpiry != null) {
+        try {
+          final expiry = DateTime.parse(refreshExpiry);
+          final now = DateTime.now();
+          final timeUntilExpiry = expiry.difference(now);
+          debugPrint('   - Time Until Refresh Expiry: ${timeUntilExpiry.inDays} days');
+        } catch (e) {
+          debugPrint('   - Error parsing refresh expiry: $e');
+        }
+      }
+
+      if (currentRefreshToken == null) {
+        debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: No refresh token found');
         await _handleSessionExpired('No refresh token');
         return false;
       }
 
-      if (!await hasValidRefreshToken()) {
-        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Refresh token expired');
+      final isValidRefresh = await hasValidRefreshToken();
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Refresh Token Valid: $isValidRefresh');
+      
+      if (!isValidRefresh) {
+        debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Refresh token expired');
         await _handleSessionExpired('Refresh token expired');
         return false;
       }
 
       final sessionId = await _storage.readSecure(_sessionIdKey);
+      final baseUrl = _getBaseUrl();
+      final endpoint = '$baseUrl/api/v1/auth/refresh';
+      
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Request Details:');
+      debugPrint('   - Endpoint: $endpoint');
+      debugPrint('   - Method: POST');
+      debugPrint('   - Has Session ID: ${sessionId != null}');
+      debugPrint('   - Session ID: ${sessionId ?? "N/A"}');
+      debugPrint('   - Refresh Token (first 20 chars): ${currentRefreshToken.substring(0, currentRefreshToken.length > 20 ? 20 : currentRefreshToken.length)}...');
+      debugPrint('   - Refresh Token (last 10 chars): ...${currentRefreshToken.substring(currentRefreshToken.length > 10 ? currentRefreshToken.length - 10 : 0)}');
+
+      final requestData = {
+        'refreshToken': currentRefreshToken,
+        if (sessionId != null) 'sessionId': sessionId,
+      };
+      
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] Sending request to server...');
+      final requestStartTime = DateTime.now();
 
       final dio = Dio();
       final response = await dio.post(
-        '${_getBaseUrl()}/api/v1/auth/refresh', // إصلاح endpoint ليطابق الخادم
-        data: {
-          'refreshToken': refreshToken,
-          if (sessionId != null) 'sessionId': sessionId,
-        },
+        endpoint,
+        data: requestData,
         options: Options(
           headers: {'Content-Type': 'application/json'},
           sendTimeout: const Duration(seconds: 10),
@@ -300,35 +368,133 @@ class UnifiedTokenManager {
         ),
       );
 
+      final requestDuration = DateTime.now().difference(requestStartTime);
+      debugPrint('✅ [REFRESH_TOKEN_LOG] Response received:');
+      debugPrint('   - Status Code: ${response.statusCode}');
+      debugPrint('   - Request Duration: ${requestDuration.inMilliseconds}ms');
+      debugPrint('   - Response Time: ${DateTime.now().toIso8601String()}');
+
       if (response.statusCode == 200) {
-        final data = response.data;
+        debugPrint('✅ [REFRESH_TOKEN_LOG] Request $requestId: Success (200)');
+        
+        // استخراج البيانات من الاستجابة - قد تكون في data أو مباشرة
+        final responseData = response.data;
+        Map<String, dynamic> data;
+        
+        debugPrint('🔄 [REFRESH_TOKEN_LOG] Parsing response data...');
+        debugPrint('   - Response Type: ${responseData.runtimeType}');
+        
+        // إذا كانت الاستجابة تحتوي على data object (Smart Messages System)
+        if (responseData is Map && responseData.containsKey('data')) {
+          data = responseData['data'] as Map<String, dynamic>;
+          debugPrint('✅ [REFRESH_TOKEN_LOG] Response has data wrapper, extracting...');
+        } else if (responseData is Map) {
+          data = responseData as Map<String, dynamic>;
+          debugPrint('✅ [REFRESH_TOKEN_LOG] Response is direct map');
+        } else {
+          debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Unexpected response format: ${responseData.runtimeType}');
+          debugPrint('   - Response Data: $responseData');
+          return false;
+        }
+        
+        debugPrint('🔄 [REFRESH_TOKEN_LOG] Response Data Keys: ${data.keys.toList()}');
 
         // استخراج مدة صلاحية refresh token من الاستجابة
+        // يجب أن يكون refreshExpiresIn موجوداً دائماً في الاستجابة من الخادم
         int? refreshExpiresIn;
-        if (data.containsKey('refreshTokenExpiresAt')) {
+        
+        // محاولة استخراج refreshExpiresIn مباشرة من الاستجابة
+        if (data.containsKey('refreshExpiresIn')) {
+          try {
+            refreshExpiresIn = data['refreshExpiresIn'] as int?;
+            if (refreshExpiresIn != null) {
+              debugPrint('✅ [UNIFIED_TOKEN_MANAGER] Got refreshExpiresIn from response: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+            }
+          } catch (e) {
+            debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] Error parsing refreshExpiresIn: $e');
+          }
+        }
+        
+        // إذا لم يكن موجوداً في المستوى العلوي، حاول البحث في tokens object
+        if (refreshExpiresIn == null && data.containsKey('tokens')) {
+          try {
+            final tokens = data['tokens'] as Map<String, dynamic>?;
+            if (tokens != null && tokens.containsKey('refreshExpiresIn')) {
+              refreshExpiresIn = tokens['refreshExpiresIn'] as int?;
+              if (refreshExpiresIn != null) {
+                debugPrint('✅ [UNIFIED_TOKEN_MANAGER] Got refreshExpiresIn from tokens object: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+              }
+            }
+          } catch (e) {
+            debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] Error parsing refreshExpiresIn from tokens: $e');
+          }
+        }
+        
+        // إذا لم يكن موجوداً، حاول استخراجه من refreshTokenExpiresAt (للتوافق مع الإصدارات القديمة)
+        if (refreshExpiresIn == null && data.containsKey('refreshTokenExpiresAt')) {
           try {
             final refreshExpiresAtString = data['refreshTokenExpiresAt'] as String;
             final refreshExpiresAt = DateTime.parse(refreshExpiresAtString);
             final now = DateTime.now();
             refreshExpiresIn = refreshExpiresAt.difference(now).inSeconds;
+            debugPrint('✅ [UNIFIED_TOKEN_MANAGER] Calculated refreshExpiresIn from refreshTokenExpiresAt: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
           } catch (e) {
             debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] Error parsing refreshTokenExpiresAt: $e');
           }
         }
         
+        // إذا لم يكن موجوداً بعد كل المحاولات، استخدم قيمة احتياطية كبيرة (30 يوم)
+        // هذا يجب ألا يحدث في الوضع الطبيعي لأن الخادم يرسل refreshExpiresIn دائماً
+        if (refreshExpiresIn == null) {
+          refreshExpiresIn = 30 * 24 * 60 * 60; // 30 days in seconds as fallback
+          debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] WARNING: refreshExpiresIn not found in response, using fallback: $refreshExpiresIn seconds (30 days)');
+          debugPrint('⚠️ [UNIFIED_TOKEN_MANAGER] This should not happen - server should always send refreshExpiresIn');
+        }
+        
+        // استخراج التوكنات - قد تكون في tokens object أو مباشرة
+        String? newAccessToken = data['accessToken'];
+        String? newRefreshToken = data['refreshToken'] ?? data['refresh_token'];
+        int? expiresIn = data['expiresIn'] ?? data['expires_in'];
+        
+        // إذا لم تكن موجودة مباشرة، حاول البحث في tokens object
+        if (newAccessToken == null && data.containsKey('tokens')) {
+          final tokens = data['tokens'] as Map<String, dynamic>?;
+          if (tokens != null) {
+            newAccessToken = tokens['accessToken'] ?? tokens['access_token'];
+            newRefreshToken = tokens['refreshToken'] ?? tokens['refresh_token'] ?? newRefreshToken;
+            expiresIn = tokens['expiresIn'] ?? tokens['expires_in'] ?? expiresIn;
+            refreshExpiresIn = tokens['refreshExpiresIn'] ?? tokens['refresh_expires_in'] ?? refreshExpiresIn;
+          }
+        }
+        
+        if (newAccessToken == null) {
+          debugPrint('❌ [UNIFIED_TOKEN_MANAGER] No access token in refresh response');
+          return false;
+        }
+        
+        debugPrint('🔄 [REFRESH_TOKEN_LOG] Saving new tokens...');
+        debugPrint('   - New Access Token Length: ${newAccessToken.length}');
+        debugPrint('   - New Access Token (first 20 chars): ${newAccessToken.substring(0, newAccessToken.length > 20 ? 20 : newAccessToken.length)}...');
+        debugPrint('   - New Refresh Token Length: ${newRefreshToken?.length ?? 0}');
+        debugPrint('   - Expires In: ${expiresIn ?? 900} seconds');
+        debugPrint('   - Refresh Expires In: ${refreshExpiresIn ?? 0} seconds (${(refreshExpiresIn ?? 0) / 86400} days)');
+        
         await saveTokens(
-          accessToken: data['accessToken'],
-          refreshToken: data['refreshToken'] ?? refreshToken,
-          expiresIn: data['expiresIn'] ?? 900, // Default 15 minutes (900 seconds)
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken ?? currentRefreshToken,
+          expiresIn: expiresIn ?? 900, // Default 15 minutes (900 seconds)
           refreshExpiresIn: refreshExpiresIn,
           sessionId: data['sessionId'] ?? sessionId,
           userData: data['user'],
         );
 
-        debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Token refreshed successfully');
+        final totalDuration = DateTime.now().difference(requestTime);
+        debugPrint('✅ [REFRESH_TOKEN_LOG] Request $requestId: Token refreshed successfully');
+        debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+        debugPrint('🔄 [REFRESH_TOKEN_LOG] ========== REFRESH TOKEN REQUEST END (SUCCESS) ==========');
 
         // Resolve all queued requests
-        final newToken = data['accessToken'];
+        final newToken = newAccessToken;
         for (final completer in _refreshQueue) {
           if (!completer.isCompleted) {
             completer.complete(newToken);
@@ -338,14 +504,64 @@ class UnifiedTokenManager {
 
         return true;
       } else {
-        debugPrint(
-            '🔐 [UNIFIED_TOKEN_MANAGER] Token refresh failed: ${response.statusCode}');
-        await _handleSessionExpired('Token refresh failed');
+        final errorMessage = response.data is Map 
+            ? response.data['message'] ?? 'Token refresh failed'
+            : 'Token refresh failed';
+        final totalDuration = DateTime.now().difference(requestTime);
+        
+        debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Token refresh failed');
+        debugPrint('   - Status Code: ${response.statusCode}');
+        debugPrint('   - Error Message: $errorMessage');
+        debugPrint('   - Response Data: ${response.data}');
+        debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+        
+        // إذا كان refresh token منتهي الصلاحية (401)، قم بإنهاء الجلسة
+        if (response.statusCode == 401) {
+          debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Refresh token expired or invalid (401), ending session');
+          await _handleSessionExpired('Refresh token expired or invalid');
+        } else {
+          // لأخطاء أخرى، حاول مرة أخرى لاحقاً
+          debugPrint('⚠️ [REFRESH_TOKEN_LOG] Request $requestId: Token refresh failed with non-401 error, will retry later');
+        }
+        debugPrint('🔄 [REFRESH_TOKEN_LOG] ========== REFRESH TOKEN REQUEST END (FAILED) ==========');
         return false;
       }
-    } catch (e) {
-      debugPrint('🔐 [UNIFIED_TOKEN_MANAGER] Error refreshing token: $e');
+    } on DioException catch (e) {
+      final totalDuration = DateTime.now().difference(requestTime);
+      
+      debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: DioException occurred');
+      debugPrint('   - Exception Type: ${e.type}');
+      debugPrint('   - Status Code: ${e.response?.statusCode ?? "N/A"}');
+      debugPrint('   - Message: ${e.message}');
+      debugPrint('   - Error: ${e.error}');
+      debugPrint('   - Response Data: ${e.response?.data}');
+      debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
+      
+      // معالجة أخطاء Dio بشكل أفضل
+      if (e.response?.statusCode == 401) {
+        debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Refresh token expired or invalid (401), ending session');
+        await _handleSessionExpired('Refresh token expired or invalid');
+      } else if (e.type == DioExceptionType.connectionTimeout || 
+                 e.type == DioExceptionType.receiveTimeout) {
+        debugPrint('⏱️ [REFRESH_TOKEN_LOG] Request $requestId: Network timeout during token refresh');
+        debugPrint('   - Timeout Type: ${e.type}');
+        // لا ننهي الجلسة في حالة timeout، قد تكون مشكلة شبكة مؤقتة
+      } else {
+        debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Dio error refreshing token');
+        await _handleSessionExpired('Token refresh error: $e');
+      }
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] ========== REFRESH TOKEN REQUEST END (DIO_ERROR) ==========');
+      return false;
+    } catch (e, stackTrace) {
+      final totalDuration = DateTime.now().difference(requestTime);
+      
+      debugPrint('❌ [REFRESH_TOKEN_LOG] Request $requestId: Unexpected error refreshing token');
+      debugPrint('   - Error Type: ${e.runtimeType}');
+      debugPrint('   - Error: $e');
+      debugPrint('   - Stack Trace: $stackTrace');
+      debugPrint('   - Total Duration: ${totalDuration.inMilliseconds}ms');
       await _handleSessionExpired('Token refresh error: $e');
+      debugPrint('🔄 [REFRESH_TOKEN_LOG] ========== REFRESH TOKEN REQUEST END (UNEXPECTED_ERROR) ==========');
       return false;
     } finally {
       _isRefreshing = false;

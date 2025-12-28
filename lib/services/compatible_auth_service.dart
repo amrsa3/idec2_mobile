@@ -149,9 +149,23 @@ class CompatibleAuthService {
   }
 
   /// استخراج refreshExpiresIn من استجابة الخادم
+  /// يجب أن يكون refreshExpiresIn موجوداً دائماً في الاستجابة من الخادم
   int? _extractRefreshExpiresIn(Map<String, dynamic>? tokens, Map<String, dynamic>? data) {
+    // أولاً: محاولة استخراج refreshExpiresIn مباشرة من tokens object
     if (tokens != null) {
-      // محاولة حساب refreshExpiresIn من refreshTokenExpiresAt
+      if (tokens.containsKey('refreshExpiresIn')) {
+        try {
+          final refreshExpiresIn = tokens['refreshExpiresIn'] as int?;
+          if (refreshExpiresIn != null && refreshExpiresIn > 0) {
+            debugPrint('✅ [COMPATIBLE_AUTH] Got refreshExpiresIn from tokens: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+            return refreshExpiresIn;
+          }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshExpiresIn from tokens: $e');
+        }
+      }
+      
+      // ثانياً: محاولة حساب refreshExpiresIn من refreshTokenExpiresAt (للتوافق مع الإصدارات القديمة)
       if (tokens.containsKey('refreshTokenExpiresAt')) {
         try {
           final expiresAtString = tokens['refreshTokenExpiresAt'] as String;
@@ -159,16 +173,31 @@ class CompatibleAuthService {
           final now = DateTime.now();
           final difference = expiresAt.difference(now).inSeconds;
           if (difference > 0) {
+            debugPrint('✅ [COMPATIBLE_AUTH] Calculated refreshExpiresIn from refreshTokenExpiresAt in tokens: $difference seconds (${difference / 86400} days)');
             return difference;
           }
         } catch (e) {
-          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshTokenExpiresAt: $e');
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshTokenExpiresAt from tokens: $e');
         }
       }
     }
     
-    // البحث في data
+    // ثالثاً: البحث في data object
     if (data != null) {
+      // محاولة استخراج refreshExpiresIn مباشرة من data
+      if (data.containsKey('refreshExpiresIn')) {
+        try {
+          final refreshExpiresIn = data['refreshExpiresIn'] as int?;
+          if (refreshExpiresIn != null && refreshExpiresIn > 0) {
+            debugPrint('✅ [COMPATIBLE_AUTH] Got refreshExpiresIn from data: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+            return refreshExpiresIn;
+          }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Error parsing refreshExpiresIn from data: $e');
+        }
+      }
+      
+      // محاولة حساب refreshExpiresIn من refreshTokenExpiresAt في data (للتوافق مع الإصدارات القديمة)
       if (data.containsKey('refreshTokenExpiresAt')) {
         try {
           final expiresAtString = data['refreshTokenExpiresAt'] as String;
@@ -176,6 +205,7 @@ class CompatibleAuthService {
           final now = DateTime.now();
           final difference = expiresAt.difference(now).inSeconds;
           if (difference > 0) {
+            debugPrint('✅ [COMPATIBLE_AUTH] Calculated refreshExpiresIn from refreshTokenExpiresAt in data: $difference seconds (${difference / 86400} days)');
             return difference;
           }
         } catch (e) {
@@ -184,7 +214,10 @@ class CompatibleAuthService {
       }
     }
     
-    return null; // لا قيمة افتراضية - سيستخدم 30 يوم في saveTokens
+    // إذا لم يتم العثور على refreshExpiresIn، نعيد null
+    // سيستخدم UnifiedTokenManager قيمة احتياطية (30 يوم) في هذه الحالة
+    debugPrint('⚠️ [COMPATIBLE_AUTH] refreshExpiresIn not found in response - will use fallback value');
+    return null;
   }
 
   /// تسجيل الدخول بالهاتف

@@ -26,6 +26,7 @@ import '../../features/news/presentation/screens/news_list_screen.dart';
 import '../../features/news/presentation/screens/news_detail_screen.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/gallery/presentation/gallery_album_view.dart';
+import '../../features/chat/chat_wrapper_page.dart';
 import '../../services/analytics_service.dart';
 import '../../services/compatible_auth_service.dart';
 
@@ -57,6 +58,7 @@ class AppRoutes {
   static const String newsDetail = '/news/:id';
   static const String gallery = '/gallery';
   static const String galleryAlbum = '/gallery/album/:id';
+  static const String chat = '/chat';
 }
 
 // Auth change notifier for GoRouter
@@ -287,9 +289,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           name: 'conference-details',
           builder: (context, state) {
             final conferenceId = state.pathParameters['id']!;
-            // TODO: Import and use ConferenceDetailsScreen when available
-            // For now, redirect to main screen
-            return const MainScreen();
+            // Display a "Coming Soon" page until ConferenceDetailsScreen is implemented
+            return _buildComingSoonScreen(
+              context, 
+              'تفاصيل المؤتمر', 
+              'Conference Details',
+              Icons.event,
+            );
           },
         ),
 
@@ -298,9 +304,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           name: 'payment-details',
           builder: (context, state) {
             final transactionId = state.pathParameters['id']!;
-            // TODO: Import and use PaymentDetailScreen when available
-            // For now, redirect to main screen
-            return const MainScreen();
+            // Display a "Coming Soon" page until PaymentDetailScreen is implemented
+            return _buildComingSoonScreen(
+              context,
+              'تفاصيل الدفع',
+              'Payment Details',
+              Icons.payment,
+            );
           },
         ),
 
@@ -334,6 +344,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             final albumId = state.pathParameters['id']!;
             return GalleryAlbumView(albumId: albumId);
           },
+        ),
+
+        // Chat Route
+        GoRoute(
+          path: AppRoutes.chat,
+          name: 'chat',
+          builder: (context, state) => const ChatWrapperPage(),
         ),
       ],
 
@@ -411,6 +428,71 @@ final routerProvider = Provider<GoRouter>((ref) {
     );
   }
 });
+
+/// Build a "Coming Soon" screen for features under development
+Widget _buildComingSoonScreen(
+  BuildContext context,
+  String titleAr,
+  String titleEn,
+  IconData icon,
+) {
+  final isRtl = Directionality.of(context) == TextDirection.rtl;
+  final title = isRtl ? titleAr : titleEn;
+  final message = isRtl
+      ? 'هذه الميزة قيد التطوير وستكون متاحة قريباً'
+      : 'This feature is under development and will be available soon';
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(title),
+      centerTitle: true,
+    ),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 64,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Icon(isRtl ? Icons.arrow_forward : Icons.arrow_back),
+              label: Text(isRtl ? 'العودة' : 'Go Back'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
 // Navigation helper extensions
 extension AppRouterExtension on GoRouter {

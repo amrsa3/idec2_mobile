@@ -397,7 +397,7 @@ class HomeScreen extends ConsumerWidget {
                       subtitle: l10n.viewNotifications,
                       color: Colors.purple,
                       onTap: () {
-                        // TODO: Navigate to notifications
+                        NavigationService.instance.goToNotifications();
                       },
                     ),
                   ],

@@ -8,8 +8,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Conditional import for web
-import 'dart:html' as html;
+// Conditional import for web utilities
+import '../../../services/web_utils.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
@@ -97,8 +97,8 @@ class LocalProfileService {
       // على الويب، محاولة قراءة من localStorage
       if (kIsWeb) {
         try {
-          final cachedDataWeb = html.window.localStorage[_cacheKey];
-          final cachedUserIdWeb = html.window.localStorage[userIdKey];
+          final cachedDataWeb = getLocalStorageValue(_cacheKey);
+          final cachedUserIdWeb = getLocalStorageValue(userIdKey);
           
           if (cachedDataWeb != null) {
             if (currentUserId != null && cachedUserIdWeb != null && currentUserId != cachedUserIdWeb) {
@@ -156,9 +156,9 @@ class LocalProfileService {
       // على الويب، حفظ في localStorage أيضاً
       if (kIsWeb) {
         try {
-          html.window.localStorage[_cacheKey] = profileJson;
-          html.window.localStorage[userIdKey] = profile.userId;
-          html.window.localStorage[_cacheTimestampKey] = DateTime.now().millisecondsSinceEpoch.toString();
+          setLocalStorageValue(_cacheKey, profileJson);
+          setLocalStorageValue(userIdKey, profile.userId);
+          setLocalStorageValue(_cacheTimestampKey, DateTime.now().millisecondsSinceEpoch.toString());
         } catch (e) {
           debugPrint('⚠️ Error caching profile to localStorage: $e');
         }
@@ -2147,13 +2147,13 @@ class LocalProfileService {
       if (kIsWeb) {
         try {
           // مسح المفاتيح الأساسية
-          html.window.localStorage.remove(_cacheKey);
-          html.window.localStorage.remove(_cacheTimestampKey);
-          html.window.localStorage.remove(userIdKey);
+          removeLocalStorageValue(_cacheKey);
+          removeLocalStorageValue(_cacheTimestampKey);
+          removeLocalStorageValue(userIdKey);
           
           // مسح جميع المفاتيح التي تبدأ بـ cached_ أو profile_
           final keysToRemove = <String>[];
-          html.window.localStorage.forEach((key, value) {
+          forEachLocalStorage((key, value) {
             if (key.startsWith('cached_') || 
                 key.startsWith('profile_') ||
                 key.contains('cached_profile') ||
@@ -2164,16 +2164,16 @@ class LocalProfileService {
           });
           
           for (final key in keysToRemove) {
-            html.window.localStorage.remove(key);
+            removeLocalStorageValue(key);
           }
           
           // مسح من sessionStorage أيضاً
-          html.window.sessionStorage.remove(_cacheKey);
-          html.window.sessionStorage.remove(_cacheTimestampKey);
-          html.window.sessionStorage.remove(userIdKey);
+          removeSessionStorageValue(_cacheKey);
+          removeSessionStorageValue(_cacheTimestampKey);
+          removeSessionStorageValue(userIdKey);
           
           for (final key in keysToRemove) {
-            html.window.sessionStorage.remove(key);
+            removeSessionStorageValue(key);
           }
           
           debugPrint('✅ Profile cache cleared from web storage (${keysToRemove.length + 3} keys)');

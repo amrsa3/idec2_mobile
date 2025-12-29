@@ -20,8 +20,8 @@ import 'authenticated_image_service.dart';
 import 'provider_cleanup_service.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-// Conditional import for web
-import 'dart:html' as html;
+// Conditional import for web utilities
+import 'web_utils.dart';
 
 /// نظام مصادقة متوافق تماماً مع النظام الحالي
 class CompatibleAuthService {
@@ -1309,83 +1309,24 @@ class CompatibleAuthService {
               'app_',
             ];
             
-            final keysToRemove = <String>[];
-            
-            // جمع جميع المفاتيح من localStorage
-            html.window.localStorage.forEach((key, value) {
-              final keyLower = key.toLowerCase();
-              bool shouldRemove = false;
-              
-              // التحقق من الأنماط
-              for (final pattern in cachePatterns) {
-                if (keyLower.contains(pattern.toLowerCase()) || 
-                    keyLower.startsWith(pattern.toLowerCase())) {
-                  shouldRemove = true;
-                  break;
-                }
-              }
-              
-              if (shouldRemove) {
-                keysToRemove.add(key);
-              }
-            });
-            
-            // مسح جميع المفاتيح من localStorage
-            for (final key in keysToRemove) {
-              html.window.localStorage.remove(key);
-            }
-            
-            // جمع جميع المفاتيح من sessionStorage
-            final sessionKeysToRemove = <String>[];
-            html.window.sessionStorage.forEach((key, value) {
-              final keyLower = key.toLowerCase();
-              bool shouldRemove = false;
-              
-              // التحقق من الأنماط
-              for (final pattern in cachePatterns) {
-                if (keyLower.contains(pattern.toLowerCase()) || 
-                    keyLower.startsWith(pattern.toLowerCase())) {
-                  shouldRemove = true;
-                  break;
-                }
-              }
-              
-              if (shouldRemove) {
-                sessionKeysToRemove.add(key);
-              }
-            });
-            
-            // مسح جميع المفاتيح من sessionStorage
-            for (final key in sessionKeysToRemove) {
-              html.window.sessionStorage.remove(key);
-            }
-            
-            debugPrint('✅ [COMPATIBLE_AUTH] Cleared ${keysToRemove.length} keys from localStorage and ${sessionKeysToRemove.length} keys from sessionStorage');
-          } catch (e) {
-            debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing localStorage/sessionStorage directly: $e');
-            // محاولة مسح كامل كحل بديل
+            // Use web_utils for cross-platform storage clearing
             try {
-              html.window.localStorage.clear();
-              html.window.sessionStorage.clear();
-              debugPrint('✅ [COMPATIBLE_AUTH] Cleared all localStorage and sessionStorage as fallback');
-            } catch (clearError) {
-              debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing all storage: $clearError');
+              clearBrowserStorage();
+              debugPrint('✅ [COMPATIBLE_AUTH] Cleared browser storage using web_utils');
+            } catch (e) {
+              debugPrint('⚠️ [COMPATIBLE_AUTH] Error clearing browser storage: $e');
             }
-          }
-          
-          debugPrint('✅ [COMPATIBLE_AUTH] Web storage cleared successfully');
-        } catch (e) {
-          debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
-          // محاولة مسح كامل كحل بديل
-          try {
-            html.window.localStorage.clear();
-            html.window.sessionStorage.clear();
-            debugPrint('✅ [COMPATIBLE_AUTH] Cleared all web storage as fallback');
-          } catch (clearError) {
-            debugPrint('⚠️ [COMPATIBLE_AUTH] Error in fallback clear: $clearError');
+          } catch (e) {
+            debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
+            // Fallback to web_utils clear
+            try {
+              clearBrowserStorage();
+              debugPrint('✅ [COMPATIBLE_AUTH] Cleared browser storage as fallback');
+            } catch (clearError) {
+              debugPrint('⚠️ [COMPATIBLE_AUTH] Error in fallback clear: $clearError');
+            }
           }
         }
-      }
       
       // مسح جميع البيانات المخزنة محلياً بشكل شامل (يتم بعد تنظيف الويب)
       debugPrint('🔐 [COMPATIBLE_AUTH] Clearing all cached data...');
@@ -1416,8 +1357,7 @@ class CompatibleAuthService {
       _currentUser = null;
       if (kIsWeb) {
         try {
-          html.window.localStorage.clear();
-          html.window.sessionStorage.clear();
+          clearBrowserStorage();
         } catch (e) {
           debugPrint('⚠️ [COMPATIBLE_AUTH] Force web cleanup error: $e');
         }

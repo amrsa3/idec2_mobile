@@ -60,6 +60,13 @@ class AppDrawer extends ConsumerWidget {
                     ),
                   );
                 }),
+                const Divider(),
+                // قسم المحادثات
+                _buildDrawerItem(
+                    context, Icons.chat_bubble_outline, 'المحادثات', () {
+                  Navigator.pop(context);
+                  context.push(AppRoutes.chat);
+                }),
                 _buildDrawerItem(
                     context, Icons.notifications_outlined, l10n.notifications,
                     () {

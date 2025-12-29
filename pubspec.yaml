@@ -69,6 +69,9 @@ dependencies:
   # Connectivity & Network
   connectivity_plus: ^5.0.2
   internet_connection_checker: ^1.0.0+1
+  
+  # Real-time Chat
+  socket_io_client: ^2.0.3+1
 
   # OTP & PIN Input
   pin_code_fields: ^8.0.1

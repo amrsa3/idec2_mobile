@@ -31,7 +31,7 @@ class BackButtonService {
   
   /// عرض حوار تأكيد الخروج
   static Future<bool> _showExitConfirmationDialog(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     final result = await showDialog<bool>(
       context: context,
@@ -44,7 +44,7 @@ class BackButtonService {
           ),
           title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.exit_to_app,
                 color: AppColors.primary,
                 size: 24,
@@ -103,7 +103,7 @@ class BackButtonService {
   
   /// عرض رسالة "اضغط مرة أخرى للخروج"
   static void _showBackPressMessage(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

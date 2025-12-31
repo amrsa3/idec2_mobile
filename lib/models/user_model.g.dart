@@ -24,6 +24,11 @@ _$UserModelImpl _$$UserModelImplFromJson(Map<String, dynamic> json) =>
       profile: json['profile'] == null
           ? null
           : UserProfileModel.fromJson(json['profile'] as Map<String, dynamic>),
+      profilePictureUrl: json['profilePictureUrl'] as String?,
+      fullNameAr: json['fullNameAr'] as String?,
+      fullNameEn: json['fullNameEn'] as String?,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
     );
 
 Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
@@ -36,6 +41,11 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'profile': instance.profile,
+      'profilePictureUrl': instance.profilePictureUrl,
+      'fullNameAr': instance.fullNameAr,
+      'fullNameEn': instance.fullNameEn,
+      'firstName': instance.firstName,
+      'lastName': instance.lastName,
     };
 
 _$UserProfileModelImpl _$$UserProfileModelImplFromJson(
@@ -138,6 +148,7 @@ _$AuthResponseImpl _$$AuthResponseImplFromJson(Map<String, dynamic> json) =>
       success: json['success'] as bool? ?? true,
       message: json['message'] as String?,
       token: json['token'] as String?,
+      expiresIn: (json['expiresIn'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$AuthResponseImplToJson(_$AuthResponseImpl instance) =>
@@ -148,6 +159,7 @@ Map<String, dynamic> _$$AuthResponseImplToJson(_$AuthResponseImpl instance) =>
       'success': instance.success,
       'message': instance.message,
       'token': instance.token,
+      'expiresIn': instance.expiresIn,
     };
 
 _$OtpRequestImpl _$$OtpRequestImplFromJson(Map<String, dynamic> json) =>

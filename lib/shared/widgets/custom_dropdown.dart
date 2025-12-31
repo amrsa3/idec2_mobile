@@ -52,15 +52,15 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ],
         
         DropdownButtonFormField<T>(
-          value: _getValidValue(),
+          initialValue: _getValidValue(),
           items: widget.items,
           onChanged: widget.enabled ? widget.onChanged : null,
           validator: widget.validator,
           decoration: _buildInputDecoration(),
           style: AppTextStyles.bodyMedium.copyWith(
-            color: widget.enabled ? AppColors.textPrimary : AppColors.textSecondary,
+            color: widget.enabled ? context.colors.textPrimary : context.colors.textSecondary,
           ),
-          dropdownColor: Colors.white,
+          dropdownColor: context.colors.surface,
           elevation: 8,
           borderRadius: BorderRadius.circular(12),
           menuMaxHeight: widget.maxHeight ?? 300,
@@ -138,7 +138,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -156,7 +156,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
     return InputDecoration(
       hintText: widget.hint,
       hintStyle: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       prefixIcon: widget.prefixIcon,
       suffixIcon: widget.suffixIcon,
@@ -166,8 +166,8 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
       ),
       filled: true,
       fillColor: widget.enabled 
-          ? Colors.white 
-          : AppColors.surfaceVariant,
+          ? context.colors.surface 
+          : context.colors.surfaceVariant,
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),
@@ -288,8 +288,8 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                                 widget.itemDisplayText(value),
                                 style: AppTextStyles.bodySmall,
                               ),
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
-                              deleteIcon: Icon(
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                              deleteIcon: const Icon(
                                 Icons.close,
                                 size: 16,
                                 color: AppColors.primary,
@@ -331,7 +331,7 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -362,9 +362,9 @@ class _MultiSelectDropdownState<T> extends State<MultiSelectDropdown<T>> {
                 value: isSelected,
                 onChanged: (selected) {
                   if (selected == true) {
-                    _addItem(item.value!);
+                    _addItem(item.value as T);
                   } else {
-                    _removeItem(item.value!);
+                    _removeItem(item.value as T);
                   }
                 },
                 activeColor: AppColors.primary,
@@ -519,7 +519,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -558,7 +558,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                   onChanged: (value) {
                     setState(() {
                       _filteredItems = widget.items.where((item) {
-                        final searchText = widget.itemSearchText(item.value!);
+                        final searchText = widget.itemSearchText(item.value as T);
                         return searchText.toLowerCase().contains(value.toLowerCase());
                       }).toList();
                     });
@@ -583,7 +583,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                           Navigator.pop(context);
                         },
                         selected: widget.value == item.value,
-                        selectedTileColor: AppColors.primary.withOpacity(0.1),
+                        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
                       );
                     },
                   ),

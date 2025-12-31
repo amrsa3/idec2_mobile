@@ -38,7 +38,7 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildOpenStatus(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -92,7 +92,7 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildClosedStatus(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -187,7 +187,7 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildMaintenanceStatus(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -254,7 +254,7 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildLimitedStatus(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -317,12 +317,12 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildNextAvailableTime(BuildContext context, DateTime nextTime) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -357,7 +357,7 @@ class RegistrationStatusWidget extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Row(
       children: [

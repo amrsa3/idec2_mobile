@@ -118,9 +118,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
           textAlign: widget.textAlign,
           autofocus: widget.autofocus,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: widget.enabled ? AppColors.textPrimary : AppColors.textSecondary,
+            color: widget.enabled ? context.colors.textPrimary : context.colors.textSecondary,
           ),
-          decoration: _buildInputDecoration(),
+          decoration: _buildInputDecoration(context),
         ),
         
         if (widget.helperText != null) ...[
@@ -128,7 +128,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           Text(
             widget.helperText!,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],
@@ -142,11 +142,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
         text: widget.label!,
         style: AppTextStyles.bodyMedium.copyWith(
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
         ),
         children: [
           if (widget.isRequired)
-            TextSpan(
+            const TextSpan(
               text: ' *',
               style: TextStyle(
                 color: AppColors.error,
@@ -158,15 +158,20 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 
-  InputDecoration _buildInputDecoration() {
-    final hasError = widget.errorText != null;
-    
+  InputDecoration _buildInputDecoration(BuildContext context) {
     return InputDecoration(
       hintText: widget.hint,
       hintStyle: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
-      prefixIcon: widget.prefixIcon,
+      prefixIcon: widget.prefixIcon != null 
+          ? IconTheme(
+              data: IconThemeData(
+                color: context.colors.textSecondary,
+              ),
+              child: widget.prefixIcon!,
+            ) 
+          : null,
       suffixIcon: _buildSuffixIcon(),
       errorText: widget.errorText,
       errorStyle: AppTextStyles.bodySmall.copyWith(
@@ -174,8 +179,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
       ),
       filled: true,
       fillColor: widget.enabled 
-          ? Colors.white 
-          : AppColors.surfaceVariant,
+          ? context.colors.surface 
+          : context.colors.surfaceVariant,
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),
@@ -195,7 +200,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       return IconButton(
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
         onPressed: () {
           setState(() {
@@ -223,9 +228,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
       borderColor = AppColors.primary;
       borderWidth = 2;
     } else if (isDisabled) {
-      borderColor = AppColors.border;
+      borderColor = context.colors.border;
     } else {
-      borderColor = AppColors.borderLight;
+      borderColor = context.colors.borderLight;
     }
     
     return OutlineInputBorder(
@@ -311,13 +316,13 @@ class SearchTextField extends StatelessWidget {
       hint: hint ?? 'البحث...',
       onChanged: onChanged,
       onSubmitted: onSubmitted,
-      prefixIcon: Icon(
+      prefixIcon: const Icon(
         Icons.search,
         color: AppColors.textSecondary,
       ),
       suffixIcon: controller?.text.isNotEmpty == true
           ? IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.clear,
                 color: AppColors.textSecondary,
               ),

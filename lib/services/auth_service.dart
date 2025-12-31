@@ -9,21 +9,23 @@ import '../models/api_response_model.dart';
 import '../models/registration_settings_model.dart';
 import '../models/user_model.dart';
 import 'api_service.dart';
-import 'dio_service.dart';
+import 'enhanced_dio_service_v2.dart';
+import 'enhanced_session_manager.dart';
+import 'platform_storage_service.dart';
 import 'registration_settings_service.dart';
-import 'storage_service.dart';
+import 'unified_token_manager.dart';
 
 class AuthService {
   static AuthService? _instance;
   static AuthService get instance => _instance ??= AuthService._internal();
 
   late ApiService _apiService;
-  late StorageService _storageService;
+  late PlatformStorageService _storageService;
   late RegistrationSettingsService _registrationSettingsService;
 
   AuthService._internal() {
-    _apiService = ApiService(DioService.instance.dio);
-    _storageService = StorageService.instance;
+    _apiService = ApiService(EnhancedDioServiceV2.instance.dio);
+    _storageService = PlatformStorageService.instance;
     _registrationSettingsService = RegistrationSettingsService.instance;
   }
 
@@ -113,7 +115,7 @@ class AuthService {
 
       // Finally, try to store in storage
       try {
-        await _storageService.setString('user_data', jsonString);
+        await _storageService.write('user_data', jsonString);
         debugPrint('🔍 [STORAGE_DEBUG] User data stored successfully');
         return true;
       } catch (storageError, stackTrace) {
@@ -158,12 +160,12 @@ class AuthService {
         debugPrint(
             '🏭 [AUTH_PRODUCTION] Current ApiConstants.baseUrl: ${ApiConstants.baseUrl}');
         debugPrint(
-            '🏭 [AUTH_PRODUCTION] DioService baseUrl: ${DioService.instance.dio.options.baseUrl}');
+            '🏭 [AUTH_PRODUCTION] DioService baseUrl: ${EnhancedDioServiceV2.instance.dio.options.baseUrl}');
         debugPrint(
-            '🏭 [AUTH_PRODUCTION] Port check: ${DioService.instance.dio.options.baseUrl.contains(":3000")}');
+            '🏭 [AUTH_PRODUCTION] HTTPS check: ${EnhancedDioServiceV2.instance.dio.options.baseUrl.startsWith("https://")}');
       }
 
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
 
       // Additional production logging before request
       if (!kDebugMode) {
@@ -196,7 +198,7 @@ class AuthService {
           try {
             user = UserModel.fromJsonSafe(userData);
             debugPrint(
-                '🔍 [AUTH_DEBUG] User parsed successfully: ${user?.phone ?? 'Unknown'}');
+                '🔍 [AUTH_DEBUG] User parsed successfully: ${user.phone ?? 'Unknown'}');
           } catch (userParseError) {
             debugPrint(
                 '🔍 [AUTH_DEBUG] Error parsing user data: $userParseError');
@@ -207,6 +209,8 @@ class AuthService {
           // Extract tokens
           String accessToken = '';
           String refreshToken = '';
+          int expiresIn = 900; // Default 15 minutes (900 seconds)
+          int? refreshExpiresIn;
 
           debugPrint('🔍 [AUTH_DEBUG] Extracting tokens...');
 
@@ -240,17 +244,65 @@ class AuthService {
                       '🔍 [AUTH_DEBUG] Refresh token: ${refreshToken.isNotEmpty ? 'present' : 'empty'}');
                 }
               }
+              // استخراج expiresIn من tokens object
+              if (tokensData.containsKey('expiresIn')) {
+                try {
+                  expiresIn = tokensData['expiresIn'] as int? ?? 900;
+                  debugPrint('🔍 [AUTH_DEBUG] Got expiresIn from tokens: $expiresIn seconds');
+                } catch (e) {
+                  debugPrint('⚠️ [AUTH_DEBUG] Error parsing expiresIn: $e');
+                }
+              }
+              // استخراج refreshExpiresIn من tokens object
+              if (tokensData.containsKey('refreshExpiresIn')) {
+                try {
+                  refreshExpiresIn = tokensData['refreshExpiresIn'] as int?;
+                  if (refreshExpiresIn != null) {
+                    debugPrint('🔍 [AUTH_DEBUG] Got refreshExpiresIn from tokens: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ [AUTH_DEBUG] Error parsing refreshExpiresIn: $e');
+                }
+              }
+            }
+          }
+          
+          // محاولة استخراج expiresIn من المستوى العلوي أيضاً
+          if (responseData.containsKey('expiresIn')) {
+            try {
+              expiresIn = responseData['expiresIn'] as int? ?? 900;
+              debugPrint('🔍 [AUTH_DEBUG] Got expiresIn from response: $expiresIn seconds');
+            } catch (e) {
+              debugPrint('⚠️ [AUTH_DEBUG] Error parsing expiresIn from response: $e');
+            }
+          }
+          
+          // محاولة استخراج refreshExpiresIn من المستوى العلوي أيضاً
+          if (refreshExpiresIn == null && responseData.containsKey('refreshExpiresIn')) {
+            try {
+              refreshExpiresIn = responseData['refreshExpiresIn'] as int?;
+              if (refreshExpiresIn != null) {
+                debugPrint('🔍 [AUTH_DEBUG] Got refreshExpiresIn from response: $refreshExpiresIn seconds (${refreshExpiresIn / 86400} days)');
+              }
+            } catch (e) {
+              debugPrint('⚠️ [AUTH_DEBUG] Error parsing refreshExpiresIn from response: $e');
             }
           }
 
           debugPrint(
-              '🔍 [AUTH_DEBUG] Final validation - accessToken: ${accessToken.isNotEmpty ? 'present' : 'empty'}, user: ${user != null ? 'present' : 'null'}');
+              '🔍 [AUTH_DEBUG] Final validation - accessToken: ${accessToken.isNotEmpty ? 'present' : 'empty'}, user: ${'present'}');
 
-          if (accessToken.isNotEmpty && user != null) {
+          if (accessToken.isNotEmpty) {
             try {
               // Store tokens and user data
               debugPrint('🔍 [AUTH_DEBUG] Storing tokens and user data...');
-              await DioService.instance.setTokens(accessToken, refreshToken);
+              await UnifiedTokenManager.instance.saveTokens(
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                expiresIn: expiresIn,
+                refreshExpiresIn: refreshExpiresIn,
+              );
+              debugPrint('🔍 [AUTH_DEBUG] Tokens saved - Access: $expiresIn seconds, Refresh: ${refreshExpiresIn ?? "fallback"} seconds');
 
               // Use safe storage method
               final storageSuccess = await _safeStoreUserData(user);
@@ -363,7 +415,7 @@ class AuthService {
       }
 
       // Make direct API call instead of using the wrapped ApiService
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.post(
         '/api/v1/auth/register',
         data: request.toJson(),
@@ -434,7 +486,7 @@ class AuthService {
           '🔍 [OTP_REQUEST] Requesting OTP for phone: $phoneNumber, purpose: $purpose');
 
       // Direct API call for OTP request - server will use default channel
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final requestData = {
         'phone': phoneNumber,
         'purpose': purpose,
@@ -481,7 +533,7 @@ class AuthService {
       );
 
       // Make direct Dio call to bypass generated API service and handle response manually
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.post(
         '/api/v1/auth/verify-otp',
         data: otpRequest.toJson(),
@@ -516,7 +568,8 @@ class AuthService {
       final refreshToken = authResponse.refreshToken ?? '';
 
       if (accessToken.isNotEmpty) {
-        await DioService.instance.setTokens(accessToken, refreshToken);
+        await EnhancedDioServiceV2.instance
+            .setTokens(accessToken, refreshToken);
       }
 
       // Store user data
@@ -559,7 +612,8 @@ class AuthService {
           final refreshToken = authResponse.refreshToken ?? '';
 
           if (accessToken.isNotEmpty) {
-            await DioService.instance.setTokens(accessToken, refreshToken);
+            await EnhancedDioServiceV2.instance
+                .setTokens(accessToken, refreshToken);
           }
 
           // Store user data
@@ -623,6 +677,22 @@ class AuthService {
     }
   }
 
+  // Send OTP
+  Future<ApiResponse> sendOtp(String phoneNumber) async {
+    try {
+      debugPrint('🔍 [SEND_OTP] Sending OTP for phone: $phoneNumber');
+
+      // Use the same requestOtp method with proper parameters
+      return await requestOtp(phoneNumber, purpose: 'registration');
+    } catch (e) {
+      debugPrint('🔍 [SEND_OTP] Send OTP error: $e');
+      return ApiResponse(
+        success: false,
+        message: 'Network error: $e',
+      );
+    }
+  }
+
   // Resend OTP
   Future<ApiResponse> resendOtp(String phoneNumber) async {
     try {
@@ -659,7 +729,8 @@ class AuthService {
   // Refresh token
   Future<AuthResponse> refreshToken() async {
     try {
-      final storedRefreshToken = await DioService.instance.getRefreshToken();
+      final storedRefreshToken =
+          await EnhancedDioServiceV2.instance.getRefreshToken();
 
       if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
         return _createErrorResponse('No refresh token available');
@@ -674,7 +745,7 @@ class AuthService {
           response.accessToken!.isNotEmpty) {
         // Store new tokens using DioService to ensure consistency
         final refreshTokenValue = response.refreshToken ?? '';
-        await DioService.instance
+        await EnhancedDioServiceV2.instance
             .setTokens(response.accessToken!, refreshTokenValue);
 
         debugPrint('Token refresh successful');
@@ -701,30 +772,92 @@ class AuthService {
     }
   }
 
-  // Logout
+  // Logout from all devices
+  Future<bool> logoutFromAllDevices() async {
+    try {
+      debugPrint('Logging out from all devices');
+
+      final success = await UnifiedTokenManager.instance.logout();
+
+      // Clear stored user data
+      await _storageService.delete('user_data');
+
+      debugPrint('Logout from all devices successful');
+      return success;
+    } catch (e) {
+      debugPrint('Logout from all devices error: $e');
+      return false;
+    }
+  }
+
+  // Logout (normal logout)
   Future<bool> logout() async {
     try {
-      final accessToken = await DioService.instance.getAccessToken();
+      debugPrint('Logging out');
 
-      if (accessToken != null && accessToken.isNotEmpty) {
-        debugPrint('Logging out user');
+      final success = await UnifiedTokenManager.instance.logout();
 
-        try {
-          await _apiService.logout();
-        } catch (e) {
-          debugPrint('Logout API call failed: $e');
-          // Continue with local logout even if API call fails
-        }
-      }
-
-      // Clear stored data using DioService to ensure consistency
-      await DioService.instance.clearTokens();
-      await _storageService.remove('user_data');
+      // Clear stored user data
+      await _storageService.delete('user_data');
 
       debugPrint('Logout successful');
-      return true;
+      return success;
     } catch (e) {
       debugPrint('Logout error: $e');
+      return false;
+    }
+  }
+
+  // Get active sessions
+  Future<List<Map<String, dynamic>>> getActiveSessions() async {
+    try {
+      // This functionality should be implemented in a separate session service
+      return [];
+    } catch (e) {
+      debugPrint('Error getting active sessions: $e');
+      return [];
+    }
+  }
+
+  // Terminate specific session
+  Future<bool> terminateSession(String sessionId) async {
+    try {
+      await EnhancedSessionManager.instance.endSession();
+      return true;
+    } catch (e) {
+      debugPrint('Error terminating session: $e');
+      return false;
+    }
+  }
+
+  // Get security alerts
+  Future<List<Map<String, dynamic>>> getSecurityAlerts() async {
+    try {
+      // This functionality should be implemented in a separate security service
+      return [];
+    } catch (e) {
+      debugPrint('Error getting security alerts: $e');
+      return [];
+    }
+  }
+
+  // Mark alert as read
+  Future<bool> markAlertAsRead(String alertId) async {
+    try {
+      // This functionality should be implemented in a separate security service
+      return true;
+    } catch (e) {
+      debugPrint('Error marking alert as read: $e');
+      return false;
+    }
+  }
+
+  // Check if user has valid session
+  Future<bool> hasValidSession() async {
+    try {
+      return await UnifiedTokenManager.instance.hasValidSession();
+    } catch (e) {
+      debugPrint('Error checking session validity: $e');
       return false;
     }
   }
@@ -732,8 +865,7 @@ class AuthService {
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
     try {
-      final accessToken = await DioService.instance.getAccessToken();
-      return accessToken != null && accessToken.isNotEmpty;
+      return await UnifiedTokenManager.instance.hasValidSession();
     } catch (e) {
       debugPrint('Error checking login status: $e');
       return false;
@@ -743,7 +875,7 @@ class AuthService {
   // Get current user
   Future<UserModel?> getCurrentUser() async {
     try {
-      final userData = _storageService.getString('user_data');
+      final userData = await _storageService.read('user_data');
       if (userData != null && userData.isNotEmpty) {
         try {
           // Try to parse as JSON first
@@ -752,13 +884,13 @@ class AuthService {
             return UserModel.fromJsonSafe(userMap);
           } else {
             // Old format, clear and return null
-            await _storageService.remove('user_data');
+            await _storageService.delete('user_data');
             return null;
           }
         } catch (parseError) {
           debugPrint('Error parsing user data: $parseError');
           // Clear corrupted data
-          await _storageService.remove('user_data');
+          await _storageService.delete('user_data');
           return null;
         }
       }
@@ -772,7 +904,7 @@ class AuthService {
   // Get access token
   Future<String?> getAccessToken() async {
     try {
-      return await DioService.instance.getAccessToken();
+      return await EnhancedDioServiceV2.instance.getAccessToken();
     } catch (e) {
       debugPrint('Error getting access token: $e');
       return null;
@@ -782,7 +914,7 @@ class AuthService {
   // Get refresh token
   Future<String?> getRefreshToken() async {
     try {
-      return await DioService.instance.getRefreshToken();
+      return await EnhancedDioServiceV2.instance.getRefreshToken();
     } catch (e) {
       debugPrint('Error getting refresh token: $e');
       return null;
@@ -914,7 +1046,7 @@ class AuthService {
       debugPrint('🔍 [PASSWORD_RESET_DEBUG] Request data: $requestData');
 
       // Make direct Dio call to handle response manually
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       debugPrint(
           '🔍 [PASSWORD_RESET_DEBUG] Making POST request to: /api/v1/auth/request-password-reset');
       debugPrint(
@@ -1036,7 +1168,7 @@ class AuthService {
       );
 
       // Make direct Dio call to handle response manually
-      final dio = DioService.instance.dio;
+      final dio = EnhancedDioServiceV2.instance.dio;
       final response = await dio.post(
         '/api/v1/auth/reset-password',
         data: request.toJson(),

@@ -46,7 +46,7 @@
   "getStarted": "ابدأ الآن",
   "onboardingTitle1": "مرحباً بك في IDEC 2026",
   "onboardingDescription1": "انضم إلى معرض ومؤتمر IDEC لطب الأسنان وتواصل مع أطباء الأسنان والمختصين والمبتكرين من جميع أنحاء العالم.",
-  "onboardingTitle2": "تواصل وتشبيك",
+  "onboardingTitle2": "تواصل وبناء العلاقات المهنية.",
   "onboardingDescription2": "بناء علاقات مهنية مع الحضور الآخرين، وتبادل الخبرات، والتعاون في تطوير مجال طب الأسنان.",
   "onboardingTitle3": "معرض وتجارة",
   "onboardingDescription3": "استكشف أحدث التقنيات والمنتجات في مجال طب الأسنان من خلال المعرض التجاري والعروض التفاعلية.",
@@ -547,5 +547,16 @@
   "enterValidHost": "يرجى إدخال عنوان خادم صحيح",
   "enterValidPort": "يرجى إدخال رقم منفذ صحيح (1-65535)",
   "currentServerSettings": "إعدادات الخادم الحالية",
-  "savingSettings": "جاري حفظ الإعدادات..."
+  "savingSettings": "جاري حفظ الإعدادات...",
+  "from": "من",
+  "to": "إلى",
+  "daysRemaining": "يوم متبقي",
+  "hoursRemaining": "ساعة متبقية",
+  "minutesRemaining": "دقيقة متبقية",
+  "underReview": "قيد المراجعة",
+  "paymentPending": "في انتظار الدفع",
+  "activeParticipant": "مشارك نشط",
+  "onHold": "معلق",
+  "rejected": "مرفوض",
+  "registrationStatus": "حالة التسجيل"
 }

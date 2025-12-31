@@ -1,0 +1,380 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import 'package:go_router/go_router.dart';
+
+import '../../core/router/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/profile_model.dart';
+import '../../core/auth/auth.dart';
+import '../../features/main/providers/bottom_navigation_provider.dart';
+import '../widgets/profile_image_widget.dart';
+import '../../../features/profile/presentation/screens/profile_edit_screen.dart';
+import '../../../features/profile/presentation/screens/user_documents_viewer_screen.dart';
+import '../../../features/profile/providers/profile_provider.dart';
+import '../../../features/registrations/presentation/my_registrations_screen.dart';
+
+/// Widget مشترك للقائمة الجانبية في صفحات الملف الشخصي
+class ProfileSideDrawer extends ConsumerWidget {
+  final String? currentScreen; // 'profile', 'edit', 'documents', 'registrations'
+  final ProfileModel? profile;
+
+  const ProfileSideDrawer({
+    super.key,
+    this.currentScreen,
+    this.profile,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    
+    // الحصول على profile من provider إذا لم يتم تمريره
+    final currentProfile = profile ?? ref.watch(profileProvider).currentProfile;
+
+    return Drawer(
+      semanticLabel: 'القائمة الجانبية',
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: [
+          // رأس القائمة الجانبية
+          DrawerHeader(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withOpacity(0.8),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // صورة المستخدم
+                ProfileImageWidget(
+                  imageUrl: user?.profile?.profilePhotoUrl,
+                  size: 60,
+                  fallbackText: () {
+                    final profile = user?.profile;
+                    final nameAr = profile?.fullNameAr;
+                    if (nameAr != null && nameAr.isNotEmpty) {
+                      return nameAr[0].toUpperCase();
+                    }
+                    final nameEn = profile?.fullNameEn;
+                    if (nameEn != null && nameEn.isNotEmpty) {
+                      return nameEn[0].toUpperCase();
+                    }
+                    return 'U';
+                  }(),
+                  showEditIcon: false,
+                  isEditable: false,
+                ),
+                const SizedBox(height: 12),
+                // اسم المستخدم
+                Text(
+                  user?.profile?.fullNameAr ??
+                      user?.profile?.fullNameEn ??
+                      'المستخدم',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // عناصر القائمة
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // الملف الشخصي
+                ListTile(
+                  trailing: Icon(
+                    Icons.person_outline,
+                    color: currentScreen == 'profile'
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  title: Text(
+                    'الملف الشخصي',
+                    style: TextStyle(
+                      fontWeight: currentScreen == 'profile'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: currentScreen == 'profile'
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (currentScreen != 'profile') {
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
+                      context.go(AppRoutes.main);
+                    }
+                  },
+                ),
+
+                // تعديل الملف الشخصي
+                if (currentProfile != null)
+                  ListTile(
+                    trailing: Icon(
+                      Icons.edit_outlined,
+                      color: currentScreen == 'edit'
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                    ),
+                    title: Text(
+                      'تعديل البيانات',
+                      style: TextStyle(
+                        fontWeight: currentScreen == 'edit'
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: currentScreen == 'edit'
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (currentScreen != 'edit') {
+                        final profileData = currentProfile;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfileEditScreen(profile: profileData),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+
+                // عرض المستندات
+                ListTile(
+                  trailing: Icon(
+                    Icons.folder_outlined,
+                    color: currentScreen == 'documents'
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  title: Text(
+                    'مستنداتي',
+                    style: TextStyle(
+                      fontWeight: currentScreen == 'documents'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: currentScreen == 'documents'
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (currentScreen != 'documents') {
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const UserDocumentsViewerScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+
+                // اشتراكاتي
+                ListTile(
+                  trailing: Icon(
+                    Icons.event_note,
+                    color: currentScreen == 'registrations'
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  title: Text(
+                    'اشتراكاتي',
+                    style: TextStyle(
+                      fontWeight: currentScreen == 'registrations'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: currentScreen == 'registrations'
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (currentScreen != 'registrations') {
+                      ref.read(bottomNavIndexProvider.notifier).state = 4;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyRegistrationsScreen(),
+                        ),
+                      );
+                    }
+                  },
+                ),
+
+                const Divider(),
+
+                // الإعدادات
+                ListTile(
+                  trailing: const Icon(Icons.settings_outlined,
+                      color: AppColors.textSecondary),
+                  title: const Text('الإعدادات'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('سيتم إضافة صفحة الإعدادات قريباً')),
+                    );
+                  },
+                ),
+
+                // المساعدة
+                ListTile(
+                  trailing:
+                      const Icon(Icons.help_outline, color: AppColors.textSecondary),
+                  title: const Text('المساعدة'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('سيتم إضافة صفحة المساعدة قريباً')),
+                    );
+                  },
+                ),
+
+                const Divider(),
+
+                // تسجيل الخروج
+                ListTile(
+                  trailing: const Icon(Icons.logout, color: AppColors.error),
+                  title: Text(
+                    l10n.logout,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
+                  onTap: () => _showLogoutDialog(context, ref, l10n),
+                ),
+              ],
+            ),
+          ),
+
+          // معلومات التطبيق في أسفل القائمة
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.hasData 
+                    ? snapshot.data!.version 
+                    : 'Loading...';
+                final buildNumber = snapshot.hasData && 
+                        snapshot.data!.buildNumber.isNotEmpty && 
+                        snapshot.data!.buildNumber != '0'
+                    ? ' (Build ${snapshot.data!.buildNumber})'
+                    : '';
+                
+                return Text(
+                  'تطبيق IDEC\nالإصدار $version$buildNumber',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        ),
+      ),
+    );
+  }
+
+  // عرض dialog تأكيد تسجيل الخروج
+  void _showLogoutDialog(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(l10n.confirmLogout),
+          content: Text(l10n.logoutConfirmation),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // إغلاق الـ dialog
+                Navigator.of(context).pop(); // إغلاق القائمة الجانبية
+                await _performLogout(context, ref);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(l10n.logoutButton),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // تنفيذ عملية تسجيل الخروج
+  Future<void> _performLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      // عرض مؤشر التحميل
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // تسجيل الخروج
+      await ref.read(authProvider.notifier).logout();
+
+      // إغلاق مؤشر التحميل والانتقال إلى صفحة تسجيل الدخول
+      if (context.mounted) {
+        Navigator.of(context).pop(); // إغلاق dialog التحميل
+        
+        // الانتقال إلى صفحة تسجيل الدخول
+        if (context.mounted) {
+          context.go(AppRoutes.login);
+        }
+      }
+    } catch (e) {
+      // إغلاق مؤشر التحميل في حالة الخطأ
+      if (context.mounted) {
+        Navigator.of(context).pop();
+
+        // عرض رسالة خطأ
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فشل في تسجيل الخروج: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+}
+

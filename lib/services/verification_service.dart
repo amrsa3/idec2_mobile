@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/models.dart';
 import '../services/profile_rules_service.dart';
 import 'api_service.dart';
@@ -6,12 +7,13 @@ import 'dio_service.dart';
 
 class VerificationService {
   static VerificationService? _instance;
-  static VerificationService get instance => _instance ??= VerificationService._internal();
+  static VerificationService get instance =>
+      _instance ??= VerificationService._internal();
 
   late ApiService _apiService;
 
   VerificationService._internal() {
-    _apiService = ApiService(DioService.instance.dio);
+    _apiService = ApiService(EnhancedDioServiceV2.instance.dio);
   }
 
   // Get verification rules (deprecated - use ProfileRulesProvider instead)
@@ -81,7 +83,8 @@ class VerificationService {
   }
 
   // Get verification request by ID
-  Future<VerificationRequestModel> getVerificationRequest(String requestId) async {
+  Future<VerificationRequestModel> getVerificationRequest(
+      String requestId) async {
     try {
       return await _apiService.getVerificationRequest(requestId);
     } catch (e) {
@@ -101,7 +104,8 @@ class VerificationService {
   }
 
   // Reject verification request (admin only)
-  Future<void> rejectVerificationRequest(String requestId, String reason) async {
+  Future<void> rejectVerificationRequest(
+      String requestId, String reason) async {
     try {
       final request = {'reason': reason};
       await _apiService.rejectVerificationRequest(requestId, request);

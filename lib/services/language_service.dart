@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_constants.dart';
 
 class LanguageService {
@@ -116,7 +117,7 @@ class LanguageService {
     await prefs.setBool(_languageFirstTimeKey, false);
   }
 
-  /// Check if onboarding has been completed
+  /// Check if onboarding is completed
   static Future<bool> isOnboardingCompleted() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_onboardingCompletedKey) ?? false;
@@ -143,3 +144,8 @@ class LanguageService {
     await prefs.remove(_languageKey);
   }
 }
+
+/// Provider for LanguageService
+final languageServiceProvider = Provider<LanguageService>((ref) {
+  return LanguageService();
+});

@@ -69,7 +69,7 @@ class ErrorHandler {
     }
 
     if (error is TimeoutException) {
-      return NetworkError(
+      return const NetworkError(
         message: kIsWeb ? 'انتهت مهلة الاتصال - يرجى التحقق من الاتصال بالإنترنت' : 'Request timeout',
         code: 'TIMEOUT',
         isTimeout: true,
@@ -328,7 +328,7 @@ class ErrorHandler {
     VoidCallback? onRetry,
     VoidCallback? onDismiss,
   }) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final message = getErrorMessage(error, l10n);
 
     showDialog(
@@ -394,14 +394,14 @@ class ErrorHandler {
     AppError error, {
     VoidCallback? onRetry,
   }) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final message = getErrorMessage(error, l10n);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: Colors.white,
               size: 20,
@@ -418,7 +418,7 @@ class ErrorHandler {
                 onPressed: onRetry,
               )
             : null,
-        duration: Duration(seconds: kIsWeb ? 6 : 4), // Longer duration for web
+        duration: const Duration(seconds: kIsWeb ? 6 : 4), // Longer duration for web
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -455,7 +455,7 @@ class ErrorHandler {
   /// Log error for debugging with web-specific information
   void _logError(dynamic error, [StackTrace? stackTrace]) {
     if (kDebugMode) {
-      final platform = kIsWeb ? 'WEB' : 'MOBILE';
+      const platform = kIsWeb ? 'WEB' : 'MOBILE';
       developer.log(
         '[$platform] Error occurred: $error',
         name: 'ErrorHandler',
@@ -498,7 +498,7 @@ class ErrorHandler {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.maintenanceMode),
+        title: Text(AppLocalizations.of(context).maintenanceMode),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -507,7 +507,7 @@ class ErrorHandler {
             if (error.estimatedEndTime != null) ...[
               const SizedBox(height: 16),
               Text(
-                '${AppLocalizations.of(context)!.estimatedTime}: ${_formatDateTime(error.estimatedEndTime!)}',
+                '${AppLocalizations.of(context).estimatedTime}: ${_formatDateTime(error.estimatedEndTime!)}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -516,7 +516,7 @@ class ErrorHandler {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.checkBackLater),
+            child: Text(AppLocalizations.of(context).checkBackLater),
           ),
         ],
       ),

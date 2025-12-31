@@ -1,0 +1,392 @@
+import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
+
+import '../../../features/main/providers/bottom_navigation_provider.dart';
+import '../../../features/main/widgets/app_bottom_navigation_bar.dart';
+import '../../../features/profile/providers/profile_provider.dart';
+import '../../../models/registration_model.dart';
+import '../../../services/registration_service.dart';
+import '../../../shared/widgets/profile_side_drawer.dart';
+import 'registration_detail_screen.dart';
+
+final myRegistrationsProvider =
+    FutureProvider<List<RegistrationModel>>((ref) async {
+  final service = RegistrationService();
+  try {
+    final registrations = await service.getMyRegistrations();
+    return registrations;
+  } catch (e) {
+    // Log error for debugging
+    print('❌ [MY_REGISTRATIONS] Error loading registrations: $e');
+    rethrow;
+  }
+});
+
+class MyRegistrationsScreen extends ConsumerStatefulWidget {
+  const MyRegistrationsScreen({super.key});
+
+  @override
+  ConsumerState<MyRegistrationsScreen> createState() =>
+      _MyRegistrationsScreenState();
+}
+
+class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Ensure data is loaded when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // This will trigger the FutureProvider to load data if not already loaded
+      ref.read(myRegistrationsProvider.future);
+      ref.read(bottomNavIndexProvider.notifier).state = 4;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final registrationsAsync = ref.watch(myRegistrationsProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.myRegistrations),
+        centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        automaticallyImplyLeading: false,
+      ),
+      drawer: _buildSideDrawer(context, ref),
+      body: registrationsAsync.when(
+        data: (registrations) {
+          // ✅ إصلاح: إضافة logging لمعرفة التسجيلات المستلمة
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] Received ${registrations.length} registrations');
+          final eventRegistrations = registrations.where((r) => r.isEvent && !r.isConference).toList();
+          final conferenceRegistrations = registrations.where((r) => r.isConference).toList();
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] - Events: ${eventRegistrations.length}');
+          debugPrint('📋 [MY_REGISTRATIONS_SCREEN] - Conferences: ${conferenceRegistrations.length}');
+          
+          for (final reg in registrations) {
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN] Registration ${reg.id}:');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Type: ${reg.registrationType}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Status: ${reg.status}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Entity Title: ${reg.entityTitle}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Event ID: ${reg.eventId}');
+            debugPrint('📋 [MY_REGISTRATIONS_SCREEN]   - Conference ID: ${reg.conferenceId}');
+          }
+          
+          if (registrations.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.event_note_outlined,
+                    size: 64,
+                    color: context.colors.textTertiary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'لا توجد تسجيلات',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'لم تقم بالتسجيل في أي مؤتمر أو فعالية بعد',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: context.colors.textTertiary,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(myRegistrationsProvider);
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: registrations.length,
+              itemBuilder: (context, index) {
+                final registration = registrations[index];
+                return _RegistrationCard(
+                  registration: registration,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RegistrationDetailScreen(
+                          registrationId: registration.id,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red[300],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'حدث خطأ في جلب التسجيلات',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.invalidate(myRegistrationsProvider);
+                },
+                child: const Text('إعادة المحاولة'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, _) {
+          final currentIndex = ref.watch(bottomNavIndexProvider);
+          return AppBottomNavigationBar(
+            currentIndexOverride: currentIndex,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSideDrawer(BuildContext context, WidgetRef ref) {
+    final profileState = ref.watch(profileProvider);
+    final currentProfile = profileState.currentProfile;
+
+    return ProfileSideDrawer(
+      currentScreen: 'registrations',
+      profile: currentProfile,
+    );
+  }
+}
+
+class _RegistrationCard extends StatelessWidget {
+  final RegistrationModel registration;
+  final VoidCallback onTap;
+
+  const _RegistrationCard({
+    required this.registration,
+    required this.onTap,
+  });
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'UNDER_REVIEW':
+        return Colors.blue;
+      case 'ACCEPTED':
+      case 'ACTIVE_PARTICIPANT':
+        return Colors.green;
+      case 'PAYMENT_PENDING':
+        return Colors.orange;
+      case 'REJECTED':
+        return Colors.red;
+      case 'ON_HOLD':
+        return Colors.red[700]!;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'UNDER_REVIEW':
+        return 'قيد المراجعة';
+      case 'ACCEPTED':
+        return 'مقبول';
+      case 'PAYMENT_PENDING':
+        return 'انتظار الدفع';
+      case 'ACTIVE_PARTICIPANT':
+        return 'مشارك نشط';
+      case 'REJECTED':
+        return 'مرفوض';
+      case 'ON_HOLD':
+        return 'معلق';
+      default:
+        return status;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      color: context.colors.card,
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          registration.entityTitle,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: context.colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(registration.status)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _getStatusColor(registration.status),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            _getStatusText(registration.status),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(registration.status),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    registration.isConference ? Icons.event : Icons.event_note,
+                    color: _getStatusColor(registration.status),
+                    size: 32,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.payments, size: 16, color: context.colors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${registration.calculatedPrice.toStringAsFixed(0)} ${registration.currency ?? 'YER'}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.calendar_today, size: 16, color: context.colors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${registration.createdAt.day}/${registration.createdAt.month}/${registration.createdAt.year}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              if (registration.paymentDeadline != null &&
+                  registration.isPaymentPending) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.access_time,
+                          size: 16, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'مهلة الدفع: ${registration.paymentDeadline!.day}/${registration.paymentDeadline!.month}/${registration.paymentDeadline!.year}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // ✅ إضافة زر إتمام الدفع مباشرة في الكارد للتسجيلات في انتظار الدفع
+              if (registration.isPaymentPending) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: onTap, // الانتقال إلى صفحة التفاصيل التي تحتوي على زر الدفع
+                    icon: const Icon(Icons.payment, size: 20),
+                    label: const Text(
+                      'إتمام الدفع',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

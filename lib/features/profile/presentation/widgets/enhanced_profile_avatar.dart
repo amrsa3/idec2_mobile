@@ -352,7 +352,7 @@ class ProfileImagePicker extends StatelessWidget {
                   color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.camera_alt,
                   color: AppColors.primary,
                 ),
@@ -373,7 +373,7 @@ class ProfileImagePicker extends StatelessWidget {
                   color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.photo_library,
                   color: AppColors.primary,
                 ),
@@ -395,7 +395,7 @@ class ProfileImagePicker extends StatelessWidget {
                     color: AppColors.error.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.delete_outline,
                     color: AppColors.error,
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/errors/app_error.dart';
 import 'custom_button.dart';
@@ -117,7 +118,7 @@ class ServiceStatusBanner extends StatelessWidget {
                 if (estimatedEndTime != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${AppLocalizations.of(context)!.estimatedTime}: ${_formatDateTime(estimatedEndTime!)}',
+                    '${AppLocalizations.of(context).estimatedTime}: ${_formatDateTime(estimatedEndTime!)}',
                     style: TextStyle(
                       color: _getTextColor().withOpacity(0.8),
                       fontSize: 12,
@@ -157,7 +158,7 @@ class ServiceStatusBanner extends StatelessWidget {
   }
 
   String _getTitle(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     switch (status) {
       case ServiceStatus.operational:
@@ -316,6 +317,11 @@ class ServiceStatusProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// Riverpod provider for ServiceStatusProvider
+final serviceStatusProviderProvider = ChangeNotifierProvider<ServiceStatusProvider>((ref) {
+  return ServiceStatusProvider();
+});
 
 /// Widget that automatically shows service status banner
 class ServiceStatusWrapper extends StatelessWidget {

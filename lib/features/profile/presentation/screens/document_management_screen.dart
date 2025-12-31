@@ -141,7 +141,7 @@ class _DocumentManagementScreenState
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.info_outline,
                 color: AppColors.primary,
                 size: 24,
@@ -318,7 +318,7 @@ class _DocumentManagementScreenState
                     label: const Text('حذف'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.error,
-                      side: BorderSide(color: AppColors.error),
+                      side: const BorderSide(color: AppColors.error),
                     ),
                   ),
                 ),
@@ -360,7 +360,7 @@ class _DocumentManagementScreenState
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.description,
             color: AppColors.success,
             size: 24,
@@ -407,7 +407,7 @@ class _DocumentManagementScreenState
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.insert_drive_file,
             color: AppColors.primary,
             size: 24,
@@ -463,7 +463,7 @@ class _DocumentManagementScreenState
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.add_circle_outline,
                 color: AppColors.primary,
                 size: 24,

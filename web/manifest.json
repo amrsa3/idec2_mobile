@@ -1,10 +1,11 @@
-{
+﻿{
   "name": "منصة IDEC ",
   "short_name": "IDEC",
-  "start_url": ".",
+  "version": "2.0.11",
+  "start_url": "/?v=2.0.11",
   "display": "standalone",
-  "background_color": "#2196F3",
-  "theme_color": "#2196F3",
+  "background_color": "#fe0303",
+  "theme_color": "#fe0303",
   "description": "منصة معرض ومؤتمر IDEC  لطب الاسنان 2026",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,

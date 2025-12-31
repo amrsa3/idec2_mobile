@@ -1,0 +1,55 @@
+GoRouter redirect: currentLocation=/login, isAuthenticated=false, isLoading=false, user=null js_primitives.dart:28:5
+LoginScreen: Attempting login for +967777034999 js_primitives.dart:28:5
+🔄 [COMPATIBLE_AUTH] Invalidating providers before login... js_primitives.dart:28:5
+🔄 [PROVIDER_CLEANUP] Starting provider invalidation... js_primitives.dart:28:5
+🔄 [PROVIDER_CLEANUP] Invalidating profileProvider... js_primitives.dart:28:5
+❌ [PROVIDER_CLEANUP] Error during provider invalidation: Instance of 'CircularDependencyError' js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Providers invalidated before login js_primitives.dart:28:5
+🔐 [COMPATIBLE_AUTH] Attempting login for: +967777034999 js_primitives.dart:28:5
+🔐 [COMPATIBLE_AUTH] Clearing old user data before login... js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Deleted from web storage: current_user js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Deleted from web storage: user_data js_primitives.dart:28:5
+🔐 [PLATFORM_STORAGE] Deleted from web storage (secure): current_user js_primitives.dart:28:5
+✅ Profile cache cleared from SharedPreferences js_primitives.dart:28:5
+✅ Profile cache cleared from web storage (3 keys) js_primitives.dart:28:5
+✅ Profile cache cleared successfully js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Profile cache cleared js_primitives.dart:28:5
+✅ [LAZY_LOADING] Cleared all cache js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Lazy loading cache cleared js_primitives.dart:28:5
+🗑️ ImageCacheService: Clearing all image cache js_primitives.dart:28:5
+✅ ImageCacheService: Successfully cleared all cache js_primitives.dart:28:5
+🗑️ AuthenticatedImageService: Cleared all image cache (0 entries) js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Image cache cleared js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Clearing web storage js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Successfully cleared web storage (13 keys) js_primitives.dart:28:5
+✅ All data cleared successfully js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Enhanced storage cleared js_primitives.dart:28:5
+✅ [COMPATIBLE_AUTH] Old user data cleared js_primitives.dart:28:5
+📡 [DIO_LOG] *** Request *** js_primitives.dart:28:5
+📡 [DIO_LOG] uri: https://api.idec-ye.com/api/v1/auth/login js_primitives.dart:28:5
+📡 [DIO_LOG] method: POST js_primitives.dart:28:5
+📡 [DIO_LOG] responseType: ResponseType.json js_primitives.dart:28:5
+📡 [DIO_LOG] followRedirects: true js_primitives.dart:28:5
+📡 [DIO_LOG] persistentConnection: true js_primitives.dart:28:5
+📡 [DIO_LOG] connectTimeout: 0:01:00.000000 js_primitives.dart:28:5
+📡 [DIO_LOG] sendTimeout: 0:05:00.000000 js_primitives.dart:28:5
+📡 [DIO_LOG] receiveTimeout: 0:05:00.000000 js_primitives.dart:28:5
+📡 [DIO_LOG] receiveDataWhenStatusError: true js_primitives.dart:28:5
+📡 [DIO_LOG] extra: {} js_primitives.dart:28:5
+📡 [DIO_LOG] headers: js_primitives.dart:28:5
+📡 [DIO_LOG]  Content-Type: application/json js_primitives.dart:28:5
+📡 [DIO_LOG]  Accept: application/json js_primitives.dart:28:5
+📡 [DIO_LOG] data: js_primitives.dart:28:5
+📡 [DIO_LOG] {phone: +967777034999, password: 456456456} js_primitives.dart:28:5
+📡 [DIO_LOG] js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Retrieved from web storage: selected_language = null js_primitives.dart:28:5
+📋 [ENHANCED_DIO_V2] Headers added for /api/v1/auth/login js_primitives.dart:28:5
+🔐 [TOKEN_INTERCEPTOR] Processing request: POST /api/v1/auth/login js_primitives.dart:28:5
+🔐 [TOKEN_INTERCEPTOR] Skipping token for auth endpoint js_primitives.dart:28:5
+📡 [DIO_LOG] *** Response *** js_primitives.dart:28:5
+📡 [DIO_LOG] uri: https://api.idec-ye.com/api/v1/auth/login js_primitives.dart:28:5
+📡 [DIO_LOG] Response Text: js_primitives.dart:28:5
+📡 [DIO_LOG] {"success":true,"messageAr":"مرحباً! تم تسجيل الدخول بنجاح","messageEn":"Welcome! Login successful","code":"AUTH_LOGIN_SUCCESS","data":{"user":{"id":"cmgtmtsm80000copzozlbljpf","phone":"+967777034999","email":"adimn@idec-ye.com","phoneVerified":true,"userType":"main_admin","permissions":[]},"tokens":{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWd0bXRzbTgwMDAwY29wem96bGJsanBmIiwicGhvbmUiOiIrOTY3Nzc3MDM0OTk5IiwiaWF0IjoxNzY0Mzg2NzY4LCJleHAiOjE3NjQzOTAzNjh9.fN1yKfw4e-g5mtEdmJFbk8sxzfAAaPsRo9IpUWPbb5M","refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWd0bXRzbTgwMDAwY29wem96bGJsanBmIiwicGhvbmUiOiIrOTY3Nzc3MDM0OTk5IiwiaWF0IjoxNzY0Mzg2NzY4LCJleHAiOjE3NjQ5OTE1Njh9.wlCIoEiNUqA4acQ3wVRJhDdiGlxPVpH2mLcwHuoHjKs","expiresIn":3600},"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWd0bXRzbTgwMDAwY29wem96bGJsanBmIiwicGhvbmUiOiIrOTY3Nzc3MDM0OTk5IiwiaWF0IjoxNzY0Mzg2NzY4LCJleHAiOjE3NjQzOTAzNjh9.fN1yKfw4e-g5mtEdmJFbk8sxzfAAaPsRo9IpUWPbb5M"},"timestamp":"2025-11-29T03:26:08.504Z"} js_primitives.dart:28:5
+📡 [DIO_LOG] js_primitives.dart:28:5
+✅ [TOKEN_INTERCEPTOR] Response received: 200 js_primitives.dart:28:5
+📝 [PLATFORM_STORAGE] Stored in localStorage: last_activity js_primitives.dart:28:5

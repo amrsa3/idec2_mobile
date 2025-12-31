@@ -155,9 +155,10 @@ class ProfileUpdateRequest with _$ProfileUpdateRequest {
     @JsonKey(name: 'full_name_ar') String? fullNameAr,
     @JsonKey(name: 'full_name_en') String? fullNameEn,
     String? email,
-    @JsonKey(name: 'birth_date') DateTime? birthDate,
+    @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson) DateTime? birthDate,
     @JsonKey(name: 'governorate_id') String? governorateId,
     @JsonKey(name: 'qualification_id') String? qualificationId,
+    @JsonKey(name: 'category_id') String? categoryId,
     @JsonKey(name: 'graduation_year') int? graduationYear,
     String? university,
     String? workplace,
@@ -165,6 +166,17 @@ class ProfileUpdateRequest with _$ProfileUpdateRequest {
 
   factory ProfileUpdateRequest.fromJson(Map<String, dynamic> json) =>
       _$ProfileUpdateRequestFromJson(json);
+}
+
+// Custom date serialization to send only date without time/timezone
+String? _dateToJson(DateTime? date) {
+  if (date == null) return null;
+  return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+}
+
+DateTime? _dateFromJson(String? dateStr) {
+  if (dateStr == null) return null;
+  return DateTime.parse(dateStr);
 }
 
 @freezed

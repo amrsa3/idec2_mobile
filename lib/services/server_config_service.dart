@@ -1,16 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/server_config_model.dart';
 
 class ServerConfigService {
   static ServerConfigService? _instance;
   static const String _serverConfigKey = 'server_config';
   static const String _customConfigKey = 'custom_server_config';
-  
+
   ServerConfigService._();
-  
+
   factory ServerConfigService() {
     _instance ??= ServerConfigService._();
     return _instance!;
@@ -21,7 +23,7 @@ class ServerConfigService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final configJson = prefs.getString(_serverConfigKey);
-      
+
       if (configJson != null) {
         final configMap = json.decode(configJson) as Map<String, dynamic>;
         return ServerConfig.fromJson(configMap);
@@ -29,7 +31,7 @@ class ServerConfigService {
     } catch (e) {
       // If there's an error reading saved config, fall back to default
     }
-    
+
     // Return default configuration
     return DefaultServerConfigs.development;
   }
@@ -61,7 +63,7 @@ class ServerConfigService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final configJson = prefs.getString(_customConfigKey);
-      
+
       if (configJson != null) {
         final configMap = json.decode(configJson) as Map<String, dynamic>;
         return ServerConfig.fromJson(configMap);
@@ -69,7 +71,7 @@ class ServerConfigService {
     } catch (e) {
       // Return null if no custom config or error
     }
-    
+
     return null;
   }
 
@@ -88,39 +90,39 @@ class ServerConfigService {
   /// Test server connectivity
   Future<ServerTestResult> testServerConnection(ServerConfig config) async {
     final stopwatch = Stopwatch()..start();
-    
+
     try {
       final dio = Dio();
       dio.options.connectTimeout = const Duration(seconds: 5);
       dio.options.receiveTimeout = const Duration(seconds: 5);
-      
+
       // Try primary health endpoint first
       try {
-        final response = await dio.get('${config.fullUrl}/api/v1/health');
+        final response = await dio.get('${config.fullUrl}/health');
         stopwatch.stop();
-        
+
         if (response.statusCode == 200) {
           return ServerTestResult(
             isReachable: true,
             responseTime: stopwatch.elapsedMilliseconds,
             statusCode: response.statusCode,
-            message: 'Server is reachable via /api/v1/health',
-            endpoint: '/api/v1/health',
+            message: 'Server is reachable via /health',
+            endpoint: '/health',
           );
         }
       } catch (e) {
-        // If primary health endpoint fails, try fallback
+        // If primary health endpoint fails, try a simpler fallback
         try {
-          final response = await dio.get('${config.fullUrl}/api/v1/registration-settings/status');
+          final response = await dio.get('${config.fullUrl}/health/ping');
           stopwatch.stop();
-          
+
           if (response.statusCode == 200) {
             return ServerTestResult(
               isReachable: true,
               responseTime: stopwatch.elapsedMilliseconds,
               statusCode: response.statusCode,
-              message: 'Server is reachable via fallback endpoint',
-              endpoint: '/api/v1/registration-settings/status',
+              message: 'Server is reachable via ping endpoint',
+              endpoint: '/health/ping',
             );
           }
         } catch (fallbackError) {
@@ -128,9 +130,9 @@ class ServerConfigService {
           throw e;
         }
       }
-      
+
       stopwatch.stop();
-      
+
       return ServerTestResult(
         isReachable: false,
         responseTime: stopwatch.elapsedMilliseconds,
@@ -202,14 +204,14 @@ class ServerConfigService {
     try {
       // Remove protocol if present for validation
       String cleanUrl = url.replaceAll(RegExp(r'^https?://'), '');
-      
+
       // Check if it's a valid hostname or IP
       if (cleanUrl.isEmpty) return false;
-      
+
       // Basic validation for hostname/IP format
       final hostnameRegex = RegExp(r'^[a-zA-Z0-9.-]+$');
       final ipRegex = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
-      
+
       return hostnameRegex.hasMatch(cleanUrl) || ipRegex.hasMatch(cleanUrl);
     } catch (e) {
       return false;

@@ -37,9 +37,70 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isUploading = false;
+  bool _forceImageReload = false;
+  int _imageReloadKey = 0;
+  String? _currentImageUrl; // لتتبع URL الحالي
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageUrl = widget.imageUrl;
+  }
+
+  @override
+  void didUpdateWidget(ProfileImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // إذا تغير URL، قم بتحديث المفتاح لإجبار إعادة التحميل
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      debugPrint('🔄 ProfileImageWidget: Image URL changed from ${oldWidget.imageUrl} to ${widget.imageUrl}');
+      setState(() {
+        _currentImageUrl = widget.imageUrl;
+        _imageReloadKey++;
+        _forceImageReload = true;
+      });
+      
+      // إعادة تعيين forceReload بعد فترة قصيرة
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {
+            _forceImageReload = false;
+          });
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // الاستماع لتغييرات profileProvider للحصول على URL محدث
+    final profileState = ref.watch(profileProvider);
+    final profileImageUrl = profileState.currentProfile?.profilePictureUrl;
+    
+    // إذا تغير URL من profileProvider، قم بتحديث _currentImageUrl
+    if (profileImageUrl != null && profileImageUrl != _currentImageUrl) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _currentImageUrl = profileImageUrl;
+            _imageReloadKey++;
+            _forceImageReload = true;
+            debugPrint('🔄 ProfileImageWidget: URL updated from profileProvider: $profileImageUrl');
+          });
+          
+          // إعادة تعيين forceReload بعد فترة قصيرة
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              setState(() {
+                _forceImageReload = false;
+              });
+            }
+          });
+        }
+      });
+    }
+    
     return GestureDetector(
       onTap: widget.isEditable ? _showImageOptions : null,
       child: Stack(
@@ -104,21 +165,66 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
 
   /// بناء محتوى الصورة
   Widget _buildImageContent() {
-    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
-      return AuthenticatedImageWidget(
-        imageUrl: widget.imageUrl!,
-        fit: BoxFit.cover,
-        placeholder: _buildPlaceholder(),
-        errorWidget: _buildFallback(),
-      );
+    // استخدام URL الحالي من state أو من widget
+    final imageUrl = _currentImageUrl ?? widget.imageUrl;
+    final size = widget.size;
+
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return _buildFallbackImage();
     }
-    return _buildFallback();
+
+    // استخدام مفتاح فريد يتضمن URL الحالي و reloadKey لإجبار إعادة البناء
+    final uniqueKey = 'profile_image_${imageUrl}_${_imageReloadKey}_${DateTime.now().millisecondsSinceEpoch}';
+    
+    return AuthenticatedImageWidget(
+      imageUrl: imageUrl,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      forceReload: _forceImageReload,
+      reloadKey: uniqueKey, // مفتاح فريد
+      key: ValueKey(uniqueKey), // مفتاح فريد للويدجت
+      placeholder: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          shape: BoxShape.circle,
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      errorWidget: _buildFallbackImage(),
+    );
   }
 
   /// بناء الصورة الاحتياطية
   Widget _buildFallback() {
     return Container(
       color: AppColors.primary.withValues(alpha: 0.1),
+      child: Center(
+        child: Text(
+          widget.fallbackText,
+          style: TextStyle(
+            fontSize: widget.size * 0.4,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// بناء الصورة الاحتياطية (نفس _buildFallback)
+  Widget _buildFallbackImage() {
+    return Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
       child: Center(
         child: Text(
           widget.fallbackText,
@@ -174,7 +280,7 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
               const SizedBox(height: 20),
 
               // العنوان
-              Text(
+              const Text(
                 'اختر مصدر الصورة',
                 style: TextStyle(
                   fontSize: 18,
@@ -346,41 +452,93 @@ class _ProfileImageWidgetState extends ConsumerState<ProfileImageWidget> {
 
   /// رفع الصورة - يدعم الويب والموبايل
   Future<void> _uploadImage(XFile imageFile) async {
+    setState(() {
+      _isUploading = true;
+    });
+
     try {
-      debugPrint('📤 Starting image upload...');
+      debugPrint('🔄 ProfileImageWidget: Starting image upload...');
+      
+      // رفع الصورة
+      final success = await ref.read(profileProvider.notifier).uploadProfilePicture(imageFile);
+      
+      if (success) {
+        debugPrint('✅ ProfileImageWidget: Image uploaded successfully');
+        
+        // إعادة تحميل profile من الخادم لضمان الحصول على URL الجديد
+        try {
+          await ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+          debugPrint('✅ ProfileImageWidget: Profile reloaded after upload');
+        } catch (e) {
+          debugPrint('⚠️ ProfileImageWidget: Error reloading profile: $e');
+        }
+        
+        // إجبار إعادة تحميل الصورة فوراً
+        setState(() {
+          _forceImageReload = true;
+          _imageReloadKey++;
+          // تحديث URL الحالي من profileProvider
+          final updatedProfile = ref.read(profileProvider).currentProfile;
+          if (updatedProfile != null && updatedProfile.profilePictureUrl != null) {
+            _currentImageUrl = updatedProfile.profilePictureUrl;
+            debugPrint('🔄 ProfileImageWidget: Updated image URL to: $_currentImageUrl');
+          }
+        });
+        
+        debugPrint('🔄 ProfileImageWidget: Force reload activated with key: $_imageReloadKey');
+        
+        // إعادة تعيين forceReload بعد فترة قصيرة
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _forceImageReload = false;
+            });
+            debugPrint('🔄 ProfileImageWidget: Force reload deactivated');
+          }
+        });
 
-      if (kIsWeb) {
-        debugPrint('🌐 Web: Uploading image file');
-        // للويب - استخدم XFile مباشرة
-        await ref
-            .read(profileProvider.notifier)
-            .uploadProfilePicture(imageFile);
+        // استدعاء callback إذا كان موجوداً
+        if (widget.onImageChanged != null) {
+          widget.onImageChanged!();
+          debugPrint('🔄 ProfileImageWidget: onImageChanged callback called');
+        }
+
+        // إظهار رسالة نجاح
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم تحديث صورة الملف الشخصي بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
-        debugPrint('📱 Mobile: Converting to File and uploading');
-        // للموبايل - حول إلى File
-        final file = File(imageFile.path);
-        await ref.read(profileProvider.notifier).uploadProfilePicture(file);
+        debugPrint('❌ ProfileImageWidget: Image upload failed');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('فشل في تحديث صورة الملف الشخصي'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
-
-      debugPrint('✅ Image uploaded successfully');
-
-      // تحديث الواجهة
-      setState(() {
-        _isLoading = false;
-      });
-
-      // إشعار النجاح
-      _showSuccessSnackBar('تم رفع الصورة بنجاح');
-
-      // استدعاء callback إذا كان موجود
-      widget.onImageChanged?.call();
     } catch (e) {
-      debugPrint('❌ Error uploading image: $e');
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'حدث خطأ أثناء رفع الصورة: ${e.toString()}';
-      });
-      _showErrorSnackBar(_errorMessage!);
+      debugPrint('❌ ProfileImageWidget: Error uploading image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في رفع الصورة: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
     }
   }
 

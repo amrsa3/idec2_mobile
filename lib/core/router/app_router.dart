@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_verification_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
-import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/connection/presentation/connection_status_screen.dart';
 import '../../features/connection/presentation/error_reporting_screen.dart';
@@ -14,12 +14,25 @@ import '../../features/language/presentation/language_selection_screen.dart';
 import '../../features/main/presentation/main_screen.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart'; // Added
+import '../../features/notifications/presentation/enhanced_notifications_screen.dart';
+import '../../features/notifications/presentation/professional_notifications_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../features/cart/presentation/cart_screen.dart';
+import '../../features/favorites/presentation/favorites_screen.dart';
+import '../../features/schedule/presentation/personal_schedule_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
-// Import providers
-import '../../providers/auth_provider.dart';
-import '../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../features/schedule/presentation/event_details_screen.dart';
+import '../../features/registrations/presentation/registration_detail_screen.dart';
+import '../../features/news/presentation/screens/news_list_screen.dart';
+import '../../features/news/presentation/screens/news_detail_screen.dart';
+import '../../features/gallery/presentation/gallery_screen.dart';
+import '../../features/gallery/presentation/gallery_album_view.dart';
+import '../../features/chat/chat_wrapper_page.dart';
+import '../../services/analytics_service.dart';
+import '../../core/auth/auth.dart';
 
 // Route names
 class AppRoutes {
@@ -39,12 +52,26 @@ class AppRoutes {
   static const String errorReporting = '/error-reporting';
   static const String notifications = '/notifications';
   static const String notificationsTest = '/notifications-test';
+  
+  // Deep linking routes
+  static const String event = '/event/:id';
+  static const String registration = '/registration/:id';
+  static const String conference = '/conference/:id';
+  static const String payment = '/payment/:id';
+  static const String news = '/news';
+  static const String newsDetail = '/news/:id';
+  static const String gallery = '/gallery';
+  static const String galleryAlbum = '/gallery/album/:id';
+  static const String chat = '/chat';
+  static const String cart = '/cart';
+  static const String favorites = '/favorites';
+  static const String mySchedule = '/my-schedule';
 }
 
 // Auth change notifier for GoRouter
 class AuthChangeNotifier extends ChangeNotifier {
   final Ref ref;
-  
+
   AuthChangeNotifier(this.ref) {
     // Listen to auth state changes
     ref.listen(authProvider, (previous, next) {
@@ -55,228 +82,443 @@ class AuthChangeNotifier extends ChangeNotifier {
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authNotifier = AuthChangeNotifier(ref);
-  
-  return GoRouter(
-    initialLocation: AppRoutes.splash,
-    debugLogDiagnostics: true,
-    // Listen to auth state changes to trigger router refresh
-    refreshListenable: authNotifier,
-    // Deep linking configuration
-    redirect: (context, state) {
-      final authState = ref.read(authProvider);
-      final isAuthenticated = authState.isAuthenticated;
-      final isLoading = authState.isLoading;
-      final isRegistering = authState.isRegistering;
-      final currentRoute = state.uri.path;
+  try {
+    final authNotifier = AuthChangeNotifier(ref);
 
-      print('GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, isRegistering=$isRegistering, user=${authState.user}');
+    return GoRouter(
+      initialLocation: AppRoutes.splash,
+      debugLogDiagnostics: true,
+      // Listen to auth state changes to trigger router refresh
+      refreshListenable: authNotifier,
+      observers: AnalyticsService.instance.navigatorObservers,
+      // Deep linking configuration
+      redirect: (context, state) {
+        try {
+          final authState = ref.read(authProvider);
+          final isAuthenticated = authState.isAuthenticated;
+          final isLoading = authState.isLoading;
+          final currentRoute = state.uri.path;
 
-      // Don't redirect while loading
-      if (isLoading) return null;
+          debugPrint(
+              'GoRouter redirect: currentLocation=$currentRoute, isAuthenticated=$isAuthenticated, isLoading=$isLoading, user=${authState.user?.phone}');
 
-      // Public routes that don't require authentication
-      final publicRoutes = [
-        AppRoutes.splash,
-        AppRoutes.languageSelection,
-        AppRoutes.onboarding,
-        AppRoutes.login,
-        AppRoutes.register,
-        AppRoutes.otpVerification,
-        AppRoutes.forgotPassword,
-        AppRoutes.resetPasswordOtp,
-        AppRoutes.connectionStatus,
-        AppRoutes.serverConfig,
-        AppRoutes.errorReporting,
-      ];
+          // Don't redirect while loading
+          if (isLoading) return null;
 
-      // Special case: If user is registering, don't redirect from register or OTP pages
-      if (isRegistering && 
-          (currentRoute == AppRoutes.register || currentRoute == AppRoutes.otpVerification)) {
-        return null; // Stay on current page during registration process
-      }
+          // Public routes that don't require authentication
+          final publicRoutes = [
+            AppRoutes.splash,
+            AppRoutes.languageSelection,
+            AppRoutes.onboarding,
+            AppRoutes.login,
+            AppRoutes.register,
+            AppRoutes.otpVerification,
+            AppRoutes.forgotPassword,
+            AppRoutes.resetPasswordOtp,
+            AppRoutes.connectionStatus,
+            AppRoutes.serverConfig,
+            AppRoutes.errorReporting,
+          ];
 
-      // If user is not authenticated and trying to access protected route
-      if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
-        return AppRoutes.login;
-      }
+          // If user is not authenticated and trying to access protected route
+          if (!isAuthenticated && !publicRoutes.contains(currentRoute)) {
+            return AppRoutes.login;
+          }
 
-      // If user is authenticated and trying to access auth routes (except OTP verification)
-      if (isAuthenticated &&
-          (currentRoute == AppRoutes.login ||
-              currentRoute == AppRoutes.register)) {
-        return AppRoutes.main;
-      }
+          // If user is authenticated and trying to access auth routes
+          if (isAuthenticated &&
+              (currentRoute == AppRoutes.login ||
+                  currentRoute == AppRoutes.register)) {
+            return AppRoutes.main;
+          }
 
-      // Special case: Don't redirect from OTP verification unless user is fully authenticated
-      if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
-        return null; // Stay on OTP verification page
-      }
+          // Special case: Don't redirect from OTP verification unless user is fully authenticated
+          if (currentRoute == AppRoutes.otpVerification && !isAuthenticated) {
+            return null; // Stay on OTP verification page
+          }
 
-      return null; // No redirect needed
-    },
-    routes: [
-      // Splash Screen
-      GoRoute(
-        path: AppRoutes.splash,
-        name: 'splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
+          return null; // No redirect needed
+        } catch (e, stackTrace) {
+          debugPrint('❌ [ROUTER] Error in redirect: $e');
+          debugPrint('Stack trace: $stackTrace');
+          // On error, allow access to prevent blocking
+          return null;
+        }
+      },
+      routes: [
+        // Splash Screen
+        GoRoute(
+          path: AppRoutes.splash,
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
 
-      // Language Selection Screen
-      GoRoute(
-        path: AppRoutes.languageSelection,
-        name: 'language-selection',
-        builder: (context, state) => const LanguageSelectionScreen(),
-      ),
+        // Language Selection Screen
+        GoRoute(
+          path: AppRoutes.languageSelection,
+          name: 'language-selection',
+          builder: (context, state) => const LanguageSelectionScreen(),
+        ),
 
-      // Onboarding Screen
-      GoRoute(
-        path: AppRoutes.onboarding,
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
-      ),
+        // Onboarding Screen
+        GoRoute(
+          path: AppRoutes.onboarding,
+          name: 'onboarding',
+          builder: (context, state) => const OnboardingScreen(),
+        ),
 
-      // Authentication Routes
-      GoRoute(
-        path: AppRoutes.login,
-        name: 'login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+        // Authentication Routes
+        GoRoute(
+          path: AppRoutes.login,
+          name: 'login',
+          builder: (context, state) => const LoginScreen(),
+        ),
 
-      GoRoute(
-        path: AppRoutes.register,
-        name: 'register',
-        builder: (context, state) => const RegisterScreen(),
-      ),
+        GoRoute(
+          path: AppRoutes.register,
+          name: 'register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
 
-      GoRoute(
-        path: AppRoutes.otpVerification,
-        name: 'otp-verification',
-        builder: (context, state) {
-          final phone = state.uri.queryParameters['phone'] ?? '';
-          final isLogin = state.uri.queryParameters['isLogin'] == 'true';
-          return OtpVerificationScreen(
-            phone: phone,
-            isLogin: isLogin,
-          );
-        },
-      ),
+        GoRoute(
+          path: AppRoutes.otpVerification,
+          name: 'otp-verification',
+          builder: (context, state) {
+            final phone = state.uri.queryParameters['phone'] ?? '';
+            final isLogin = state.uri.queryParameters['isLogin'] == 'true';
+            return OtpVerificationScreen(
+              phone: phone,
+              isLogin: isLogin,
+            );
+          },
+        ),
 
-      // Forgot Password Routes
-      GoRoute(
-        path: AppRoutes.forgotPassword,
-        name: 'forgot-password',
-        builder: (context, state) => const ForgotPasswordScreen(),
-      ),
+        // Forgot Password Routes
+        GoRoute(
+          path: AppRoutes.forgotPassword,
+          name: 'forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
 
-      GoRoute(
-        path: AppRoutes.resetPasswordOtp,
-        name: 'reset-password-otp',
-        builder: (context, state) {
-          final phone = state.uri.queryParameters['phone'] ?? '';
-          return ResetPasswordScreen(phone: phone);
-        },
-      ),
+        GoRoute(
+          path: AppRoutes.resetPasswordOtp,
+          name: 'reset-password-otp',
+          builder: (context, state) {
+            final phone = state.uri.queryParameters['phone'] ?? '';
+            return ResetPasswordScreen(phone: phone);
+          },
+        ),
 
-      // Main Screen with Bottom Navigation
-      GoRoute(
-        path: AppRoutes.main,
-        name: 'main',
-        builder: (context, state) => const MainScreen(),
-      ),
+        // Main Screen with Bottom Navigation
+        GoRoute(
+          path: AppRoutes.main,
+          name: 'main',
+          builder: (context, state) => const MainScreen(),
+        ),
 
-      // Profile Routes - Now using ProfileMainScreen with rules integration
-      GoRoute(
-        path: AppRoutes.profile,
-        name: 'profile',
-        builder: (context, state) => const ProfileMainScreen(),
-      ),
+        // Profile Routes - Now using ProfileMainScreen with rules integration
+        GoRoute(
+          path: AppRoutes.profile,
+          name: 'profile',
+          builder: (context, state) =>
+              const ProfileMainScreen(showBottomNavigation: true),
+        ),
 
-      // Profile View Route (keeping for backward compatibility)
-      GoRoute(
-        path: AppRoutes.profileView,
-        name: 'profile-view',
-        builder: (context, state) => const ProfileMainScreen(),
-      ),
+        // Profile View Route (keeping for backward compatibility)
+        GoRoute(
+          path: AppRoutes.profileView,
+          name: 'profile-view',
+          builder: (context, state) => const ProfileMainScreen(),
+        ),
 
-      // Connection Status Route
-      GoRoute(
-        path: AppRoutes.connectionStatus,
-        name: 'connection-status',
-        builder: (context, state) => const ConnectionStatusScreen(),
-      ),
+        // Connection Status Route
+        GoRoute(
+          path: AppRoutes.connectionStatus,
+          name: 'connection-status',
+          builder: (context, state) => const ConnectionStatusScreen(),
+        ),
 
-      // Server Configuration Route
-      GoRoute(
-        path: AppRoutes.serverConfig,
-        name: 'server-config',
-        builder: (context, state) => const ServerConfigScreen(),
-      ),
+        // Server Configuration Route
+        GoRoute(
+          path: AppRoutes.serverConfig,
+          name: 'server-config',
+          builder: (context, state) => const ServerConfigScreen(),
+        ),
 
-      // Error Reporting Route
-      GoRoute(
-        path: AppRoutes.errorReporting,
-        name: 'error-reporting',
-        builder: (context, state) {
-          final errorMessage = state.uri.queryParameters['error'];
-          final stackTrace = state.uri.queryParameters['stackTrace'];
-          return ErrorReportingScreen(
-            errorMessage: errorMessage,
-            stackTrace: stackTrace,
-          );
-        },
-      ),
+        // Error Reporting Route
+        GoRoute(
+          path: AppRoutes.errorReporting,
+          name: 'error-reporting',
+          builder: (context, state) {
+            final errorMessage = state.uri.queryParameters['error'];
+            final stackTrace = state.uri.queryParameters['stackTrace'];
+            return ErrorReportingScreen(
+              errorMessage: errorMessage,
+              stackTrace: stackTrace,
+            );
+          },
+        ),
 
-      // Notifications Routes
-      GoRoute(
-        path: AppRoutes.notifications,
-        name: 'notifications',
-        builder: (context, state) => const NotificationsPage(),
-      ),
+        // Notifications Routes - Using NotificationCenter API
+        GoRoute(
+          path: AppRoutes.notifications,
+          name: 'notifications',
+          builder: (context, state) => const NotificationsScreen(), // Switched to optimized screen
+        ),
 
-      GoRoute(
-        path: AppRoutes.notificationsTest,
-        name: 'notifications-test',
-        builder: (context, state) => const NotificationsTestScreen(),
-      ),
-    ],
+        GoRoute(
+          path: AppRoutes.notificationsTest,
+          name: 'notifications-test',
+          builder: (context, state) => const NotificationsTestScreen(),
+        ),
 
-    // Error handling
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(
-        title: const Text('خطأ'),
-      ),
-      body: Center(
+        // Deep Linking Routes
+        GoRoute(
+          path: AppRoutes.event,
+          name: 'event-details',
+          builder: (context, state) {
+            final eventId = state.pathParameters['id']!;
+            return EventDetailsScreen(eventId: eventId);
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.registration,
+          name: 'registration-details',
+          builder: (context, state) {
+            final registrationId = state.pathParameters['id']!;
+            return RegistrationDetailScreen(registrationId: registrationId);
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.conference,
+          name: 'conference-details',
+          builder: (context, state) {
+            final conferenceId = state.pathParameters['id']!;
+            // Display a "Coming Soon" page until ConferenceDetailsScreen is implemented
+            return _buildComingSoonScreen(
+              context, 
+              'تفاصيل المؤتمر', 
+              'Conference Details',
+              Icons.event,
+            );
+          },
+        ),
+
+        GoRoute(
+          path: AppRoutes.payment,
+          name: 'payment-details',
+          builder: (context, state) {
+            final transactionId = state.pathParameters['id']!;
+            // Display a "Coming Soon" page until PaymentDetailScreen is implemented
+            return _buildComingSoonScreen(
+              context,
+              'تفاصيل الدفع',
+              'Payment Details',
+              Icons.payment,
+            );
+          },
+        ),
+
+        // News Routes
+        GoRoute(
+          path: AppRoutes.news,
+          name: 'news',
+          builder: (context, state) => const NewsListScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.newsDetail,
+          name: 'news-detail',
+          builder: (context, state) {
+            final articleId = state.pathParameters['id']!;
+            return NewsDetailScreen(articleId: articleId);
+          },
+        ),
+
+        // Gallery Routes
+        GoRoute(
+          path: AppRoutes.gallery,
+          name: 'gallery',
+          builder: (context, state) => const GalleryScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.galleryAlbum,
+          name: 'gallery-album',
+          builder: (context, state) {
+            final albumId = state.pathParameters['id']!;
+            return GalleryAlbumView(albumId: albumId);
+          },
+        ),
+
+        // Chat Route
+        GoRoute(
+          path: AppRoutes.chat,
+          name: 'chat',
+          builder: (context, state) => const ChatWrapperPage(),
+        ),
+        
+        // New Feature Routes
+        GoRoute(
+          path: AppRoutes.cart,
+          name: 'cart',
+          builder: (context, state) => const CartScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.favorites,
+          name: 'favorites',
+          builder: (context, state) => const FavoritesScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.mySchedule,
+          name: 'my-schedule',
+          builder: (context, state) => const PersonalScheduleScreen(),
+        ),
+      ],
+
+      // Error handling
+      errorBuilder: (context, state) => Scaffold(
+        appBar: AppBar(
+          title: const Text('خطأ'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'الصفحة غير موجودة',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'المسار: ${state.uri.path}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.go(AppRoutes.splash),
+                child: const Text('العودة للرئيسية'),
+              ),
+            ],
+          ),
+        ), // Close body parameter of Scaffold
+      ), // Close Scaffold and errorBuilder
+    ); // Close GoRouter
+  } catch (e, stackTrace) {
+    debugPrint('❌ [ROUTER] CRITICAL: Failed to create router: $e');
+    debugPrint('Stack trace: $stackTrace');
+
+    // Return a minimal router that shows error screen
+    return GoRouter(
+      initialLocation: AppRoutes.splash,
+      debugLogDiagnostics: true,
+      routes: [
+        GoRoute(
+          path: AppRoutes.splash,
+          name: 'splash',
+          builder: (context, state) => const Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'خطأ في تهيئة التطبيق',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'حدث خطأ في تهيئة نظام التنقل. يرجى إعادة تشغيل التطبيق.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+});
+
+/// Build a "Coming Soon" screen for features under development
+Widget _buildComingSoonScreen(
+  BuildContext context,
+  String titleAr,
+  String titleEn,
+  IconData icon,
+) {
+  final isRtl = Directionality.of(context) == TextDirection.rtl;
+  final title = isRtl ? titleAr : titleEn;
+  final message = isRtl
+      ? 'هذه الميزة قيد التطوير وستكون متاحة قريباً'
+      : 'This feature is under development and will be available soon';
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(title),
+      centerTitle: true,
+    ),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 64,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
-              'الصفحة غير موجودة',
-              style: Theme.of(context).textTheme.headlineSmall,
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'المسار: ${state.uri.path}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.go(AppRoutes.splash),
-              child: const Text('العودة للرئيسية'),
+            const SizedBox(height: 32),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Icon(isRtl ? Icons.arrow_forward : Icons.arrow_back),
+              label: Text(isRtl ? 'العودة' : 'Go Back'),
             ),
           ],
         ),
       ),
     ),
   );
-});
+}
 
 // Navigation helper extensions
 extension AppRouterExtension on GoRouter {

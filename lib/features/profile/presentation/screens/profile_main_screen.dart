@@ -13,18 +13,31 @@ import '../../../../models/governorate_model.dart' hide QualificationModel;
 import '../../../../models/profile_data_models.dart';
 import '../../../../models/profile_model.dart';
 import '../../../../models/profile_rule_model.dart';
-import '../../../../providers/auth_provider.dart';
 import '../../../../providers/profile_rules_provider.dart';
+import '../../../../core/auth/auth.dart';
+import '../../../../services/image_cache_service.dart';
+import '../../../../services/authenticated_image_service.dart';
+import '../../../../services/push_notification_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/profile_image_widget.dart';
+import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../providers/profile_provider.dart';
+import '../../services/profile_service.dart' as profile_service;
+import '../../../main/providers/bottom_navigation_provider.dart';
+import '../../../main/widgets/app_bottom_navigation_bar.dart';
 import '../widgets/verification_status_badge.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../models/gamification_models.dart';
+import '../../providers/gamification_provider.dart';
+import 'profile_badge_screen.dart';
 import 'profile_edit_screen.dart';
 
 /// شاشة عرض الملف الشخصي الرئيسية
 class ProfileMainScreen extends ConsumerStatefulWidget {
-  const ProfileMainScreen({super.key});
+  final bool showBottomNavigation;
+
+  const ProfileMainScreen({super.key, this.showBottomNavigation = false});
 
   @override
   ConsumerState<ProfileMainScreen> createState() => _ProfileMainScreenState();
@@ -34,6 +47,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   // متغير لتتبع حالة ظهور إشعار التوثيق
   bool _showVerificationNotification = true;
   Timer? _verificationNotificationTimer;
+  ProviderSubscription<AuthState>? _authSubscription;
+  ProviderSubscription<ProfileState>? _profileSubscription;
+  StreamSubscription<Map<String, dynamic>>? _pushNotificationSubscription;
 
   @override
   void initState() {
@@ -41,7 +57,114 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     // تحميل بيانات الملف الشخصي وقواعد التعديل عند فتح الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
+      _listenToAuthChanges();
+      _listenToProfileStatusUpdates();
     });
+
+    if (widget.showBottomNavigation) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(bottomNavIndexProvider.notifier).state = 4;
+        }
+      });
+    }
+  }
+  
+  /// الاستماع لتحديثات حالة الملف الشخصي من Push Notifications
+  void _listenToProfileStatusUpdates() {
+    // الاستماع لتحديثات profileProvider للكشف عن تغييرات الحالة
+    _profileSubscription = ref.listenManual<ProfileState>(
+      profileProvider,
+      (previous, next) {
+        if (previous?.currentProfile?.verificationStatus != 
+            next.currentProfile?.verificationStatus) {
+          final oldStatus = previous?.currentProfile?.verificationStatus;
+          final newStatus = next.currentProfile?.verificationStatus;
+          debugPrint('🔄 [PROFILE_SCREEN] Verification status changed: $oldStatus -> $newStatus');
+          
+          // إذا تغيرت الحالة إلى verified، قم بتحديث UI
+          if (newStatus == VerificationStatus.verified && 
+              oldStatus != VerificationStatus.verified) {
+            debugPrint('✅ [PROFILE_SCREEN] Profile verified! Updating UI...');
+            if (mounted) {
+              setState(() {
+                // إعادة بناء الصفحة لعرض الحالة الجديدة
+                _showVerificationNotification = true;
+              });
+            }
+          } else if (newStatus == VerificationStatus.rejected && 
+                     oldStatus != VerificationStatus.rejected) {
+            debugPrint('⚠️ [PROFILE_SCREEN] Profile rejected! Updating UI...');
+            if (mounted) {
+              setState(() {
+                // إعادة بناء الصفحة لعرض الحالة الجديدة
+              });
+            }
+          }
+        }
+      },
+    );
+    
+    // أيضاً الاستماع لإشعارات Push مباشرة
+    try {
+      _pushNotificationSubscription = PushNotificationService.instance.onNotificationReceived.listen(
+        (data) {
+          if (data.containsKey('_profileStatusUpdated') || 
+              data.containsKey('profileStatus')) {
+            debugPrint('🔄 [PROFILE_SCREEN] Profile status update received via push notification');
+            debugPrint('🔄 [PROFILE_SCREEN] Data: $data');
+            if (mounted) {
+              // إعادة تحميل البيانات للتأكد من التزامن
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+                  debugPrint('🔄 [PROFILE_SCREEN] Profile reloaded after push notification');
+                }
+              });
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('⚠️ [PROFILE_SCREEN] Error in push notification stream: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('⚠️ [PROFILE_SCREEN] Error listening to push notifications: $e');
+    }
+  }
+  
+  /// Listen to authentication changes to refresh profile when user logs in
+  void _listenToAuthChanges() {
+    // Listen to auth state changes to refresh profile when login occurs
+    _authSubscription = ref.listenManual<AuthState>(
+      authProvider,
+      (previous, next) async {
+        // If user just logged in, refresh profile data
+        if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
+          debugPrint('🔄 ProfileMainScreen: User logged in, refreshing profile data...');
+          // Use the same approach as edit screen for consistency
+          Future.microtask(() async {
+            try {
+              // Clear cache first (like edit screen does)
+              await profile_service.LocalProfileService.clearCache();
+              debugPrint('✅ ProfileMainScreen: Cache cleared after login');
+              
+              // Wait a bit to ensure tokens are ready
+              await Future.delayed(const Duration(milliseconds: 500));
+              
+              // Load fresh data from server (including qualifications and governorates)
+              // Use initializeProfilePage instead of loadCurrentProfile to ensure all data is loaded
+              if (mounted) {
+                await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+                debugPrint('✅ ProfileMainScreen: Profile, qualifications, and governorates refreshed after login');
+              }
+            } catch (e) {
+              debugPrint('❌ ProfileMainScreen: Error refreshing profile after login: $e');
+            }
+          });
+        }
+      },
+    );
   }
 
   /// Load profile data with retry mechanism
@@ -50,20 +173,39 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     const retryDelay = Duration(milliseconds: 1000);
 
     try {
+      // تحديث حالة المصادقة أولاً
+      ref.read(authProvider.notifier).refreshAuthState();
+
       // Check if user is authenticated before loading profile
       final authState = ref.read(authProvider);
       debugPrint(
-          'ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.sessionExpired}, isLoading: ${authState.isLoading}');
+          'ProfileMainScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.isSessionExpired}, isLoading: ${authState.isLoading}');
 
       if (authState.isAuthenticated &&
-          !authState.sessionExpired &&
           !authState.isLoading) {
         debugPrint(
             'ProfileMainScreen: Loading profile data (attempt ${retryCount + 1})');
+        debugPrint(
+            'ProfileMainScreen: Auth state confirmed - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.isSessionExpired}, isLoading: ${authState.isLoading}');
         // تحميل بيانات الملف الشخصي مع البيانات المرجعية (المحافظات والمؤهلات)
-        ref.read(profileProvider.notifier).loadProfile(forceRefresh: true);
+        // Always force refresh to get latest data from server (especially after admin approval)
+        debugPrint('ProfileMainScreen: Loading profile data with force refresh to ensure latest status');
+        
+        // Clear cache first (same approach as edit screen)
+        try {
+          await profile_service.LocalProfileService.clearCache();
+          debugPrint('✅ ProfileMainScreen: Cache cleared in _loadProfileData');
+        } catch (e) {
+          debugPrint('⚠️ ProfileMainScreen: Error clearing cache: $e');
+        }
+        
+        // Use initializeProfilePage to load profile + qualifications + governorates together
+        // This ensures qualifications are available when displaying profile data
+        await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+        
         // تحميل قواعد الملف الشخصي
         ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser();
+        debugPrint('ProfileMainScreen: Profile, qualifications, and governorates loaded successfully');
       } else if (authState.isLoading && retryCount < maxRetries) {
         // Auth is still loading, wait and retry
         debugPrint(
@@ -77,22 +219,38 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         await Future.delayed(retryDelay);
         return _loadProfileData(retryCount: retryCount + 1);
       } else {
+        // User is not authenticated or session expired
         debugPrint(
-            'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
-        // Show error message or redirect to login
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                  'فشل في تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.'),
-              backgroundColor: AppColors.error,
-              action: SnackBarAction(
-                label: 'إعادة المحاولة',
-                textColor: Colors.white,
-                onPressed: () => _loadProfileData(),
+            'ProfileMainScreen: User not authenticated or session expired');
+        debugPrint(
+            'ProfileMainScreen: Auth details - isAuthenticated: ${authState.isAuthenticated}, sessionExpired: ${authState.isSessionExpired}, user: ${authState.user?.phone}');
+        debugPrint('ProfileMainScreen: Error: ${authState.errorMessage}');
+        debugPrint(
+            'ProfileMainScreen: Retry count: $retryCount, Max retries: $maxRetries');
+
+        if (retryCount >= maxRetries) {
+          debugPrint(
+              'ProfileMainScreen: Failed to load profile after $maxRetries attempts');
+          // Show error message or redirect to login
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'انتهاء صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى.'),
+                backgroundColor: AppColors.error,
+                action: SnackBarAction(
+                  label: 'تسجيل الدخول',
+                  textColor: Colors.white,
+                  onPressed: () => context.go(AppRoutes.login),
+                ),
               ),
-            ),
-          );
+            );
+          }
+        } else {
+          debugPrint(
+              'ProfileMainScreen: Retrying authentication check (attempt ${retryCount + 1})');
+          await Future.delayed(retryDelay);
+          return _loadProfileData(retryCount: retryCount + 1);
         }
       }
     } catch (e) {
@@ -109,6 +267,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   @override
   void dispose() {
     _verificationNotificationTimer?.cancel();
+    _authSubscription?.close();
+    _profileSubscription?.close();
+    _pushNotificationSubscription?.cancel();
     super.dispose();
   }
 
@@ -116,187 +277,36 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final currentProfile = profileState.currentProfile;
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: CustomAppBar(
-        title: 'الملف الشخصي',
+        title: l10n.myProfile,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         actions: [
           if (currentProfile != null)
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: Icon(Icons.edit_outlined),
               onPressed: () => _navigateToEditProfile(context, currentProfile),
             ),
-          // زر القائمة الجانبية
-          Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
-            ),
-          ),
         ],
       ),
-      // القائمة الجانبية
-      endDrawer: _buildSideDrawer(context, l10n, currentProfile),
+      drawer: ProfileSideDrawer(
+        currentScreen: 'profile',
+        profile: currentProfile,
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(profileProvider.notifier).refresh(),
         child: _buildBody(profileState),
       ),
-    );
-  }
-
-  // إنشاء القائمة الجانبية
-  Widget _buildSideDrawer(
-      BuildContext context, AppLocalizations l10n, ProfileModel? profile) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
-
-    return Drawer(
-      child: Column(
-        children: [
-          // رأس القائمة الجانبية
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary,
-                  AppColors.primary.withOpacity(0.8),
-                ],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // صورة المستخدم
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (profile != null) {
-                      _showProfileImageOptions(context, profile);
-                    }
-                  },
-                  child: ProfileImageWidget(
-                    imageUrl: user?.profile
-                        ?.profilePhotoUrl, // Use profile.profilePhotoUrl
-                    size: 60,
-                    fallbackText: user?.profile?.fullNameAr?.isNotEmpty == true
-                        ? user!.profile!.fullNameAr![0].toUpperCase()
-                        : (user?.profile?.fullNameEn?.isNotEmpty == true
-                            ? user!.profile!.fullNameEn![0].toUpperCase()
-                            : 'U'),
-                    showEditIcon: false,
-                    isEditable: false,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // اسم المستخدم
-                Text(
-                  user?.profile?.fullNameAr ??
-                      user?.profile?.fullNameEn ??
-                      'المستخدم',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // عناصر القائمة
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                // الملف الشخصي
-                ListTile(
-                  leading: Icon(Icons.person_outline, color: AppColors.primary),
-                  title: const Text('الملف الشخصي'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // نحن بالفعل في صفحة الملف الشخصي
-                  },
-                ),
-
-                // تعديل الملف الشخصي
-                if (profile != null)
-                  ListTile(
-                    leading:
-                        Icon(Icons.edit_outlined, color: AppColors.primary),
-                    title: const Text('تعديل البيانات'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _navigateToEditProfile(context, profile);
-                    },
-                  ),
-
-                const Divider(),
-
-                // الإعدادات
-                ListTile(
-                  leading: Icon(Icons.settings_outlined,
-                      color: AppColors.textSecondary),
-                  title: const Text('الإعدادات'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: إضافة صفحة الإعدادات
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('سيتم إضافة صفحة الإعدادات قريباً')),
-                    );
-                  },
-                ),
-
-                // المساعدة
-                ListTile(
-                  leading:
-                      Icon(Icons.help_outline, color: AppColors.textSecondary),
-                  title: const Text('المساعدة'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // TODO: إضافة صفحة المساعدة
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('سيتم إضافة صفحة المساعدة قريباً')),
-                    );
-                  },
-                ),
-
-                const Divider(),
-
-                // تسجيل الخروج
-                ListTile(
-                  leading: Icon(Icons.logout, color: AppColors.error),
-                  title: Text(
-                    l10n.logout,
-                    style: TextStyle(color: AppColors.error),
-                  ),
-                  onTap: () => _showLogoutDialog(context, l10n),
-                ),
-              ],
-            ),
-          ),
-
-          // معلومات التطبيق في أسفل القائمة
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'تطبيق IDEC\nالإصدار 1.0.0',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
+      bottomNavigationBar:
+          widget.showBottomNavigation ? const AppBottomNavigationBar() : null,
     );
   }
 
@@ -311,7 +321,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('إلغاء'),
+              child: Text('إلغاء'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -342,6 +352,27 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           child: CircularProgressIndicator(),
         ),
       );
+
+      // مسح كاش المستندات والملف الشخصي قبل تسجيل الخروج
+      try {
+        await profile_service.LocalProfileService.clearCache();
+        debugPrint('✅ ProfileMainScreen: Profile cache cleared before logout');
+        
+        // مسح كاش الصور
+        try {
+          await ImageCacheService.clearAllCache();
+          AuthenticatedImageService.clearAllImageCache();
+          debugPrint('✅ ProfileMainScreen: Image cache cleared before logout');
+        } catch (e) {
+          debugPrint('⚠️ ProfileMainScreen: Error clearing image cache: $e');
+        }
+        
+        // إلغاء profile provider لإجبار إعادة التحميل
+        ref.invalidate(profileProvider);
+        debugPrint('✅ ProfileMainScreen: Profile provider invalidated');
+      } catch (e) {
+        debugPrint('⚠️ ProfileMainScreen: Error clearing cache before logout: $e');
+      }
 
       // تسجيل الخروج
       await ref.read(authProvider.notifier).logout();
@@ -400,8 +431,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () => _loadProfileData(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('إعادة المحاولة'),
+                    icon: Icon(Icons.refresh),
+                    label: Text('إعادة المحاولة'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -414,8 +445,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                     onPressed: () => ref
                         .read(profileProvider.notifier)
                         .loadCurrentProfile(forceRefresh: true),
-                    icon: const Icon(Icons.cloud_download),
-                    label: const Text('إعادة تحميل'),
+                    icon: Icon(Icons.cloud_download),
+                    label: Text('إعادة تحميل'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
@@ -441,21 +472,21 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               Icon(
                 Icons.person_outline,
                 size: 64,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               const SizedBox(height: 16),
               Text(
                 'لم يتم العثور على بيانات الملف الشخصي',
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => _loadProfileData(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('إعادة تحميل البيانات'),
+                icon: Icon(Icons.refresh),
+                label: Text('إعادة تحميل البيانات'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -495,6 +526,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             _buildVerificationSuccessNotification(),
 
           const SizedBox(height: 16),
+          
+          // Gamification Status
+          _buildGamificationStatus(ref),
+
+          const SizedBox(height: 16),
 
           // معلومات الملف الشخصي الأساسية
           _buildProfileHeader(profile),
@@ -522,11 +558,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -538,6 +574,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             children: [
               // صورة الملف الشخصي
               ProfileImageWidget(
+                key: ValueKey('profile_image_${profile.profilePictureUrl}_${DateTime.now().millisecondsSinceEpoch}'), // مفتاح فريد لإجبار إعادة البناء
                 imageUrl: profile.profilePictureUrl,
                 size: 80,
                 fallbackText: profile.fullNameAr.isNotEmpty
@@ -549,7 +586,9 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 isEditable: true,
                 onImageChanged: () {
                   // إعادة تحميل البيانات بعد تغيير الصورة
-                  ref.refresh(profileProvider);
+                  debugPrint('🔄 ProfileMainScreen: onImageChanged callback triggered');
+                  ref.invalidate(profileProvider);
+                  ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
                 },
               ),
 
@@ -564,24 +603,50 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                       profile.fullNameAr ?? profile.fullNameEn ?? 'غير محدد',
                       style: AppTextStyles.headlineSmall.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: context.colors.textPrimary,
                       ),
                     ),
 
                     const SizedBox(height: 4),
 
-                    // البريد الإلكتروني
-                    if (profile.email != null)
-                      Text(
-                        profile.email!,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                    // المؤهل العلمي (يظهر فقط للحسابات الموثقة)
+                    if (profile.verificationStatus ==
+                            VerificationStatus.verified &&
+                        profile.qualificationId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getQualificationDisplayName(
+                              profile.qualificationId, ref),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
 
                     const SizedBox(height: 8),
 
-                    // حالة التوثيق
-                    VerificationStatusBadge(status: profile.verificationStatus),
+                    // حالة التوثيق مع اختصار لفتح صفحة الهوية
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _openBadgeScreen(profile),
+                      child: Tooltip(
+                        message: 'عرض هوية المشاركة الرسمية',
+                        child: VerificationStatusBadge(
+                          status: profile.verificationStatus,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -610,6 +675,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               'اكتمال الملف الشخصي',
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
+                color: context.colors.textPrimary,
               ),
             ),
             Text(
@@ -690,11 +756,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -715,6 +781,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                 title,
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ],
@@ -737,7 +804,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             child: Text(
               label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -747,8 +814,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               value ?? 'غير محدد',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: value != null
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
+                    ? context.colors.textPrimary
+                    : context.colors.textSecondary,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -826,7 +893,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
                   child: Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -849,8 +916,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               value ?? 'غير محدد',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: value != null
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
+                    ? context.colors.textPrimary
+                    : context.colors.textSecondary,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
@@ -867,8 +934,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () => _navigateToEditProfile(context, profile),
-            icon: const Icon(Icons.edit),
-            label: const Text('تعديل البيانات'),
+            icon: Icon(Icons.edit),
+            label: Text('تعديل البيانات'),
           ),
         ),
       ],
@@ -982,7 +1049,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       final governorate = governorates.firstWhere(
         (g) => g.id == governorateId,
         orElse: () =>
-            GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
+            const GovernorateModel(id: '', name: 'غير محدد', nameAr: 'غير محدد'),
       );
       return governorate.nameAr;
     }
@@ -994,10 +1061,11 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     if (qualifications != null && qualificationId != null) {
       final qualification = qualifications.firstWhere(
         (q) => q.id == qualificationId,
-        orElse: () => QualificationModel(
+        orElse: () => const QualificationModel(
           id: '',
           nameAr: 'غير محدد',
           nameEn: '',
+          categoryId: '',
           requiresDocument: false,
           isActive: true,
           description: '',
@@ -1010,6 +1078,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
   }
 
   // Navigation methods
+  void _openBadgeScreen(ProfileModel profile) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ProfileBadgeScreen(profile: profile),
+      ),
+    );
+  }
+
   void _navigateToEditProfile(BuildContext context, ProfileModel profile) {
     // الانتقال إلى شاشة التعديل مع callback لتحديث البيانات عند العودة
     Navigator.push(
@@ -1017,15 +1093,22 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       MaterialPageRoute(
         builder: (context) => ProfileEditScreen(profile: profile),
       ),
-    ).then((_) {
-      // تحديث البيانات والقواعد عند العودة من صفحة التعديل
-      debugPrint(
-          'ProfileMainScreen: Returned from edit screen, refreshing data...');
-      _loadProfileData();
-      // تحديث قواعد التعديل أيضاً
+    ).then((result) async {
+      // Always refresh data when returning from edit screen
+      // This ensures we get latest data including admin approval changes
+      debugPrint('ProfileMainScreen: Returning from edit screen, refreshing data...');
+      
+      // Clear cache first
+      await profile_service.LocalProfileService.clearCache();
+      
+      // Always load fresh data from server (including qualifications and governorates)
+      // This is critical to detect admin approval changes and display qualification names correctly
+      await ref.read(profileProvider.notifier).initializeProfilePage(forceRefresh: true);
+      
+      // Update profile rules as well
       ref.read(profileRulesProvider.notifier).loadRules();
-      // تحديث حالة الملف الشخصي
-      ref.refresh(profileProvider);
+      
+      debugPrint('✅ ProfileMainScreen: Profile data refreshed after returning from edit');
     });
   }
 
@@ -1039,16 +1122,16 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('التقاط صورة'),
+              leading: Icon(Icons.camera_alt),
+              title: Text('التقاط صورة'),
               onTap: () {
                 Navigator.pop(context);
                 _updateProfilePicture(context, isCamera: true);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('اختيار من المعرض'),
+              leading: Icon(Icons.photo_library),
+              title: Text('اختيار من المعرض'),
               onTap: () {
                 Navigator.pop(context);
                 _updateProfilePicture(context, isCamera: false);
@@ -1056,8 +1139,8 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             ),
             if (profile.profilePictureUrl != null)
               ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('حذف الصورة'),
+                leading: Icon(Icons.delete),
+                title: Text('حذف الصورة'),
                 onTap: () {
                   Navigator.pop(context);
                   _removeProfilePicture(context);
@@ -1154,18 +1237,18 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('متطلبات التوثيق غير مكتملة'),
+          title: Text('متطلبات التوثيق غير مكتملة'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('يرجى إكمال المتطلبات التالية قبل طلب التوثيق:'),
+              Text('يرجى إكمال المتطلبات التالية قبل طلب التوثيق:'),
               const SizedBox(height: 12),
               ...missingRequirements.map((requirement) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline,
+                        Icon(Icons.error_outline,
                             color: AppColors.error, size: 16),
                         const SizedBox(width: 8),
                         Expanded(child: Text(requirement)),
@@ -1177,14 +1260,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('حسناً'),
+              child: Text('حسناً'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 _navigateToEditProfile(context, profile);
               },
-              child: const Text('تعديل الملف الشخصي'),
+              child: Text('تعديل الملف الشخصي'),
             ),
           ],
         ),
@@ -1200,14 +1283,14 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('طلب توثيق الحساب'),
+        title: Text('طلب توثيق الحساب'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('هل أنت متأكد من أنك تريد إرسال طلب توثيق الحساب؟'),
+            Text('هل أنت متأكد من أنك تريد إرسال طلب توثيق الحساب؟'),
             const SizedBox(height: 16),
-            const Text('سيتم مراجعة:',
+            Text('سيتم مراجعة:',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (requiredFields.isNotEmpty) ...[
@@ -1217,7 +1300,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
               Text('• ${requiredDocuments.length} وثيقة مطلوبة'),
             ],
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'ملاحظة: قد تستغرق عملية المراجعة من 1-3 أيام عمل.',
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
@@ -1226,7 +1309,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1236,7 +1319,7 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
             ),
-            child: const Text('إرسال الطلب'),
+            child: Text('إرسال الطلب'),
           ),
         ],
       ),
@@ -1332,5 +1415,81 @@ class _ProfileMainScreenState extends ConsumerState<ProfileMainScreen> {
       default:
         return documentType;
     }
+  }
+
+  Widget _buildGamificationStatus(WidgetRef ref) {
+    final gamificationAsync = ref.watch(myGamificationProfileProvider);
+
+    return gamificationAsync.when(
+      data: (data) {
+        if (data == null) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildGamificationItem(
+                'Points',
+                '${data.totalPoints}',
+                Icons.stars,
+              ),
+              Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+              _buildGamificationItem(
+                'Level',
+                '${data.currentLevel}',
+                Icons.military_tech,
+              ),
+              Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+               _buildGamificationItem(
+                'Rank',
+                data.rank != null ? '#${data.rank}' : '-',
+                Icons.leaderboard,
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(height: 80, child: Center(child: LoadingIndicator())),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildGamificationItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
 }

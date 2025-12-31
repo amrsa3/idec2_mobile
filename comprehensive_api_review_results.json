@@ -3,7 +3,7 @@
   "server_status": "healthy",
   "endpoints": {
     "health_check": {
-      "endpoint": "/api/v1/health",
+      "endpoint": "/health",
       "method": "GET",
       "success": true,
       "response_time": 85,

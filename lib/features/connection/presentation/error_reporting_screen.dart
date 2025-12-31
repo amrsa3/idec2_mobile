@@ -306,7 +306,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
         // Test Results Summary
         if (testResults.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Test Results:',
             style: TextStyle(
               fontWeight: FontWeight.w600,
@@ -326,7 +326,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
           const SizedBox(height: 8),
           Text(
             'Errors Found: ${errors.length}',
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.w600,
               color: AppColors.error,
             ),
@@ -340,7 +340,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
           if (errors.length > 3)
             Text(
               '... and ${errors.length - 3} more errors',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
                 fontStyle: FontStyle.italic,
@@ -351,7 +351,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
         // Speed Test Summary
         if (testData['speedTestResult'] != null) ...[
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Speed Test:',
             style: TextStyle(
               fontWeight: FontWeight.w600,
@@ -383,7 +383,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
             width: 120,
             child: Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -453,7 +453,7 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
             // Header
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.bug_report,
                   size: 32,
                   color: AppColors.primary,
@@ -491,10 +491,10 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(Icons.error, color: AppColors.error),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             'Error Details',
                             style: TextStyle(
@@ -525,10 +525,10 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(Icons.network_check, color: AppColors.info),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             'Connection Test Summary',
                             style: TextStyle(
@@ -640,15 +640,15 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
             // Information Card
             Card(
               color: AppColors.info.withOpacity(0.1),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+              child: const Padding(
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Icon(Icons.info, color: AppColors.info),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'What\'s included in the report?',
                           style: TextStyle(
@@ -658,16 +658,16 @@ class _ErrorReportingScreenState extends ConsumerState<ErrorReportingScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text('• Error message and stack trace'),
-                    const Text('• Device and app information'),
-                    const Text('• Complete connection test results'),
-                    const Text('• Server ping and API endpoint errors'),
-                    const Text('• Network connectivity details'),
-                    const Text('• Speed test results (if available)'),
-                    const Text('• All DioException and connection errors'),
-                    const Text('• Timestamp and user description'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
+                    Text('• Error message and stack trace'),
+                    Text('• Device and app information'),
+                    Text('• Complete connection test results'),
+                    Text('• Server ping and API endpoint errors'),
+                    Text('• Network connectivity details'),
+                    Text('• Speed test results (if available)'),
+                    Text('• All DioException and connection errors'),
+                    Text('• Timestamp and user description'),
+                    SizedBox(height: 8),
                     Text(
                       'No personal data or sensitive information is included.',
                       style: TextStyle(

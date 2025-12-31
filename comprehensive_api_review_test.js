@@ -105,11 +105,11 @@ async function testServerHealth() {
     console.log('🔍 اختبار حالة الخادم...');
     
     const { result, responseTime, success, error } = await measureResponseTime(async () => {
-        return await axios.get(`${BASE_URL}/api/v1/health`);
+        return await axios.get(`${BASE_URL}/health`);
     });
 
     const testResult = {
-        endpoint: '/api/v1/health',
+        endpoint: '/health',
         method: 'GET',
         success,
         response_time: responseTime,

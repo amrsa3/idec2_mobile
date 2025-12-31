@@ -334,7 +334,7 @@ async function runAllTests() {
   const endpointMismatches = [
     {
       flutter: '/api/server/health',
-      server: '/api/v1/health',
+      server: '/health',
       description: 'Health check endpoint'
     },
     {

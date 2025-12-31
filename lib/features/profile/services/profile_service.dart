@@ -8,15 +8,18 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Conditional import for web utilities
+import '../../../services/web_utils.dart';
+
 import '../../../core/constants/api_constants.dart';
 import '../../../models/models.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/dio_service.dart';
+import '../../../services/compatible_auth_service.dart';
+import '../../../services/enhanced_dio_service_v2.dart';
+import '../../../services/platform_storage_service.dart';
 import '../../../services/profile_rules_service.dart';
-import '../../../services/storage_service.dart';
 
 class LocalProfileService {
-  static final Dio _dio = Dio();
+  static Dio get _dio => EnhancedDioServiceV2.instance.dio;
   static const String _cacheKey = 'cached_profile_data';
   static const String _cacheTimestampKey = 'profile_cache_timestamp';
   static const int _cacheValidityHours = 24; // Cache valid for 24 hours
@@ -62,17 +65,79 @@ class LocalProfileService {
   /// Get cached profile data
   static Future<ProfileModel?> _getCachedProfile() async {
     try {
+      // الحصول على userId الحالي من auth service
+      final currentUserId = await _getCurrentUserId();
+      
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString(_cacheKey);
+      const userIdKey = '${_cacheKey}_user_id';
+      final cachedUserId = prefs.getString(userIdKey);
 
+      // التحقق من تطابق userId قبل استخدام الكاش
       if (cachedData != null) {
+        if (currentUserId != null && cachedUserId != null && currentUserId != cachedUserId) {
+          debugPrint('⚠️ Cached profile userId ($cachedUserId) does not match current userId ($currentUserId), clearing cache');
+          await clearCache();
+          return null;
+        }
+        
         final profileJson = json.decode(cachedData);
-        return ProfileModel.fromJson(profileJson);
+        final profile = ProfileModel.fromJson(profileJson);
+        
+        // التحقق مرة أخرى من userId في profile نفسه
+        if (currentUserId != null && profile.userId != currentUserId) {
+          debugPrint('⚠️ Profile userId (${profile.userId}) does not match current userId ($currentUserId), clearing cache');
+          await clearCache();
+          return null;
+        }
+        
+        return profile;
+      }
+      
+      // على الويب، محاولة قراءة من localStorage
+      if (kIsWeb) {
+        try {
+          final cachedDataWeb = getLocalStorageValue(_cacheKey);
+          final cachedUserIdWeb = getLocalStorageValue(userIdKey);
+          
+          if (cachedDataWeb != null) {
+            if (currentUserId != null && cachedUserIdWeb != null && currentUserId != cachedUserIdWeb) {
+              debugPrint('⚠️ Web cached profile userId ($cachedUserIdWeb) does not match current userId ($currentUserId), clearing cache');
+              await clearCache();
+              return null;
+            }
+            
+            final profileJson = json.decode(cachedDataWeb);
+            final profile = ProfileModel.fromJson(profileJson);
+            
+            if (currentUserId != null && profile.userId != currentUserId) {
+              debugPrint('⚠️ Web profile userId (${profile.userId}) does not match current userId ($currentUserId), clearing cache');
+              await clearCache();
+              return null;
+            }
+            
+            return profile;
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error reading cached profile from localStorage: $e');
+        }
       }
     } catch (e) {
-      debugPrint('Error loading cached profile: $e');
+      debugPrint('❌ Error loading cached profile: $e');
     }
     return null;
+  }
+  
+  /// Get current user ID from auth service
+  static Future<String?> _getCurrentUserId() async {
+    try {
+      final authService = CompatibleAuthService.instance;
+      final user = authService.user;
+      return user?.id;
+    } catch (e) {
+      debugPrint('⚠️ Error getting current user ID: $e');
+      return null;
+    }
   }
 
   /// Cache profile data
@@ -80,12 +145,28 @@ class LocalProfileService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final profileJson = json.encode(profile.toJson());
+      
+      // حفظ userId مع الكاش للتحقق لاحقاً
+      const userIdKey = '${_cacheKey}_user_id';
       await prefs.setString(_cacheKey, profileJson);
+      await prefs.setString(userIdKey, profile.userId);
       await prefs.setInt(
           _cacheTimestampKey, DateTime.now().millisecondsSinceEpoch);
-      debugPrint('✅ Profile cached successfully');
+      
+      // على الويب، حفظ في localStorage أيضاً
+      if (kIsWeb) {
+        try {
+          setLocalStorageValue(_cacheKey, profileJson);
+          setLocalStorageValue(userIdKey, profile.userId);
+          setLocalStorageValue(_cacheTimestampKey, DateTime.now().millisecondsSinceEpoch.toString());
+        } catch (e) {
+          debugPrint('⚠️ Error caching profile to localStorage: $e');
+        }
+      }
+      
+      debugPrint('✅ Profile cached successfully (userId: ${profile.userId})');
     } catch (e) {
-      debugPrint('Error caching profile: $e');
+      debugPrint('❌ Error caching profile: $e');
     }
   }
 
@@ -106,7 +187,7 @@ class LocalProfileService {
       debugPrint('📋 ProfileService: Fetching profile data');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -145,7 +226,7 @@ class LocalProfileService {
       debugPrint('📊 ProfileService: Fetching profile completion status');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -205,8 +286,9 @@ class LocalProfileService {
       }
 
       // If connected, check cache strategy
+      // IMPORTANT: When forceRefresh is true, NEVER use cache (even recent cache)
       if (!forceRefresh) {
-        // Use recent cache if available and requested
+        // Use recent cache if available and requested (only if not forceRefresh)
         if (useRecentCache && await _isRecentCache()) {
           final cachedProfile = await _getCachedProfile();
           if (cachedProfile != null) {
@@ -216,7 +298,7 @@ class LocalProfileService {
           }
         }
 
-        // Use regular cache if valid
+        // Use regular cache if valid (only if not forceRefresh)
         if (await _isCacheValid()) {
           final cachedProfile = await _getCachedProfile();
           if (cachedProfile != null) {
@@ -224,10 +306,20 @@ class LocalProfileService {
             return cachedProfile;
           }
         }
+      } else {
+        debugPrint('🔄 ProfileService: forceRefresh=true, skipping all cache checks');
+        // Clear cache when forceRefresh to ensure fresh data
+        try {
+          await clearCache();
+          debugPrint('✅ ProfileService: Cache cleared due to forceRefresh');
+        } catch (e) {
+          debugPrint('⚠️ ProfileService: Error clearing cache: $e');
+          // Continue anyway
+        }
       }
 
       // Fetch fresh data from server
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         throw Exception('لم يتم العثور على رمز المصادقة');
@@ -349,7 +441,7 @@ class LocalProfileService {
       debugPrint('🔄 ProfileService: Updating profile');
 
       // استخدام DioService للصصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -373,7 +465,27 @@ class LocalProfileService {
       if (response.statusCode == 200) {
         debugPrint('✅ ProfileService: Profile updated successfully');
         final data = response.data;
-        return ProfileModel.fromJson(data);
+
+        // تحويل البيانات لضمان التوافق مع ProfileModel
+        final transformedData = Map<String, dynamic>.from(data);
+
+        // التأكد من أن documents هو قائمة وليس string أو رقم
+        if (transformedData['documents'] != null &&
+            transformedData['documents'] is! List) {
+          debugPrint(
+              '⚠️ ProfileService: Converting documents from ${transformedData['documents'].runtimeType} to List');
+          transformedData['documents'] = [];
+        }
+
+        // التأكد من أن required_documents هو قائمة
+        if (transformedData['required_documents'] != null &&
+            transformedData['required_documents'] is! List) {
+          debugPrint(
+              '⚠️ ProfileService: Converting required_documents from ${transformedData['required_documents'].runtimeType} to List');
+          transformedData['required_documents'] = [];
+        }
+
+        return ProfileModel.fromJson(transformedData);
       } else {
         debugPrint(
             '❌ ProfileService: Update failed with status: ${response.statusCode}');
@@ -397,14 +509,14 @@ class LocalProfileService {
       debugPrint('📄 File URL: $fileUrl');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
       }
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '/api/v1/files/upload',
         data: {
           'documentType': documentType,
           'fileUrl': fileUrl,
@@ -425,7 +537,48 @@ class LocalProfileService {
         final data = response.data;
         debugPrint('📄 ProfileService: Document uploaded successfully');
 
-        return DocumentUploadModel.fromJson(data);
+        // تحويل البيانات مع معالجة أفضل للأخطاء
+        try {
+          // التأكد من تحويل جميع الحقول للنوع الصحيح
+          final safeData = Map<String, dynamic>.from(data);
+
+          // التأكد من أن userId هو string
+          if (safeData['userId'] != null) {
+            safeData['userId'] = safeData['userId'].toString();
+          }
+
+          // التأكد من أن id هو string
+          if (safeData['id'] != null) {
+            safeData['id'] = safeData['id'].toString();
+          }
+
+          // التأكد من أن documentType هو string
+          if (safeData['documentType'] != null) {
+            safeData['documentType'] = safeData['documentType'].toString();
+          }
+
+          // التأكد من أن fileName هو string
+          if (safeData['fileName'] != null) {
+            safeData['fileName'] = safeData['fileName'].toString();
+          }
+
+          // التأكد من أن fileUrl هو string
+          if (safeData['fileUrl'] != null) {
+            safeData['fileUrl'] = safeData['fileUrl'].toString();
+          }
+
+          // التأكد من أن status هو string
+          if (safeData['status'] != null) {
+            safeData['status'] = safeData['status'].toString();
+          }
+
+          return DocumentUploadModel.fromJson(safeData);
+        } catch (conversionError) {
+          debugPrint(
+              '❌ ProfileService: Error converting document data: $conversionError');
+          debugPrint('📊 ProfileService: Original data: $data');
+          throw Exception('خطأ في تحويل بيانات الوثيقة: $conversionError');
+        }
       } else {
         debugPrint(
             '❌ ProfileService: Failed to upload document: ${response.statusCode}');
@@ -438,40 +591,113 @@ class LocalProfileService {
   }
 
   /// Get user documents
-  static Future<List<DocumentUploadModel>> getUserDocuments() async {
+  static Future<List<DocumentUploadModel>> getUserDocuments({
+    int page = 1,
+    int limit = 100,
+  }) async {
     try {
       debugPrint('📄 ProfileService: Fetching user documents');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return [];
       }
 
-      final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
+      final allDocuments = <DocumentUploadModel>[];
+      int currentPage = page;
+      int safetyCounter = 0;
 
-      debugPrint(
-          '📄 ProfileService: Documents response status: ${response.statusCode}');
+      while (true) {
+        final response = await _dio.get(
+          '/api/v1/files/documents',
+          queryParameters: {
+            'page': currentPage,
+            'limit': limit,
+          },
+          options: Options(
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        debugPrint('📄 ProfileService: Documents received successfully');
-
-        final List<dynamic> documentsJson = data['documents'] ?? [];
-        return documentsJson
-            .map((json) => DocumentUploadModel.fromJson(json))
-            .toList();
-      } else {
         debugPrint(
-            '❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
-        return [];
+            '📄 ProfileService: Documents response status (page $currentPage): ${response.statusCode}');
+
+        if (response.statusCode != 200 && response.statusCode != 201) {
+          debugPrint(
+              '❌ ProfileService: Failed to fetch documents: ${response.statusCode}');
+          break;
+        }
+
+        final responseData = response.data;
+        List<dynamic> filesJson = [];
+
+        if (responseData is Map<String, dynamic>) {
+          if (responseData['files'] is List) {
+            filesJson = responseData['files'] as List<dynamic>;
+          } else if (responseData['documents'] is List) {
+            filesJson = responseData['documents'] as List<dynamic>;
+          } else {
+            debugPrint(
+                '⚠️ ProfileService: No files/documents array in response: keys=${responseData.keys}');
+          }
+        } else if (responseData is List) {
+          filesJson = responseData;
+        } else {
+          debugPrint(
+              '⚠️ ProfileService: Unexpected documents response type: ${responseData.runtimeType}');
+        }
+
+        final pageDocuments = filesJson
+            .map((json) {
+              try {
+                final fileData =
+                    Map<String, dynamic>.from(json as Map<String, dynamic>);
+                return _convertFileResponseToDocumentModel(fileData);
+              } catch (e) {
+                debugPrint(
+                    '❌ ProfileService: Error converting file to document: $e');
+                debugPrint('📊 ProfileService: Original file data: $json');
+                return null;
+              }
+            })
+            .whereType<DocumentUploadModel>()
+            .toList();
+
+        if (pageDocuments.isEmpty) {
+          break;
+        }
+
+        // Avoid duplicates by ID
+        final existingIds = allDocuments.map((doc) => doc.id).toSet();
+        for (final doc in pageDocuments) {
+          if (existingIds.add(doc.id)) {
+            allDocuments.add(doc);
+          }
+        }
+
+        bool hasMore = false;
+        if (responseData is Map<String, dynamic>) {
+          final totalPages = responseData['totalPages'];
+          if (totalPages is num && currentPage < totalPages) {
+            hasMore = true;
+          } else if (totalPages == null && filesJson.length == limit) {
+            hasMore = true;
+          }
+        } else if (filesJson.length == limit) {
+          hasMore = true;
+        }
+
+        currentPage += 1;
+        safetyCounter += 1;
+
+        if (!hasMore || safetyCounter >= 10) {
+          break;
+        }
       }
+
+      return allDocuments;
     } catch (e) {
       debugPrint('❌ ProfileService: Error fetching documents: $e');
 
@@ -487,19 +713,65 @@ class LocalProfileService {
     }
   }
 
+  static DocumentUploadModel? _convertFileResponseToDocumentModel(
+      Map<String, dynamic> fileData) {
+    try {
+      final metadata = fileData['metadata'] is Map
+          ? Map<String, dynamic>.from(fileData['metadata'] as Map)
+          : null;
+
+      DateTime? uploadedAt;
+      if (fileData['createdAt'] != null) {
+        uploadedAt = DateTime.tryParse(fileData['createdAt'].toString());
+      }
+      uploadedAt ??= DateTime.now();
+
+      DateTime? reviewedAt;
+      if (metadata != null && metadata['reviewedAt'] != null) {
+        reviewedAt = DateTime.tryParse(metadata['reviewedAt'].toString());
+      }
+
+      final convertedData = <String, dynamic>{
+        'id': fileData['id']?.toString() ?? '',
+        'userId': fileData['entityId']?.toString() ??
+            fileData['uploadedBy']?.toString() ??
+            '',
+        'documentType': fileData['fileCategory']?.toString() ??
+            metadata?['documentType']?.toString() ??
+            'OTHER_DOCUMENT',
+        'fileName': fileData['originalName']?.toString() ??
+            fileData['fileName']?.toString() ??
+            '',
+        'fileUrl': fileData['url']?.toString() ?? '',
+        'status': metadata?['status']?.toString() ?? 'uploaded',
+        'uploadedAt': uploadedAt.toIso8601String(),
+        'rejectionReason': metadata?['rejectionReason']?.toString(),
+        'reviewedAt': reviewedAt?.toIso8601String(),
+        'reviewedBy': metadata?['reviewedBy']?.toString(),
+        'metadata': metadata,
+      };
+
+      return DocumentUploadModel.fromJson(convertedData);
+    } catch (e) {
+      debugPrint('❌ ProfileService: Failed to convert file data: $e');
+      debugPrint('📊 ProfileService: File data: $fileData');
+      return null;
+    }
+  }
+
   /// Delete document
   static Future<bool> deleteDocument(String documentId) async {
     try {
       debugPrint('🗑️ ProfileService: Deleting document: $documentId');
 
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         debugPrint('❌ ProfileService: No authentication token found');
         return false;
       }
 
       final response = await _dio.delete(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents/$documentId',
+        '${ApiConstants.baseUrl}/api/v1/files/$documentId',
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
@@ -519,7 +791,7 @@ class LocalProfileService {
       debugPrint('✅ ProfileService: Submitting profile for verification');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return false;
@@ -547,7 +819,7 @@ class LocalProfileService {
       debugPrint('📜 ProfileService: Fetching verification history');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return [];
@@ -668,7 +940,7 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Uploading profile picture');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -677,14 +949,27 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
+      String userId;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
-        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        debugPrint('⚠️ ProfileService: Current user is null, trying fallback...');
+        try {
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('User data not found');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
       }
-      final userId = currentUser.id;
       debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
@@ -701,6 +986,8 @@ class LocalProfileService {
       }
 
       debugPrint('📸 ProfileService: Detected content type: $contentType');
+
+      // User ID is already available from authService.getCurrentUser() above
 
       // Create form data with correct content type and user ID
       MultipartFile multipartFile;
@@ -721,34 +1008,72 @@ class LocalProfileService {
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': 'profile_picture',
+        'entityType': 'USER_PROFILE', // enum value
+        'entityId': userId,
+        'fileCategory': 'PROFILE_PICTURE', // enum value
         'description': 'صورة الملف الشخصي',
       });
+      
+      debugPrint('📤 [UPLOAD_PROFILE_PICTURE] Uploading profile picture with:');
+      debugPrint('   - entityType: USER_PROFILE');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: PROFILE_PICTURE');
 
       // Use the correct endpoint that matches the backend
+      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
+      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
+      debugPrint('📁 File info: ${imageFile.path}');
+      debugPrint('👤 User ID: $userId');
+      debugPrint('📦 Form data fields count: ${formData.fields.length}');
+      debugPrint('📦 Form data files count: ${formData.files.length}');
+      debugPrint(
+          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
+      debugPrint('🔑 Token length: ${token.length}');
+      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
+
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 
       debugPrint(
           '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
       debugPrint('📸 ProfileService: Response data: ${response.data}');
+      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         debugPrint('📸 ProfileService: Profile picture uploaded successfully');
+        
+        // 🔍 DEBUG: طباعة تفاصيل الاستجابة من الخادم
+        debugPrint('📥 [UPLOAD_PROFILE_PICTURE] Server response:');
+        final fileData = data['file'] ?? data;
+        if (fileData is Map<String, dynamic>) {
+          debugPrint('   - id: ${fileData['id']}');
+          debugPrint('   - entityType: ${fileData['entityType']}');
+          debugPrint('   - entityId: ${fileData['entityId']}');
+          debugPrint('   - fileCategory: ${fileData['fileCategory']}');
+          debugPrint('   - url: ${fileData['url']}');
+          debugPrint('   - originalName: ${fileData['originalName']}');
+        }
 
         // Extract file data from the response
-        final fileData = data['file'];
         if (fileData != null) {
-          return fileData;
+          return fileData is Map<String, dynamic> ? fileData : data;
         } else {
           // Fallback if file data is not in expected format
           return data;
@@ -837,7 +1162,7 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Uploading profile picture (Web)');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -846,14 +1171,27 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
+      String userId;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
-        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        debugPrint('⚠️ ProfileService: Current user is null, trying fallback...');
+        try {
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('User data not found');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
       }
-      final userId = currentUser.id;
       debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
@@ -872,42 +1210,84 @@ class LocalProfileService {
       debugPrint('📸 ProfileService: Detected content type: $contentType');
 
       // Create form data for web platform
+      final bytes = await imageFile.readAsBytes();
       final multipartFile = MultipartFile.fromBytes(
-        await imageFile.readAsBytes(),
-        filename: imageFile.name,
+        bytes,
+        filename: 'profile_picture.jpg', // Use a fixed filename for web
         contentType: MediaType.parse(contentType),
       );
 
+      debugPrint('📸 ProfileService: File bytes length: ${bytes.length}');
+      debugPrint('📸 ProfileService: MultipartFile created successfully');
+
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': 'profile_picture',
+        'entityType': 'USER_PROFILE', // enum value
+        'entityId': userId,
+        'fileCategory': 'PROFILE_PICTURE', // enum value
         'description': 'صورة الملف الشخصي',
       });
+      
+      debugPrint('📤 [UPLOAD_PROFILE_PICTURE] Uploading profile picture with:');
+      debugPrint('   - entityType: USER_PROFILE');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: PROFILE_PICTURE');
 
       // Use the correct endpoint that matches the backend
+      debugPrint('🚀 === MOBILE FILE UPLOAD REQUEST STARTED ===');
+      debugPrint('📅 Timestamp: ${DateTime.now().toIso8601String()}');
+      debugPrint('🔗 Upload URL: ${ApiConstants.baseUrl}/api/v1/files/upload');
+      debugPrint('📁 File info: ${imageFile.path}');
+      debugPrint('👤 User ID: $userId');
+      debugPrint('📦 Form data fields count: ${formData.fields.length}');
+      debugPrint('📦 Form data files count: ${formData.files.length}');
+      debugPrint(
+          '📦 Form data keys: ${formData.fields.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data files: ${formData.files.map((e) => e.key).toList()}');
+      debugPrint(
+          '📦 Form data values: ${formData.fields.map((e) => '${e.key}: ${e.value}').toList()}');
+      debugPrint('🔑 Token length: ${token.length}');
+      debugPrint('🔑 Token prefix: ${token.substring(0, 20)}...');
+
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents',
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 
       debugPrint(
           '📸 ProfileService: Profile picture upload response: ${response.statusCode}');
       debugPrint('📸 ProfileService: Response data: ${response.data}');
+      debugPrint('🎉 === MOBILE FILE UPLOAD RESPONSE RECEIVED ===');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        debugPrint('📸 ProfileService: Profile picture uploaded successfully');
+        debugPrint('📸 ProfileService: Profile picture uploaded successfully (Web)');
+        
+        // 🔍 DEBUG: طباعة تفاصيل الاستجابة من الخادم
+        debugPrint('📥 [UPLOAD_PROFILE_PICTURE_WEB] Server response:');
+        final fileData = data['file'] ?? data;
+        if (fileData is Map<String, dynamic>) {
+          debugPrint('   - id: ${fileData['id']}');
+          debugPrint('   - entityType: ${fileData['entityType']}');
+          debugPrint('   - entityId: ${fileData['entityId']}');
+          debugPrint('   - fileCategory: ${fileData['fileCategory']}');
+          debugPrint('   - url: ${fileData['url']}');
+          debugPrint('   - originalName: ${fileData['originalName']}');
+        }
 
         // Extract file data from the response
-        final fileData = data['file'];
         if (fileData != null) {
-          return fileData;
+          return fileData is Map<String, dynamic> ? fileData : data;
         } else {
           // Fallback if file data is not in expected format
           return data;
@@ -929,7 +1309,7 @@ class LocalProfileService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('❌ ProfileService: Error uploading profile picture: $e');
+      debugPrint('❌ ProfileService: Error uploading profile picture (Web): $e');
 
       // Re-throw DioException with more specific error handling
       if (e is DioException) {
@@ -989,7 +1369,7 @@ class LocalProfileService {
       debugPrint('🗑️ ProfileService: Removing profile picture');
 
       // استخدام DioService للحصول على الرمز المميز
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       debugPrint(
           '🔑 ProfileService: Token check - ${token != null ? "Token exists (length: ${token.length})" : "No token found"}');
 
@@ -998,9 +1378,9 @@ class LocalProfileService {
         throw Exception('خطأ في المصادقة - يرجى تسجيل الدخول أولاً');
       }
 
-      // Get current user ID from AuthService
-      final authService = AuthService.instance;
-      final currentUser = await authService.getCurrentUser();
+      // Get current user ID from CompatibleAuthService
+      final compatibleAuthService = CompatibleAuthService.instance;
+      final currentUser = compatibleAuthService.user;
       if (currentUser == null || currentUser.id.isEmpty) {
         debugPrint('❌ ProfileService: No current user found');
         throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
@@ -1092,7 +1472,7 @@ class LocalProfileService {
       debugPrint('✅ Request data: ${request.toJson()}');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -1131,9 +1511,49 @@ class LocalProfileService {
 
   /// Alias for getProfile() for backward compatibility
   /// Use getProfile() instead - this method will be deprecated
+  /// When forceRefresh is true, NEVER use cache (not even recent cache)
   static Future<ProfileModel?> getCurrentProfile(
       {bool forceRefresh = false}) async {
-    return getProfile(forceRefresh: forceRefresh, useRecentCache: true);
+    // If forceRefresh is true, disable both regular cache and recent cache
+    return getProfile(
+      forceRefresh: forceRefresh, 
+      useRecentCache: !forceRefresh // Disable recent cache if forceRefresh
+    );
+  }
+
+  /// Update profile picture URL locally without server call
+  static Future<void> updateProfilePictureUrlLocally(String imageUrl) async {
+    try {
+      debugPrint(
+          '🔄 ProfileService: Updating profile picture URL locally: $imageUrl');
+
+      // تحديث URL الصورة في التخزين المحلي
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profile_picture_url', imageUrl);
+
+      // تحديث الملف الشخصي المحفوظ محلياً
+      final cachedData = prefs.getString(_cacheKey);
+      if (cachedData != null) {
+        try {
+          final profileJson = json.decode(cachedData);
+          profileJson['profilePictureUrl'] = imageUrl;
+          profileJson['profilePhotoUrl'] = imageUrl; // للتوافق مع الباك إند
+
+          // حفظ الملف الشخصي المحدث
+          await prefs.setString(_cacheKey, json.encode(profileJson));
+          debugPrint(
+              '✅ ProfileService: Cached profile updated with new image URL');
+        } catch (e) {
+          debugPrint('⚠️ ProfileService: Error updating cached profile: $e');
+        }
+      }
+
+      debugPrint('✅ ProfileService: Profile picture URL updated locally');
+    } catch (e) {
+      debugPrint(
+          '❌ ProfileService: Error updating profile picture URL locally: $e');
+      // لا نريد أن يفشل العملية بسبب فشل التحديث المحلي
+    }
   }
 
   /// Update profile picture URL in user profile
@@ -1248,6 +1668,237 @@ class LocalProfileService {
     }
   }
 
+  /// Upload document file for specific field with retry mechanism and progress tracking
+  static Future<DocumentUploadModel?> uploadDocumentFileWithRetry({
+    required File file,
+    required String documentType,
+    required String fieldName,
+    Uint8List? fileBytes, // إضافة البيانات للويب
+    int maxRetries = 3,
+    Duration retryDelay = const Duration(seconds: 2),
+    Function(double)? onProgress, // إضافة callback للتقدم
+  }) async {
+    int retryCount = 0;
+    Exception? lastException;
+
+    while (retryCount < maxRetries) {
+      try {
+        debugPrint(
+            '📄 ProfileService: Uploading document file for field: $fieldName (attempt ${retryCount + 1}/$maxRetries)');
+
+        // فحص الاتصال قبل المحاولة
+        if (retryCount > 0) {
+          debugPrint(
+              '📄 ProfileService: Waiting ${retryDelay.inSeconds} seconds before retry...');
+          await Future.delayed(retryDelay);
+        }
+
+        // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
+        final token = await EnhancedDioServiceV2.instance.getAccessToken();
+        if (token == null || token.isEmpty) {
+          debugPrint('❌ ProfileService: No authentication token found');
+          throw Exception('لا يوجد رمز مصادقة صالح');
+        }
+
+        // Create form data
+        MultipartFile multipartFile;
+        String fileName;
+
+        if (kIsWeb) {
+          // في بيئة الويب، استخدم اسم ملف مع الحفاظ على الامتداد الأصلي
+          final originalFileName = file.path.split('/').last;
+
+          // الحفاظ على الامتداد الأصلي من اسم الملف
+          String fileExtension = 'bin'; // امتداد افتراضي للأغراض العامة
+          if (originalFileName.contains('.')) {
+            fileExtension = originalFileName.split('.').last.toLowerCase();
+          }
+
+          fileName =
+              'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+
+          if (fileBytes != null) {
+            // استخدام البيانات المرسلة مباشرة مع الحفاظ على نوع الملف الأصلي
+            multipartFile = MultipartFile.fromBytes(
+              fileBytes,
+              filename: fileName,
+            );
+            debugPrint(
+                '✅ ProfileService: Retry - Web upload preserving original file type: .$fileExtension');
+            debugPrint(
+                '📄 ProfileService: Document bytes length: ${fileBytes.length}');
+          } else {
+            debugPrint(
+                '❌ ProfileService: No file bytes provided for web upload');
+            throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
+          }
+        } else {
+          // في بيئة الموبايل، استخدم path مع الحفاظ على الامتداد الأصلي
+          fileName = file.path.split('/').last;
+          multipartFile = await MultipartFile.fromFile(
+            file.path,
+            filename: fileName,
+          );
+          debugPrint(
+              '✅ ProfileService: Retry - Mobile upload preserving original file name: $fileName');
+        }
+
+        // الحصول على معرف المستخدم من CompatibleAuthService
+        // الحصول على معرف المستخدم
+        final compatibleAuthService = CompatibleAuthService.instance;
+        var currentUser = compatibleAuthService.user;
+        String userId;
+
+        if (currentUser == null || currentUser.id.isEmpty) {
+          debugPrint('⚠️ ProfileService: Current user is null in auth service, trying to fetch profile...');
+          try {
+            // محاولة جلب البروفايل للحصول على المعرف
+            final profile = await getProfile(useRecentCache: true);
+            if (profile != null && profile.userId.isNotEmpty) {
+              userId = profile.userId;
+              debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+            } else {
+              throw Exception('لم يتم العثور على بيانات المستخدم');
+            }
+          } catch (e) {
+            debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+            throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+          }
+        } else {
+          userId = currentUser.id;
+        }
+
+        debugPrint('👤 ProfileService: Current user ID: $userId');
+
+        final formData = FormData.fromMap({
+          'file': multipartFile,
+          'entityType': 'USER_DOCUMENT', // نوع الكيان - enum value
+          'entityId': userId, // معرف المستخدم الحقيقي
+          'fileCategory': fieldName, // فئة الملف (يجب أن تكون OTHER_DOCUMENT)
+          'description':
+              'Document uploaded from mobile app for profile review', // وصف الملف
+        });
+        
+        // 🔍 DEBUG: طباعة تفاصيل الرفع
+        debugPrint('📤 [UPLOAD_DOCUMENT] Uploading document with:');
+        debugPrint('   - entityType: USER_DOCUMENT');
+        debugPrint('   - entityId: $userId');
+        debugPrint('   - fileCategory: $fieldName');
+        debugPrint('   - fileName: $fileName');
+
+        final response = await _dio.post(
+          '/api/v1/files/upload',
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $token',
+              // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
+            },
+            sendTimeout:
+                const Duration(seconds: 300), // 5 دقائق للملفات الكبيرة
+            receiveTimeout: const Duration(
+                seconds: 300), // 5 دقائق لاستقبال الملفات الكبيرة
+          ),
+          onSendProgress: (sent, total) {
+            // حساب نسبة التقدم
+            if (total > 0) {
+              final progress = sent / total;
+              debugPrint(
+                  '📄 ProfileService: Upload progress: ${(progress * 100).toStringAsFixed(1)}%');
+              onProgress?.call(progress);
+            }
+          },
+        );
+
+        debugPrint(
+            '📄 ProfileService: Upload response status: ${response.statusCode}');
+
+        if (response.statusCode != null &&
+            response.statusCode! >= 200 &&
+            response.statusCode! < 300) {
+          final data = response.data;
+          debugPrint('📄 ProfileService: Document uploaded successfully');
+          debugPrint('📄 ProfileService: Response data: $data');
+
+          // فحص البيانات قبل المعالجة
+          if (data != null && data is Map<String, dynamic>) {
+            try {
+              // الخادم يرجع البيانات مباشرة (object)
+              Map<String, dynamic> documentData =
+                  Map<String, dynamic>.from(data);
+              debugPrint(
+                  '✅ ProfileService: Using direct response data: ${documentData.keys}');
+
+              // تحويل البيانات من FileResponseDto إلى DocumentUploadModel
+              final convertedData = <String, dynamic>{
+                'id': documentData['id']?.toString() ?? '',
+                'userId': documentData['entityId']?.toString() ??
+                    documentData['uploadedBy']?.toString() ??
+                    '',
+                'documentType': documentData['fileCategory']?.toString() ??
+                    documentData['documentType']?.toString() ??
+                    'general',
+                'fileName': documentData['originalName']?.toString() ??
+                    documentData['fileName']?.toString() ??
+                    '',
+                'fileUrl': documentData['url']?.toString() ??
+                    documentData['fileUrl']?.toString() ??
+                    '',
+                'status': 'uploaded', // افتراضي لأن الرفع نجح
+                'uploadedAt': DateTime.now().toIso8601String(),
+              };
+
+              final document = DocumentUploadModel.fromJson(convertedData);
+              debugPrint(
+                  '✅ ProfileService: Document model created successfully');
+              return document;
+            } catch (e) {
+              debugPrint('❌ ProfileService: Error parsing document data: $e');
+              throw Exception('خطأ في معالجة بيانات الوثيقة: $e');
+            }
+          } else {
+            debugPrint('❌ ProfileService: Invalid response data format');
+            throw Exception('تنسيق بيانات الاستجابة غير صحيح');
+          }
+        } else {
+          debugPrint(
+              '❌ ProfileService: Upload failed with status: ${response.statusCode}');
+          throw Exception(
+              'فشل في رفع الوثيقة. رمز الخطأ: ${response.statusCode}');
+        }
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        retryCount++;
+
+        debugPrint('❌ ProfileService: Upload attempt $retryCount failed: $e');
+
+        // إذا كان الخطأ متعلق بالمصادقة، لا نحاول مرة أخرى
+        if (e.toString().contains('مصادقة') || e.toString().contains('token')) {
+          debugPrint('❌ ProfileService: Authentication error, not retrying');
+          break;
+        }
+
+        // إذا كان الخطأ متعلق بالملف نفسه، لا نحاول مرة أخرى
+        if (e.toString().contains('file') &&
+            e.toString().contains('not found')) {
+          debugPrint('❌ ProfileService: File error, not retrying');
+          break;
+        }
+
+        if (retryCount >= maxRetries) {
+          debugPrint('❌ ProfileService: All retry attempts failed');
+          break;
+        }
+      }
+    }
+
+    // إذا وصلنا هنا، فشلت جميع المحاولات
+    debugPrint(
+        '❌ ProfileService: Document upload failed after $maxRetries attempts');
+    throw lastException ??
+        Exception('فشل في رفع الوثيقة بعد $maxRetries محاولات');
+  }
+
   /// Upload document file for specific field
   static Future<DocumentUploadModel?> uploadDocumentFile({
     required File file,
@@ -1260,7 +1911,7 @@ class LocalProfileService {
           '📄 ProfileService: Uploading document file for field: $fieldName');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return null;
@@ -1271,44 +1922,96 @@ class LocalProfileService {
       String fileName;
 
       if (kIsWeb) {
-        // في بيئة الويب، استخدم البيانات المرسلة مباشرة
-        fileName = file.path.isNotEmpty
-            ? file.path
+        // في بيئة الويب، استخدم البيانات المرسلة مباشرة مع الحفاظ على الامتداد الأصلي
+        final originalFileName = file.path.isNotEmpty
+            ? file.path.split('/').last
             : 'document_${DateTime.now().millisecondsSinceEpoch}';
 
+        // الحفاظ على الامتداد الأصلي من اسم الملف
+        String fileExtension = 'bin'; // امتداد افتراضي للأغراض العامة
+        if (originalFileName.contains('.')) {
+          fileExtension = originalFileName.split('.').last.toLowerCase();
+        }
+
+        fileName =
+            'document_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+
         if (fileBytes != null) {
-          // استخدام البيانات المرسلة مباشرة
+          // استخدام البيانات المرسلة مباشرة مع الحفاظ على نوع الملف الأصلي
           multipartFile = MultipartFile.fromBytes(
             fileBytes,
             filename: fileName,
           );
+          debugPrint(
+              '✅ ProfileService: Web upload - preserving original file type: .$fileExtension');
         } else {
           debugPrint('❌ ProfileService: No file bytes provided for web upload');
           throw Exception('لم يتم توفير بيانات الملف لرفعه في بيئة الويب');
         }
       } else {
-        // في بيئة الموبايل، استخدم path
+        // في بيئة الموبايل، استخدم path مع الحفاظ على الامتداد الأصلي
         fileName = file.path.split('/').last;
         multipartFile = await MultipartFile.fromFile(
           file.path,
           filename: fileName,
         );
+        debugPrint(
+            '✅ ProfileService: Mobile upload - preserving original file name: $fileName');
       }
+
+      // الحصول على معرف المستخدم من CompatibleAuthService (مثل uploadDocumentFileWithRetry)
+      final compatibleAuthService = CompatibleAuthService.instance;
+      var currentUser = compatibleAuthService.user;
+      String userId;
+
+      if (currentUser == null || currentUser.id.isEmpty) {
+        debugPrint('⚠️ ProfileService: Current user is null in auth service, trying to fetch profile...');
+        try {
+          // محاولة جلب البروفايل للحصول على المعرف
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('لم يتم العثور على بيانات المستخدم');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
+      }
+      
+      debugPrint('👤 ProfileService: Current user ID: $userId');
 
       final formData = FormData.fromMap({
         'file': multipartFile,
-        'category': fieldName, // استخدام category بدلاً من document_type
-        'description': 'Document uploaded from mobile app', // إضافة وصف
+        'entityType': 'USER_DOCUMENT', // نوع الكيان - enum value
+        'entityId': userId, // معرف المستخدم الحقيقي
+        'fileCategory': fieldName, // فئة الملف (يجب أن تكون OTHER_DOCUMENT)
+        'description':
+            'Document uploaded from mobile app for profile review', // وصف الملف
       });
+      
+      // 🔍 DEBUG: طباعة تفاصيل الرفع
+      debugPrint('📤 [UPLOAD_DOCUMENT] Uploading document with:');
+      debugPrint('   - entityType: USER_DOCUMENT');
+      debugPrint('   - entityId: $userId');
+      debugPrint('   - fileCategory: $fieldName');
+      debugPrint('   - fileName: $fileName');
 
       final response = await _dio.post(
-        '${ApiConstants.baseUrl}/api/v1/profiles/me/documents', // الـ endpoint الصحيح
+        '/api/v1/files/upload',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
           },
+          sendTimeout:
+              const Duration(seconds: 300), // timeout للإرسال لملفات كبيرة
+          receiveTimeout: const Duration(seconds: 300), // timeout للاستقبال
         ),
       );
 
@@ -1326,12 +2029,33 @@ class LocalProfileService {
         if (data != null && data is Map<String, dynamic>) {
           try {
             // الخادم يرجع البيانات في حقل 'file'
+            Map<String, dynamic> documentData;
             if (data.containsKey('file') && data['file'] != null) {
-              return DocumentUploadModel.fromJson(data['file']);
+              documentData = Map<String, dynamic>.from(data['file']);
             } else {
-              // محاولة معالجة البيانات مباشرة
-              return DocumentUploadModel.fromJson(data);
+              documentData = Map<String, dynamic>.from(data);
             }
+
+            // تحويل البيانات من FileResponseDto إلى DocumentUploadModel
+            final convertedData = <String, dynamic>{
+              'id': documentData['id']?.toString() ?? '',
+              'userId': documentData['entityId']?.toString() ??
+                  documentData['uploadedBy']?.toString() ??
+                  '',
+              'documentType': documentData['fileCategory']?.toString() ??
+                  documentData['documentType']?.toString() ??
+                  'general',
+              'fileName': documentData['originalName']?.toString() ??
+                  documentData['fileName']?.toString() ??
+                  '',
+              'fileUrl': documentData['url']?.toString() ??
+                  documentData['fileUrl']?.toString() ??
+                  '',
+              'status': 'uploaded', // افتراضي لأن الرفع نجح
+              'uploadedAt': DateTime.now().toIso8601String(),
+            };
+
+            return DocumentUploadModel.fromJson(convertedData);
           } catch (e) {
             debugPrint(
                 '⚠️ ProfileService: Could not parse response as DocumentUploadModel: $e');
@@ -1377,7 +2101,7 @@ class LocalProfileService {
       debugPrint('💾 Request data: ${request.toJson()}');
 
       // استخدام DioService للحصول على الرمز المميز بدلاً من StorageService
-      final token = await DioService.instance.getAccessToken();
+      final token = await EnhancedDioServiceV2.instance.getAccessToken();
       if (token == null || token.isEmpty) {
         debugPrint('❌ ProfileService: No authentication token found');
         return const ProfileUpdateResponse(
@@ -1470,11 +2194,56 @@ class LocalProfileService {
   static Future<void> clearCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      const userIdKey = '${_cacheKey}_user_id';
+      
+      // مسح جميع المفاتيح المتعلقة بالكاش
       await prefs.remove(_cacheKey);
       await prefs.remove(_cacheTimestampKey);
+      await prefs.remove(userIdKey);
+      debugPrint('✅ Profile cache cleared from SharedPreferences');
+      
+      // على الويب، مسح localStorage أيضاً بشكل مباشر
+      if (kIsWeb) {
+        try {
+          // مسح المفاتيح الأساسية
+          removeLocalStorageValue(_cacheKey);
+          removeLocalStorageValue(_cacheTimestampKey);
+          removeLocalStorageValue(userIdKey);
+          
+          // مسح جميع المفاتيح التي تبدأ بـ cached_ أو profile_
+          final keysToRemove = <String>[];
+          forEachLocalStorage((key, value) {
+            if (key.startsWith('cached_') || 
+                key.startsWith('profile_') ||
+                key.contains('cached_profile') ||
+                key.contains('profile_cache') ||
+                key.contains('_user_id')) {
+              keysToRemove.add(key);
+            }
+          });
+          
+          for (final key in keysToRemove) {
+            removeLocalStorageValue(key);
+          }
+          
+          // مسح من sessionStorage أيضاً
+          removeSessionStorageValue(_cacheKey);
+          removeSessionStorageValue(_cacheTimestampKey);
+          removeSessionStorageValue(userIdKey);
+          
+          for (final key in keysToRemove) {
+            removeSessionStorageValue(key);
+          }
+          
+          debugPrint('✅ Profile cache cleared from web storage (${keysToRemove.length + 3} keys)');
+        } catch (e) {
+          debugPrint('⚠️ Error clearing profile cache from web storage: $e');
+        }
+      }
+      
       debugPrint('✅ Profile cache cleared successfully');
     } catch (e) {
-      debugPrint('Error clearing profile cache: $e');
+      debugPrint('❌ Error clearing profile cache: $e');
     }
   }
 
@@ -1605,3 +2374,4 @@ class LocalProfileService {
     return completionPercentage;
   }
 }
+

@@ -1,6 +1,12 @@
+import 'dart:io';
+import '../../../../../l10n/app_localizations.dart';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/messages/smart_message_handler.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../models/profile_model.dart';
@@ -9,8 +15,13 @@ import '../../../../providers/profile_rules_provider.dart';
 import '../../../../shared/widgets/custom_dropdown.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/loading_button.dart';
+import '../../../../shared/widgets/upload_progress_dialog.dart';
+import '../../../../shared/widgets/profile_side_drawer.dart';
 import '../../../../widgets/profile/document_picker_widget.dart';
+import '../../../main/providers/bottom_navigation_provider.dart';
+import '../../../main/widgets/app_bottom_navigation_bar.dart';
 import '../../providers/profile_provider.dart';
+import '../../services/profile_service.dart';
 
 /// شاشة تعديل البيانات الشخصية
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -41,17 +52,27 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   DateTime? _selectedBirthDate;
   String? _selectedGovernorateId;
   String? _selectedQualificationId;
+  String? _selectedCategoryId; // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
 
   // متغيرات لحالة التحميل والأخطاء
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isSaving = false;
-  Map<String, String> _fieldErrors = {};
-  Map<String, bool> _fieldEditability = {};
+  final Map<String, String> _fieldErrors = {};
+  final Map<String, bool> _fieldEditability = {};
 
-  List<String> _missingRequiredFields = [];
+  // متغيرات لتتبع حالة رفع الملفات
+  final Map<int, double> _uploadProgress = {}; // تقدم رفع كل ملف
+  final Map<int, bool> _uploadSuccess = {}; // نجاح رفع كل ملف
+  final Map<int, String> _uploadErrors = {}; // أخطاء رفع كل ملف
+  bool _isUploadingFiles = false;
+
+  final List<String> _missingRequiredFields = [];
 
   // قائمة الملفات المختارة للرفع
   List<SelectedDocument> _selectedDocuments = [];
+
+  // قائمة الملفات الفاشلة لإعادة رفعها
+  List<SelectedDocument> _failedDocuments = [];
 
   // متغير لسنة التخرج المختارة
   int? _selectedGraduationYear;
@@ -59,11 +80,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   // دالة لتوليد قائمة السنوات
   List<DropdownMenuItem<int>> _getGraduationYearItems() {
     final currentYear = DateTime.now().year;
-    final startYear = 1950;
+    const startYear = 1950;
     final endYear = currentYear + 5;
-    
+
     List<DropdownMenuItem<int>> items = [];
-    
+
     for (int year = endYear; year >= startYear; year--) {
       items.add(
         DropdownMenuItem<int>(
@@ -72,23 +93,106 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         ),
       );
     }
-    
+
     return items;
   }
 
-  /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
-  bool _hasDocumentRequiringChanges() {
+  /// الحصول على الحقول المتغيرة التي تتطلب وثائق
+  List<String> _getChangedFieldsRequiringDocuments(ProfileModel currentProfile) {
+    final changedFieldsRequiringDocs = <String>[];
+    
     try {
-      // التحقق من صحة البيانات الأساسية
-      if (widget.profile == null) {
-        debugPrint('⚠️ لا يمكن التحقق من التغييرات: الملف الشخصي غير متاح');
-        return false;
-      }
-
       // قائمة الحقول التي قد تتطلب وثائق
       final fieldsToCheck = [
         'fullNameAr',
-        'fullNameEn', 
+        'fullNameEn',
+        'email',
+        'birthDate',
+        'governorateId',
+        'qualificationId',
+        'graduationYear',
+        'university',
+        'workplace'
+      ];
+
+      for (final fieldName in fieldsToCheck) {
+        try {
+          // التحقق من وجود تغيير في الحقل
+          bool hasChange = false;
+
+          switch (fieldName) {
+            case 'fullNameAr':
+              final currentValue = _fullNameArController.text.trim();
+              final originalValue = currentProfile.fullNameAr ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'fullNameEn':
+              final currentValue = _fullNameEnController.text.trim();
+              final originalValue = currentProfile.fullNameEn ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'email':
+              final currentValue = _emailController.text.trim();
+              final originalValue = currentProfile.email ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'birthDate':
+              hasChange = _selectedBirthDate != currentProfile.birthDate;
+              break;
+            case 'governorateId':
+              final currentValue = _selectedGovernorateId ?? '';
+              final originalValue = currentProfile.governorateId ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'qualificationId':
+              final currentValue = _selectedQualificationId ?? '';
+              final originalValue = currentProfile.qualificationId ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'graduationYear':
+              final currentValue = _selectedGraduationYear;
+              final originalValue = currentProfile.graduationYear;
+              hasChange = currentValue != originalValue;
+              break;
+            case 'university':
+              final currentValue = _universityController.text.trim();
+              final originalValue = currentProfile.university ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+            case 'workplace':
+              final currentValue = _workplaceController.text.trim();
+              final originalValue = currentProfile.workplace ?? '';
+              hasChange = currentValue != originalValue;
+              break;
+          }
+
+          // إذا كان هناك تغيير، التحقق من الحاجة للوثيقة
+          if (hasChange) {
+            final requiresDoc = _requiresDocument(fieldName, ref);
+            if (requiresDoc) {
+              debugPrint('📄 الحقل $fieldName تم تغييره ويتطلب وثيقة');
+              changedFieldsRequiringDocs.add(fieldName);
+            }
+          }
+        } catch (fieldError) {
+          debugPrint('❌ خطأ في فحص الحقل $fieldName: $fieldError');
+          continue;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ خطأ في الحصول على الحقول المتغيرة التي تتطلب وثائق: $e');
+    }
+
+    return changedFieldsRequiringDocs;
+  }
+
+  /// التحقق من وجود تغييرات في الحقول التي تتطلب وثائق
+  bool _hasDocumentRequiringChanges(WidgetRef ref) {
+    try {
+      // التحقق من صحة البيانات الأساسية
+      final fieldsToCheck = [
+        'fullNameAr',
+        'fullNameEn',
         'email',
         'birthDate',
         'governorateId',
@@ -102,7 +206,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         try {
           // التحقق من وجود تغيير في الحقل مع null safety
           bool hasChange = false;
-          
+
           switch (fieldName) {
             case 'fullNameAr':
               final currentValue = _fullNameArController.text.trim();
@@ -133,7 +237,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               final currentValue = _selectedQualificationId ?? '';
               final originalValue = widget.profile.qualificationId ?? '';
               hasChange = currentValue != originalValue;
-              debugPrint('🎓 فحص تغيير المؤهل: الحالي="$currentValue", الأصلي="$originalValue", تغيير=$hasChange');
+              debugPrint(
+                  '🎓 فحص تغيير المؤهل: الحالي="$currentValue", الأصلي="$originalValue", تغيير=$hasChange');
               break;
             case 'graduationYear':
               // معالجة خاصة لسنة التخرج مع null safety
@@ -156,9 +261,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           // إذا كان هناك تغيير، التحقق من الحاجة للوثيقة
           if (hasChange) {
             debugPrint('📝 تم اكتشاف تغيير في الحقل: $fieldName');
-            
+
             // التحقق من الحاجة للوثيقة مع معالجة الأخطاء
-            final requiresDoc = _requiresDocument(fieldName);
+            final requiresDoc = _requiresDocument(fieldName, ref);
             if (requiresDoc) {
               debugPrint('📄 الحقل $fieldName يتطلب وثيقة');
               return true;
@@ -182,14 +287,81 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   void initState() {
     super.initState();
+    // مسح الوثائق المختارة عند فتح الصفحة
+    _selectedDocuments.clear();
+    _failedDocuments.clear();
     _initializeForm();
     _loadData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(bottomNavIndexProvider.notifier).state = 4;
+      }
+    });
   }
 
-  void _loadData() {
+  void _loadData() async {
+    // Always load fresh data from server when opening edit screen
+    // This ensures we have the latest profile status (e.g., admin approval)
+    debugPrint('🔍 [PROFILE_EDIT] Loading fresh profile data...');
+    
+    // Clear cache first
+    await LocalProfileService.clearCache();
+    
+    // Load fresh profile data from server
+    await ref.read(profileProvider.notifier).loadCurrentProfile(forceRefresh: true);
+    
+    // Wait a bit for data to load
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Update form with latest data from Provider (not widget.profile)
+    final profileState = ref.read(profileProvider);
+    final latestProfile = profileState.currentProfile ?? widget.profile;
+    
+    if (latestProfile != widget.profile) {
+      debugPrint('🔄 [PROFILE_EDIT] Profile data updated, refreshing form...');
+      // Re-initialize form with latest data
+      _updateFormWithLatestProfile(latestProfile);
+    }
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(profileProvider.notifier).initializeProfilePage();
     });
+  }
+  
+  /// Update form controllers with latest profile data
+  void _updateFormWithLatestProfile(ProfileModel latestProfile) {
+    _fullNameArController.text = latestProfile.fullNameAr ?? '';
+    _fullNameEnController.text = latestProfile.fullNameEn ?? '';
+    _emailController.text = latestProfile.email ?? '';
+    _graduationYearController.text = latestProfile.graduationYear?.toString() ?? '';
+    _universityController.text = latestProfile.university ?? '';
+    _workplaceController.text = latestProfile.workplace ?? '';
+    
+    _selectedBirthDate = latestProfile.birthDate;
+    
+    // Update governorate
+    final governorateId = latestProfile.governorateId;
+    if (governorateId == null || governorateId.isEmpty || governorateId == "0") {
+      _selectedGovernorateId = null;
+    } else {
+      _selectedGovernorateId = governorateId;
+    }
+    
+    // Update qualification
+    final qualificationId = latestProfile.qualificationId;
+    if (qualificationId == null || qualificationId.isEmpty || qualificationId == "0" || qualificationId.trim().isEmpty) {
+      _selectedQualificationId = null;
+    } else {
+      _selectedQualificationId = qualificationId;
+    }
+    
+    _selectedGraduationYear = latestProfile.graduationYear;
+    
+    // Force rebuild
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _retryLoadData() {
@@ -225,28 +397,31 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         TextEditingController(text: widget.profile.workplace ?? '');
 
     _selectedBirthDate = widget.profile.birthDate;
-    
+
     // التعامل مع governorateId - تحويل "0" إلى null لتجنب خطأ DropdownButton
     final governorateId = widget.profile.governorateId;
-    if (governorateId == null || governorateId.isEmpty || governorateId == "0") {
+    if (governorateId == null ||
+        governorateId.isEmpty ||
+        governorateId == "0") {
       _selectedGovernorateId = null;
     } else {
       _selectedGovernorateId = governorateId;
     }
-    
+
     // التعامل مع qualificationId - تحويل القيم غير الصالحة إلى null لتجنب خطأ DropdownButton
     final qualificationId = widget.profile.qualificationId;
-    if (qualificationId == null || 
-        qualificationId.isEmpty || 
-        qualificationId == "0" || 
+    if (qualificationId == null ||
+        qualificationId.isEmpty ||
+        qualificationId == "0" ||
         qualificationId.trim().isEmpty) {
       _selectedQualificationId = null;
-      debugPrint('🔄 تم تعيين qualificationId إلى null (القيمة الأصلية: "$qualificationId")');
+      debugPrint(
+          '🔄 تم تعيين qualificationId إلى null (القيمة الأصلية: "$qualificationId")');
     } else {
       _selectedQualificationId = qualificationId;
       debugPrint('✅ تم تعيين qualificationId إلى: "$qualificationId"');
     }
-    
+
     _selectedGraduationYear = widget.profile.graduationYear;
   }
 
@@ -255,7 +430,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       debugPrint('🔍 [PROFILE_EDIT] جلب قواعد الملف الشخصي للمستخدم الحالي...');
 
       // جلب القواعد للمستخدم الحالي (يتم فحص الحالة تلقائياً في الخادم)
-      ref.read(profileRulesProvider.notifier).loadRulesForCurrentUser(forceRefresh: true);
+      ref
+          .read(profileRulesProvider.notifier)
+          .loadRulesForCurrentUser(forceRefresh: true);
 
       // طباعة حالة الملف الشخصي الحالية للتأكد من صحة التطبيق
       final profileState = ref.read(profileProvider);
@@ -283,8 +460,127 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     super.dispose();
   }
 
+  /// ضغط الصورة إذا كانت كبيرة (أكبر من 2 ميجا)
+  Future<Uint8List?> _compressImageIfLarge(File file) async {
+    try {
+      final fileSize = await file.length();
+      final extension = file.path.toLowerCase().split('.').last;
+
+      // إذا كان الملف صورة، اضغطها دائماً لتحسين الأداء
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
+        debugPrint(
+            '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
+
+        final compressedFile = await FlutterImageCompress.compressWithFile(
+          file.absolute.path,
+          minWidth: 1920,
+          minHeight: 1920,
+          quality: 85,
+          format: extension == 'png' ? CompressFormat.png : CompressFormat.jpeg,
+        );
+
+        if (compressedFile != null && compressedFile.isNotEmpty) {
+          final compressedSize = compressedFile.length;
+          debugPrint(
+              '✅ ProfileEditScreen: Image compressed to ${compressedSize ~/ 1024}KB (reduced by ${((fileSize - compressedSize) / fileSize * 100).toStringAsFixed(1)}%)');
+          return compressedFile;
+        }
+      }
+      return null; // لا نحتاج ضغط
+    } catch (e) {
+      debugPrint('❌ ProfileEditScreen: Error compressing image: $e');
+      return null; // في حالة الخطأ، نرجع الملف الأصلي
+    }
+  }
+
+  /// تحديد fileCategory للمستندات المرفوعة
+  /// جميع المستندات المرفوعة في صفحة تعديل الملف الشخصي يجب أن تكون:
+  /// fileCategory = OTHER_DOCUMENT
+  String _getSmartFileCategory(int index, String fileName) {
+    // جميع المستندات المرفوعة في صفحة تعديل الملف الشخصي
+    // يجب أن تكون fileCategory = OTHER_DOCUMENT
+    return 'OTHER_DOCUMENT';
+  }
+
+  /// الحصول على اسم عرضي للملف حسب فئته الذكية
+  String _getSmartFileDisplayName(String category) {
+    if (category.startsWith('profile_image_')) {
+      return 'صورة شخصية';
+    } else if (category.startsWith('documents_pdf_')) {
+      return 'وثيقة PDF';
+    } else if (category.startsWith('documents_word_')) {
+      return 'وثيقة Word';
+    } else if (category.startsWith('documents_excel_')) {
+      return 'ملف Excel';
+    } else if (category.startsWith('documents_text_')) {
+      return 'ملف نصي';
+    } else if (category.startsWith('documents_')) {
+      return 'وثيقة';
+    } else {
+      return 'ملف';
+    }
+  }
+
+  /// الحصول على أيقونة الملف حسب فئته الذكية
+  IconData _getSmartFileIcon(String category) {
+    if (category.startsWith('profile_image_')) {
+      return Icons.person;
+    } else if (category.startsWith('documents_pdf_')) {
+      return Icons.picture_as_pdf;
+    } else if (category.startsWith('documents_word_')) {
+      return Icons.description;
+    } else if (category.startsWith('documents_excel_')) {
+      return Icons.table_chart;
+    } else if (category.startsWith('documents_text_')) {
+      return Icons.text_snippet;
+    } else if (category.startsWith('documents_')) {
+      return Icons.attach_file;
+    } else {
+      return Icons.insert_drive_file;
+    }
+  }
+
+  /// الحصول على الرسالة باللغة العربية حسب الكود
+  String _getMessageByCode(
+      String code, int successfulUploads, int totalUploads) {
+    switch (code) {
+      case 'PROFILE_EDIT_WITH_DOCS_SUCCESS':
+        return 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
+      case 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS':
+        return 'تم حفظ البيانات ورفع $successfulUploads من $totalUploads وثائق';
+      case 'PROFILE_EDIT_DOCS_FAILED':
+        return 'تم حفظ البيانات لكن فشل في رفع الوثائق';
+      case 'PROFILE_EDIT_FAILED':
+        return 'فشل في حفظ البيانات';
+      case 'PROFILE_EDIT_SUCCESS':
+        return 'تم حفظ البيانات بنجاح';
+      default:
+        return 'تم حفظ البيانات بنجاح';
+    }
+  }
+
+  /// الحصول على الرسالة باللغة الإنجليزية حسب الكود
+  String _getMessageByCodeEn(
+      String code, int successfulUploads, int totalUploads) {
+    switch (code) {
+      case 'PROFILE_EDIT_WITH_DOCS_SUCCESS':
+        return 'Data saved and all documents uploaded successfully';
+      case 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS':
+        return 'Data saved and $successfulUploads of $totalUploads documents uploaded';
+      case 'PROFILE_EDIT_DOCS_FAILED':
+        return 'Data saved but failed to upload documents';
+      case 'PROFILE_EDIT_FAILED':
+        return 'Failed to save data';
+      case 'PROFILE_EDIT_SUCCESS':
+        return 'Data saved successfully';
+      default:
+        return 'Data saved successfully';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final profileState = ref.watch(profileProvider);
     final profileRulesState = ref.watch(profileRulesProvider);
 
@@ -313,11 +609,32 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('تعديل الملف الشخصي'),
-      ),
-      body: _buildBody(profileState),
+        backgroundColor: context.colors.background,
+        appBar: AppBar(
+          title: Text(l10n.editProfile),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          automaticallyImplyLeading: false,
+        ),
+        drawer: ProfileSideDrawer(
+          currentScreen: 'edit',
+          profile: widget.profile,
+        ),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh profile data and rules
+            await ref.read(profileProvider.notifier).refresh();
+            await ref
+                .read(profileRulesProvider.notifier)
+                .loadRulesForCurrentUser(forceRefresh: true);
+          },
+          child: _buildBody(profileState),
+        ),
+        bottomNavigationBar: const AppBottomNavigationBar(),
     );
   }
 
@@ -367,17 +684,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       builder: (context, ref, child) {
         final profileState = ref.watch(profileProvider);
         final currentProfile = profileState.currentProfile;
-        
+
         if (currentProfile == null) return const SizedBox.shrink();
-        
+
         final profileStatus = _convertVerificationStatusToProfileStatus(
-             currentProfile.verificationStatus);
-         final isEditable = ref.watch(canEditFieldProvider((
-           fieldName: 'birthDate',
-           status: profileStatus,
-         )));
-         print('DEBUG: birthDate field enabled: $isEditable');
-        
+            currentProfile.verificationStatus);
+        final isEditable = ref.watch(canEditFieldProvider((
+          fieldName: 'birthDate',
+          status: profileStatus,
+        )));
+        print('DEBUG: birthDate field enabled: $isEditable');
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -389,24 +706,29 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ),
             const SizedBox(height: 8),
             InkWell(
-              onTap: isEditable ? () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedBirthDate ?? DateTime.now(),
-                  firstDate: DateTime(1950),
-                  lastDate: DateTime.now(),
-                );
-                if (date != null) {
-                  setState(() => _selectedBirthDate = date);
-                }
-              } : null,
+              onTap: isEditable
+                  ? () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedBirthDate ?? DateTime.now(),
+                        firstDate: DateTime(1950),
+                        lastDate: DateTime.now(),
+                      );
+                      if (date != null) {
+                        setState(() => _selectedBirthDate = date);
+                      }
+                    }
+                  : null,
               child: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: isEditable ? Colors.grey : Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                  color: isEditable ? null : Colors.grey.shade100,
-                ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isEditable
+                            ? context.colors.border
+                            : context.colors.border.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(8),
+                    color: isEditable ? null : context.colors.surfaceVariant,
+                  ),
                 child: Row(
                   children: [
                     Expanded(
@@ -415,16 +737,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
                             : 'اختر تاريخ الميلاد',
                         style: TextStyle(
-                          color: _selectedBirthDate != null
-                              ? (isEditable ? Colors.black : Colors.grey.shade600)
-                              : Colors.grey,
-                        ),
-                      ),
+                      color: _selectedBirthDate != null
+                          ? (isEditable
+                              ? context.colors.textPrimary
+                              : context.colors.textSecondary)
+                          : context.colors.textSecondary,
                     ),
-                    Icon(
-                      Icons.calendar_today,
-                      color: isEditable ? null : Colors.grey.shade400,
-                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.calendar_today,
+                  color: isEditable ? null : context.colors.textTertiary,
+                ),
                   ],
                 ),
               ),
@@ -444,6 +768,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       key: _formKey,
       child: SingleChildScrollView(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,6 +783,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
             // البيانات الأكاديمية
             _buildAcademicDataSection(state),
+
+            const SizedBox(height: 24),
+
+            // مؤشر تقدم رفع الملفات
+            _buildUploadProgressWidget(),
 
             const SizedBox(height: 24),
 
@@ -495,7 +825,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               color: AppColors.success.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.verified_user,
               color: AppColors.success,
               size: 24,
@@ -524,18 +854,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final canEdit = ref.watch(canEditFieldProvider((
               fieldName: 'fullNameAr',
               status: profileStatus,
             )));
-            
-            debugPrint('🔍 [CONSUMER] فحص تعديل fullNameAr: $canEdit للحالة: $profileStatus');
-            
+
+            debugPrint(
+                '🔍 [CONSUMER] فحص تعديل fullNameAr: $canEdit للحالة: $profileStatus');
+
             return CustomTextField(
               controller: _fullNameArController,
               label: 'الاسم العربي',
@@ -555,18 +886,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final canEdit = ref.watch(canEditFieldProvider((
               fieldName: 'fullNameEn',
               status: profileStatus,
             )));
-            
-            debugPrint('🔍 [CONSUMER] فحص تعديل fullNameEn: $canEdit للحالة: $profileStatus');
-            
+
+            debugPrint(
+                '🔍 [CONSUMER] فحص تعديل fullNameEn: $canEdit للحالة: $profileStatus');
+
             return CustomTextField(
               controller: _fullNameEnController,
               label: 'الاسم الإنجليزي',
@@ -586,9 +918,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final isEditable = ref.watch(canEditFieldProvider((
@@ -596,13 +928,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               status: profileStatus,
             )));
             print('DEBUG: email field enabled: $isEditable');
-            
+
             return CustomTextField(
               controller: _emailController,
               label: 'البريد الإلكتروني',
               keyboardType: TextInputType.emailAddress,
               enabled: isEditable,
-              suffixIcon: Icon(
+              suffixIcon: const Icon(
                 Icons.email_outlined,
                 color: AppColors.textSecondary,
                 size: 20,
@@ -623,9 +955,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final isEditable = ref.watch(canEditFieldProvider((
@@ -633,16 +965,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               status: profileStatus,
             )));
             print('DEBUG: governorateId field enabled: $isEditable');
-            
+
             // معالجة آمنة للقيمة المختارة
             final governorateItems = _getGovernorateItems(state);
-            final validValues = governorateItems.map((item) => item.value).toSet();
-            
+            final validValues =
+                governorateItems.map((item) => item.value).toSet();
+
             // التحقق من صحة القيمة المختارة
             String? safeValue = _selectedGovernorateId;
-            if (safeValue != null && 
-                (safeValue.isEmpty || safeValue == "0" || !validValues.contains(safeValue))) {
-              debugPrint('⚠️ إعادة تعيين قيمة المحافظة غير الصالحة: "$safeValue"');
+            if (safeValue != null &&
+                (safeValue.isEmpty ||
+                    safeValue == "0" ||
+                    !validValues.contains(safeValue))) {
+              debugPrint(
+                  '⚠️ إعادة تعيين قيمة المحافظة غير الصالحة: "$safeValue"');
               safeValue = null;
               // تحديث القيمة في الحالة
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -653,14 +989,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 }
               });
             }
-            
+
             return CustomDropdown<String>(
               label: 'المحافظة',
               value: safeValue,
               items: governorateItems,
               isRequired: true,
               enabled: isEditable,
-              onChanged: (value) => setState(() => _selectedGovernorateId = value),
+              onChanged: (value) =>
+                  setState(() => _selectedGovernorateId = value),
               validator: (value) => _validateField('governorateId', value),
               errorText: _fieldErrors['governorateId'],
               suffixIcon: _buildDocumentIcon('governorateId'),
@@ -681,41 +1018,47 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final canEdit = ref.watch(canEditFieldProvider((
               fieldName: 'qualificationId',
               status: profileStatus,
             )));
-            
-            debugPrint('🔍 [CONSUMER] فحص تعديل qualificationId: $canEdit للحالة: $profileStatus');
-            
+
+            debugPrint(
+                '🔍 [CONSUMER] فحص تعديل qualificationId: $canEdit للحالة: $profileStatus');
+
             // الحصول على قائمة العناصر المتاحة
             final qualificationItems = _getQualificationItems(state);
-            
+
             // التحقق الآمن من صحة القيمة المختارة
             String? safeValue = _selectedQualificationId;
-            
+
             // معالجة القيم غير الصالحة
             if (safeValue != null) {
-              if (safeValue.isEmpty || safeValue == "0" || safeValue.trim().isEmpty) {
+              if (safeValue.isEmpty ||
+                  safeValue == "0" ||
+                  safeValue.trim().isEmpty) {
                 safeValue = null;
               } else {
                 // التحقق من وجود القيمة في قائمة العناصر
-                final validValues = qualificationItems.map((item) => item.value).toSet();
+                final validValues =
+                    qualificationItems.map((item) => item.value).toSet();
                 if (!validValues.contains(safeValue)) {
-                  debugPrint('⚠️ القيمة المختارة غير موجودة في القائمة: "$safeValue"');
+                  debugPrint(
+                      '⚠️ القيمة المختارة غير موجودة في القائمة: "$safeValue"');
                   safeValue = null;
                 }
               }
             }
-            
+
             // تحديث القيمة إذا تغيرت
             if (safeValue != _selectedQualificationId) {
-              debugPrint('🔄 تصحيح قيمة المؤهل من "$_selectedQualificationId" إلى "$safeValue"');
+              debugPrint(
+                  '🔄 تصحيح قيمة المؤهل من "$_selectedQualificationId" إلى "$safeValue"');
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   setState(() {
@@ -724,7 +1067,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 }
               });
             }
-            
+
             return CustomDropdown<String>(
               label: 'المؤهل العلمي',
               value: safeValue,
@@ -733,7 +1076,24 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               enabled: canEdit,
               onChanged: (value) {
                 debugPrint('🔄 تغيير قيمة المؤهل إلى: "$value"');
-                setState(() => _selectedQualificationId = value);
+                setState(() {
+                  _selectedQualificationId = value;
+                  
+                  // تحديث الفئة الرئيسية تلقائياً من المؤهل المختار
+                  if (value != null && value.isNotEmpty && state.qualifications != null) {
+                    final selectedQualification = state.qualifications!.firstWhere(
+                      (q) => q.id == value,
+                      orElse: () => state.qualifications!.first,
+                    );
+                    
+                    if (selectedQualification.categoryId.isNotEmpty) {
+                      _selectedCategoryId = selectedQualification.categoryId;
+                      debugPrint('✅ تم تحديث الفئة الرئيسية تلقائياً إلى: "$_selectedCategoryId" من المؤهل: "${selectedQualification.nameAr}"');
+                    }
+                  } else {
+                    _selectedCategoryId = null;
+                  }
+                });
               },
               validator: (value) => _validateField('qualificationId', value),
               errorText: _fieldErrors['qualificationId'],
@@ -745,19 +1105,29 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         const SizedBox(height: 16),
 
         // زر إرفاق وثيقة (يظهر فقط عند وجود تغييرات تتطلب وثائق)
-        if (_hasDocumentRequiringChanges()) ...[
-          _buildDocumentUploadSection(),
-          const SizedBox(height: 16),
-        ],
+        Consumer(
+          builder: (context, ref, child) {
+            final hasDocumentChanges = _hasDocumentRequiringChanges(ref);
+            if (hasDocumentChanges) {
+              return Column(
+                children: [
+                  _buildDocumentUploadSection(),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
 
         // سنة التخرج (اختياري)
         Consumer(
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final isEditable = ref.watch(canEditFieldProvider((
@@ -765,14 +1135,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               status: profileStatus,
             )));
             print('DEBUG: graduationYear field enabled: $isEditable');
-            
+
             return CustomDropdown<int>(
               label: 'سنة التخرج',
               value: _selectedGraduationYear,
               items: _getGraduationYearItems(),
               isRequired: false,
               enabled: isEditable,
-              onChanged: (value) => setState(() => _selectedGraduationYear = value),
+              onChanged: (value) =>
+                  setState(() => _selectedGraduationYear = value),
               validator: (value) => null, // No validation for optional field
               errorText: _fieldErrors['graduationYear'],
               suffixIcon: _buildDocumentIcon('graduationYear'),
@@ -787,9 +1158,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final isEditable = ref.watch(canEditFieldProvider((
@@ -797,7 +1168,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               status: profileStatus,
             )));
             print('DEBUG: university field enabled: $isEditable');
-            
+
             return CustomTextField(
               controller: _universityController,
               label: 'الجامعة',
@@ -817,9 +1188,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           builder: (context, ref, child) {
             final profileState = ref.watch(profileProvider);
             final currentProfile = profileState.currentProfile;
-            
+
             if (currentProfile == null) return const SizedBox.shrink();
-            
+
             final profileStatus = _convertVerificationStatusToProfileStatus(
                 currentProfile.verificationStatus);
             final isEditable = ref.watch(canEditFieldProvider((
@@ -827,7 +1198,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               status: profileStatus,
             )));
             print('DEBUG: workplace field enabled: $isEditable');
-            
+
             return CustomTextField(
               controller: _workplaceController,
               label: 'مكان العمل',
@@ -846,7 +1217,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
@@ -855,7 +1226,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.attach_file,
                 color: AppColors.primary,
                 size: 20,
@@ -871,7 +1242,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
           // Widget جديد لاختيار الملفات
           DocumentPickerWidget(
             selectedDocuments: _selectedDocuments,
@@ -881,8 +1251,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               });
             },
           ),
-
-
         ],
       ),
     );
@@ -948,7 +1316,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             }
           });
         }
-        
+
         // إذا كان هناك خطأ في التحميل
         if (state.error != null && state.error!.isNotEmpty) {
           return [
@@ -992,7 +1360,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // إنشاء قائمة العناصر من البيانات المحملة
       List<DropdownMenuItem<String>> items = [];
       final validValues = <String?>{}; // تتبع القيم الصالحة
-      
+
       // إضافة عنصر فارغ اختياري
       items.add(
         const DropdownMenuItem<String>(
@@ -1004,12 +1372,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
       // إضافة المحافظات المتاحة
       for (final governorate in state.governorates!) {
-        if (governorate.id != null && 
-            governorate.id!.isNotEmpty && 
+        if (governorate.id.isNotEmpty &&
             governorate.id != "0" &&
-            governorate.id!.trim().isNotEmpty &&
+            governorate.id.trim().isNotEmpty &&
             !validValues.contains(governorate.id)) {
-          validValues.add(governorate.id!);
+          validValues.add(governorate.id);
           items.add(
             DropdownMenuItem<String>(
               value: governorate.id,
@@ -1022,14 +1389,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // التحقق الفوري من صحة القيمة المختارة
       if (_selectedGovernorateId != null) {
         // معالجة القيم غير الصالحة
-        if (_selectedGovernorateId!.isEmpty || 
+        if (_selectedGovernorateId!.isEmpty ||
             _selectedGovernorateId == "0" ||
             _selectedGovernorateId!.trim().isEmpty ||
             !validValues.contains(_selectedGovernorateId)) {
-          
-          debugPrint('⚠️ القيمة المختارة للمحافظة غير صالحة: "$_selectedGovernorateId"');
+          debugPrint(
+              '⚠️ القيمة المختارة للمحافظة غير صالحة: "$_selectedGovernorateId"');
           debugPrint('⚠️ القيم الصالحة: $validValues');
-          
+
           // إعادة تعيين فورية
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -1042,10 +1409,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       }
 
       return items;
-      
     } catch (e) {
       debugPrint('❌ خطأ في _getGovernorateItems: $e');
-      
+
       // في حالة حدوث خطأ، إعادة تعيين القيمة المختارة فوراً
       if (_selectedGovernorateId != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1056,7 +1422,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           }
         });
       }
-      
+
       return [
         const DropdownMenuItem<String>(
           value: null,
@@ -1080,7 +1446,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             }
           });
         }
-        
+
         // إذا كان هناك خطأ في التحميل
         if (state.error != null && state.error!.isNotEmpty) {
           return [
@@ -1101,7 +1467,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ),
           ];
         }
-        
+
         // إذا كان التحميل جاري
         return [
           const DropdownMenuItem<String>(
@@ -1124,7 +1490,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // إنشاء قائمة العناصر من البيانات المحملة
       List<DropdownMenuItem<String>> items = [];
       final validValues = <String?>{}; // تتبع القيم الصالحة
-      
+
       // إضافة عنصر فارغ اختياري
       items.add(
         const DropdownMenuItem<String>(
@@ -1133,15 +1499,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         ),
       );
       validValues.add(null);
-      
+
       // إضافة المؤهلات المتاحة مع تجنب القيم المكررة
       for (final qualification in state.qualifications!) {
-        if (qualification.id != null && 
-            qualification.id!.isNotEmpty && 
+        if (qualification.id.isNotEmpty &&
             qualification.id != "0" &&
-            qualification.id!.trim().isNotEmpty &&
+            qualification.id.trim().isNotEmpty &&
             !validValues.contains(qualification.id)) {
-          validValues.add(qualification.id!);
+          validValues.add(qualification.id);
           items.add(
             DropdownMenuItem<String>(
               value: qualification.id,
@@ -1154,14 +1519,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // التحقق الفوري من صحة القيمة المختارة
       if (_selectedQualificationId != null) {
         // معالجة القيم غير الصالحة
-        if (_selectedQualificationId!.isEmpty || 
+        if (_selectedQualificationId!.isEmpty ||
             _selectedQualificationId == "0" ||
             _selectedQualificationId!.trim().isEmpty ||
             !validValues.contains(_selectedQualificationId)) {
-          
-          debugPrint('⚠️ القيمة المختارة للمؤهل غير صالحة: "$_selectedQualificationId"');
+          debugPrint(
+              '⚠️ القيمة المختارة للمؤهل غير صالحة: "$_selectedQualificationId"');
           debugPrint('⚠️ القيم الصالحة: $validValues');
-          
+
           // إعادة تعيين فورية
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -1174,11 +1539,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       }
 
       return items;
-      
     } catch (e) {
       debugPrint('❌ خطأ في _getQualificationItems: $e');
       debugPrint('❌ Stack trace: ${StackTrace.current}');
-      
+
       // في حالة حدوث خطأ، إعادة تعيين القيمة المختارة فوراً
       if (_selectedQualificationId != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1189,7 +1553,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           }
         });
       }
-      
+
       return [
         const DropdownMenuItem<String>(
           value: null,
@@ -1198,8 +1562,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       ];
     }
   }
-
-
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
@@ -1230,6 +1592,624 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _showValidationResults(validationResult);
   }
 
+  /// Widget لعرض تقدم رفع الملفات
+  Widget _buildUploadProgressWidget() {
+    if (!_isUploadingFiles && _selectedDocuments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isUploadingFiles ? Icons.upload : Icons.attach_file,
+                  color:
+                      _isUploadingFiles ? AppColors.primary : AppColors.success,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _isUploadingFiles ? 'جاري رفع الملفات...' : 'الملفات المرفقة',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: _isUploadingFiles
+                        ? AppColors.primary
+                        : AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // عرض تقدم كل ملف
+            for (int i = 0; i < _selectedDocuments.length; i++) ...[
+              _buildFileProgressItem(i),
+              if (i < _selectedDocuments.length - 1) const SizedBox(height: 12),
+            ],
+
+            // إجمالي التقدم
+            if (_isUploadingFiles) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'إجمالي التقدم:',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                  Text(
+                    '${_uploadProgress.values.isNotEmpty ? (_uploadProgress.values.reduce((a, b) => a + b) / _uploadProgress.length * 100).toStringAsFixed(1) : '0.0'}%',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Widget لعرض تقدم ملف واحد
+  Widget _buildFileProgressItem(int index) {
+    final progress = _uploadProgress[index] ?? 0.0;
+    final isSuccess = _uploadSuccess[index] ?? false;
+    final error = _uploadErrors[index] ?? '';
+    final fileName = _selectedDocuments[index].file.path.split('/').last;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              isSuccess
+                  ? Icons.check_circle
+                  : error.isNotEmpty
+                      ? Icons.error
+                      : _isUploadingFiles
+                          ? Icons.upload
+                          : Icons.attach_file,
+              color: isSuccess
+                  ? AppColors.success
+                  : error.isNotEmpty
+                      ? AppColors.error
+                      : AppColors.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                fileName,
+                style: AppTextStyles.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isSuccess)
+              Text(
+                '100%',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else if (error.isNotEmpty)
+              Text(
+                'فشل',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              Text(
+                '${(progress * 100).toStringAsFixed(1)}%',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
+
+        // شريط التقدم
+        if (_isUploadingFiles || isSuccess) ...[
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: AppColors.lightGray,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isSuccess
+                  ? AppColors.success
+                  : error.isNotEmpty
+                      ? AppColors.error
+                      : AppColors.primary,
+            ),
+          ),
+        ],
+
+        // رسالة الخطأ
+        if (error.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            error,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.error,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// متابعة الحفظ بعد التحقق من القواعد - مع الرسالة المنبثقة الاحترافية
+  Future<void> _proceedWithSaveProfessional() async {
+    await showUploadProgressDialog(
+      context: context,
+      uploadFunction: _performUploadAndSave,
+      onSuccess: () {
+        Navigator.pop(context, true); // العودة لصفحة الملف الشخصي
+      },
+    );
+  }
+
+  /// تنفيذ عملية الرفع والحفظ مع تحديث التقدم
+  Future<void> _performUploadAndSave() async {
+    final uploadNotifier = ref.read(uploadProgressProvider.notifier);
+
+    try {
+      // الخطوة 1: التحضير
+      uploadNotifier.setPreparing();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // الخطوة 1.5: التحقق من الحقول المتغيرة التي تتطلب وثائق
+      final profileState = ref.read(profileProvider);
+      final currentProfile = profileState.currentProfile;
+      if (currentProfile == null) {
+        throw Exception('الملف الشخصي غير متاح');
+      }
+
+      // الحصول على الحقول المتغيرة التي تتطلب وثائق
+      final changedFieldsRequiringDocuments = _getChangedFieldsRequiringDocuments(currentProfile);
+      
+      debugPrint('🔍 [PROFILE_EDIT] Changed fields requiring documents: $changedFieldsRequiringDocuments');
+      debugPrint('🔍 [PROFILE_EDIT] Selected documents count: ${_selectedDocuments.length}');
+
+      // الخطوة 2: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
+      List<String> uploadedDocumentIds = [];
+      bool allUploadsSuccessful = true;
+
+      // الخطوة 2: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
+      // إذا لم تكن هناك حقول متغيرة تتطلب وثائق، لا يجب رفع أي وثائق
+      if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isNotEmpty) {
+        // تهيئة بيانات الملفات
+        final filesData = _selectedDocuments
+            .map((doc) => FileProgressData(
+                  fileName: doc.file.path.split('/').last,
+                ))
+            .toList();
+
+        uploadNotifier.setUploading(filesData);
+
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          final selectedDoc = _selectedDocuments[i];
+          try {
+            // تحديث حالة الملف إلى "جاري الرفع"
+            uploadNotifier.updateFileProgress(
+                i,
+                filesData[i].copyWith(
+                  progress: 0.1,
+                ));
+
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
+            // ضغط الصور تلقائياً إذا كانت أكبر من 1MB
+            Uint8List? fileBytesToUpload = selectedDoc.bytes;
+            final fileSize = fileBytesToUpload?.length ?? 0;
+
+            // إذا كان الملف صورة وأكبر من 1MB، اضغطه
+            if (fileSize > 1024 * 1024 &&
+                ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(
+                    selectedDoc.file.path.toLowerCase().split('.').last)) {
+              debugPrint(
+                  '📸 ProfileEditScreen: Compressing image (${fileSize ~/ 1024}KB)');
+              final compressedBytes =
+                  await _compressImageIfLarge(selectedDoc.file);
+              if (compressedBytes != null && compressedBytes.isNotEmpty) {
+                fileBytesToUpload = compressedBytes;
+                debugPrint(
+                    '✅ ProfileEditScreen: Image compressed to ${compressedBytes.length ~/ 1024}KB');
+              }
+            }
+
+            debugPrint(
+                '🔍 ProfileEditScreen: Uploading file ${i + 1}/${_selectedDocuments.length}');
+            debugPrint('📁 File path: ${selectedDoc.file.path}');
+            debugPrint(
+                '📦 Bytes length: ${fileBytesToUpload?.length ?? "null"}');
+
+            // رفع الملف مع تتبع التقدم
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
+                  documentType: 'general',
+                  file: selectedDoc.file,
+                  fileBytes: fileBytesToUpload, // استخدام الـ bytes الأصلية
+                  maxRetries: 1, // محاولة واحدة فقط
+                  onProgress: (progress) {
+                    // تحديث التقدم في الرسالة المنبثقة
+                    uploadNotifier.updateFileProgress(
+                        i,
+                        filesData[i].copyWith(
+                          progress: progress,
+                        ));
+                  },
+                );
+
+            if (uploadSuccess) {
+              uploadNotifier.updateFileProgress(
+                  i,
+                  filesData[i].copyWith(
+                    progress: 1.0,
+                    isSuccess: true,
+                  ));
+              // إضافة معرف الملف المرفوع بنجاح إلى القائمة مع الفئة الذكية
+              final fileName = selectedDoc.file.path.split('/').last;
+              final smartCategory = _getSmartFileCategory(i, fileName);
+              uploadedDocumentIds.add(smartCategory);
+            } else {
+              uploadNotifier.updateFileProgress(
+                  i,
+                  filesData[i].copyWith(
+                    errorMessage: 'فشل في رفع الملف',
+                  ));
+              allUploadsSuccessful = false;
+            }
+          } catch (e) {
+            uploadNotifier.updateFileProgress(
+                i,
+                filesData[i].copyWith(
+                  errorMessage: e.toString(),
+                ));
+            allUploadsSuccessful = false;
+          }
+        }
+
+        // إذا فشل رفع أي ملف، نعرض رسالة خطأ مع إمكانية إعادة المحاولة
+        if (!allUploadsSuccessful) {
+          uploadNotifier.setError(
+              'فشل في رفع بعض الملفات. اضغط على "إعادة المحاولة" لمحاولة رفعها مرة أخرى.',
+              canRetry: true);
+
+          // حفظ الملفات الفاشلة لإعادة محاولتها لاحقاً
+          _failedDocuments = _selectedDocuments
+              .where((doc) => !uploadedDocumentIds.contains(
+                  _getSmartFileCategory(_selectedDocuments.indexOf(doc),
+                      doc.file.path.split('/').last)))
+              .toList();
+          return;
+        }
+      } else if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isEmpty) {
+        // إذا كانت هناك حقول متغيرة تتطلب وثائق ولكن لم يتم رفع وثائق
+        throw Exception('يجب رفع وثائق للحقول المتغيرة التي تتطلب وثائق: ${changedFieldsRequiringDocuments.join(", ")}');
+      } else if (changedFieldsRequiringDocuments.isEmpty && _selectedDocuments.isNotEmpty) {
+        // إذا لم تكن هناك حقول متغيرة تتطلب وثائق ولكن تم اختيار وثائق
+        debugPrint('⚠️ [PROFILE_EDIT] تم اختيار وثائق ولكن لا توجد حقول متغيرة تتطلب وثائق. سيتم تجاهل الوثائق.');
+        // مسح الوثائق المختارة لأنها غير مطلوبة
+        _selectedDocuments.clear();
+      }
+
+      // الخطوة 3: حفظ البيانات (فقط إذا نجح رفع جميع الملفات)
+      uploadNotifier.setSaving();
+
+      final updatedProfile = widget.profile.copyWith(
+        fullNameAr: _fullNameArController.text.trim(),
+        fullNameEn: _fullNameEnController.text.trim(),
+        email: _emailController.text.trim(),
+        birthDate: _selectedBirthDate,
+        governorateId: _selectedGovernorateId,
+        qualificationId: _selectedQualificationId,
+        graduationYear: _selectedGraduationYear,
+        university: _universityController.text.trim().isEmpty
+            ? ''
+            : _universityController.text.trim(),
+        workplace: _workplaceController.text.trim(),
+      );
+
+      final updateRequest = ProfileUpdateRequest(
+        fullNameAr: updatedProfile.fullNameAr,
+        fullNameEn: updatedProfile.fullNameEn,
+        email: updatedProfile.email.isEmpty ? null : updatedProfile.email,
+        birthDate: updatedProfile.birthDate,
+        governorateId: updatedProfile.governorateId,
+        qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
+        graduationYear: updatedProfile.graduationYear,
+        university: updatedProfile.university.isEmpty == true
+            ? null
+            : updatedProfile.university,
+        workplace: updatedProfile.workplace.isEmpty == true
+            ? null
+            : updatedProfile.workplace,
+      );
+
+      final updateResult =
+          await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+
+      if (updateResult) {
+        // الخطوة 4: النجاح
+        uploadNotifier.setSuccess();
+        await Future.delayed(
+            const Duration(milliseconds: 1000)); // عرض رسالة النجاح
+      } else {
+        throw Exception('فشل في حفظ البيانات');
+      }
+    } catch (e) {
+      uploadNotifier.setError(e.toString());
+    }
+  }
+
+  /// متابعة الحفظ بعد التحقق من القواعد - الآلية الجديدة
+  Future<void> _proceedWithSaveNew() async {
+    setState(() => _isSaving = true);
+
+    try {
+      // الخطوة 0.5: التحقق من الحقول المتغيرة التي تتطلب وثائق
+      final profileState = ref.read(profileProvider);
+      final currentProfile = profileState.currentProfile;
+      if (currentProfile == null) {
+        throw Exception('الملف الشخصي غير متاح');
+      }
+
+      // الحصول على الحقول المتغيرة التي تتطلب وثائق
+      final changedFieldsRequiringDocuments = _getChangedFieldsRequiringDocuments(currentProfile);
+      
+      debugPrint('🔍 [PROFILE_EDIT] Changed fields requiring documents: $changedFieldsRequiringDocuments');
+      debugPrint('🔍 [PROFILE_EDIT] Selected documents count: ${_selectedDocuments.length}');
+
+      // الخطوة 1: رفع الملفات (فقط إذا كانت هناك حقول متغيرة تتطلب وثائق)
+      List<String> uploadedDocumentIds = [];
+
+      // يجب أن تكون هناك وثائق مرفقة فقط إذا كانت هناك حقول متغيرة تتطلب وثائق
+      if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isNotEmpty) {
+        setState(() => _isUploadingFiles = true);
+
+        // تهيئة متغيرات التتبع
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          _uploadProgress[i] = 0.0;
+          _uploadSuccess[i] = false;
+          _uploadErrors[i] = '';
+        }
+
+        debugPrint('📄 ProfileEditScreen: Starting file uploads...');
+
+        for (int i = 0; i < _selectedDocuments.length; i++) {
+          final selectedDoc = _selectedDocuments[i];
+          try {
+            debugPrint(
+                '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
+
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
+            // رفع الملف مع تتبع التقدم
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
+                  documentType: 'general',
+                  file: selectedDoc.file,
+                  fileBytes: selectedDoc.bytes,
+                  maxRetries: 3,
+                  onProgress: (progress) {
+                    // تحديث التقدم في الواجهة
+                    setState(() {
+                      _uploadProgress[i] = progress;
+                    });
+                  },
+                );
+
+            if (uploadSuccess) {
+              setState(() {
+                _uploadSuccess[i] = true;
+                _uploadProgress[i] = 1.0;
+              });
+              // إضافة معرف الملف المرفوع بنجاح إلى القائمة مع الفئة الذكية
+              final fileName = selectedDoc.file.path.split('/').last;
+              final smartCategory = _getSmartFileCategory(i, fileName);
+              uploadedDocumentIds.add(smartCategory);
+              debugPrint(
+                  '✅ ProfileEditScreen: Document ${i + 1} uploaded successfully');
+            } else {
+              setState(() {
+                _uploadSuccess[i] = false;
+                _uploadErrors[i] = 'فشل في رفع الملف';
+              });
+              debugPrint(
+                  '❌ ProfileEditScreen: Document ${i + 1} upload failed');
+            }
+          } catch (e) {
+            setState(() {
+              _uploadSuccess[i] = false;
+              _uploadErrors[i] = e.toString();
+            });
+            debugPrint(
+                '❌ ProfileEditScreen: Failed to upload document ${i + 1}: $e');
+          }
+        }
+
+        setState(() => _isUploadingFiles = false);
+      } else if (changedFieldsRequiringDocuments.isNotEmpty && _selectedDocuments.isEmpty) {
+        // إذا كانت هناك حقول متغيرة تتطلب وثائق ولكن لم يتم رفع وثائق
+        setState(() => _isSaving = false);
+        throw Exception('يجب رفع وثائق للحقول المتغيرة التي تتطلب وثائق: ${changedFieldsRequiringDocuments.join(", ")}');
+      } else if (changedFieldsRequiringDocuments.isEmpty && _selectedDocuments.isNotEmpty) {
+        // إذا لم تكن هناك حقول متغيرة تتطلب وثائق ولكن تم اختيار وثائق
+        debugPrint('⚠️ [PROFILE_EDIT] تم اختيار وثائق ولكن لا توجد حقول متغيرة تتطلب وثائق. سيتم تجاهل الوثائق.');
+        // مسح الوثائق المختارة لأنها غير مطلوبة
+        setState(() {
+          _selectedDocuments.clear();
+          _isUploadingFiles = false;
+        });
+      }
+
+      // الخطوة 2: إنشاء البيانات المحدثة مع مراجع الملفات المرفقة
+      final updatedProfile = widget.profile.copyWith(
+        fullNameAr: _fullNameArController.text.trim(),
+        fullNameEn: _fullNameEnController.text.trim(),
+        email: _emailController.text.trim(),
+        birthDate: _selectedBirthDate,
+        governorateId: _selectedGovernorateId,
+        qualificationId: _selectedQualificationId,
+        graduationYear: _selectedGraduationYear,
+        university: _universityController.text.trim().isEmpty
+            ? ''
+            : _universityController.text.trim(),
+        workplace: _workplaceController.text.trim(),
+      );
+
+      // تحويل البيانات إلى ProfileUpdateRequest مع مراجع الملفات
+      final updateRequest = ProfileUpdateRequest(
+        fullNameAr: updatedProfile.fullNameAr,
+        fullNameEn: updatedProfile.fullNameEn,
+        email: updatedProfile.email.isEmpty ? null : updatedProfile.email,
+        birthDate: updatedProfile.birthDate,
+        governorateId: updatedProfile.governorateId,
+        qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
+        graduationYear: updatedProfile.graduationYear,
+        university: updatedProfile.university.isEmpty == true
+            ? null
+            : updatedProfile.university,
+        workplace: updatedProfile.workplace.isEmpty == true
+            ? null
+            : updatedProfile.workplace,
+        // لا نرسل attached_documents لأن الخادم لا يدعمها في هذا endpoint
+      );
+
+      // الخطوة 3: حفظ البيانات مع مراجع الملفات
+      debugPrint(
+          '📄 ProfileEditScreen: Saving profile data with ${uploadedDocumentIds.length} attached documents');
+      final updateResult =
+          await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+
+      // الخطوة 4: عرض النتائج للمستخدم
+      if (mounted) {
+        String message;
+        Color backgroundColor;
+
+        if (_selectedDocuments.isEmpty) {
+          // لا توجد وثائق للرفع
+          final messageCode =
+              updateResult ? 'PROFILE_EDIT_SUCCESS' : 'PROFILE_EDIT_FAILED';
+          final smartMessage = SmartMessageHandler.instance.handleApiResponse({
+            'success': updateResult,
+            'code': messageCode,
+            'messageAr':
+                updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات',
+            'messageEn': updateResult
+                ? 'Data saved successfully'
+                : 'Failed to save data',
+          }, 'ar');
+          message = smartMessage['message'] ??
+              (updateResult ? 'تم حفظ البيانات بنجاح' : 'فشل في حفظ البيانات');
+          backgroundColor = updateResult ? AppColors.success : AppColors.error;
+        } else {
+          // حساب النتائج
+          int successfulUploads =
+              _uploadSuccess.values.where((success) => success).length;
+          int totalUploads = _selectedDocuments.length;
+
+          String messageCode;
+          if (updateResult && successfulUploads == totalUploads) {
+            // تم حفظ البيانات ورفع جميع الوثائق بنجاح
+            messageCode = 'PROFILE_EDIT_WITH_DOCS_SUCCESS';
+          } else if (updateResult && successfulUploads > 0) {
+            // تم حفظ البيانات ورفع بعض الوثائق
+            messageCode = 'PROFILE_EDIT_PARTIAL_DOCS_SUCCESS';
+          } else if (updateResult) {
+            // تم حفظ البيانات لكن فشل في رفع جميع الوثائق
+            messageCode = 'PROFILE_EDIT_DOCS_FAILED';
+          } else {
+            // فشل في حفظ البيانات
+            messageCode = 'PROFILE_EDIT_FAILED';
+          }
+
+          final smartMessage = SmartMessageHandler.instance.handleApiResponse({
+            'success': updateResult,
+            'code': messageCode,
+            'messageAr':
+                _getMessageByCode(messageCode, successfulUploads, totalUploads),
+            'messageEn': _getMessageByCodeEn(
+                messageCode, successfulUploads, totalUploads),
+          }, 'ar');
+          message = smartMessage['message'] ??
+              _getMessageByCode(messageCode, successfulUploads, totalUploads);
+          backgroundColor = updateResult
+              ? (successfulUploads == totalUploads
+                  ? AppColors.success
+                  : AppColors.warning)
+              : AppColors.error;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: backgroundColor,
+            action: backgroundColor == AppColors.warning
+                ? SnackBarAction(
+                    label: 'إعادة المحاولة',
+                    textColor: Colors.white,
+                    onPressed: () => _proceedWithSaveNew(),
+                  )
+                : null,
+          ),
+        );
+
+        if (updateResult) {
+          Navigator.pop(context, true); // إرجاع true للإشارة إلى أن هناك تحديث
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ أثناء حفظ البيانات: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isSaving = false;
+        _isUploadingFiles = false;
+      });
+    }
+  }
+
   /// متابعة الحفظ بعد التحقق من القواعد
   Future<void> _proceedWithSave() async {
     setState(() => _isSaving = true);
@@ -1258,25 +2238,33 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         birthDate: updatedProfile.birthDate,
         governorateId: updatedProfile.governorateId,
         qualificationId: updatedProfile.qualificationId,
+        categoryId: _selectedCategoryId, // الفئة الرئيسية (يتم تحديثها تلقائياً من المؤهل)
         graduationYear: updatedProfile.graduationYear,
-        university: updatedProfile.university?.isEmpty == true
+        university: updatedProfile.university.isEmpty == true
             ? null
             : updatedProfile.university,
-        workplace: updatedProfile.workplace?.isEmpty == true
+        workplace: updatedProfile.workplace.isEmpty == true
             ? null
             : updatedProfile.workplace,
       );
 
       // حفظ البيانات أولاً
-      final updateResult = await ref.read(profileProvider.notifier).updateProfile(updateRequest);
-      
+      final updateResult =
+          await ref.read(profileProvider.notifier).updateProfile(updateRequest);
+
       // فحص نتيجة تحديث البيانات
       if (!updateResult) {
         // فشل في تحديث البيانات
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('فشل في حفظ البيانات. يرجى المحاولة مرة أخرى'),
+            SnackBar(
+              content: Text(SmartMessageHandler.instance.handleApiResponse({
+                    'success': false,
+                    'code': 'PROFILE_EDIT_FAILED',
+                    'messageAr': 'فشل في حفظ البيانات. يرجى المحاولة مرة أخرى',
+                    'messageEn': 'Failed to save data. Please try again',
+                  }, 'ar')['message'] ??
+                  'فشل في حفظ البيانات. يرجى المحاولة مرة أخرى'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -1287,22 +2275,53 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       // إذا نجح تحديث البيانات، نتابع لرفع الوثائق
       bool documentsUploadSuccess = true;
       int uploadedDocuments = 0;
-      
+      List<String> failedDocuments = [];
+
       if (_selectedDocuments.isNotEmpty) {
+        // فحص الاتصال قبل رفع الملفات
+        debugPrint(
+            '📄 ProfileEditScreen: Checking connection before uploading documents...');
+
         for (int i = 0; i < _selectedDocuments.length; i++) {
           final selectedDoc = _selectedDocuments[i];
           try {
-            // رفع كل ملف كوثيقة عامة
-            await ref.read(profileProvider.notifier).uploadDocumentForField(
-                  fieldName: 'documents_${i + 1}', // اسم فريد لكل ملف
+            debugPrint(
+                '📄 ProfileEditScreen: Uploading document ${i + 1}/${_selectedDocuments.length}');
+
+            // تحديد فئة الملف الذكية باستخدام النظام الهرمي الجديد
+            final fileName = selectedDoc.file.path.split('/').last;
+            final smartCategory = _getSmartFileCategory(i, fileName);
+
+            debugPrint(
+                '📄 ProfileEditScreen: Smart file category for $fileName: $smartCategory');
+            debugPrint(
+                '📄 ProfileEditScreen: Display name: ${_getSmartFileDisplayName(smartCategory)}');
+
+            // رفع كل ملف كوثيقة عامة مع آلية إعادة المحاولة
+            final uploadSuccess = await ref
+                .read(profileProvider.notifier)
+                .uploadDocumentForFieldWithRetry(
+                  fieldName: smartCategory, // استخدام الفئة الذكية الجديدة
                   documentType: 'general', // نوع عام للوثائق
                   file: selectedDoc.file,
                   fileBytes: selectedDoc.bytes, // تمرير البيانات للويب
+                  maxRetries: 3, // 3 محاولات لكل ملف
                 );
-            uploadedDocuments++;
+
+            if (uploadSuccess) {
+              uploadedDocuments++;
+              debugPrint(
+                  '✅ ProfileEditScreen: Document ${i + 1} uploaded successfully');
+            } else {
+              failedDocuments.add('الوثيقة ${i + 1}');
+              debugPrint(
+                  '❌ ProfileEditScreen: Document ${i + 1} upload failed');
+            }
           } catch (e) {
             // في حالة فشل رفع ملف معين، نستمر مع باقي الملفات
-            debugPrint('فشل في رفع الملف ${selectedDoc.file.path}: $e');
+            failedDocuments.add('الوثيقة ${i + 1}');
+            debugPrint(
+                '❌ ProfileEditScreen: Failed to upload document ${i + 1}: $e');
             documentsUploadSuccess = false;
           }
         }
@@ -1311,32 +2330,34 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       if (mounted) {
         String message;
         Color backgroundColor;
-        
+
         if (_selectedDocuments.isEmpty) {
           // لا توجد وثائق للرفع
           message = 'تم حفظ البيانات بنجاح';
           backgroundColor = AppColors.success;
-        } else if (documentsUploadSuccess && uploadedDocuments == _selectedDocuments.length) {
+        } else if (documentsUploadSuccess &&
+            uploadedDocuments == _selectedDocuments.length) {
           // تم رفع جميع الوثائق بنجاح
           message = 'تم حفظ البيانات ورفع جميع الوثائق بنجاح';
           backgroundColor = AppColors.success;
         } else if (uploadedDocuments > 0) {
           // تم رفع بعض الوثائق فقط
-          message = 'تم حفظ البيانات ورفع $uploadedDocuments من ${_selectedDocuments.length} وثائق';
+          message =
+              'تم حفظ البيانات ورفع $uploadedDocuments من ${_selectedDocuments.length} وثائق';
           backgroundColor = AppColors.warning;
         } else {
           // فشل في رفع جميع الوثائق
           message = 'تم حفظ البيانات لكن فشل في رفع الوثائق';
           backgroundColor = AppColors.warning;
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
             backgroundColor: backgroundColor,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true); // إرجاع true للإشارة إلى أن هناك تحديث
       }
     } catch (e) {
       if (mounted) {
@@ -1377,7 +2398,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.info_outline,
                 color: AppColors.warning,
                 size: 20,
@@ -1415,11 +2436,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1440,6 +2461,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 title,
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ],
@@ -1462,31 +2484,33 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
         const SizedBox(height: 12),
 
-
-
         SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: _isSaving ? null : () => Navigator.pop(context),
+            onPressed: _isSaving
+                ? null
+                : () => Navigator.pop(
+                    context, false), // إرجاع false للإشارة إلى عدم وجود تحديث
             child: const Text('إلغاء'),
           ),
         ),
 
         // رسالة تنبيه للحقول المطلوبة (فقط للحسابات غير الموثقة)
-        if (!widget.profile.isVerified && !_canRequestVerification()) _buildRequiredFieldsAlert(),
+        if (!widget.profile.isVerified && !_canRequestVerification())
+          _buildRequiredFieldsAlert(),
       ],
     );
   }
 
   Widget? _buildDocumentIcon(String fieldName) {
-    final requiresDoc = _requiresDocument(fieldName);
+    final requiresDoc = _requiresDocument(fieldName, ref);
     final isEditable = _isFieldEditable(fieldName);
 
     if (!requiresDoc && isEditable) return null;
 
     // إذا كان الحقل غير قابل للتعديل
     if (!isEditable) {
-      return Tooltip(
+      return const Tooltip(
         message: 'هذا الحقل غير قابل للتعديل حسب قواعد الملف الشخصي',
         child: Icon(
           Icons.lock,
@@ -1557,29 +2581,32 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final rulesState = ref.read(profileRulesProvider);
       final profileStatus = _convertVerificationStatusToProfileStatus(
           currentProfile.verificationStatus);
-      
+
       debugPrint('🔍 [FIELD_EDIT] فحص الحقل: $fieldName');
       debugPrint('📋 [FIELD_EDIT] حالة الملف الشخصي: $profileStatus');
-      debugPrint('📋 [FIELD_EDIT] حالة التوثيق: ${currentProfile.verificationStatus}');
-      debugPrint('📋 [FIELD_EDIT] عدد القواعد المحملة: ${rulesState.rules.length}');
+      debugPrint(
+          '📋 [FIELD_EDIT] حالة التوثيق: ${currentProfile.verificationStatus}');
+      debugPrint(
+          '📋 [FIELD_EDIT] عدد القواعد المحملة: ${rulesState.rules.length}');
       debugPrint('📋 [FIELD_EDIT] حالة تحميل القواعد: ${rulesState.isLoading}');
-      
+
       // التحقق من أن القواعد محملة
       if (rulesState.isLoading) {
-        debugPrint('⏳ [FIELD_EDIT] القواعد لا تزال قيد التحميل - السماح بالتعديل مؤقتاً');
+        debugPrint(
+            '⏳ [FIELD_EDIT] القواعد لا تزال قيد التحميل - السماح بالتعديل مؤقتاً');
         return true;
       }
-      
+
       if (rulesState.error != null) {
         debugPrint('❌ [FIELD_EDIT] خطأ في تحميل القواعد: ${rulesState.error}');
         return true;
       }
-      
+
       // استخدام الـ notifier للتحقق من إمكانية التعديل
       final rulesNotifier = ref.read(profileRulesProvider.notifier);
       final canEdit = rulesNotifier.canEditField(fieldName, profileStatus);
       debugPrint('✅ [FIELD_EDIT] هل يمكن تعديل $fieldName؟ $canEdit');
-      
+
       return canEdit;
     } catch (e) {
       debugPrint('❌ خطأ في التحقق من إمكانية تعديل الحقل $fieldName: $e');
@@ -1587,7 +2614,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
-  bool _requiresDocument(String fieldName) {
+  bool _requiresDocument(String fieldName, WidgetRef ref) {
     try {
       // التحقق من صحة المدخلات
       if (fieldName.isEmpty) {
@@ -1599,14 +2626,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final currentProfile = profileState.currentProfile;
 
       if (currentProfile == null) {
-        debugPrint('⚠️ الملف الشخصي غير متاح، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
+        debugPrint(
+            '⚠️ الملف الشخصي غير متاح، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
         return false;
       }
 
       // التحقق من حالة ProfileRulesProvider
       final rulesState = ref.read(profileRulesProvider);
       if (rulesState.rules.isEmpty) {
-        debugPrint('⚠️ قواعد الملف الشخصي غير متاحة، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
+        debugPrint(
+            '⚠️ قواعد الملف الشخصي غير متاحة، لا يمكن التحقق من الحاجة للوثيقة للحقل: $fieldName');
         return false;
       }
 
@@ -1614,10 +2643,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final rulesNotifier = ref.read(profileRulesProvider.notifier);
       final profileStatus = _convertVerificationStatusToProfileStatus(
           currentProfile.verificationStatus);
-      
-      final requiresDoc = rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
+
+      final requiresDoc =
+          rulesNotifier.fieldRequiresDocument(fieldName, profileStatus);
       debugPrint('📋 فحص الحاجة للوثيقة للحقل $fieldName: $requiresDoc');
-      
+
       return requiresDoc;
     } catch (e, stackTrace) {
       debugPrint('❌ خطأ في التحقق من الحاجة للوثيقة للحقل $fieldName: $e');
@@ -1666,8 +2696,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
       // التحقق من التغييرات في سنة التخرج
       if (_selectedGraduationYear != currentProfile.graduationYear) {
-        proposedChanges['graduationYear'] = _selectedGraduationYear?.toString() ?? '';
-        currentValues['graduationYear'] = currentProfile.graduationYear?.toString() ?? '';
+        proposedChanges['graduationYear'] =
+            _selectedGraduationYear?.toString() ?? '';
+        currentValues['graduationYear'] =
+            currentProfile.graduationYear?.toString() ?? '';
       }
 
       // التحقق من التغييرات في الجامعة
@@ -1747,7 +2779,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(
+                  context, false), // إرجاع false للإشارة إلى عدم وجود تحديث
               child: const Text('حسناً'),
             ),
           ],
@@ -1758,8 +2791,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final hasWarnings = result.warnings.isNotEmpty;
       final requiresApproval = result.requiresApproval;
       final requiresDocuments = result.requiresDocument;
-
-
 
       // التحقق من وجود وثائق إذا كانت مطلوبة
       if (requiresDocuments && _selectedDocuments.isEmpty) {
@@ -1796,7 +2827,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(
+                    context, false), // إرجاع false للإشارة إلى عدم وجود تحديث
                 child: const Text('حسناً'),
               ),
             ],
@@ -1897,16 +2929,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 if (requiresDocuments) ...[
                   const Row(
                     children: [
-                      Icon(Icons.attach_file, color: AppColors.success, size: 20),
+                      Icon(Icons.attach_file,
+                          color: AppColors.success, size: 20),
                       SizedBox(width: 8),
-                      Text('وثائق مرفقة ✓', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('وثائق مرفقة ✓',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text('تم رفع ${_selectedDocuments.length} وثيقة داعمة'),
                   const SizedBox(height: 12),
                 ],
-
 
                 const Text('هل تريد المتابعة؟',
                     style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1920,8 +2953,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       height: 50,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
-                          _proceedWithSave();
+                          Navigator.pop(context,
+                              true); // إرجاع true للإشارة إلى أن هناك تحديث
+                          _proceedWithSaveProfessional();
                         },
                         icon: const Icon(
                           Icons.verified_user,
@@ -1952,7 +2986,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       width: double.infinity,
                       height: 50,
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(context,
+                            false), // إرجاع false للإشارة إلى عدم وجود تحديث
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
                           side: const BorderSide(
@@ -1982,7 +3017,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         );
       } else {
         // لا توجد تحذيرات أو متطلبات إضافية، حفظ مباشرة
-        _proceedWithSave();
+        _proceedWithSaveProfessional();
       }
     }
   }

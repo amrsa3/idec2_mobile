@@ -100,7 +100,7 @@ class ApiConstants {
   
   /// Get fallback URL based on build mode
   static String _getFallbackUrl() {
-    final fallback = kDebugMode ? devUrl : prodUrl;
+    const fallback = kDebugMode ? devUrl : prodUrl;
     debugPrint('🆘 [API_CONSTANTS] Using fallback URL: $fallback (debug: $kDebugMode)');
     return fallback;
   }

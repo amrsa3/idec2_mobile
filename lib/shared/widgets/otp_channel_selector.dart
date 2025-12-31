@@ -40,7 +40,7 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     if (widget.availableChannels.isEmpty) {
       return _buildEmptyState(context, l10n);
@@ -129,7 +129,7 @@ class _OtpChannelSelectorState extends State<OtpChannelSelector> {
               ],
             ),
           ),
-          Icon(
+          const Icon(
             Icons.check_circle,
             color: AppColors.primary,
           ),
@@ -305,7 +305,7 @@ class OtpChannelSelectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
       title: Text(l10n.selectLanguage), // TODO: Add proper localization
@@ -357,7 +357,7 @@ class OtpChannelSelectionBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.all(24),

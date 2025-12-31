@@ -1,0 +1,3370 @@
+[
+  {
+    "id": "cmhskzyna000hfln60e1vzgvg",
+    "code": "OTP_MESSAGE_TEMPLATE",
+    "success": true,
+    "messageAr": "🎉 مرحباً بك في مؤتمر IDEC!\n\nكود التحقق الخاص بك هو: {otpCode}\n\n⏰ هذا الكود صالح لمدة 15 دقيقة فقط\n🔒 لا تشارك هذا الكود مع أي شخص آخر\n\nشكراً لك لانضمامك إلينا!\nفريق مؤتمر IDEC",
+    "messageEn": "🎉 Welcome to IDEC Conference!\n\nYour verification code is: {otpCode}\n\n⏰ This code is valid for 15 minutes only\n🔒 Do not share this code with anyone else\n\nThank you for joining us!\nIDEC Conference Team",
+    "category": "auth",
+    "description": "قالب الرسالة الإلكترونية/النصية التي تحتوي على كود التحقق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T03:27:12.934Z",
+    "updatedAt": "2025-11-11T14:41:01.479Z",
+    "defaultChannels": [
+      "SMS"
+    ],
+    "channelTemplates": {
+      "SMS": {
+        "messageAr": "كود التحقق : {otpCode}\nهذا الكود صالح لـ 15 دقيقة فقط\n‏IDEC-Ye2026"
+      }
+    },
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyni000ifln6iqhit534",
+    "code": "OTP_REGISTRATION_MESSAGE",
+    "success": true,
+    "messageAr": "🎉 مرحباً بك في مؤتمر IDEC!\n\nكود التحقق الخاص بك هو: {otpCode}\n\n⏰ هذا الكود صالح لمدة 15 دقيقة فقط\n🔒 لا تشارك هذا الكود مع أي شخص آخر\n\nشكراً لك لانضمامك إلينا!\nفريق مؤتمر IDEC",
+    "messageEn": "🎉 Welcome to IDEC Conference!\n\nYour verification code is: {otpCode}\n\n⏰ This code is valid for 15 minutes only\n🔒 Do not share this code with anyone else\n\nThank you for joining us!\nIDEC Conference Team",
+    "category": "auth",
+    "description": "رسالة OTP للتسجيل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T03:27:12.942Z",
+    "updatedAt": "2025-11-11T14:41:33.144Z",
+    "defaultChannels": [
+      "SMS"
+    ],
+    "channelTemplates": {
+      "SMS": {
+        "messageAr": "كود التحقق : {otpCode}\nهذا الكود صالح لـ 15 دقيقة فقط\n‏IDEC-Ye2026"
+      }
+    },
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzynp000jfln6h8jyt3hk",
+    "code": "OTP_PASSWORD_RESET_MESSAGE",
+    "success": true,
+    "messageAr": "🔐 إعادة تعيين كلمة المرور - مؤتمر IDEC\n\nكود التحقق الخاص بك هو: {otpCode}\n\n⏰ هذا الكود صالح لمدة 15 دقيقة فقط\n🔒 لا تشارك هذا الكود مع أي شخص آخر\n\nإذا لم تطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذه الرسالة.\n\nفريق مؤتمر IDEC",
+    "messageEn": "🔐 Password Reset - IDEC Conference\n\nYour verification code is: {otpCode}\n\n⏰ This code is valid for 15 minutes only\n🔒 Do not share this code with anyone else\n\nIf you did not request a password reset, please ignore this message.\n\nIDEC Conference Team",
+    "category": "auth",
+    "description": "رسالة OTP لإعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T03:27:12.949Z",
+    "updatedAt": "2025-11-29T07:33:00.241Z",
+    "defaultChannels": [
+      "SMS"
+    ],
+    "channelTemplates": {
+      "SMS": {
+        "messageAr": "كود التحقق: {otpCode}\nهذا الكود صالح لـ 15 دقيقة\n‏IDEC-Ye2026"
+      }
+    },
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzynw000kfln6xkuzhtqo",
+    "code": "OTP_PHONE_VERIFICATION_MESSAGE",
+    "success": true,
+    "messageAr": "✅ التحقق من رقم الهاتف - مؤتمر IDEC\n\nكود التحقق الخاص بك هو: {otpCode}\n\n⏰ هذا الكود صالح لمدة 15 دقيقة فقط\n🔒 لا تشارك هذا الكود مع أي شخص آخر\n\nشكراً لك!\nفريق مؤتمر IDEC",
+    "messageEn": "✅ Phone Number Verification - IDEC Conference\n\nYour verification code is: {otpCode}\n\n⏰ This code is valid for 15 minutes only\n🔒 Do not share this code with anyone else\n\nThank you!\nIDEC Conference Team",
+    "category": "auth",
+    "description": "رسالة OTP للتحقق من رقم الهاتف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T03:27:12.956Z",
+    "updatedAt": "2025-11-11T14:41:17.051Z",
+    "defaultChannels": [
+      "SMS"
+    ],
+    "channelTemplates": {
+      "SMS": {
+        "messageAr": "كود التحقق : {otpCode}\nهذا الكود صالح لـ 15 دقيقة فقط\n‏IDEC-Ye2026"
+      }
+    },
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsfltb0000fl24jzvowlin",
+    "code": "PROFILE_REVIEW_SUBMITTED_WHATSAPP",
+    "success": true,
+    "messageAr": "{userNameEn}\n\n تم استلام بياناتك بنجاح للمراجعة في منصة IDEC.\nسيتم التحقق من بياناتك خلال وقت قصير.",
+    "messageEn": "{userNameEn}, we received your review request on IDEC successfully.\n\nWe will verify your document shortly.",
+    "category": "profile_review",
+    "description": "رسالة واتساب عند إرسال طلب مراجعة الملف الشخصي بنجاح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T23:43:06.287Z",
+    "updatedAt": "2025-11-13T02:03:30.658Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userNameEn"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsfltn0002fl243zjbylu9",
+    "code": "PROFILE_REVIEW_REJECTED_WHATSAPP",
+    "success": false,
+    "messageAr": "عذرًا، لم يتم توثيق حسابك بسبب: {rejectionReason}.\n\nيرجى إعادة التقديم عبر ملفك الشخصي في التطبيق.",
+    "messageEn": "Sorry, your account verification was declined because: {rejectionReason}.\n\nPlease resubmit your request from the mobile app.",
+    "category": "profile_review",
+    "description": "رسالة واتساب عند رفض طلب مراجعة الملف الشخصي مع ذكر السبب",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T23:43:06.300Z",
+    "updatedAt": "2025-11-10T23:43:06.300Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "rejectionReason"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsfltj0001fl24zsrcpyva",
+    "code": "PROFILE_REVIEW_APPROVED_WHATSAPP",
+    "success": true,
+    "messageAr": "{userNameEn} \nتم توثيق حسابك في منصة IDEC بنجاح!\nالآن يمكنك البدء بالتسجيل في المؤتمر والدورات المتاحة.\n\nمرحبًا بك معنا!",
+    "messageEn": "{userNameEn}, your IDEC account has been verified successfully!\n\nYou can now register for conferences and available courses.\n\nWelcome aboard!",
+    "category": "profile_review",
+    "description": "رسالة واتساب عند قبول طلب مراجعة الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T23:43:06.295Z",
+    "updatedAt": "2025-11-12T03:05:03.197Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userNameEn"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsflzg0005fl24at6xcm3o",
+    "code": "REGISTRATION_PAYMENT_DEADLINE_REMINDER_WHATSAPP",
+    "success": true,
+    "messageAr": "{userNameEn}، تذكير: تبقى يوم واحد فقط لإتمام دفع اشتراكك في {entityTitle}.\n\nالموعد النهائي: {deadline}\nالمبلغ المستحق: {amount}\n\nيرجى إتمام الدفع من خلال التطبيق قبل انتهاء المهلة.",
+    "messageEn": "{userNameEn}, reminder: only one day left to pay for {entityTitle}.\n\nDeadline: {deadline}\nAmount due: {amount}\n\nPlease complete the payment in the app before the deadline.",
+    "category": "payment",
+    "description": "رسالة واتساب لتذكير المستخدم قبل انتهاء مهلة الدفع بيوم واحد",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T23:43:06.509Z",
+    "updatedAt": "2025-11-10T23:43:06.509Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userNameEn",
+      "entityTitle",
+      "deadline",
+      "amount"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsflxy0003fl241g0l5t16",
+    "code": "REGISTRATION_PAYMENT_PENDING_WHATSAPP",
+    "success": true,
+    "messageAr": "{userNameEn}\n تم اشتراكك بنجاح بـ {entityTitle}.\nبانتظار دفع مبلغ {amount} خلال مدة {paymentDeadline}.",
+    "messageEn": "{userNameEn}, you have been enrolled in {entityTitle}.\n\nPlease pay {amount} within {paymentDeadline}.",
+    "category": "registration",
+    "description": "رسالة واتساب عند إنشاء اشتراك جديد بانتظار الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T23:43:06.454Z",
+    "updatedAt": "2025-11-12T03:05:25.934Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userNameEn",
+      "entityTitle",
+      "amount",
+      "paymentDeadline"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhtsflzb0004fl24m5j8slqf",
+    "code": "REGISTRATION_PAYMENT_DEADLINE_EXPIRED_WHATSAPP",
+    "success": false,
+    "messageAr": "تم تعليق اشتراكك مؤقتًا.\nلعدم إتمام عملية الدفع خلال المهلة المحددة، تم تعليق الاشتراك بشكل مؤقت.\n\nلإعادة التفعيل يرجى الدخول إلى التطبيق وطلب مقعد جديد للمؤتمر، ثم انتظار الموافقة، وبعدها يمكنك إتمام عملية الدفع مباشرة عبر التطبيق.",
+    "messageEn": "Your subscription has been temporarily suspended.\n\nPayment was not completed within the allowed time, so the registration is on hold.\n\nTo reactivate, request a new seat in the app, wait for approval, then complete the payment directly.",
+    "category": "payment",
+    "description": "رسالة واتساب عند انتهاء مهلة الدفع وتعليق الاشتراك",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T23:43:06.503Z",
+    "updatedAt": "2025-11-12T03:05:36.600Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj8y0002flyjemtrdz5t",
+    "code": "REGISTRATION_REJECTED",
+    "success": false,
+    "messageAr": "نعتذر، تم رفض طلب التسجيل في \"{eventTitle}\". {rejectionReason}",
+    "messageEn": "We apologize, your registration request for \"{eventTitle}\" has been rejected. {rejectionReason}",
+    "category": "registration",
+    "description": "رسالة عند رفض طلب التسجيل في فعالية. المتغيرات: {eventTitle}, {userName}, {registrationId}, {rejectionReason}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.776Z",
+    "updatedAt": "2025-12-06T12:05:55.510Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "registrationId",
+      "rejectionReason"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj8p0001flyjiy0gpsc6",
+    "code": "REGISTRATION_ACCEPTED",
+    "success": true,
+    "messageAr": "تهانينا! تم قبول طلب التسجيل في \"{eventTitle}\". يرجى إتمام عملية الدفع قبل {paymentDeadline}.",
+    "messageEn": "Congratulations! Your registration request for \"{eventTitle}\" has been accepted. Please complete payment before {paymentDeadline}.",
+    "category": "registration",
+    "description": "رسالة عند قبول طلب التسجيل في فعالية. المتغيرات: {eventTitle}, {userName}, {registrationId}, {calculatedPrice}, {currency}, {paymentDeadline}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.767Z",
+    "updatedAt": "2025-12-06T02:14:56.857Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "registrationId",
+      "calculatedPrice",
+      "currency",
+      "paymentDeadline"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj960003flyjh4elwl6i",
+    "code": "REGISTRATION_PAYMENT_PENDING",
+    "success": true,
+    "messageAr": "{userNameEn}\nتم قبول طلب اشتراكك في \"{eventTitle}\". يرجى إتمام عملية الدفع بقيمة {calculatedPrice} {currency} خلال مدة {paymentDeadline}.",
+    "messageEn": "Your registration for \"{eventTitle}\" has been approved. Please complete payment of {calculatedPrice} {currency} before {paymentDeadline}.",
+    "category": "registration",
+    "description": "رسالة عند قبول التسجيل وانتظار الدفع. المتغيرات: {eventTitle}, {userName}, {userNameEn}, {registrationId}, {calculatedPrice}, {currency}, {paymentDeadline}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.785Z",
+    "updatedAt": "2025-12-06T02:18:57.877Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "userNameEn",
+      "registrationId",
+      "calculatedPrice",
+      "currency",
+      "paymentDeadline"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj8a0000flyjucurlj6k",
+    "code": "REGISTRATION_UNDER_REVIEW",
+    "success": true,
+    "messageAr": "تم استلام طلب التسجيل في \"{eventTitle}\". جاري مراجعة طلبك من قبل اللجنة.",
+    "messageEn": "Your registration request for \"{eventTitle}\" has been received. Your request is being reviewed by the committee.",
+    "category": "registration",
+    "description": "رسالة عند استلام طلب التسجيل في فعالية (قيد المراجعة). المتغيرات: {eventTitle}, {userName}, {registrationId}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.752Z",
+    "updatedAt": "2025-12-06T19:45:22.763Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "registrationId"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz6l0035fln6qg7s0hmv",
+    "code": "REGISTRATION_NO_MATCHING_RULES",
+    "success": false,
+    "messageAr": "نعتذر عن قبولك حالياً كون مؤهلك غير مسموح لها بالاشتراك بهذه الفعالية ،، لايزال يمكنك الاشتراك ببقيه الدورات",
+    "messageEn": "We apologize, but we cannot accept your registration at this time as you do not meet the requirements",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب عدم تطابق القواعد في DIRECT_ACCEPTANCE",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-10T03:27:13.629Z",
+    "updatedAt": "2025-11-14T19:14:12.883Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmim4xiee0001fl16pb3gpad2",
+    "code": "REGISTRATION_QUALIFICATION_MISMATCH",
+    "success": false,
+    "messageAr": "نعتذر عن قبولك كون مؤهلك غير متطابق مع الشروط. يمكنك الاشتراك بالفعاليات",
+    "messageEn": "We apologize, but your qualification does not match the requirements. You can register for events",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب عدم تطابق المؤهل أو الفئة. تظهر عند استخدام شرط qualificationId أو categoryId",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-30T19:50:29.989Z",
+    "updatedAt": "2025-11-30T19:50:29.989Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmim4xiem0002fl16onp8iw3q",
+    "code": "REGISTRATION_GRADUATION_YEAR_MISMATCH",
+    "success": false,
+    "messageAr": "نعتذر عن قبولك كون سنة التخرج غير متطابقة مع الشروط. يمكنك الاشتراك بالفعاليات",
+    "messageEn": "We apologize, but your graduation year does not match the requirements. You can register for events",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب عدم تطابق سنة التخرج. تظهر عند استخدام شرط graduationYear",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-30T19:50:29.997Z",
+    "updatedAt": "2025-11-30T19:50:29.997Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmim4xiew0003fl165pezlwah",
+    "code": "REGISTRATION_PROFILE_MISMATCH",
+    "success": false,
+    "messageAr": "نعتذر عن قبولك كون بياناتك الشخصية غير متطابقة مع الشروط. يمكنك الاشتراك بالفعاليات",
+    "messageEn": "We apologize, but your profile data does not match the requirements. You can register for events",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب عدم تطابق بيانات الملف الشخصي (المحافظة، الحالة، الجنس، تاريخ الميلاد). تظهر عند استخدام شرط governorateId أو status أو gender أو birthDate",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-30T19:50:30.007Z",
+    "updatedAt": "2025-11-30T19:50:30.007Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmim4xidw0000fl165qfmbuwh",
+    "code": "REGISTRATION_SUBSCRIPTION_REQUIRED",
+    "success": false,
+    "messageAr": "يجب أن تكون مشتركاً في \"{requiredEventName}\" للاشتراك بـ بهذه الفعالية",
+    "messageEn": "You must be registered for \"{requiredEventName}\" to register for \"{eventName}\"",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب عدم الاشتراك في الفعالية/المؤتمر المطلوب. المتغيرات: {eventName}, {requiredEventName}, {requiredConferenceName}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-30T19:50:29.969Z",
+    "updatedAt": "2025-11-30T20:05:58.434Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj9e0004flyjh1pzyidy",
+    "code": "REGISTRATION_PAYMENT_COMPLETED",
+    "success": true,
+    "messageAr": "تم تأكيد الدفع! أنت الآن مشارك نشط في \"{eventTitle}\".",
+    "messageEn": "Payment confirmed! You are now an active participant in \"{eventTitle}\".",
+    "category": "registration",
+    "description": "رسالة عند إتمام الدفع وتأكيد التسجيل. المتغيرات: {eventTitle}, {userName}, {registrationId}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-12-06T02:10:33.793Z",
+    "updatedAt": "2025-12-06T02:10:33.793Z",
+    "defaultChannels": [
+      "PUSH"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "registrationId"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpja10007flyjvs7lvs76",
+    "code": "PROFILE_REJECTED",
+    "success": false,
+    "messageAr": "نعتذر، تم رفض طلب توثيق الملف الشخصي. {rejectionReason}",
+    "messageEn": "We apologize, your profile verification request has been rejected. {rejectionReason}",
+    "category": "profile",
+    "description": "رسالة عند رفض طلب توثيق الملف الشخصي. المتغيرات: {userName}, {profileId}, {rejectionReason}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.816Z",
+    "updatedAt": "2025-12-06T19:45:42.674Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userName",
+      "profileId",
+      "rejectionReason"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpjaa0008flyj672y5ela",
+    "code": "CONFERENCE_REGISTRATION_REJECTED",
+    "success": false,
+    "messageAr": "نعتذر، تم رفض طلب التسجيل في المؤتمر \"{conferenceName}\". {rejectionReason}",
+    "messageEn": "We apologize, your registration request for conference \"{conferenceName}\" has been rejected. {rejectionReason}",
+    "category": "conference",
+    "description": "رسالة عند رفض طلب التسجيل في مؤتمر. المتغيرات: {conferenceName}, {userName}, {registrationId}, {rejectionReason}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.825Z",
+    "updatedAt": "2025-12-06T19:45:48.659Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "conferenceName",
+      "userName",
+      "registrationId",
+      "rejectionReason"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj9p0005flyjp7tx58hy",
+    "code": "REGISTRATION_ON_HOLD",
+    "success": false,
+    "messageAr": "تم وضع طلب التسجيل في \"{eventTitle}\" قيد الانتظار. {onHoldReason}",
+    "messageEn": "Your registration request for \"{eventTitle}\" has been placed on hold. {onHoldReason}",
+    "category": "registration",
+    "description": "رسالة عند وضع التسجيل قيد الانتظار. المتغيرات: {eventTitle}, {userName}, {registrationId}, {onHoldReason}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.805Z",
+    "updatedAt": "2025-12-06T19:45:34.436Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "eventTitle",
+      "userName",
+      "registrationId",
+      "onHoldReason"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpj9v0006flyj5j059db9",
+    "code": "PROFILE_APPROVED",
+    "success": true,
+    "messageAr": "تهانينا! تم قبول طلب توثيق الملف الشخصي بنجاح.",
+    "messageEn": "Congratulations! Your profile verification request has been approved.",
+    "category": "profile",
+    "description": "رسالة عند قبول طلب توثيق الملف الشخصي. المتغيرات: {userName}, {profileId}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.810Z",
+    "updatedAt": "2025-12-06T19:45:38.392Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "userName",
+      "profileId"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnpjah0009flyjsaebs2db",
+    "code": "CONFERENCE_REGISTRATION_PAYMENT_PENDING",
+    "success": true,
+    "messageAr": "تم قبول طلب التسجيل في \"{conferenceName}\". يرجى إتمام عملية الدفع بقيمة {calculatedPrice} {currency} خلال مدة {paymentDeadline}.",
+    "messageEn": "Your registration for conference \"{conferenceName}\" has been approved. Please complete payment of {calculatedPrice} {currency} before {paymentDeadline}.",
+    "category": "conference",
+    "description": "رسالة عند قبول التسجيل في مؤتمر وانتظار الدفع. المتغيرات: {conferenceName}, {userName}, {userNameEn}, {registrationId}, {calculatedPrice}, {currency}, {paymentDeadline}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.832Z",
+    "updatedAt": "2025-12-06T02:20:40.939Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "conferenceName",
+      "userName",
+      "userNameEn",
+      "registrationId",
+      "calculatedPrice",
+      "currency",
+      "paymentDeadline"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmitnnhqd0000fldpefw3gp6w",
+    "code": "SECURITY_ALERT",
+    "success": true,
+    "messageAr": "⚠️ تنبيه أمني: {{severity}} - {{attackType}} من IP: {{ipAddress}}",
+    "messageEn": "⚠️ Security Alert: {{severity}} - {{attackType}} from IP: {{ipAddress}}",
+    "category": "security",
+    "description": "تنبيه أمني يتم إرساله للمسؤولين عند اكتشاف نشاط مشبوه أو هجوم",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-12-06T02:08:58.501Z",
+    "updatedAt": "2025-12-06T02:08:58.501Z",
+    "defaultChannels": [
+      "SMS",
+      "WHATSAPP"
+    ],
+    "channelTemplates": {
+      "SMS": {
+        "ar": "⚠️ تنبيه أمني: {{severity}} - {{attackType}} من IP: {{ipAddress}} - {{description}}",
+        "en": "⚠️ Security Alert: {{severity}} - {{attackType}} from IP: {{ipAddress}} - {{description}}"
+      },
+      "EMAIL": {
+        "ar": {
+          "body": "<div dir=\"rtl\" style=\"font-family: Arial, sans-serif; padding: 20px; background-color: #fff3cd;\"><div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 3px solid #f44336;\"><h2 style=\"color: #d32f2f; border-bottom: 3px solid #f44336; padding-bottom: 10px;\">🚨 تنبيه أمني</h2><div style=\"margin: 20px 0;\"><div style=\"background-color: #ffebee; padding: 15px; border-radius: 5px; border-right: 4px solid #f44336;\"><h3 style=\"color: #c62828; margin: 0 0 10px 0;\">⚠️ {{severity}}</h3><p style=\"font-size: 18px; font-weight: bold; color: #d32f2f; margin: 5px 0;\">{{attackType}}</p></div></div><table style=\"width: 100%; border-collapse: collapse; margin: 20px 0;\"><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">🌐 عنوان IP:</td><td style=\"padding: 10px; color: #2d3748; font-family: monospace;\">{{ipAddress}}</td></tr><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">📝 الوصف:</td><td style=\"padding: 10px; color: #2d3748;\">{{description}}</td></tr><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">🕐 الوقت:</td><td style=\"padding: 10px; color: #2d3748;\">{{timestamp}}</td></tr></table><div style=\"margin-top: 30px; padding: 15px; background-color: #e8f5e9; border-radius: 5px; border-right: 4px solid #4caf50;\"><p style=\"margin: 0; color: #2e7d32; font-weight: bold;\">💡 الإجراء الموصى به:</p><p style=\"margin: 5px 0 0 0; color: #388e3c;\">راجع سجلات الأمان وتحقق من الحاجة لحظر هذا IP</p></div><div style=\"margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #718096; font-size: 12px;\"><p>هذه رسالة تلقائية من نظام الأمان</p></div></div></div>",
+          "subject": "🚨 تنبيه أمني: {{severity}} - {{attackType}}"
+        },
+        "en": {
+          "body": "<div style=\"font-family: Arial, sans-serif; padding: 20px; background-color: #fff3cd;\"><div style=\"max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 3px solid #f44336;\"><h2 style=\"color: #d32f2f; border-bottom: 3px solid #f44336; padding-bottom: 10px;\">🚨 Security Alert</h2><div style=\"margin: 20px 0;\"><div style=\"background-color: #ffebee; padding: 15px; border-radius: 5px; border-left: 4px solid #f44336;\"><h3 style=\"color: #c62828; margin: 0 0 10px 0;\">⚠️ {{severity}}</h3><p style=\"font-size: 18px; font-weight: bold; color: #d32f2f; margin: 5px 0;\">{{attackType}}</p></div></div><table style=\"width: 100%; border-collapse: collapse; margin: 20px 0;\"><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">🌐 IP Address:</td><td style=\"padding: 10px; color: #2d3748; font-family: monospace;\">{{ipAddress}}</td></tr><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">📝 Description:</td><td style=\"padding: 10px; color: #2d3748;\">{{description}}</td></tr><tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding: 10px; font-weight: bold; color: #4a5568;\">🕐 Time:</td><td style=\"padding: 10px; color: #2d3748;\">{{timestamp}}</td></tr></table><div style=\"margin-top: 30px; padding: 15px; background-color: #e8f5e9; border-radius: 5px; border-left: 4px solid #4caf50;\"><p style=\"margin: 0; color: #2e7d32; font-weight: bold;\">💡 Recommended Action:</p><p style=\"margin: 5px 0 0 0; color: #388e3c;\">Review security logs and check if this IP should be blocked</p></div><div style=\"margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #718096; font-size: 12px;\"><p>This is an automated message from the Security System</p></div></div></div>",
+          "subject": "🚨 Security Alert: {{severity}} - {{attackType}}"
+        }
+      },
+      "WHATSAPP": {
+        "ar": "🚨 *تنبيه أمني*\n\n⚠️ الخطورة: *{{severity}}*\n🎯 نوع الهجوم: {{attackType}}\n🌐 عنوان IP: {{ipAddress}}\n📝 الوصف: {{description}}\n🕐 الوقت: {{timestamp}}",
+        "en": "🚨 *Security Alert*\n\n⚠️ Severity: *{{severity}}*\n🎯 Attack Type: {{attackType}}\n🌐 IP Address: {{ipAddress}}\n📝 Description: {{description}}\n🕐 Time: {{timestamp}}"
+      }
+    },
+    "variablePlaceholders": [
+      "severity",
+      "ipAddress",
+      "attackType",
+      "description",
+      "timestamp"
+    ],
+    "metadata": {
+      "purpose": "security_alert",
+      "priority": "HIGH"
+    }
+  },
+  {
+    "id": "cmitnpjam000aflyjq82zbpgn",
+    "code": "CONFERENCE_REGISTRATION_PAYMENT_COMPLETED",
+    "success": true,
+    "messageAr": "تم تأكيد الدفع! أنت الآن مشترك في \"{conferenceName}\".",
+    "messageEn": "Payment confirmed! You are now an active participant in conference \"{conferenceName}\".",
+    "category": "conference",
+    "description": "رسالة عند إتمام الدفع وتأكيد التسجيل في مؤتمر. المتغيرات: {conferenceName}, {userName}, {registrationId}",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:10:33.837Z",
+    "updatedAt": "2025-12-06T02:22:23.603Z",
+    "defaultChannels": [
+      "PUSH"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "conferenceName",
+      "userName",
+      "registrationId"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhxkqgo10000fln0e3w4zoxv",
+    "code": "PAYMENT_SUCCESS_EVENT",
+    "success": true,
+    "messageAr": "{USER_NAME_EN}\nلقد تم استلام مبلغ {AMOUNT} عبر {WALLET_NAME}\nتهانينا لقد تم اشتراكك بنجاح بـ {EVENT_NAME}",
+    "messageEn": "{USER_NAME_EN}\nWe have received {AMOUNT} via {WALLET_NAME}\nCongratulations! You are successfully registered for the event {EVENT_NAME}",
+    "category": "payment",
+    "description": "إشعار نجاح الدفع يمكن إرساله عبر قنوات واتساب أو الرسائل النصية أو إشعارات الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-11-13T15:18:40.609Z",
+    "updatedAt": "2025-12-07T04:36:12.367Z",
+    "defaultChannels": [
+      "WHATSAPP"
+    ],
+    "channelTemplates": {
+      "PUSH": {
+        "messageAr": "({USER_NAME_EN}) تم استلام مبلغ ({AMOUNT}) عبر محفظة ({WALLET_NAME}). تم تأكيد اشتراكك في ({EVENT_NAME}).",
+        "messageEn": "({USER_NAME_EN}) We received ({AMOUNT}) via wallet ({WALLET_NAME}). Your registration for ({EVENT_NAME}) is confirmed.",
+        "subjectAr": "تم تأكيد الاشتراك",
+        "subjectEn": "Registration Confirmed"
+      },
+      "WHATSAPP": {
+        "messageAr": "{USER_NAME_EN}\nلقد تم استلام مبلغ {AMOUNT} عبر {WALLET_NAME}\nتهانينا لقد تم اشتراكك بنجاح بـ {EVENT_NAME}",
+        "messageEn": "({USER_NAME_EN})\n\nWe have received ({AMOUNT}) via ({WALLET_NAME})\n\nCongratulations! You are successfully registered for the event ({EVENT_NAME})"
+      }
+    },
+    "variablePlaceholders": [
+      "USER_NAME_EN",
+      "AMOUNT",
+      "WALLET_NAME",
+      "EVENT_NAME",
+      "TRANSACTION_ID"
+    ],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyjg0000fln60o2ck7tb",
+    "code": "AUTH_LOGIN_SUCCESS",
+    "success": true,
+    "messageAr": "مرحباً! تم تسجيل الدخول بنجاح",
+    "messageEn": "Welcome! Login successful",
+    "category": "auth",
+    "description": "رسالة نجاح تسجيل الدخول مع ترحيب",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.795Z",
+    "updatedAt": "2025-11-10T03:27:12.795Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyjt0001fln6oh38b923",
+    "code": "AUTH_LOGIN_FAILED",
+    "success": false,
+    "messageAr": "عذراً، فشل تسجيل الدخول. تحقق من رقم الهاتف وكلمة المرور",
+    "messageEn": "Sorry, login failed. Please check your phone number and password",
+    "category": "auth",
+    "description": "رسالة فشل تسجيل الدخول محسنة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.809Z",
+    "updatedAt": "2025-11-10T03:27:12.809Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyk00002fln6bzy4t626",
+    "code": "AUTH_INVALID_PASSWORD",
+    "success": false,
+    "messageAr": "كلمة المرور غير صحيحة. تحقق من كلمة المرور المدخلة",
+    "messageEn": "Invalid password. Please check your password",
+    "category": "auth",
+    "description": "رسالة كلمة المرور غير صحيحة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.817Z",
+    "updatedAt": "2025-11-10T03:27:12.817Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyk80003fln6jmlycykd",
+    "code": "AUTH_USER_NOT_FOUND",
+    "success": false,
+    "messageAr": "المستخدم غير موجود. تحقق من رقم الهاتف المدخل",
+    "messageEn": "User not found. Please check your phone number",
+    "category": "auth",
+    "description": "رسالة المستخدم غير موجود",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.824Z",
+    "updatedAt": "2025-11-10T03:27:12.824Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzykg0004fln6f351icru",
+    "code": "AUTH_REGISTER_SUCCESS",
+    "success": true,
+    "messageAr": "مرحباً بك! تم إنشاء حسابك بنجاح. يرجى التحقق من رقم الهاتف",
+    "messageEn": "Welcome! Your account has been created successfully. Please verify your phone number",
+    "category": "auth",
+    "description": "رسالة نجاح التسجيل مع ترحيب",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.832Z",
+    "updatedAt": "2025-11-10T03:27:12.832Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyko0005fln6wvdyciyo",
+    "code": "AUTH_REGISTER_FAILED",
+    "success": false,
+    "messageAr": "فشل في إنشاء الحساب. حاول مرة أخرى",
+    "messageEn": "Account creation failed. Please try again",
+    "category": "auth",
+    "description": "رسالة فشل التسجيل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.840Z",
+    "updatedAt": "2025-11-10T03:27:12.840Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzykv0006fln6ku7plyke",
+    "code": "AUTH_PHONE_EXISTS",
+    "success": false,
+    "messageAr": "رقم الهاتف مستخدم بالفعل. جرب تسجيل الدخول أو استخدم رقم آخر",
+    "messageEn": "Phone number already exists. Try logging in or use a different number",
+    "category": "auth",
+    "description": "رسالة رقم الهاتف موجود مسبقاً",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.847Z",
+    "updatedAt": "2025-11-10T03:27:12.847Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyl20007fln60ft5vvvb",
+    "code": "AUTH_EMAIL_EXISTS",
+    "success": false,
+    "messageAr": "البريد الإلكتروني مستخدم بالفعل. جرب تسجيل الدخول أو استخدم بريد آخر",
+    "messageEn": "Email already exists. Try logging in or use a different email",
+    "category": "auth",
+    "description": "رسالة البريد الإلكتروني موجود مسبقاً",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.855Z",
+    "updatedAt": "2025-11-10T03:27:12.855Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyl90008fln6p77mo7mo",
+    "code": "AUTH_PHONE_NOT_VERIFIED",
+    "success": false,
+    "messageAr": "رقم الهاتف غير محقق. يرجى التحقق من رقم الهاتف أولاً",
+    "messageEn": "Phone number not verified. Please verify your phone number first",
+    "category": "auth",
+    "description": "رسالة رقم الهاتف غير محقق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.861Z",
+    "updatedAt": "2025-11-10T03:27:12.861Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzylf0009fln6xiwh8pvd",
+    "code": "AUTH_OTP_VERIFIED",
+    "success": true,
+    "messageAr": "ممتاز! تم التحقق من رقم الهاتف بنجاح",
+    "messageEn": "Excellent! Phone number verified successfully",
+    "category": "auth",
+    "description": "رسالة نجاح التحقق من OTP مع تشجيع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.868Z",
+    "updatedAt": "2025-11-10T03:27:12.868Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzylp000afln6l7z8dxhg",
+    "code": "AUTH_OTP_VERIFICATION_SUCCESS",
+    "success": true,
+    "messageAr": "تم التحقق من الرمز بنجاح",
+    "messageEn": "OTP verification successful",
+    "category": "auth",
+    "description": "رسالة نجاح التحقق من OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.877Z",
+    "updatedAt": "2025-11-10T03:27:12.877Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzym0000bfln6omhvm0jw",
+    "code": "AUTH_OTP_VERIFICATION_FAILED",
+    "success": false,
+    "messageAr": "رمز التحقق غير صحيح. تحقق من الرمز المدخل",
+    "messageEn": "Invalid verification code. Please check the code you entered",
+    "category": "auth",
+    "description": "رسالة فشل التحقق من OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.888Z",
+    "updatedAt": "2025-11-10T03:27:12.888Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyme000cfln6lzt4gbtk",
+    "code": "AUTH_OTP_EXPIRED",
+    "success": false,
+    "messageAr": "انتهت صلاحية رمز التحقق. اطلب رمز جديد",
+    "messageEn": "Verification code expired. Request a new code",
+    "category": "auth",
+    "description": "رسالة انتهاء صلاحية OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.902Z",
+    "updatedAt": "2025-11-10T03:27:12.902Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzymm000dfln6nje8rjev",
+    "code": "AUTH_OTP_INVALID",
+    "success": false,
+    "messageAr": "رمز التحقق غير صحيح. تأكد من إدخال الرمز الصحيح",
+    "messageEn": "Invalid verification code. Make sure to enter the correct code",
+    "category": "auth",
+    "description": "رسالة OTP غير صحيح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.910Z",
+    "updatedAt": "2025-11-10T03:27:12.910Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyms000efln6fo0zdb73",
+    "code": "OTP_TOO_MANY_ATTEMPTS",
+    "success": false,
+    "messageAr": "تم تجاوز عدد المحاولات المسموح لرمز التحقق. حاول مرة أخرى بعد قليل",
+    "messageEn": "Too many OTP attempts. Please try again in a few minutes",
+    "category": "auth",
+    "description": "رسالة تجاوز محاولات OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.917Z",
+    "updatedAt": "2025-11-10T03:27:12.917Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzymz000ffln6k7cddd81",
+    "code": "AUTH_OTP_SENT_SUCCESS",
+    "success": true,
+    "messageAr": "تم إرسال الرمز بنجاح",
+    "messageEn": "OTP sent successfully",
+    "category": "auth",
+    "description": "رسالة نجاح إرسال OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.923Z",
+    "updatedAt": "2025-11-10T03:27:12.923Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyn5000gfln6be799876",
+    "code": "OTP_CODE_SENT_TO_USER",
+    "success": true,
+    "messageAr": "تم إرسال كود التحقق إلى رقم هاتفك المسجل",
+    "messageEn": "Verification code has been sent to your registered phone number",
+    "category": "auth",
+    "description": "رسالة إعلامية بإرسال كود التحقق للمستخدم",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.930Z",
+    "updatedAt": "2025-11-10T03:27:12.930Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyo6000lfln6pht9bi8k",
+    "code": "OTP_RESEND_SUCCESS",
+    "success": true,
+    "messageAr": "تم إرسال رمز التحقق مرة أخرى بنجاح",
+    "messageEn": "Verification code resent successfully",
+    "category": "auth",
+    "description": "رسالة نجاح إعادة إرسال OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.967Z",
+    "updatedAt": "2025-11-10T03:27:12.967Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyoe000mfln6lp9efhgl",
+    "code": "OTP_RESEND_FAILED",
+    "success": false,
+    "messageAr": "فشل في إعادة إرسال رمز التحقق. حاول مرة أخرى",
+    "messageEn": "Failed to resend verification code. Please try again",
+    "category": "auth",
+    "description": "رسالة فشل إعادة إرسال OTP",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.975Z",
+    "updatedAt": "2025-11-10T03:27:12.975Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyol000nfln6fyqa9e7n",
+    "code": "OTP_SMS_SENT_SUCCESS",
+    "success": true,
+    "messageAr": "تم إرسال رمز التحقق عبر الرسائل النصية",
+    "messageEn": "OTP sent via SMS successfully",
+    "category": "auth",
+    "description": "رسالة نجاح إرسال OTP عبر SMS",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.981Z",
+    "updatedAt": "2025-11-10T03:27:12.981Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyot000ofln6kye6ekbn",
+    "code": "OTP_WHATSAPP_SENT_SUCCESS",
+    "success": true,
+    "messageAr": "تم إرسال رمز التحقق عبر واتساب",
+    "messageEn": "OTP sent via WhatsApp successfully",
+    "category": "auth",
+    "description": "رسالة نجاح إرسال OTP عبر WhatsApp",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.990Z",
+    "updatedAt": "2025-11-10T03:27:12.990Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyp0000pfln699jik3ej",
+    "code": "OTP_SMS_SEND_FAILED",
+    "success": false,
+    "messageAr": "فشل في إرسال رمز التحقق عبر الرسائل النصية",
+    "messageEn": "Failed to send OTP via SMS",
+    "category": "auth",
+    "description": "رسالة فشل إرسال OTP عبر SMS",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:12.997Z",
+    "updatedAt": "2025-11-10T03:27:12.997Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyp8000qfln6oo65wofs",
+    "code": "OTP_WHATSAPP_SEND_FAILED",
+    "success": false,
+    "messageAr": "فشل في إرسال رمز التحقق عبر واتساب",
+    "messageEn": "Failed to send OTP via WhatsApp",
+    "category": "auth",
+    "description": "رسالة فشل إرسال OTP عبر WhatsApp",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.004Z",
+    "updatedAt": "2025-11-10T03:27:13.004Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzypf000rfln6ranfi358",
+    "code": "AUTH_PASSWORD_RESET_SUCCESS",
+    "success": true,
+    "messageAr": "تم إعادة تعيين كلمة المرور بنجاح",
+    "messageEn": "Password reset successful",
+    "category": "auth",
+    "description": "رسالة نجاح إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.012Z",
+    "updatedAt": "2025-11-10T03:27:13.012Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzypn000sfln6wdt58nd3",
+    "code": "AUTH_PASSWORD_RESET_REQUEST_SUCCESS",
+    "success": true,
+    "messageAr": "تم إرسال رمز إعادة تعيين كلمة المرور بنجاح",
+    "messageEn": "Password reset code sent successfully",
+    "category": "auth",
+    "description": "رسالة نجاح طلب إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.019Z",
+    "updatedAt": "2025-11-10T03:27:13.019Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzypu000tfln6lxu8ocsz",
+    "code": "AUTH_PASSWORD_RESET_REQUEST_FAILED",
+    "success": false,
+    "messageAr": "فشل في إرسال رمز إعادة تعيين كلمة المرور",
+    "messageEn": "Failed to send password reset code",
+    "category": "auth",
+    "description": "رسالة فشل طلب إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.027Z",
+    "updatedAt": "2025-11-10T03:27:13.027Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyq1000ufln6hc5xafxp",
+    "code": "AUTH_PASSWORD_RESET_VERIFY_SUCCESS",
+    "success": true,
+    "messageAr": "تم التحقق من رمز إعادة تعيين كلمة المرور بنجاح",
+    "messageEn": "Password reset code verified successfully",
+    "category": "auth",
+    "description": "رسالة نجاح التحقق من رمز إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.033Z",
+    "updatedAt": "2025-11-10T03:27:13.033Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyq7000vfln6va2xivls",
+    "code": "AUTH_PASSWORD_RESET_VERIFY_FAILED",
+    "success": false,
+    "messageAr": "فشل في التحقق من رمز إعادة تعيين كلمة المرور",
+    "messageEn": "Failed to verify password reset code",
+    "category": "auth",
+    "description": "رسالة فشل التحقق من رمز إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.039Z",
+    "updatedAt": "2025-11-10T03:27:13.039Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyqd000wfln6dnyxeuaa",
+    "code": "AUTH_PASSWORD_RESET_PHONE_NOT_REGISTERED",
+    "success": false,
+    "messageAr": "رقم الهاتف غير مسجل لدينا. يرجى إنشاء حساب جديد أولاً",
+    "messageEn": "Phone number is not registered. Please create a new account first",
+    "category": "auth",
+    "description": "رسالة عدم وجود رقم الهاتف في قاعدة البيانات عند طلب إعادة تعيين كلمة المرور",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.046Z",
+    "updatedAt": "2025-11-10T03:27:13.046Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyqk000xfln6aiy636ew",
+    "code": "AUTH_LOGOUT_SUCCESS",
+    "success": true,
+    "messageAr": "تم تسجيل الخروج بنجاح. نراك قريباً!",
+    "messageEn": "Logout successful. See you soon!",
+    "category": "auth",
+    "description": "رسالة نجاح تسجيل الخروج مع وداع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.052Z",
+    "updatedAt": "2025-11-10T03:27:13.052Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyqq000yfln6bs1hc06t",
+    "code": "REGISTRATION_DISABLED",
+    "success": false,
+    "messageAr": "التسجيل معطل حالياً. حاول مرة أخرى لاحقاً",
+    "messageEn": "Registration is currently disabled. Please try again later",
+    "category": "auth",
+    "description": "رسالة التسجيل معطل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.059Z",
+    "updatedAt": "2025-11-10T03:27:13.059Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyqx000zfln6qjopm5mi",
+    "code": "TERMS_NOT_ACCEPTED",
+    "success": false,
+    "messageAr": "يجب الموافقة على الشروط والأحكام للمتابعة",
+    "messageEn": "You must accept the terms and conditions to continue",
+    "category": "auth",
+    "description": "رسالة عدم الموافقة على الشروط",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.065Z",
+    "updatedAt": "2025-11-10T03:27:13.065Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyr20010fln62qbffjy4",
+    "code": "SESSION_EXPIRED",
+    "success": false,
+    "messageAr": "انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى",
+    "messageEn": "Session expired. Please login again",
+    "category": "auth",
+    "description": "رسالة انتهاء صلاحية الجلسة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.071Z",
+    "updatedAt": "2025-11-10T03:27:13.071Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyr90011fln6chnhii9i",
+    "code": "TOKEN_EXPIRED",
+    "success": false,
+    "messageAr": "انتهت صلاحية رمز المصادقة. يرجى تسجيل الدخول مرة أخرى",
+    "messageEn": "Authentication token expired. Please login again",
+    "category": "auth",
+    "description": "رسالة انتهاء صلاحية رمز المصادقة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.077Z",
+    "updatedAt": "2025-11-10T03:27:13.077Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyre0012fln6q2cvzzk9",
+    "code": "PROFILE_UPDATE_SUCCESS",
+    "success": true,
+    "messageAr": "تم تحديث الملف الشخصي بنجاح",
+    "messageEn": "Profile updated successfully",
+    "category": "profile",
+    "description": "رسالة نجاح تحديث الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.083Z",
+    "updatedAt": "2025-11-10T03:27:13.083Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyrj0013fln6ujbqxtdx",
+    "code": "PROFILE_UPDATE_FAILED",
+    "success": false,
+    "messageAr": "فشل في تحديث الملف الشخصي. حاول مرة أخرى",
+    "messageEn": "Failed to update profile. Please try again",
+    "category": "profile",
+    "description": "رسالة فشل تحديث الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.087Z",
+    "updatedAt": "2025-11-10T03:27:13.087Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyrp0014fln6x8rv2j6f",
+    "code": "PROFILE_EDIT_SUCCESS",
+    "success": true,
+    "messageAr": "تم حفظ البيانات بنجاح",
+    "messageEn": "Data saved successfully",
+    "category": "profile",
+    "description": "رسالة نجاح حفظ بيانات الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.094Z",
+    "updatedAt": "2025-11-10T03:27:13.094Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyrv0015fln6wt325amh",
+    "code": "PROFILE_EDIT_FAILED",
+    "success": false,
+    "messageAr": "فشل في حفظ البيانات",
+    "messageEn": "Failed to save data",
+    "category": "profile",
+    "description": "رسالة فشل حفظ بيانات الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.099Z",
+    "updatedAt": "2025-11-10T03:27:13.099Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzys00016fln6qih6svp1",
+    "code": "PROFILE_EDIT_WITH_DOCS_SUCCESS",
+    "success": true,
+    "messageAr": "تم حفظ البيانات ورفع جميع الوثائق بنجاح",
+    "messageEn": "Data saved and all documents uploaded successfully",
+    "category": "profile",
+    "description": "رسالة نجاح حفظ البيانات مع جميع الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.104Z",
+    "updatedAt": "2025-11-10T03:27:13.104Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzys70017fln6wlo4orng",
+    "code": "PROFILE_EDIT_PARTIAL_DOCS_SUCCESS",
+    "success": true,
+    "messageAr": "تم حفظ البيانات ورفع بعض الوثائق",
+    "messageEn": "Data saved and some documents uploaded",
+    "category": "profile",
+    "description": "رسالة نجاح حفظ البيانات مع بعض الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.112Z",
+    "updatedAt": "2025-11-10T03:27:13.112Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyse0018fln62msgt84o",
+    "code": "PROFILE_EDIT_DOCS_FAILED",
+    "success": false,
+    "messageAr": "تم حفظ البيانات لكن فشل في رفع الوثائق",
+    "messageEn": "Data saved but failed to upload documents",
+    "category": "profile",
+    "description": "رسالة فشل رفع الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.118Z",
+    "updatedAt": "2025-11-10T03:27:13.118Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzysl0019fln6a9uum8h3",
+    "code": "PROFILE_VERIFICATION_PENDING",
+    "success": true,
+    "messageAr": "تم إرسال الملف الشخصي للمراجعة. سيتم إشعارك بالنتيجة",
+    "messageEn": "Profile submitted for review. You will be notified of the result",
+    "category": "profile",
+    "description": "رسالة الملف الشخصي قيد المراجعة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.126Z",
+    "updatedAt": "2025-11-10T03:27:13.126Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyss001afln6qr6nleof",
+    "code": "PROFILE_VERIFICATION_APPROVED",
+    "success": true,
+    "messageAr": "تم الموافقة على ملفك الشخصي. يمكنك الآن الوصول لجميع الميزات",
+    "messageEn": "Your profile has been approved. You can now access all features",
+    "category": "profile",
+    "description": "رسالة الموافقة على الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.132Z",
+    "updatedAt": "2025-11-10T03:27:13.132Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzysy001bfln684l4aqj0",
+    "code": "PROFILE_VERIFICATION_REJECTED",
+    "success": false,
+    "messageAr": "تم رفض ملفك الشخصي. يرجى مراجعة البيانات وإعادة المحاولة",
+    "messageEn": "Your profile has been rejected. Please review your information and try again",
+    "category": "profile",
+    "description": "رسالة رفض الملف الشخصي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.138Z",
+    "updatedAt": "2025-11-10T03:27:13.138Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyt4001cfln6somw2s61",
+    "code": "FILE_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع الملف بنجاح",
+    "messageEn": "File uploaded successfully",
+    "category": "file_upload",
+    "description": "رسالة نجاح رفع الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.144Z",
+    "updatedAt": "2025-11-10T03:27:13.144Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzytc001dfln65b85crn7",
+    "code": "FILE_UPLOAD_FAILED",
+    "success": false,
+    "messageAr": "فشل في رفع الملف",
+    "messageEn": "Failed to upload file",
+    "category": "file_upload",
+    "description": "رسالة فشل رفع الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.152Z",
+    "updatedAt": "2025-11-10T03:27:13.152Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzytl001efln64n2b8o53",
+    "code": "FILE_UPLOAD_SIZE_EXCEEDED",
+    "success": false,
+    "messageAr": "حجم الملف يتجاوز الحد المسموح (10MB)",
+    "messageEn": "File size exceeds allowed limit (10MB)",
+    "category": "file_upload",
+    "description": "رسالة تجاوز حجم الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.161Z",
+    "updatedAt": "2025-11-10T03:27:13.161Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyts001ffln6xiozg7vw",
+    "code": "FILE_UPLOAD_TYPE_NOT_ALLOWED",
+    "success": false,
+    "messageAr": "نوع الملف غير مدعوم. الأنواع المسموحة: PDF, JPG, PNG",
+    "messageEn": "File type not supported. Allowed types: PDF, JPG, PNG",
+    "category": "file_upload",
+    "description": "رسالة نوع الملف غير مدعوم",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.169Z",
+    "updatedAt": "2025-11-10T03:27:13.169Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzytz001gfln6x87ui0wl",
+    "code": "FILE_DELETE_SUCCESS",
+    "success": true,
+    "messageAr": "تم حذف الملف بنجاح",
+    "messageEn": "File deleted successfully",
+    "category": "file_upload",
+    "description": "رسالة نجاح حذف الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.175Z",
+    "updatedAt": "2025-11-10T03:27:13.175Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyu7001hfln6kxs9y2k4",
+    "code": "FILE_DELETE_FAILED",
+    "success": false,
+    "messageAr": "فشل في حذف الملف",
+    "messageEn": "Failed to delete file",
+    "category": "file_upload",
+    "description": "رسالة فشل حذف الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.183Z",
+    "updatedAt": "2025-11-10T03:27:13.183Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyug001ifln6m4jgqjql",
+    "code": "INVALID_PHONE",
+    "success": false,
+    "messageAr": "رقم الهاتف غير صحيح. استخدم الصيغة الصحيحة (+967xxxxxxxxx)",
+    "messageEn": "Invalid phone number. Use correct format (+967xxxxxxxxx)",
+    "category": "validation",
+    "description": "رسالة رقم الهاتف غير صحيح مع مثال",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.192Z",
+    "updatedAt": "2025-11-10T03:27:13.192Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyuo001jfln6ma2bglab",
+    "code": "INVALID_EMAIL",
+    "success": false,
+    "messageAr": "البريد الإلكتروني غير صحيح. تأكد من صيغة البريد الإلكتروني",
+    "messageEn": "Invalid email address. Please check the email format",
+    "category": "validation",
+    "description": "رسالة البريد الإلكتروني غير صحيح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.200Z",
+    "updatedAt": "2025-11-10T03:27:13.200Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyux001kfln6zvdbq8gl",
+    "code": "WEAK_PASSWORD",
+    "success": false,
+    "messageAr": "كلمة المرور ضعيفة. يجب أن تحتوي على 8 أحرف على الأقل",
+    "messageEn": "Weak password. Must contain at least 8 characters",
+    "category": "validation",
+    "description": "رسالة كلمة المرور ضعيفة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.209Z",
+    "updatedAt": "2025-11-10T03:27:13.209Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyv7001lfln6lfp0wzq5",
+    "code": "INVALID_OTP_LENGTH",
+    "success": false,
+    "messageAr": "رمز التحقق يجب أن يكون 4 أرقام",
+    "messageEn": "OTP must be 4 digits",
+    "category": "validation",
+    "description": "رسالة طول OTP غير صحيح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.219Z",
+    "updatedAt": "2025-11-10T03:27:13.219Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyvh001mfln60fj3mgwh",
+    "code": "FILE_TOO_LARGE",
+    "success": false,
+    "messageAr": "حجم الملف كبير جداً. الحد الأقصى المسموح 5 ميجابايت",
+    "messageEn": "File size too large. Maximum allowed is 5MB",
+    "category": "validation",
+    "description": "رسالة حجم الملف كبير",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.230Z",
+    "updatedAt": "2025-11-10T03:27:13.230Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyvp001nfln6bicfk9ns",
+    "code": "INVALID_FILE_FORMAT",
+    "success": false,
+    "messageAr": "صيغة الملف غير مدعومة. يرجى استخدام صيغة صحيحة",
+    "messageEn": "Unsupported file format. Please use a valid format",
+    "category": "validation",
+    "description": "رسالة صيغة ملف غير صحيحة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.237Z",
+    "updatedAt": "2025-11-10T03:27:13.237Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyvx001ofln6eth74htf",
+    "code": "VALIDATION_ERROR",
+    "success": false,
+    "messageAr": "خطأ في التحقق من البيانات. تأكد من صحة المعلومات المدخلة",
+    "messageEn": "Validation error. Please check the entered information",
+    "category": "validation",
+    "description": "رسالة خطأ التحقق من البيانات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.246Z",
+    "updatedAt": "2025-11-10T03:27:13.246Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyw5001pfln6057g6uxe",
+    "code": "REQUIRED_FIELD_MISSING",
+    "success": false,
+    "messageAr": "يرجى ملء جميع الحقول المطلوبة",
+    "messageEn": "Please fill in all required fields",
+    "category": "validation",
+    "description": "رسالة حقل مطلوب مفقود",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.254Z",
+    "updatedAt": "2025-11-10T03:27:13.254Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzywe001qfln6ysmcrb6g",
+    "code": "NETWORK_ERROR",
+    "success": false,
+    "messageAr": "خطأ في الشبكة. تحقق من اتصالك بالإنترنت",
+    "messageEn": "Network error. Please check your internet connection",
+    "category": "network",
+    "description": "رسالة خطأ الشبكة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.262Z",
+    "updatedAt": "2025-11-10T03:27:13.262Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzywo001rfln6o19wcd1j",
+    "code": "CONNECTION_TIMEOUT",
+    "success": false,
+    "messageAr": "انتهت مهلة الاتصال. حاول مرة أخرى",
+    "messageEn": "Connection timeout. Please try again",
+    "category": "network",
+    "description": "رسالة انتهاء مهلة الاتصال",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.272Z",
+    "updatedAt": "2025-11-10T03:27:13.272Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzywz001sfln6r47y3bxo",
+    "code": "SERVER_ERROR",
+    "success": false,
+    "messageAr": "خطأ في الخادم. نحن نعمل على إصلاحه",
+    "messageEn": "Server error. We are working on fixing it",
+    "category": "system",
+    "description": "رسالة خطأ الخادم",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.283Z",
+    "updatedAt": "2025-11-10T03:27:13.283Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyx7001tfln65ke2f4mg",
+    "code": "SERVER_UNAVAILABLE",
+    "success": false,
+    "messageAr": "الخادم غير متاح حالياً. حاول مرة أخرى لاحقاً",
+    "messageEn": "Server is currently unavailable. Please try again later",
+    "category": "system",
+    "description": "رسالة الخادم غير متاح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.292Z",
+    "updatedAt": "2025-11-10T03:27:13.292Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyxe001ufln6su1jm51w",
+    "code": "RATE_LIMIT_ERROR",
+    "success": false,
+    "messageAr": "تم تجاوز الحد المسموح من المحاولات. حاول مرة أخرى بعد قليل",
+    "messageEn": "Rate limit exceeded. Please try again in a few minutes",
+    "category": "security",
+    "description": "رسالة تجاوز الحد المسموح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.298Z",
+    "updatedAt": "2025-11-10T03:27:13.298Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyxk001vfln6eiv1098j",
+    "code": "ACCOUNT_LOCKED",
+    "success": false,
+    "messageAr": "تم قفل الحساب مؤقتاً بسبب محاولات دخول متعددة فاشلة",
+    "messageEn": "Account temporarily locked due to multiple failed login attempts",
+    "category": "security",
+    "description": "رسالة قفل الحساب",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.304Z",
+    "updatedAt": "2025-11-10T03:27:13.304Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyxr001wfln6dxity3oa",
+    "code": "SUSPICIOUS_ACTIVITY",
+    "success": false,
+    "messageAr": "تم اكتشاف نشاط مشبوه. تم تأمين حسابك",
+    "messageEn": "Suspicious activity detected. Your account has been secured",
+    "category": "security",
+    "description": "رسالة نشاط مشبوه",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.311Z",
+    "updatedAt": "2025-11-10T03:27:13.311Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyxx001xfln6i55hon1v",
+    "code": "SYSTEM_ERROR",
+    "success": false,
+    "messageAr": "حدث خطأ في النظام. نحن نعمل على إصلاحه، حاول مرة أخرى لاحقاً",
+    "messageEn": "System error occurred. We are working on fixing it, please try again later",
+    "category": "system",
+    "description": "رسالة خطأ عام في النظام محسنة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.318Z",
+    "updatedAt": "2025-11-10T03:27:13.318Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyy4001yfln67q2d74px",
+    "code": "UNKNOWN_ERROR",
+    "success": false,
+    "messageAr": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو الاتصال بالدعم",
+    "messageEn": "An unexpected error occurred. Please try again or contact support",
+    "category": "system",
+    "description": "رسالة خطأ غير معروف محسنة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.324Z",
+    "updatedAt": "2025-11-10T03:27:13.324Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyy9001zfln6ieo1afqk",
+    "code": "PHONE_NOT_VERIFIED_INFO",
+    "success": true,
+    "messageAr": "تم إرسال رمز التحقق إلى رقم ",
+    "messageEn": "Verification code sent to phone number ",
+    "category": "auth",
+    "description": "رسالة إعلامية بإرسال رمز التحقق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.330Z",
+    "updatedAt": "2025-11-10T03:27:13.330Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyye0020fln62iyo4xhf",
+    "code": "FILE_PICKER_ERROR",
+    "success": false,
+    "messageAr": "حدث خطأ أثناء اختيار الملف",
+    "messageEn": "An error occurred while selecting the file",
+    "category": "file_upload",
+    "description": "رسالة خطأ في اختيار الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.335Z",
+    "updatedAt": "2025-11-10T03:27:13.335Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyyk0021fln6zqi8jg6m",
+    "code": "FILE_UPLOAD_MULTIPLE_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع جميع الملفات بنجاح",
+    "messageEn": "All files uploaded successfully",
+    "category": "file_upload",
+    "description": "رسالة نجاح رفع عدة ملفات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.340Z",
+    "updatedAt": "2025-11-10T03:27:13.340Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyyq0022fln68hm2zgav",
+    "code": "FILE_UPLOAD_PARTIAL_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع بعض الملفات بنجاح",
+    "messageEn": "Some files uploaded successfully",
+    "category": "file_upload",
+    "description": "رسالة نجاح رفع بعض الملفات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.346Z",
+    "updatedAt": "2025-11-10T03:27:13.346Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyyx0023fln6ju0e04tq",
+    "code": "FILE_SAVE_SUCCESS",
+    "success": true,
+    "messageAr": "تم حفظ البيانات والملفات بنجاح",
+    "messageEn": "Data and files saved successfully",
+    "category": "file_upload",
+    "description": "رسالة نجاح حفظ البيانات والملفات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.353Z",
+    "updatedAt": "2025-11-10T03:27:13.353Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyz50024fln6ar7ohccl",
+    "code": "FILE_UPLOAD_PERMISSION_DENIED",
+    "success": false,
+    "messageAr": "ليس لديك صلاحية لرفع الملف",
+    "messageEn": "Permission denied to upload file",
+    "category": "file_upload",
+    "description": "رسالة رفض رفع الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.361Z",
+    "updatedAt": "2025-11-10T03:27:13.361Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyzg0025fln6dfqa8cup",
+    "code": "FILE_UPLOAD_STORAGE_ERROR",
+    "success": false,
+    "messageAr": "خطأ في تخزين الملف",
+    "messageEn": "Storage error occurred",
+    "category": "file_upload",
+    "description": "رسالة خطأ التخزين",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.372Z",
+    "updatedAt": "2025-11-10T03:27:13.372Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyzm0026fln6fyw89602",
+    "code": "FILE_UPLOAD_NETWORK_ERROR",
+    "success": false,
+    "messageAr": "خطأ في الاتصال أثناء رفع الملف",
+    "messageEn": "Network error during file upload",
+    "category": "file_upload",
+    "description": "رسالة خطأ الشبكة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.378Z",
+    "updatedAt": "2025-11-10T03:27:13.378Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzyzr0027fln6vdjkenv5",
+    "code": "FILE_UPLOAD_VALIDATION_ERROR",
+    "success": false,
+    "messageAr": "خطأ في التحقق من صحة الملف",
+    "messageEn": "File validation error",
+    "category": "file_upload",
+    "description": "رسالة خطأ التحقق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.383Z",
+    "updatedAt": "2025-11-10T03:27:13.383Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz020028fln6clz9opf9",
+    "code": "FILE_UPLOAD_DUPLICATE_ERROR",
+    "success": false,
+    "messageAr": "الملف موجود بالفعل",
+    "messageEn": "File already exists",
+    "category": "file_upload",
+    "description": "رسالة تكرار الملف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.394Z",
+    "updatedAt": "2025-11-10T03:27:13.394Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz090029fln6oj2jp8s8",
+    "code": "FILE_UPLOAD_CORRUPTED_ERROR",
+    "success": false,
+    "messageAr": "الملف تالف أو غير صالح",
+    "messageEn": "File is corrupted or invalid",
+    "category": "file_upload",
+    "description": "رسالة ملف تالف",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.402Z",
+    "updatedAt": "2025-11-10T03:27:13.402Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz0k002afln6c971dsk2",
+    "code": "FILE_UPLOAD_QUOTA_EXCEEDED",
+    "success": false,
+    "messageAr": "تم تجاوز الحد المسموح من الملفات",
+    "messageEn": "File quota exceeded",
+    "category": "file_upload",
+    "description": "رسالة تجاوز الحد",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.413Z",
+    "updatedAt": "2025-11-10T03:27:13.413Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz0q002bfln6gegi2xg1",
+    "code": "PROFILE_IMAGE_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع الصورة الشخصية بنجاح",
+    "messageEn": "Profile image uploaded successfully",
+    "category": "profile_image",
+    "description": "رسالة نجاح رفع الصورة الشخصية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.418Z",
+    "updatedAt": "2025-11-10T03:27:13.418Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz0w002cfln6mxdicd5v",
+    "code": "PROFILE_IMAGE_UPLOAD_FAILED",
+    "success": false,
+    "messageAr": "فشل في رفع الصورة الشخصية",
+    "messageEn": "Failed to upload profile image",
+    "category": "profile_image",
+    "description": "رسالة فشل رفع الصورة الشخصية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.425Z",
+    "updatedAt": "2025-11-10T03:27:13.425Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz14002dfln619l3f5qs",
+    "code": "PROFILE_IMAGE_DELETE_SUCCESS",
+    "success": true,
+    "messageAr": "تم حذف الصورة الشخصية بنجاح",
+    "messageEn": "Profile image deleted successfully",
+    "category": "profile_image",
+    "description": "رسالة نجاح حذف الصورة الشخصية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.433Z",
+    "updatedAt": "2025-11-10T03:27:13.433Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz1a002efln64i393jfy",
+    "code": "PROFILE_IMAGE_NOT_FOUND",
+    "success": false,
+    "messageAr": "الصورة الشخصية غير موجودة",
+    "messageEn": "Profile image not found",
+    "category": "profile_image",
+    "description": "رسالة الصورة الشخصية غير موجودة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.438Z",
+    "updatedAt": "2025-11-10T03:27:13.438Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz1f002ffln6h4squ5in",
+    "code": "DOCUMENTS_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع الوثائق بنجاح",
+    "messageEn": "Documents uploaded successfully",
+    "category": "documents",
+    "description": "رسالة نجاح رفع الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.443Z",
+    "updatedAt": "2025-11-10T03:27:13.443Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz1k002gfln6twnm14u1",
+    "code": "DOCUMENTS_UPLOAD_FAILED",
+    "success": false,
+    "messageAr": "فشل في رفع الوثائق",
+    "messageEn": "Failed to upload documents",
+    "category": "documents",
+    "description": "رسالة فشل رفع الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.448Z",
+    "updatedAt": "2025-11-10T03:27:13.448Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz1q002hfln62r9pnw2g",
+    "code": "DOCUMENTS_PDF_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع وثيقة PDF بنجاح",
+    "messageEn": "PDF document uploaded successfully",
+    "category": "documents",
+    "description": "رسالة نجاح رفع PDF",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.454Z",
+    "updatedAt": "2025-11-10T03:27:13.454Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz1w002ifln6neqq9tz3",
+    "code": "DOCUMENTS_WORD_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع وثيقة Word بنجاح",
+    "messageEn": "Word document uploaded successfully",
+    "category": "documents",
+    "description": "رسالة نجاح رفع Word",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.460Z",
+    "updatedAt": "2025-11-10T03:27:13.460Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz23002jfln6yiz2b135",
+    "code": "DOCUMENTS_EXCEL_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع ملف Excel بنجاح",
+    "messageEn": "Excel file uploaded successfully",
+    "category": "documents",
+    "description": "رسالة نجاح رفع Excel",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.467Z",
+    "updatedAt": "2025-11-10T03:27:13.467Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz29002kfln6b9owjwcs",
+    "code": "DOCUMENTS_TEXT_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع الملف النصي بنجاح",
+    "messageEn": "Text file uploaded successfully",
+    "category": "documents",
+    "description": "رسالة نجاح رفع النص",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.473Z",
+    "updatedAt": "2025-11-10T03:27:13.473Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz2f002lfln6qo9335zx",
+    "code": "ATTACHMENTS_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع المرفقات الإضافية بنجاح",
+    "messageEn": "Additional attachments uploaded successfully",
+    "category": "attachments",
+    "description": "رسالة نجاح رفع المرفقات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.479Z",
+    "updatedAt": "2025-11-10T03:27:13.479Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz2m002mfln6oamjqmtf",
+    "code": "ATTACHMENTS_UPLOAD_FAILED",
+    "success": false,
+    "messageAr": "فشل في رفع المرفقات الإضافية",
+    "messageEn": "Failed to upload additional attachments",
+    "category": "attachments",
+    "description": "رسالة فشل رفع المرفقات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.486Z",
+    "updatedAt": "2025-11-10T03:27:13.486Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz2v002nfln6g1hra3a4",
+    "code": "CERTIFICATES_UPLOAD_SUCCESS",
+    "success": true,
+    "messageAr": "تم رفع الشهادات بنجاح",
+    "messageEn": "Certificates uploaded successfully",
+    "category": "certificates",
+    "description": "رسالة نجاح رفع الشهادات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.495Z",
+    "updatedAt": "2025-11-10T03:27:13.495Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz31002ofln6mwv7jlyt",
+    "code": "CERTIFICATES_UPLOAD_FAILED",
+    "success": false,
+    "messageAr": "فشل في رفع الشهادات",
+    "messageEn": "Failed to upload certificates",
+    "category": "certificates",
+    "description": "رسالة فشل رفع الشهادات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.502Z",
+    "updatedAt": "2025-11-10T03:27:13.502Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz39002pfln6fzupe3gg",
+    "code": "FILES_BY_TYPE_SUCCESS",
+    "success": true,
+    "messageAr": "تم العثور على الملفات حسب النوع",
+    "messageEn": "Files found by type",
+    "category": "file_search",
+    "description": "رسالة نجاح البحث",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.509Z",
+    "updatedAt": "2025-11-10T03:27:13.509Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz3g002qfln65m1eo6oz",
+    "code": "FILES_BY_TYPE_NOT_FOUND",
+    "success": false,
+    "messageAr": "لم يتم العثور على ملفات من هذا النوع",
+    "messageEn": "No files found of this type",
+    "category": "file_search",
+    "description": "رسالة عدم وجود ملفات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.516Z",
+    "updatedAt": "2025-11-10T03:27:13.516Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz3l002rfln6d5067ahj",
+    "code": "FILE_INVALID_TYPE",
+    "success": false,
+    "messageAr": "نوع الملف غير صحيح",
+    "messageEn": "Invalid file type",
+    "category": "file_search",
+    "description": "رسالة نوع ملف غير صحيح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.521Z",
+    "updatedAt": "2025-11-10T03:27:13.521Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz3p002sfln6bseyuwql",
+    "code": "SMART_CATEGORIZATION_SUCCESS",
+    "success": true,
+    "messageAr": "تم تصنيف الملفات تلقائياً بنجاح",
+    "messageEn": "Files categorized automatically successfully",
+    "category": "smart_categorization",
+    "description": "رسالة نجاح التصنيف الذكي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.526Z",
+    "updatedAt": "2025-11-10T03:27:13.526Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz3u002tfln64zxnw9nw",
+    "code": "SMART_CATEGORIZATION_FAILED",
+    "success": false,
+    "messageAr": "فشل في التصنيف التلقائي للملفات",
+    "messageEn": "Failed to categorize files automatically",
+    "category": "smart_categorization",
+    "description": "رسالة فشل التصنيف الذكي",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.531Z",
+    "updatedAt": "2025-11-10T03:27:13.531Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz3z002ufln6r0y9bv6j",
+    "code": "PROFILE_IMAGES_ENDPOINT_SUCCESS",
+    "success": true,
+    "messageAr": "تم جلب الصور الشخصية بنجاح",
+    "messageEn": "Profile images retrieved successfully",
+    "category": "endpoints",
+    "description": "رسالة جلب الصور الشخصية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.536Z",
+    "updatedAt": "2025-11-10T03:27:13.536Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz46002vfln6ebwi8du5",
+    "code": "DOCUMENTS_ENDPOINT_SUCCESS",
+    "success": true,
+    "messageAr": "تم جلب الوثائق بنجاح",
+    "messageEn": "Documents retrieved successfully",
+    "category": "endpoints",
+    "description": "رسالة جلب الوثائق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.542Z",
+    "updatedAt": "2025-11-10T03:27:13.542Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz4b002wfln6acis9tjd",
+    "code": "ATTACHMENTS_ENDPOINT_SUCCESS",
+    "success": true,
+    "messageAr": "تم جلب المرفقات الإضافية بنجاح",
+    "messageEn": "Additional attachments retrieved successfully",
+    "category": "endpoints",
+    "description": "رسالة جلب المرفقات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.547Z",
+    "updatedAt": "2025-11-10T03:27:13.547Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz4l002xfln6at80wkly",
+    "code": "CERTIFICATES_ENDPOINT_SUCCESS",
+    "success": true,
+    "messageAr": "تم جلب الشهادات بنجاح",
+    "messageEn": "Certificates retrieved successfully",
+    "category": "endpoints",
+    "description": "رسالة جلب الشهادات",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.557Z",
+    "updatedAt": "2025-11-10T03:27:13.557Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz4s002yfln6eefmviyh",
+    "code": "REGISTRATION_SUCCESS",
+    "success": true,
+    "messageAr": "تم تقديم طلب الاشتراك بنجاح",
+    "messageEn": "Registration request submitted successfully",
+    "category": "registration",
+    "description": "رسالة نجاح عامة لتقديم طلب الاشتراك",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.564Z",
+    "updatedAt": "2025-11-10T03:27:13.564Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz50002zfln68p8hp10l",
+    "code": "REGISTRATION_ACCEPTED_PAYMENT_PENDING",
+    "success": true,
+    "messageAr": "تم قبول طلب الاشتراك بنجاح. يرجى إتمام عملية الدفع",
+    "messageEn": "Registration accepted successfully. Please complete the payment",
+    "category": "registration",
+    "description": "رسالة عند قبول التسجيل تلقائياً وانتقاله إلى انتظار الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.572Z",
+    "updatedAt": "2025-11-10T03:27:13.572Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz570030fln6t9s91bv8",
+    "code": "REGISTRATION_SUBMITTED_FOR_REVIEW",
+    "success": true,
+    "messageAr": "تم تقديم طلب الاشتراك بنجاح وجارٍ مراجعته من قبل الإدارة",
+    "messageEn": "Registration request submitted successfully and is being reviewed by administration",
+    "category": "registration",
+    "description": "رسالة عند تقديم التسجيل للمراجعة اليدوية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.579Z",
+    "updatedAt": "2025-11-10T03:27:13.579Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz5i0031fln60dm1h6cz",
+    "code": "REGISTRATION_NOT_ELIGIBLE",
+    "success": false,
+    "messageAr": "عذراً، لا يمكنك التسجيل في هذا المؤتمر/الفعالية",
+    "messageEn": "Sorry, you are not eligible to register for this conference/event",
+    "category": "registration",
+    "description": "رسالة خطأ عامة عند عدم الأهلية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.590Z",
+    "updatedAt": "2025-11-10T03:27:13.590Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz5w0032fln60o0vb4q6",
+    "code": "REGISTRATION_INVALID_REQUEST",
+    "success": false,
+    "messageAr": "الطلب غير صالح. يرجى التأكد من إدخال البيانات الصحيحة",
+    "messageEn": "Invalid request. Please ensure you enter the correct data",
+    "category": "registration",
+    "description": "رسالة عند طلب غير صالح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.604Z",
+    "updatedAt": "2025-11-10T03:27:13.604Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz660033fln6rcrhbwxc",
+    "code": "REGISTRATION_ALREADY_EXISTS",
+    "success": false,
+    "messageAr": "أنت مسجل بالفعل في هذا المؤتمر/الفعالية",
+    "messageEn": "You are already registered for this conference/event",
+    "category": "registration",
+    "description": "رسالة عند محاولة التسجيل مرة أخرى",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.614Z",
+    "updatedAt": "2025-11-10T03:27:13.614Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz6e0034fln6v0mkwpbh",
+    "code": "REGISTRATION_STRICT_MODE_NOT_VERIFIED",
+    "success": false,
+    "messageAr": "الحساب غير موثق. يرجى توثيق الحساب للإشتراك بالمؤتمر",
+    "messageEn": "Account not verified. Please verify your account to register for the conference",
+    "category": "registration",
+    "description": "رسالة عند رفض التسجيل بسبب STRICT_MODE والملف غير موثق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.622Z",
+    "updatedAt": "2025-11-10T03:27:13.622Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz6r0036fln64wvjvztd",
+    "code": "REGISTRATION_PROFILE_NOT_FOUND",
+    "success": false,
+    "messageAr": "ملفك الشخصي غير موجود. يرجى إكمال بيانات ملفك الشخصي أولاً",
+    "messageEn": "Your profile is not found. Please complete your profile information first",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود ملف شخصي للمستخدم",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.636Z",
+    "updatedAt": "2025-11-10T03:27:13.636Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz6x0037fln611jl44yo",
+    "code": "REGISTRATION_CONFERENCE_NOT_FOUND",
+    "success": false,
+    "messageAr": "المؤتمر/الفعالية المطلوبة غير موجودة أو غير نشطة",
+    "messageEn": "The requested conference/event does not exist or is not active",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود المؤتمر",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.641Z",
+    "updatedAt": "2025-11-10T03:27:13.641Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz720038fln6vx29obt3",
+    "code": "REGISTRATION_EVENT_NOT_FOUND",
+    "success": false,
+    "messageAr": "الفعالية المطلوبة غير موجودة أو غير نشطة",
+    "messageEn": "The requested event does not exist or is not active",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود الفعالية",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.647Z",
+    "updatedAt": "2025-11-10T03:27:13.647Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz770039fln6rp2wqtd5",
+    "code": "REGISTRATION_NOT_FOUND",
+    "success": false,
+    "messageAr": "التسجيل المطلوب غير موجود",
+    "messageEn": "The requested registration was not found",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود التسجيل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.652Z",
+    "updatedAt": "2025-11-10T03:27:13.652Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz7d003afln6z28hfb7m",
+    "code": "REGISTRATION_NO_SUBSCRIPTION_RULES",
+    "success": false,
+    "messageAr": "لا توجد قواعد اشتراك محددة للمؤتمر. يرجى الاتصال بالإدارة",
+    "messageEn": "No subscription rules are defined for the conference. Please contact administration",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود قواعد اشتراك",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.657Z",
+    "updatedAt": "2025-11-10T03:27:13.657Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz7k003bfln6wygargc6",
+    "code": "REGISTRATION_CAPACITY_EXCEEDED",
+    "success": false,
+    "messageAr": "عذراً، تم الوصول إلى الحد الأقصى لعدد المشتركين في هذا المؤتمر/الفعالية",
+    "messageEn": "Sorry, the maximum number of participants for this conference/event has been reached",
+    "category": "registration",
+    "description": "رسالة عند انتهاء السعة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.664Z",
+    "updatedAt": "2025-11-10T03:27:13.664Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz7q003cfln648mv8wgq",
+    "code": "REGISTRATION_NOT_IN_REVIEW",
+    "success": false,
+    "messageAr": "التسجيل ليس في حالة المراجعة",
+    "messageEn": "Registration is not in review status",
+    "category": "registration",
+    "description": "رسالة عند محاولة مراجعة تسجيل غير في حالة المراجعة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.670Z",
+    "updatedAt": "2025-11-10T03:27:13.670Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz7w003dfln6qa00kzv9",
+    "code": "REGISTRATION_NOT_PAYMENT_PENDING",
+    "success": false,
+    "messageAr": "التسجيل ليس في حالة انتظار الدفع",
+    "messageEn": "Registration is not in payment pending status",
+    "category": "registration",
+    "description": "رسالة عند محاولة دفع تسجيل غير في انتظار الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.677Z",
+    "updatedAt": "2025-11-10T03:27:13.677Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz83003efln6ou2mfpq2",
+    "code": "REGISTRATION_NOT_ON_HOLD",
+    "success": false,
+    "messageAr": "التسجيل ليس في حالة التعليق",
+    "messageEn": "Registration is not on hold",
+    "category": "registration",
+    "description": "رسالة عند محاولة إعادة تفعيل تسجيل غير معلق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.684Z",
+    "updatedAt": "2025-11-10T03:27:13.684Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz89003ffln6dbef0kxd",
+    "code": "REGISTRATION_REACTIVATION_NOT_PENDING",
+    "success": false,
+    "messageAr": "طلب إعادة التفعيل ليس في حالة الانتظار",
+    "messageEn": "Reactivation request is not pending",
+    "category": "registration",
+    "description": "رسالة عند محاولة الموافقة على طلب إعادة تفعيل غير معلق",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.690Z",
+    "updatedAt": "2025-11-10T03:27:13.690Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz8g003gfln6spo22kpi",
+    "code": "REACTIVATION_REQUEST_ALREADY_PENDING",
+    "success": false,
+    "messageAr": "يوجد طلب إعادة تفعيل معلق بالفعل لهذا التسجيل. يرجى انتظار مراجعة الطلب الحالي",
+    "messageEn": "There is already a pending reactivation request for this registration. Please wait for the current request to be reviewed",
+    "category": "registration",
+    "description": "رسالة عند محاولة إنشاء طلب إعادة تفعيل جديد بينما يوجد طلب معلق بالفعل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.697Z",
+    "updatedAt": "2025-11-10T03:27:13.697Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz8n003hfln6f8w3dgos",
+    "code": "REGISTRATION_REACTIVATION_REQUEST_NOT_FOUND",
+    "success": false,
+    "messageAr": "طلب إعادة التفعيل غير موجود",
+    "messageEn": "Reactivation request not found",
+    "category": "registration",
+    "description": "رسالة عند عدم وجود طلب إعادة التفعيل",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.703Z",
+    "updatedAt": "2025-11-10T03:27:13.703Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz8x003ifln64tanwkrm",
+    "code": "PAYMENT_INITIATED_SUCCESS",
+    "success": true,
+    "messageAr": "تم بدء عملية الدفع بنجاح",
+    "messageEn": "Payment process initiated successfully",
+    "category": "payment",
+    "description": "رسالة نجاح عند بدء عملية الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.713Z",
+    "updatedAt": "2025-11-10T03:27:13.713Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz92003jfln69740fkff",
+    "code": "PAYMENT_SUCCESS",
+    "success": true,
+    "messageAr": "تم الدفع بنجاح، أنت الآن مشارك نشط",
+    "messageEn": "Payment successful, you are now an active participant",
+    "category": "payment",
+    "description": "رسالة نجاح بعد إتمام الدفع بنجاح",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.718Z",
+    "updatedAt": "2025-11-10T03:27:13.718Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz97003kfln6n8nm1m57",
+    "code": "PAYMENT_PROCESSING",
+    "success": true,
+    "messageAr": "جارٍ معالجة عملية الدفع، يرجى الانتظار",
+    "messageEn": "Processing payment, please wait",
+    "category": "payment",
+    "description": "رسالة تظهر أثناء معالجة عملية الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.724Z",
+    "updatedAt": "2025-11-10T03:27:13.724Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz9c003lfln6vro9aidy",
+    "code": "PAYMENT_GATEWAY_UNAVAILABLE",
+    "success": false,
+    "messageAr": "بوابة الدفع غير متاحة حالياً، يرجى المحاولة لاحقاً",
+    "messageEn": "Payment gateway is currently unavailable, please try again later",
+    "category": "payment",
+    "description": "رسالة خطأ عند عدم توفر بوابة الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.729Z",
+    "updatedAt": "2025-11-10T03:27:13.729Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz9j003mfln6qmav729o",
+    "code": "PAYMENT_NO_GATEWAYS",
+    "success": false,
+    "messageAr": "لا توجد بوابات دفع نشطة حالياً",
+    "messageEn": "No active payment gateways available",
+    "category": "payment",
+    "description": "رسالة خطأ عند عدم وجود بوابات دفع نشطة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.735Z",
+    "updatedAt": "2025-11-10T03:27:13.735Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz9p003nfln6uwdvcfwz",
+    "code": "INVOICE_NOT_FOUND",
+    "success": false,
+    "messageAr": "الفاتورة غير موجودة",
+    "messageEn": "Invoice not found",
+    "category": "payment",
+    "description": "رسالة خطأ عند عدم وجود فاتورة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.741Z",
+    "updatedAt": "2025-11-10T03:27:13.741Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzz9u003ofln6ylv5m43r",
+    "code": "INVOICE_ALREADY_PAID",
+    "success": false,
+    "messageAr": "الفاتورة مدفوعة بالفعل",
+    "messageEn": "Invoice is already paid",
+    "category": "payment",
+    "description": "رسالة خطأ عند محاولة دفع فاتورة مدفوعة مسبقاً",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.747Z",
+    "updatedAt": "2025-11-10T03:27:13.747Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzza1003pfln6l9nmpl5z",
+    "code": "TRANSACTION_NOT_FOUND",
+    "success": false,
+    "messageAr": "المعاملة غير موجودة",
+    "messageEn": "Transaction not found",
+    "category": "payment",
+    "description": "رسالة خطأ عند عدم وجود معاملة",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.753Z",
+    "updatedAt": "2025-11-10T03:27:13.753Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzza6003qfln60a539g4d",
+    "code": "GATEWAY_SELECTION_TITLE",
+    "success": true,
+    "messageAr": "اختر بوابة الدفع",
+    "messageEn": "Select Payment Gateway",
+    "category": "payment",
+    "description": "عنوان شاشة اختيار بوابة الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.759Z",
+    "updatedAt": "2025-11-10T03:27:13.759Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzzab003rfln6hkfaz378",
+    "code": "ENTER_VOUCHER_CODE",
+    "success": true,
+    "messageAr": "أدخل كود الدفع",
+    "messageEn": "Enter Payment Code",
+    "category": "payment",
+    "description": "تسمية حقل إدخال كود الدفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.763Z",
+    "updatedAt": "2025-11-10T03:27:13.763Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmhskzzae003sfln6uhnkerkm",
+    "code": "ENTER_SECRET_CODE",
+    "success": true,
+    "messageAr": "أدخل الرمز السري",
+    "messageEn": "Enter Secret Code",
+    "category": "payment",
+    "description": "تسمية حقل إدخال الرمز السري",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": null,
+    "createdAt": "2025-11-10T03:27:13.767Z",
+    "updatedAt": "2025-11-10T03:27:13.767Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [],
+    "metadata": null
+  },
+  {
+    "id": "cmitno6wd0000fllwcdh73xtw",
+    "code": "PAYMENT_ADMIN_NOTIFICATION",
+    "success": true,
+    "messageAr": "تم استلام مبلغ {amount} {currency} عبر {walletName} مقابل {entityType} لـ \"{entityName}\" من /{userName} ،\nرقم المرجع: {gatewayTransactionId}",
+    "messageEn": "Payment received: {amount} {currency} via {walletName} for {entityType} {entityName} from {userName}}",
+    "category": "payment",
+    "description": "إشعار يتم إرساله للإدارة المالية عند إتمام عملية دفع",
+    "isActive": true,
+    "createdBy": null,
+    "updatedBy": "cmgtmtsm80000copzozlbljpf",
+    "createdAt": "2025-12-06T02:09:31.118Z",
+    "updatedAt": "2025-12-07T04:44:18.215Z",
+    "defaultChannels": [
+      "IN_APP"
+    ],
+    "channelTemplates": null,
+    "variablePlaceholders": [
+      "amount",
+      "currency",
+      "walletName",
+      "entityType",
+      "entityName",
+      "userName",
+      "userPhone",
+      "transactionId",
+      "date"
+    ],
+    "metadata": {
+      "purpose": "financial_admin_notification",
+      "priority": "HIGH"
+    }
+  }
+]

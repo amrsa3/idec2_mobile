@@ -13,7 +13,7 @@ abstract class ApiService {
   @GET('/api/v1/server/settings')
   Future<ApiResponse> getServerSettings();
 
-  @GET('/api/v1/health')
+  @GET('/health')
   Future<HealthCheckModel> getHealthCheck();
 
   // Authentication - Updated to match server paths
@@ -23,7 +23,7 @@ abstract class ApiService {
   @POST('/api/v1/auth/login')
   Future<AuthResponse> login(@Body() LoginRequest request);
 
-  @POST('/api/v1/auth/refresh')
+  @POST('/api/auth/refresh')
   Future<AuthResponse> refreshToken(@Field('refresh_token') String refreshToken);
 
   @POST('/api/v1/auth/logout')

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../core/constants/api_constants.dart';
 import '../models/governorate_model.dart';
 import '../models/qualification_model.dart';
-import '../services/storage_service.dart';
+import './services/platform_storage_service.dart';
 
 class ReferenceDataService {
   static final ReferenceDataService _instance =
@@ -13,14 +13,14 @@ class ReferenceDataService {
   factory ReferenceDataService() => _instance;
   ReferenceDataService._internal();
 
-  final StorageService _storageService = StorageService.instance;
+  final StorageService _storageService = PlatformStorageService.instance;
 
   // Cache for reference data
   List<GovernorateModel>? _governorates;
   List<Qualification>? _qualifications;
 
   Future<Map<String, String>> _getHeaders() async {
-    final token = await _storageService.getToken();
+    final token = await _storageService.getAccessToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -111,3 +111,5 @@ class ReferenceDataService {
     _qualifications = null;
   }
 }
+
+

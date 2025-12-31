@@ -6,7 +6,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart'; // إضافة هذا للفحص kIsWeb
 
-import '../core/constants/app_constants.dart';
 import '../core/constants/api_constants.dart';
 import '../models/connection_status.dart';
 
@@ -140,7 +139,7 @@ class AdvancedConnectivityService {
       final stopwatch = Stopwatch()..start();
       
       final response = await _dio.get(
-        '$serverUrl/api/v1/health',
+        '$serverUrl/health',
         options: Options(
           sendTimeout: _timeout,
           receiveTimeout: _timeout,
@@ -408,7 +407,7 @@ class AdvancedConnectivityService {
     try {
       // Use the health endpoint for ping test
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/v1/health',
+        '${ApiConstants.baseUrl}/health',
         options: Options(
           sendTimeout: _pingTimeout,
           receiveTimeout: _pingTimeout,
@@ -457,7 +456,7 @@ class AdvancedConnectivityService {
       // اختبار نقطة واحدة فقط - health endpoint
       final endpointTests = [
         {
-          'path': '/api/v1/health',
+          'path': '/health',
           'method': 'GET',
           'expectedCodes': [200], // Should return health status
         },
@@ -572,7 +571,7 @@ class AdvancedConnectivityService {
       final responses = <Response>[];
       for (int i = 0; i < 5; i++) { // Reduced from 10 to 5 requests
         final response = await _dio.get(
-          '${ApiConstants.baseUrl}/api/v1/health',
+          '${ApiConstants.baseUrl}/health',
           options: Options(
             sendTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
@@ -619,7 +618,7 @@ class AdvancedConnectivityService {
   }
 
   /// Test upload speed by measuring response time to multiple GET requests
-  /// Since we can't use POST to /api/v1/health, we simulate upload speed
+  /// Since we can't use POST to /health, we simulate upload speed
   /// by measuring response time to multiple GET requests with query parameters
   Future<double> _testUploadSpeed() async {
     try {
@@ -633,7 +632,7 @@ class AdvancedConnectivityService {
           // Simulate upload by adding query parameters to GET request
           // This creates slightly more network traffic without using POST
           final response = await _dio.get(
-            '${ApiConstants.baseUrl}/api/v1/health',
+            '${ApiConstants.baseUrl}/health',
             queryParameters: {
               'test': 'upload_speed_simulation',
               'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -699,7 +698,7 @@ class AdvancedConnectivityService {
         
         // Use the health endpoint for ping test instead of HEAD to baseUrl
         await _dio.get(
-          '${ApiConstants.baseUrl}/api/v1/health',
+          '${ApiConstants.baseUrl}/health',
           options: Options(
             sendTimeout: _pingTimeout,
             receiveTimeout: _pingTimeout,

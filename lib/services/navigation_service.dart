@@ -99,6 +99,26 @@ class NavigationService {
     router?.go(AppRoutes.notificationsTest);
   }
   
+  /// Navigate to event details
+  void goToEvent(String eventId) {
+    router?.go('/event/$eventId');
+  }
+  
+  /// Navigate to registration details
+  void goToRegistration(String registrationId) {
+    router?.go('/registration/$registrationId');
+  }
+  
+  /// Navigate to conference details
+  void goToConference(String conferenceId) {
+    router?.go('/conference/$conferenceId');
+  }
+  
+  /// Navigate to payment details
+  void goToPayment(String transactionId) {
+    router?.go('/payment/$transactionId');
+  }
+  
   // Push methods (for modal navigation)
   
   /// Push a route onto the navigation stack
@@ -126,6 +146,12 @@ class NavigationService {
   /// Clear navigation stack and go to route
   void clearAndGoTo(String route) {
     router?.go(route);
+  }
+
+  /// Pop all routes until the root (first) route.
+  void popToRoot() {
+    final navigator = navigatorKey.currentState;
+    navigator?.popUntil((route) => route.isFirst);
   }
   
   // Utility methods

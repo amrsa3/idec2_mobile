@@ -56,38 +56,46 @@ class ServerConfigValidation with _$ServerConfigValidation {
 
 // Default configurations
 class DefaultServerConfigs {
-  static final ServerConfig development = ServerConfig(
-    baseUrl: 'localhost',
-    port: 3000,
+  static const ServerConfig development = ServerConfig(
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: true,
-    isSecure: false,
+    isSecure: true,
   );
 
-  static final ServerConfig production = ServerConfig(
-    baseUrl: 'api.idec.com',
+  static const ServerConfig production = ServerConfig(
+    baseUrl: 'api.idec-ye.com',
     port: 443,
     isDefault: false,
     isSecure: true,
   );
 
-  static final ServerConfig localhost = ServerConfig(
-    baseUrl: 'localhost',
-    port: 3000,
+  static const ServerConfig localhost = ServerConfig(
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: false,
-    isSecure: false,
+    isSecure: true,
   );
 
-  static final ServerConfig emulator = ServerConfig(
-    baseUrl: '10.0.2.2',
-    port: 3000,
+  static const ServerConfig localDevelopment = ServerConfig(
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
     isDefault: false,
-    isSecure: false,
+    isSecure: true,
+  );
+
+  static const ServerConfig emulator = ServerConfig(
+    baseUrl: 'api.idec-ye.com',
+    port: 443,
+    isDefault: false,
+    isSecure: true,
   );
 
   static List<ServerConfig> get presets => [
     development,
     production,
     localhost,
+    localDevelopment,
     emulator,
   ];
 }

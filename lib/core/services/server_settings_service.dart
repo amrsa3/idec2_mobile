@@ -1,10 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../services/storage_service.dart';
 
 // Provider for StorageService
 final storageServiceProvider = Provider<StorageService>((ref) {
-  return StorageService.instance;
+  return DefaultStorageService();
 });
 
 class ServerSettings {
@@ -17,6 +18,7 @@ class ServerSettings {
   });
 
   String get baseUrl {
+<<<<<<< HEAD
     // For the new API domain, use HTTPS without port
     if (host.contains('api.idec-ye.com')) {
       final url = 'https://$host';
@@ -26,20 +28,36 @@ class ServerSettings {
     
     // For other hosts, use HTTP with port
     final cleanHost = host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
+=======
+    final cleanHost =
+        host.replaceAll(RegExp(r':\d+$'), ''); // Remove any existing port
+
+    // Use HTTPS for production API server
+    if (cleanHost.contains('api.idec-ye.com')) {
+      final url = 'https://$cleanHost';
+      debugPrint(
+          '🔗 [SERVER_SETTINGS] Generated HTTPS baseUrl: $url (host: $cleanHost)');
+      return url;
+    }
+
+    // Use HTTP with port for local/development servers
+>>>>>>> working-version-fixed
     final url = 'http://$cleanHost:$port';
-    debugPrint('🔗 [SERVER_SETTINGS] Generated baseUrl: $url (host: $cleanHost, port: $port)');
+    debugPrint(
+        '🔗 [SERVER_SETTINGS] Generated HTTP baseUrl: $url (host: $cleanHost, port: $port)');
     return url;
   }
 
   factory ServerSettings.fromJson(Map<String, dynamic> json) {
     final host = json['host'] ?? 'api.idec-ye.com';
     final port = json['port'] ?? 3000;
-    
+
     // Clean host to remove any existing port
     final cleanHost = host.toString().replaceAll(RegExp(r':\d+$'), '');
-    
-    debugPrint('🔧 [SERVER_SETTINGS] fromJson - host: $host -> cleanHost: $cleanHost, port: $port');
-    
+
+    debugPrint(
+        '🔧 [SERVER_SETTINGS] fromJson - host: $host -> cleanHost: $cleanHost, port: $port');
+
     return ServerSettings(
       host: cleanHost,
       port: port,
@@ -59,10 +77,10 @@ class ServerSettings {
   }) {
     final newHost = host ?? this.host;
     final newPort = port ?? this.port;
-    
+
     // Clean host to remove any existing port
     final cleanHost = newHost.replaceAll(RegExp(r':\d+$'), '');
-    
+
     return ServerSettings(
       host: cleanHost,
       port: newPort,
@@ -72,9 +90,7 @@ class ServerSettings {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ServerSettings &&
-        other.host == host &&
-        other.port == port;
+    return other is ServerSettings && other.host == host && other.port == port;
   }
 
   @override
@@ -85,22 +101,37 @@ class ServerSettingsService {
   static const String _serverHostKey = 'server_host';
   static const String _serverPortKey = 'server_port';
   static const String _isInitializedKey = 'server_settings_initialized';
-  
-  // Default server configurations
+
+  // Default server configurations - تم تغيير الافتراضي للخادم المستضاف
   static const ServerSettings mainServer = ServerSettings(
+<<<<<<< HEAD
     host: 'api.idec-ye.com', // New API domain with HTTPS
     port: 443, // HTTPS port (not used for api.idec-ye.com)
+=======
+    host: 'api.idec-ye.com', // Production server
+    port: 443, // HTTPS port
+>>>>>>> working-version-fixed
   );
-  
+
   static const ServerSettings localServer = ServerSettings(
-    host: '192.168.0.165',
+    host: 'localhost',
     port: 3000,
   );
+<<<<<<< HEAD
   
   // Fallback domain server (legacy)
+=======
+
+  // Production server for later use
+  static const ServerSettings productionServer = ServerSettings(
+    host: 'api.idec-ye.com',
+    port: 443, // HTTPS port
+  );
+
+>>>>>>> working-version-fixed
   static const ServerSettings domainServer = ServerSettings(
-    host: 'idec-ye.com',
-    port: 3000,
+    host: 'api.idec-ye.com',
+    port: 443, // HTTPS port
   );
 
   final StorageService _storageService;
@@ -112,26 +143,32 @@ class ServerSettingsService {
     try {
       final host = await _storageService.getString(_serverHostKey);
       final port = await _storageService.getInt(_serverPortKey);
-      final isInitialized = await _storageService.getBool(_isInitializedKey) ?? false;
-      
-      debugPrint('🔍 [SERVER_SETTINGS] getCurrentSettings - host: $host, port: $port, initialized: $isInitialized');
-      
+      final isInitialized =
+          await _storageService.getBool(_isInitializedKey) ?? false;
+
+      debugPrint(
+          '🔍 [SERVER_SETTINGS] getCurrentSettings - host: $host, port: $port, initialized: $isInitialized');
+
       // If not initialized or missing data, use defaults and initialize
       if (!isInitialized || host == null || port == null) {
-        debugPrint('⚠️ [SERVER_SETTINGS] Settings not properly initialized, using defaults');
+        debugPrint(
+            '⚠️ [SERVER_SETTINGS] Settings not properly initialized, using defaults');
         await _initializeWithDefaults();
         return mainServer;
       }
-      
+
       // Clean host to remove any existing port
       final cleanHost = host.replaceAll(RegExp(r':\d+$'), '');
-      final validPort = port > 0 ? port : 3000;
-      
+      // Use 443 for HTTPS (production API) or 3000 for local development
+      final validPort = port > 0
+          ? port
+          : (cleanHost.contains('api.idec-ye.com') ? 443 : 3000);
+
       final settings = ServerSettings(
         host: cleanHost,
         port: validPort,
       );
-      
+
       debugPrint('✅ [SERVER_SETTINGS] Returning settings: ${settings.baseUrl}');
       return settings;
     } catch (e) {
@@ -153,14 +190,18 @@ class ServerSettingsService {
     try {
       // Clean host to remove any existing port
       final cleanHost = settings.host.replaceAll(RegExp(r':\d+$'), '');
-      final validPort = settings.port > 0 ? settings.port : 3000;
-      
-      debugPrint('💾 [SERVER_SETTINGS] Saving settings - host: $cleanHost, port: $validPort');
-      
+      // Use 443 for HTTPS (production API) or 3000 for local development
+      final validPort = settings.port > 0
+          ? settings.port
+          : (cleanHost.contains('api.idec-ye.com') ? 443 : 3000);
+
+      debugPrint(
+          '💾 [SERVER_SETTINGS] Saving settings - host: $cleanHost, port: $validPort');
+
       await _storageService.setString(_serverHostKey, cleanHost);
       await _storageService.setInt(_serverPortKey, validPort);
       await _storageService.setBool(_isInitializedKey, true);
-      
+
       debugPrint('✅ [SERVER_SETTINGS] Settings saved successfully');
     } catch (e) {
       debugPrint('❌ [SERVER_SETTINGS] Error saving settings: $e');
@@ -190,11 +231,13 @@ class ServerSettingsService {
   Future<bool> hasExistingSettings() async {
     final hasHost = await _storageService.containsKey(_serverHostKey);
     final hasPort = await _storageService.containsKey(_serverPortKey);
-    final isInitialized = await _storageService.getBool(_isInitializedKey) ?? false;
-    
+    final isInitialized =
+        await _storageService.getBool(_isInitializedKey) ?? false;
+
     final exists = hasHost && hasPort && isInitialized;
-    debugPrint('🔍 [SERVER_SETTINGS] hasExistingSettings: $exists (host: $hasHost, port: $hasPort, init: $isInitialized)');
-    
+    debugPrint(
+        '🔍 [SERVER_SETTINGS] hasExistingSettings: $exists (host: $hasHost, port: $hasPort, init: $isInitialized)');
+
     return exists;
   }
 
@@ -210,16 +253,17 @@ class ServerSettingsService {
   Future<void> validateAndFixSettings() async {
     try {
       debugPrint('🔧 [SERVER_SETTINGS] Validating and fixing settings');
-      
+
       final hasSettings = await hasExistingSettings();
       if (!hasSettings) {
-        debugPrint('⚠️ [SERVER_SETTINGS] No valid settings found, initializing defaults');
+        debugPrint(
+            '⚠️ [SERVER_SETTINGS] No valid settings found, initializing defaults');
         await _initializeWithDefaults();
         return;
       }
-      
+
       final settings = await getCurrentSettings();
-      
+
       // Validate the generated URL
       final url = settings.baseUrl;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -242,7 +286,8 @@ final serverSettingsServiceProvider = Provider<ServerSettingsService>((ref) {
 });
 
 // Provider for current server settings
-final currentServerSettingsProvider = FutureProvider<ServerSettings>((ref) async {
+final currentServerSettingsProvider =
+    FutureProvider<ServerSettings>((ref) async {
   final service = ref.watch(serverSettingsServiceProvider);
   return await service.getCurrentSettings();
 });

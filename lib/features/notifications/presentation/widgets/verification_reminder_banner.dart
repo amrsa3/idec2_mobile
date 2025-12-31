@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../providers/auth_provider.dart';
+import '../../../../providers/enhanced_auth_provider.dart';
 import '../../../../services/navigation_service.dart';
 
 /// Banner that reminds unverified users to complete their profile verification

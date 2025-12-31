@@ -1417,12 +1417,14 @@ mixin _$ProfileUpdateRequest {
   @JsonKey(name: 'full_name_en')
   String? get fullNameEn => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   DateTime? get birthDate => throw _privateConstructorUsedError;
   @JsonKey(name: 'governorate_id')
   String? get governorateId => throw _privateConstructorUsedError;
   @JsonKey(name: 'qualification_id')
   String? get qualificationId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'category_id')
+  String? get categoryId => throw _privateConstructorUsedError;
   @JsonKey(name: 'graduation_year')
   int? get graduationYear => throw _privateConstructorUsedError;
   String? get university => throw _privateConstructorUsedError;
@@ -1444,9 +1446,11 @@ abstract class $ProfileUpdateRequestCopyWith<$Res> {
       {@JsonKey(name: 'full_name_ar') String? fullNameAr,
       @JsonKey(name: 'full_name_en') String? fullNameEn,
       String? email,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
+      @JsonKey(name: 'category_id') String? categoryId,
       @JsonKey(name: 'graduation_year') int? graduationYear,
       String? university,
       String? workplace});
@@ -1472,6 +1476,7 @@ class _$ProfileUpdateRequestCopyWithImpl<$Res,
     Object? birthDate = freezed,
     Object? governorateId = freezed,
     Object? qualificationId = freezed,
+    Object? categoryId = freezed,
     Object? graduationYear = freezed,
     Object? university = freezed,
     Object? workplace = freezed,
@@ -1501,6 +1506,10 @@ class _$ProfileUpdateRequestCopyWithImpl<$Res,
           ? _value.qualificationId
           : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
       graduationYear: freezed == graduationYear
           ? _value.graduationYear
           : graduationYear // ignore: cast_nullable_to_non_nullable
@@ -1529,9 +1538,11 @@ abstract class _$$ProfileUpdateRequestImplCopyWith<$Res>
       {@JsonKey(name: 'full_name_ar') String? fullNameAr,
       @JsonKey(name: 'full_name_en') String? fullNameEn,
       String? email,
-      @JsonKey(name: 'birth_date') DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      DateTime? birthDate,
       @JsonKey(name: 'governorate_id') String? governorateId,
       @JsonKey(name: 'qualification_id') String? qualificationId,
+      @JsonKey(name: 'category_id') String? categoryId,
       @JsonKey(name: 'graduation_year') int? graduationYear,
       String? university,
       String? workplace});
@@ -1554,6 +1565,7 @@ class __$$ProfileUpdateRequestImplCopyWithImpl<$Res>
     Object? birthDate = freezed,
     Object? governorateId = freezed,
     Object? qualificationId = freezed,
+    Object? categoryId = freezed,
     Object? graduationYear = freezed,
     Object? university = freezed,
     Object? workplace = freezed,
@@ -1583,6 +1595,10 @@ class __$$ProfileUpdateRequestImplCopyWithImpl<$Res>
           ? _value.qualificationId
           : qualificationId // ignore: cast_nullable_to_non_nullable
               as String?,
+      categoryId: freezed == categoryId
+          ? _value.categoryId
+          : categoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
       graduationYear: freezed == graduationYear
           ? _value.graduationYear
           : graduationYear // ignore: cast_nullable_to_non_nullable
@@ -1608,9 +1624,11 @@ class _$ProfileUpdateRequestImpl
       {@JsonKey(name: 'full_name_ar') this.fullNameAr,
       @JsonKey(name: 'full_name_en') this.fullNameEn,
       this.email,
-      @JsonKey(name: 'birth_date') this.birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      this.birthDate,
       @JsonKey(name: 'governorate_id') this.governorateId,
       @JsonKey(name: 'qualification_id') this.qualificationId,
+      @JsonKey(name: 'category_id') this.categoryId,
       @JsonKey(name: 'graduation_year') this.graduationYear,
       this.university,
       this.workplace});
@@ -1627,7 +1645,7 @@ class _$ProfileUpdateRequestImpl
   @override
   final String? email;
   @override
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   final DateTime? birthDate;
   @override
   @JsonKey(name: 'governorate_id')
@@ -1635,6 +1653,9 @@ class _$ProfileUpdateRequestImpl
   @override
   @JsonKey(name: 'qualification_id')
   final String? qualificationId;
+  @override
+  @JsonKey(name: 'category_id')
+  final String? categoryId;
   @override
   @JsonKey(name: 'graduation_year')
   final int? graduationYear;
@@ -1645,7 +1666,7 @@ class _$ProfileUpdateRequestImpl
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ProfileUpdateRequest(fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, email: $email, birthDate: $birthDate, governorateId: $governorateId, qualificationId: $qualificationId, graduationYear: $graduationYear, university: $university, workplace: $workplace)';
+    return 'ProfileUpdateRequest(fullNameAr: $fullNameAr, fullNameEn: $fullNameEn, email: $email, birthDate: $birthDate, governorateId: $governorateId, qualificationId: $qualificationId, categoryId: $categoryId, graduationYear: $graduationYear, university: $university, workplace: $workplace)';
   }
 
   @override
@@ -1659,6 +1680,7 @@ class _$ProfileUpdateRequestImpl
       ..add(DiagnosticsProperty('birthDate', birthDate))
       ..add(DiagnosticsProperty('governorateId', governorateId))
       ..add(DiagnosticsProperty('qualificationId', qualificationId))
+      ..add(DiagnosticsProperty('categoryId', categoryId))
       ..add(DiagnosticsProperty('graduationYear', graduationYear))
       ..add(DiagnosticsProperty('university', university))
       ..add(DiagnosticsProperty('workplace', workplace));
@@ -1680,6 +1702,8 @@ class _$ProfileUpdateRequestImpl
                 other.governorateId == governorateId) &&
             (identical(other.qualificationId, qualificationId) ||
                 other.qualificationId == qualificationId) &&
+            (identical(other.categoryId, categoryId) ||
+                other.categoryId == categoryId) &&
             (identical(other.graduationYear, graduationYear) ||
                 other.graduationYear == graduationYear) &&
             (identical(other.university, university) ||
@@ -1698,6 +1722,7 @@ class _$ProfileUpdateRequestImpl
       birthDate,
       governorateId,
       qualificationId,
+      categoryId,
       graduationYear,
       university,
       workplace);
@@ -1723,9 +1748,11 @@ abstract class _ProfileUpdateRequest implements ProfileUpdateRequest {
       {@JsonKey(name: 'full_name_ar') final String? fullNameAr,
       @JsonKey(name: 'full_name_en') final String? fullNameEn,
       final String? email,
-      @JsonKey(name: 'birth_date') final DateTime? birthDate,
+      @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
+      final DateTime? birthDate,
       @JsonKey(name: 'governorate_id') final String? governorateId,
       @JsonKey(name: 'qualification_id') final String? qualificationId,
+      @JsonKey(name: 'category_id') final String? categoryId,
       @JsonKey(name: 'graduation_year') final int? graduationYear,
       final String? university,
       final String? workplace}) = _$ProfileUpdateRequestImpl;
@@ -1742,7 +1769,7 @@ abstract class _ProfileUpdateRequest implements ProfileUpdateRequest {
   @override
   String? get email;
   @override
-  @JsonKey(name: 'birth_date')
+  @JsonKey(name: 'birth_date', toJson: _dateToJson, fromJson: _dateFromJson)
   DateTime? get birthDate;
   @override
   @JsonKey(name: 'governorate_id')
@@ -1750,6 +1777,9 @@ abstract class _ProfileUpdateRequest implements ProfileUpdateRequest {
   @override
   @JsonKey(name: 'qualification_id')
   String? get qualificationId;
+  @override
+  @JsonKey(name: 'category_id')
+  String? get categoryId;
   @override
   @JsonKey(name: 'graduation_year')
   int? get graduationYear;

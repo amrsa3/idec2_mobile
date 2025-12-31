@@ -648,7 +648,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                               color: AppColors.primary.withOpacity(0.8),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -660,7 +660,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                                       valueColor: AlwaysStoppedAnimation<Color>(AppColors.textOnPrimary),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8),
                                   Text(
                                     'جاري الفحص...',
                                     style: TextStyle(
@@ -737,7 +737,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                               color: Colors.orange.withOpacity(0.8),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -749,8 +749,8 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Text(
+                                  SizedBox(width: 8),
+                                  Text(
                                     'فحص يدوي...',
                                     style: TextStyle(
                                       color: Colors.white,
@@ -832,15 +832,15 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
             // Information Card
             Card(
               color: AppColors.info.withOpacity(0.1),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
+              child: const Padding(
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Icon(Icons.info, color: AppColors.info),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'نصائح استكشاف الأخطاء',
                           style: TextStyle(
@@ -850,11 +850,11 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text('• تحقق من اتصال WiFi أو بيانات الجوال'),
-                    const Text('• تأكد من صحة إعدادات الخادم'),
-                    const Text('• جرب التبديل بين WiFi وبيانات الجوال'),
-                    const Text('• اتصل بالدعم الفني إذا استمرت المشاكل'),
+                    SizedBox(height: 8),
+                    Text('• تحقق من اتصال WiFi أو بيانات الجوال'),
+                    Text('• تأكد من صحة إعدادات الخادم'),
+                    Text('• جرب التبديل بين WiFi وبيانات الجوال'),
+                    Text('• اتصل بالدعم الفني إذا استمرت المشاكل'),
                   ],
                 ),
               ),
@@ -892,7 +892,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                 if (subtitle != null)
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
@@ -901,7 +901,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
             ),
           ),
           isChecking
-              ? SizedBox(
+              ? const SizedBox(
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
@@ -942,7 +942,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -950,7 +950,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
               ],
             ),
           ),
-          Icon(
+          const Icon(
             Icons.help_outline,
             color: AppColors.textSecondary,
           ),
@@ -980,7 +980,7 @@ class _ConnectionStatusScreenState extends ConsumerState<ConnectionStatusScreen>
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,

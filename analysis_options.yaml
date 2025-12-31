@@ -9,6 +9,19 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: warning
+    dead_code: warning
+    unused_import: info
+    unused_local_variable: info
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated/**"
+    - "lib/generated_plugin_registrant.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -21,8 +34,46 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # أفضل الممارسات
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_in_for_each
+    - avoid_print: false  # السماح باستخدام print للتصحيح
+    - use_key_in_widget_constructors
+    - prefer_single_quotes
+    
+    # سلامة الأنواع
+    - avoid_dynamic_calls
+    - avoid_returning_null_for_future
+    - avoid_slow_async_io
+    - cancel_subscriptions
+    - close_sinks
+    
+    # التنظيم
+    - sort_child_properties_last
+    - require_trailing_commas: false  # اختياري
+    
+    # تجنب الأخطاء الشائعة
+    - always_put_required_named_parameters_first
+    - avoid_empty_else
+    - avoid_unnecessary_containers
+    - await_only_futures
+    - camel_case_types
+    - constant_identifier_names
+    - curly_braces_in_flow_control_structures
+    - empty_catches
+    - empty_constructor_bodies
+    - empty_statements
+    - no_duplicate_case_values
+    - null_check_on_nullable_type_parameter
+    - unnecessary_await_in_return
+    - unnecessary_const
+    - unnecessary_new
+    - unnecessary_null_in_if_null_operators
+    - unnecessary_this
+    - use_rethrow_when_possible
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+

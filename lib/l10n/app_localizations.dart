@@ -236,7 +236,7 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
-  /// Cancel button text
+  /// Cancel button
   ///
   /// In en, this message translates to:
   /// **'Cancel'**
@@ -395,25 +395,25 @@ abstract class AppLocalizations {
   /// Second onboarding screen title
   ///
   /// In en, this message translates to:
-  /// **'Connect & Network'**
+  /// **'Integrated Professional Network'**
   String get onboardingTitle2;
 
   /// Second onboarding screen description
   ///
   /// In en, this message translates to:
-  /// **'Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.'**
+  /// **'Connect with elite dentists and international experts, participate in workshops and scientific sessions to exchange knowledge and develop your professional skills in dentistry.'**
   String get onboardingDescription2;
 
   /// Third onboarding screen title
   ///
   /// In en, this message translates to:
-  /// **'Exhibition & Trade'**
+  /// **'Advanced Dental Exhibition'**
   String get onboardingTitle3;
 
   /// Third onboarding screen description
   ///
   /// In en, this message translates to:
-  /// **'Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.'**
+  /// **'Discover cutting-edge innovations and medical equipment at the comprehensive IDEC exhibition, and explore the latest technologies and advanced dental tools.'**
   String get onboardingDescription3;
 
   /// No description provided for @onboardingPage3Description.
@@ -1583,7 +1583,7 @@ abstract class AppLocalizations {
   /// Uploaded on date label
   ///
   /// In en, this message translates to:
-  /// **'Uploaded on'**
+  /// **'Uploaded On'**
   String get uploadedOn;
 
   /// Select image source dialog title
@@ -1705,6 +1705,1452 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saving settings...'**
   String get savingSettings;
+
+  /// From text for date ranges
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// To text for date ranges
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// Days remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'days remaining'**
+  String get daysRemaining;
+
+  /// Hours remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'hours remaining'**
+  String get hoursRemaining;
+
+  /// Minutes remaining text
+  ///
+  /// In en, this message translates to:
+  /// **'minutes remaining'**
+  String get minutesRemaining;
+
+  /// Under review status
+  ///
+  /// In en, this message translates to:
+  /// **'Under Review'**
+  String get underReview;
+
+  /// Payment pending status
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Pending'**
+  String get paymentPending;
+
+  /// Active participant status
+  ///
+  /// In en, this message translates to:
+  /// **'Active Participant'**
+  String get activeParticipant;
+
+  /// On hold status
+  ///
+  /// In en, this message translates to:
+  /// **'On Hold'**
+  String get onHold;
+
+  /// Rejected status
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// Registration status label
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get registrationStatus;
+
+  /// Title for payment gateway selection
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Gateway'**
+  String get selectPaymentGateway;
+
+  /// Processing payment status
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get processingPayment;
+
+  /// Complete payment button
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Payment'**
+  String get completePayment;
+
+  /// Payment success message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Successful'**
+  String get paymentSuccess;
+
+  /// Payment failed message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Failed'**
+  String get paymentFailed;
+
+  /// Active participant message
+  ///
+  /// In en, this message translates to:
+  /// **'You are now an active participant'**
+  String get youAreNowActiveParticipant;
+
+  /// No active gateways message
+  ///
+  /// In en, this message translates to:
+  /// **'No active payment gateways available'**
+  String get noActiveGateways;
+
+  /// Invoice receipt title
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt'**
+  String get invoiceReceipt;
+
+  /// Receipt details title
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt Details'**
+  String get receiptDetails;
+
+  /// Invoice number label
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Number'**
+  String get invoiceNumber;
+
+  /// Conference or course label
+  ///
+  /// In en, this message translates to:
+  /// **'Conference/Course'**
+  String get conferenceOrCourse;
+
+  /// Amount label
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// Issue date label
+  ///
+  /// In en, this message translates to:
+  /// **'Issue Date'**
+  String get issueDate;
+
+  /// Due date label
+  ///
+  /// In en, this message translates to:
+  /// **'Due Date'**
+  String get dueDate;
+
+  /// Transaction details title
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Details'**
+  String get transactionDetails;
+
+  /// Transaction number label
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Number'**
+  String get transactionNumber;
+
+  /// Payment gateway label
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Gateway'**
+  String get paymentGateway;
+
+  /// Payment method label
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Method'**
+  String get paymentMethod;
+
+  /// Transaction date label
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Date'**
+  String get transactionDate;
+
+  /// Completion date label
+  ///
+  /// In en, this message translates to:
+  /// **'Completion Date'**
+  String get completionDate;
+
+  /// Share receipt button
+  ///
+  /// In en, this message translates to:
+  /// **'Share Receipt'**
+  String get shareReceipt;
+
+  /// Back to home button
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Home'**
+  String get backToHome;
+
+  /// Payment input title
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Input'**
+  String get paymentInput;
+
+  /// Confirm payment button
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmPayment;
+
+  /// Enter payment code label
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Payment Code'**
+  String get enterPaymentCode;
+
+  /// Enter secret code label
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Secret Code'**
+  String get enterSecretCode;
+
+  /// Feature coming soon message
+  ///
+  /// In en, this message translates to:
+  /// **'Feature coming soon'**
+  String get featureComingSoon;
+
+  /// Payment processing error message
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Processing Error'**
+  String get paymentProcessingError;
+
+  /// Gateway selection title
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Gateway'**
+  String get gatewaySelectionTitle;
+
+  /// Test mode label
+  ///
+  /// In en, this message translates to:
+  /// **'Test Mode'**
+  String get testMode;
+
+  /// Production mode label
+  ///
+  /// In en, this message translates to:
+  /// **'Production Mode'**
+  String get productionMode;
+
+  /// No description provided for @myDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'My Documents'**
+  String get myDocuments;
+
+  /// No description provided for @noDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents uploaded yet'**
+  String get noDocuments;
+
+  /// No description provided for @uploadDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Document'**
+  String get uploadDocument;
+
+  /// No description provided for @documentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Document Name'**
+  String get documentName;
+
+  /// No description provided for @documentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Document Type'**
+  String get documentType;
+
+  /// No description provided for @fileSize.
+  ///
+  /// In en, this message translates to:
+  /// **'File Size'**
+  String get fileSize;
+
+  /// No description provided for @viewDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'View Document'**
+  String get viewDocument;
+
+  /// No description provided for @downloadDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Document'**
+  String get downloadDocument;
+
+  /// No description provided for @shareDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Document'**
+  String get shareDocument;
+
+  /// No description provided for @myProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My Profile'**
+  String get myProfile;
+
+  /// No description provided for @personalInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInfo;
+
+  /// No description provided for @fullNameAr.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name (Arabic)'**
+  String get fullNameAr;
+
+  /// No description provided for @fullNameEn.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name (English)'**
+  String get fullNameEn;
+
+  /// No description provided for @nationalId.
+  ///
+  /// In en, this message translates to:
+  /// **'National ID'**
+  String get nationalId;
+
+  /// No description provided for @dateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth'**
+  String get dateOfBirth;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get male;
+
+  /// No description provided for @female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get female;
+
+  /// No description provided for @city.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get city;
+
+  /// No description provided for @address.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get address;
+
+  /// No description provided for @workplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workplace'**
+  String get workplace;
+
+  /// No description provided for @jobTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Job Title'**
+  String get jobTitle;
+
+  /// No description provided for @graduationYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Graduation Year'**
+  String get graduationYear;
+
+  /// No description provided for @specialization.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialization'**
+  String get specialization;
+
+  /// No description provided for @profilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Photo'**
+  String get profilePhoto;
+
+  /// No description provided for @changePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Photo'**
+  String get changePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Photo'**
+  String get removePhoto;
+
+  /// No description provided for @courses.
+  ///
+  /// In en, this message translates to:
+  /// **'Courses'**
+  String get courses;
+
+  /// No description provided for @allCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'All Courses'**
+  String get allCourses;
+
+  /// No description provided for @myCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'My Courses'**
+  String get myCourses;
+
+  /// No description provided for @availableCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Courses'**
+  String get availableCourses;
+
+  /// No description provided for @registeredCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered Courses'**
+  String get registeredCourses;
+
+  /// No description provided for @completedCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Courses'**
+  String get completedCourses;
+
+  /// No description provided for @upcomingCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Courses'**
+  String get upcomingCourses;
+
+  /// No description provided for @courseDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Course Details'**
+  String get courseDetails;
+
+  /// No description provided for @courseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Course Name'**
+  String get courseName;
+
+  /// No description provided for @courseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Course Description'**
+  String get courseDescription;
+
+  /// No description provided for @courseInstructor.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructor'**
+  String get courseInstructor;
+
+  /// No description provided for @courseDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get courseDuration;
+
+  /// No description provided for @courseLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get courseLevel;
+
+  /// No description provided for @coursePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get coursePrice;
+
+  /// No description provided for @courseCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get courseCapacity;
+
+  /// No description provided for @courseLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get courseLocation;
+
+  /// No description provided for @courseDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get courseDate;
+
+  /// No description provided for @courseTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get courseTime;
+
+  /// No description provided for @registerForCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Register for Course'**
+  String get registerForCourse;
+
+  /// No description provided for @viewCourseDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewCourseDetails;
+
+  /// No description provided for @noCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'No courses available'**
+  String get noCourses;
+
+  /// No description provided for @searchCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Search courses'**
+  String get searchCourses;
+
+  /// No description provided for @filterCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filterCourses;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort By'**
+  String get sortBy;
+
+  /// No description provided for @newest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get newest;
+
+  /// No description provided for @oldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get oldest;
+
+  /// No description provided for @priceHighToLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Price: High to Low'**
+  String get priceHighToLow;
+
+  /// No description provided for @priceLowToHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Price: Low to High'**
+  String get priceLowToHigh;
+
+  /// No description provided for @free.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get free;
+
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
+  /// No description provided for @beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get beginner;
+
+  /// No description provided for @intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get intermediate;
+
+  /// No description provided for @advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get advanced;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get hours;
+
+  /// No description provided for @seats.
+  ///
+  /// In en, this message translates to:
+  /// **'seats'**
+  String get seats;
+
+  /// No description provided for @seatsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'seats available'**
+  String get seatsAvailable;
+
+  /// No description provided for @fullyBooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully Booked'**
+  String get fullyBooked;
+
+  /// No description provided for @allSpeakers.
+  ///
+  /// In en, this message translates to:
+  /// **'All Speakers'**
+  String get allSpeakers;
+
+  /// No description provided for @featuredSpeakers.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured Speakers'**
+  String get featuredSpeakers;
+
+  /// No description provided for @speakerDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker Details'**
+  String get speakerDetails;
+
+  /// No description provided for @speakerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get speakerName;
+
+  /// No description provided for @speakerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get speakerTitle;
+
+  /// No description provided for @speakerBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Biography'**
+  String get speakerBio;
+
+  /// No description provided for @speakerSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get speakerSessions;
+
+  /// No description provided for @noSpeakers.
+  ///
+  /// In en, this message translates to:
+  /// **'No speakers available'**
+  String get noSpeakers;
+
+  /// No description provided for @searchSpeakers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search speakers'**
+  String get searchSpeakers;
+
+  /// No description provided for @viewProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'View Profile'**
+  String get viewProfile;
+
+  /// No description provided for @sessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get sessions;
+
+  /// No description provided for @allSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'All Sessions'**
+  String get allSessions;
+
+  /// No description provided for @mySessions.
+  ///
+  /// In en, this message translates to:
+  /// **'My Sessions'**
+  String get mySessions;
+
+  /// No description provided for @upcomingSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Sessions'**
+  String get upcomingSessions;
+
+  /// No description provided for @pastSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Past Sessions'**
+  String get pastSessions;
+
+  /// No description provided for @sessionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Details'**
+  String get sessionDetails;
+
+  /// No description provided for @sessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session Title'**
+  String get sessionTitle;
+
+  /// No description provided for @sessionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get sessionDescription;
+
+  /// No description provided for @sessionSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get sessionSpeaker;
+
+  /// No description provided for @sessionDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get sessionDate;
+
+  /// No description provided for @sessionTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get sessionTime;
+
+  /// No description provided for @sessionLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get sessionLocation;
+
+  /// No description provided for @sessionDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get sessionDuration;
+
+  /// No description provided for @joinSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Session'**
+  String get joinSession;
+
+  /// No description provided for @addToCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Calendar'**
+  String get addToCalendar;
+
+  /// No description provided for @noSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions available'**
+  String get noSessions;
+
+  /// No description provided for @searchSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions'**
+  String get searchSessions;
+
+  /// No description provided for @live.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get live;
+
+  /// No description provided for @upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcoming;
+
+  /// No description provided for @ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get ended;
+
+  /// No description provided for @myRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'My Registrations'**
+  String get myRegistrations;
+
+  /// No description provided for @activeRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeRegistrations;
+
+  /// No description provided for @pendingRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingRegistrations;
+
+  /// No description provided for @completedRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedRegistrations;
+
+  /// No description provided for @cancelledRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelledRegistrations;
+
+  /// No description provided for @registrationDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration Details'**
+  String get registrationDetails;
+
+  /// No description provided for @registrationDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration Date'**
+  String get registrationDate;
+
+  /// No description provided for @paymentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Status'**
+  String get paymentStatus;
+
+  /// No description provided for @paymentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Date'**
+  String get paymentDate;
+
+  /// No description provided for @totalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Amount'**
+  String get totalAmount;
+
+  /// No description provided for @paidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid Amount'**
+  String get paidAmount;
+
+  /// No description provided for @remainingAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining Amount'**
+  String get remainingAmount;
+
+  /// No description provided for @viewReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'View Receipt'**
+  String get viewReceipt;
+
+  /// No description provided for @downloadReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Receipt'**
+  String get downloadReceipt;
+
+  /// No description provided for @cancelRegistration.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Registration'**
+  String get cancelRegistration;
+
+  /// No description provided for @noRegistrations.
+  ///
+  /// In en, this message translates to:
+  /// **'No registrations yet'**
+  String get noRegistrations;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get approved;
+
+  /// No description provided for @cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelled;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @unpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid'**
+  String get unpaid;
+
+  /// No description provided for @partiallyPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially Paid'**
+  String get partiallyPaid;
+
+  /// No description provided for @news.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get news;
+
+  /// No description provided for @latestNews.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest News'**
+  String get latestNews;
+
+  /// No description provided for @newsDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'News Details'**
+  String get newsDetails;
+
+  /// No description provided for @newsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get newsTitle;
+
+  /// No description provided for @newsContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get newsContent;
+
+  /// No description provided for @publishedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Published On'**
+  String get publishedOn;
+
+  /// No description provided for @readMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Read More'**
+  String get readMore;
+
+  /// No description provided for @noNews.
+  ///
+  /// In en, this message translates to:
+  /// **'No news available'**
+  String get noNews;
+
+  /// No description provided for @searchNews.
+  ///
+  /// In en, this message translates to:
+  /// **'Search news'**
+  String get searchNews;
+
+  /// No description provided for @photoGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo Gallery'**
+  String get photoGallery;
+
+  /// No description provided for @videoGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Gallery'**
+  String get videoGallery;
+
+  /// No description provided for @albums.
+  ///
+  /// In en, this message translates to:
+  /// **'Albums'**
+  String get albums;
+
+  /// No description provided for @allPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'All Photos'**
+  String get allPhotos;
+
+  /// No description provided for @allVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'All Videos'**
+  String get allVideos;
+
+  /// No description provided for @viewPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'View Photo'**
+  String get viewPhoto;
+
+  /// No description provided for @viewVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'View Video'**
+  String get viewVideo;
+
+  /// No description provided for @downloadPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get downloadPhoto;
+
+  /// No description provided for @sharePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get sharePhoto;
+
+  /// No description provided for @noPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos available'**
+  String get noPhotos;
+
+  /// No description provided for @noVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'No videos available'**
+  String get noVideos;
+
+  /// No description provided for @photos.
+  ///
+  /// In en, this message translates to:
+  /// **'photos'**
+  String get photos;
+
+  /// No description provided for @videos.
+  ///
+  /// In en, this message translates to:
+  /// **'videos'**
+  String get videos;
+
+  /// No description provided for @allNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allNotifications;
+
+  /// No description provided for @unreadNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get unreadNotifications;
+
+  /// No description provided for @readNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get readNotifications;
+
+  /// No description provided for @markAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Read'**
+  String get markAsRead;
+
+  /// No description provided for @markAllAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark All as Read'**
+  String get markAllAsRead;
+
+  /// No description provided for @deleteNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteNotification;
+
+  /// No description provided for @deleteAllNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete All'**
+  String get deleteAllNotifications;
+
+  /// No description provided for @noNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get noNotifications;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @enableNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Notifications'**
+  String get enableNotifications;
+
+  /// No description provided for @pushNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Push Notifications'**
+  String get pushNotifications;
+
+  /// No description provided for @emailNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Notifications'**
+  String get emailNotifications;
+
+  /// No description provided for @smsNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Notifications'**
+  String get smsNotifications;
+
+  /// No description provided for @chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chat;
+
+  /// No description provided for @chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get chats;
+
+  /// No description provided for @messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messages;
+
+  /// No description provided for @newMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New Message'**
+  String get newMessage;
+
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get sendMessage;
+
+  /// No description provided for @typeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get typeMessage;
+
+  /// No description provided for @noMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noMessages;
+
+  /// No description provided for @online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get online;
+
+  /// No description provided for @offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offline;
+
+  /// No description provided for @typing.
+  ///
+  /// In en, this message translates to:
+  /// **'typing...'**
+  String get typing;
+
+  /// No description provided for @lastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen'**
+  String get lastSeen;
+
+  /// No description provided for @attachFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach File'**
+  String get attachFile;
+
+  /// No description provided for @attachPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Photo'**
+  String get attachPhoto;
+
+  /// No description provided for @attachVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Video'**
+  String get attachVideo;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Message'**
+  String get voiceMessage;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
+  /// No description provided for @seeMore.
+  ///
+  /// In en, this message translates to:
+  /// **'See More'**
+  String get seeMore;
+
+  /// No description provided for @seeLess.
+  ///
+  /// In en, this message translates to:
+  /// **'See Less'**
+  String get seeLess;
+
+  /// No description provided for @showMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show More'**
+  String get showMore;
+
+  /// No description provided for @showLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Less'**
+  String get showLess;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data available'**
+  String get noData;
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noResults;
+
+  /// No description provided for @searchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Results'**
+  String get searchResults;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sort;
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get apply;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @requirements.
+  ///
+  /// In en, this message translates to:
+  /// **'Requirements'**
+  String get requirements;
+
+  /// No description provided for @certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate'**
+  String get certificate;
+
+  /// No description provided for @certified.
+  ///
+  /// In en, this message translates to:
+  /// **'Certified'**
+  String get certified;
+
+  /// No description provided for @instructor.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructor'**
+  String get instructor;
+
+  /// No description provided for @duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get duration;
+
+  /// No description provided for @level.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get level;
+
+  /// No description provided for @capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get capacity;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Available'**
+  String get notAvailable;
 }
 
 class _AppLocalizationsDelegate

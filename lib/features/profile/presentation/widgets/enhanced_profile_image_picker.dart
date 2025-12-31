@@ -251,7 +251,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.delete_outline_rounded,
               color: AppColors.error,
               size: 20,
@@ -454,7 +454,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
@@ -471,7 +471,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
@@ -515,7 +515,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
             child: SizedBox(
               width: widget.size * 0.4,
               height: widget.size * 0.4,
-              child: CircularProgressIndicator(
+              child: const CircularProgressIndicator(
                 strokeWidth: 3,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
@@ -601,7 +601,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
     return Container(
       width: widget.size,
       height: widget.size,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         shape: BoxShape.circle,
       ),
@@ -611,7 +611,7 @@ class _EnhancedProfileImagePickerState extends State<EnhancedProfileImagePicker>
             child: SizedBox(
               width: widget.size * 0.3,
               height: widget.size * 0.3,
-              child: CircularProgressIndicator(
+              child: const CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),

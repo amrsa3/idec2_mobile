@@ -4,11 +4,11 @@ import 'app_colors.dart';
 
 class AppTextStyles {
   // System Font Family with local fonts as fallbacks for Arabic and English support
-  static const String fontFamily = 'Tahoma';
+  static const String fontFamily = 'Cairo';
   static const List<String> fontFamilyFallbacks = [
-    'Tahoma',
     'Cairo',
     'NotoSansArabic',
+    'Tahoma',
     'Roboto',
     'Arial',
     'sans-serif'

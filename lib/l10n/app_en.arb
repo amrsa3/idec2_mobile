@@ -196,19 +196,19 @@
   "@onboardingDescription1": {
     "description": "First onboarding screen description"
   },
-  "onboardingTitle2": "Connect & Network",
+  "onboardingTitle2": "Integrated Professional Network",
   "@onboardingTitle2": {
     "description": "Second onboarding screen title"
   },
-  "onboardingDescription2": "Build professional connections with fellow attendees, share experiences, and collaborate on advancing the field of dentistry.",
+  "onboardingDescription2": "Connect with elite dentists and international experts, participate in workshops and scientific sessions to exchange knowledge and develop your professional skills in dentistry.",
   "@onboardingDescription2": {
     "description": "Second onboarding screen description"
   },
-  "onboardingTitle3": "Exhibition & Trade",
+  "onboardingTitle3": "Advanced Dental Exhibition",
   "@onboardingTitle3": {
     "description": "Third onboarding screen title"
   },
-  "onboardingDescription3": "Explore the latest technologies and products in dentistry through our trade exhibition and interactive demonstrations.",
+  "onboardingDescription3": "Discover cutting-edge innovations and medical equipment at the comprehensive IDEC exhibition, and explore the latest technologies and advanced dental tools.",
   "@onboardingDescription3": {
     "description": "Third onboarding screen description"
   },
@@ -1025,5 +1025,394 @@
   "savingSettings": "Saving settings...",
   "@savingSettings": {
     "description": "Saving settings loading message"
+  },
+  "from": "From",
+  "@from": {
+    "description": "From text for date ranges"
+  },
+  "to": "To",
+  "@to": {
+    "description": "To text for date ranges"
+  },
+  "daysRemaining": "days remaining",
+  "@daysRemaining": {
+    "description": "Days remaining text"
+  },
+  "hoursRemaining": "hours remaining",
+  "@hoursRemaining": {
+    "description": "Hours remaining text"
+  },
+  "minutesRemaining": "minutes remaining",
+  "@minutesRemaining": {
+    "description": "Minutes remaining text"
+  },
+  "underReview": "Under Review",
+  "@underReview": {
+    "description": "Under review status"
+  },
+  "paymentPending": "Payment Pending",
+  "@paymentPending": {
+    "description": "Payment pending status"
+  },
+  "activeParticipant": "Active Participant",
+  "@activeParticipant": {
+    "description": "Active participant status"
+  },
+  "onHold": "On Hold",
+  "@onHold": {
+    "description": "On hold status"
+  },
+  "rejected": "Rejected",
+  "@rejected": {
+    "description": "Rejected status"
+  },
+  "registrationStatus": "Registration Status",
+  "@registrationStatus": {
+    "description": "Registration status label"
+  },
+
+  "@@payment": {},
+  "selectPaymentGateway": "Select Payment Gateway",
+  "@selectPaymentGateway": {
+    "description": "Title for payment gateway selection"
+  },
+  "processingPayment": "Processing...",
+  "@processingPayment": {
+    "description": "Processing payment status"
+  },
+  "completePayment": "Complete Payment",
+  "@completePayment": {
+    "description": "Complete payment button"
+  },
+  "paymentSuccess": "Payment Successful",
+  "@paymentSuccess": {
+    "description": "Payment success message"
+  },
+  "paymentFailed": "Payment Failed",
+  "@paymentFailed": {
+    "description": "Payment failed message"
+  },
+  "youAreNowActiveParticipant": "You are now an active participant",
+  "@youAreNowActiveParticipant": {
+    "description": "Active participant message"
+  },
+  "noActiveGateways": "No active payment gateways available",
+  "@noActiveGateways": {
+    "description": "No active gateways message"
+  },
+  "invoiceReceipt": "Receipt",
+  "@invoiceReceipt": {
+    "description": "Invoice receipt title"
+  },
+  "receiptDetails": "Receipt Details",
+  "@receiptDetails": {
+    "description": "Receipt details title"
+  },
+  "invoiceNumber": "Invoice Number",
+  "@invoiceNumber": {
+    "description": "Invoice number label"
+  },
+  "conferenceOrCourse": "Conference/Course",
+  "@conferenceOrCourse": {
+    "description": "Conference or course label"
+  },
+  "amount": "Amount",
+  "@amount": {
+    "description": "Amount label"
+  },
+  "issueDate": "Issue Date",
+  "@issueDate": {
+    "description": "Issue date label"
+  },
+  "dueDate": "Due Date",
+  "@dueDate": {
+    "description": "Due date label"
+  },
+  "transactionDetails": "Transaction Details",
+  "@transactionDetails": {
+    "description": "Transaction details title"
+  },
+  "transactionNumber": "Transaction Number",
+  "@transactionNumber": {
+    "description": "Transaction number label"
+  },
+  "paymentGateway": "Payment Gateway",
+  "@paymentGateway": {
+    "description": "Payment gateway label"
+  },
+  "paymentMethod": "Payment Method",
+  "@paymentMethod": {
+    "description": "Payment method label"
+  },
+  "transactionDate": "Transaction Date",
+  "@transactionDate": {
+    "description": "Transaction date label"
+  },
+  "completionDate": "Completion Date",
+  "@completionDate": {
+    "description": "Completion date label"
+  },
+  "shareReceipt": "Share Receipt",
+  "@shareReceipt": {
+    "description": "Share receipt button"
+  },
+  "backToHome": "Back to Home",
+  "@backToHome": {
+    "description": "Back to home button"
+  },
+  "paymentInput": "Payment Input",
+  "@paymentInput": {
+    "description": "Payment input title"
+  },
+  "confirmPayment": "Confirm",
+  "@confirmPayment": {
+    "description": "Confirm payment button"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "enterPaymentCode": "Enter Payment Code",
+  "@enterPaymentCode": {
+    "description": "Enter payment code label"
+  },
+  "enterSecretCode": "Enter Secret Code",
+  "@enterSecretCode": {
+    "description": "Enter secret code label"
+  },
+  "featureComingSoon": "Feature coming soon",
+  "@featureComingSoon": {
+    "description": "Feature coming soon message"
+  },
+  "paymentProcessingError": "Payment Processing Error",
+  "@paymentProcessingError": {
+    "description": "Payment processing error message"
+  },
+  "gatewaySelectionTitle": "Select Payment Gateway",
+  "@gatewaySelectionTitle": {
+    "description": "Gateway selection title"
+  },
+  "testMode": "Test Mode",
+  "@testMode": {
+    "description": "Test mode label"
+  },
+  "productionMode": "Production Mode",
+  "@productionMode": {
+    "description": "Production mode label"
   }
+,
+  "myDocuments": "My Documents",
+  "noDocuments": "No documents uploaded yet",
+  "uploadDocument": "Upload Document",
+  "documentName": "Document Name",
+  "documentType": "Document Type",
+  "fileSize": "File Size",
+  "uploadedOn": "Uploaded On",
+  "viewDocument": "View Document",
+  "deleteDocument": "Delete Document",
+  "downloadDocument": "Download Document",
+  "shareDocument": "Share Document",
+  "myProfile": "My Profile",
+  "personalInfo": "Personal Information",
+  "fullNameAr": "Full Name (Arabic)",
+  "fullNameEn": "Full Name (English)",
+  "nationalId": "National ID",
+  "dateOfBirth": "Date of Birth",
+  "gender": "Gender",
+  "male": "Male",
+  "female": "Female",
+  "city": "City",
+  "address": "Address",
+  "workplace": "Workplace",
+  "jobTitle": "Job Title",
+  "graduationYear": "Graduation Year",
+  "specialization": "Specialization",
+  "profilePhoto": "Profile Photo",
+  "changePhoto": "Change Photo",
+  "removePhoto": "Remove Photo",
+  "courses": "Courses",
+  "allCourses": "All Courses",
+  "myCourses": "My Courses",
+  "availableCourses": "Available Courses",
+  "registeredCourses": "Registered Courses",
+  "completedCourses": "Completed Courses",
+  "upcomingCourses": "Upcoming Courses",
+  "courseDetails": "Course Details",
+  "courseName": "Course Name",
+  "courseDescription": "Course Description",
+  "courseInstructor": "Instructor",
+  "courseDuration": "Duration",
+  "courseLevel": "Level",
+  "coursePrice": "Price",
+  "courseCapacity": "Capacity",
+  "courseLocation": "Location",
+  "courseDate": "Date",
+  "courseTime": "Time",
+  "registerForCourse": "Register for Course",
+  "viewCourseDetails": "View Details",
+  "noCourses": "No courses available",
+  "searchCourses": "Search courses",
+  "filterCourses": "Filter",
+  "sortBy": "Sort By",
+  "newest": "Newest",
+  "oldest": "Oldest",
+  "priceHighToLow": "Price: High to Low",
+  "priceLowToHigh": "Price: Low to High",
+  "free": "Free",
+  "paid": "Paid",
+  "beginner": "Beginner",
+  "intermediate": "Intermediate",
+  "advanced": "Advanced",
+  "hours": "hours",
+  "seats": "seats",
+  "seatsAvailable": "seats available",
+  "fullyBooked": "Fully Booked",
+  "registrationOpen": "Registration Open",
+  "registrationClosed": "Registration Closed",
+  "speakers": "Speakers",
+  "allSpeakers": "All Speakers",
+  "featuredSpeakers": "Featured Speakers",
+  "speakerDetails": "Speaker Details",
+  "speakerName": "Name",
+  "speakerTitle": "Title",
+  "speakerBio": "Biography",
+  "speakerSessions": "Sessions",
+  "noSpeakers": "No speakers available",
+  "searchSpeakers": "Search speakers",
+  "viewProfile": "View Profile",
+  "sessions": "Sessions",
+  "allSessions": "All Sessions",
+  "mySessions": "My Sessions",
+  "upcomingSessions": "Upcoming Sessions",
+  "pastSessions": "Past Sessions",
+  "sessionDetails": "Session Details",
+  "sessionTitle": "Session Title",
+  "sessionDescription": "Description",
+  "sessionSpeaker": "Speaker",
+  "sessionDate": "Date",
+  "sessionTime": "Time",
+  "sessionLocation": "Location",
+  "sessionDuration": "Duration",
+  "joinSession": "Join Session",
+  "addToCalendar": "Add to Calendar",
+  "noSessions": "No sessions available",
+  "searchSessions": "Search sessions",
+  "live": "Live",
+  "upcoming": "Upcoming",
+  "ended": "Ended",
+  "myRegistrations": "My Registrations",
+  "activeRegistrations": "Active",
+  "pendingRegistrations": "Pending",
+  "completedRegistrations": "Completed",
+  "cancelledRegistrations": "Cancelled",
+  "registrationDetails": "Registration Details",
+  "registrationDate": "Registration Date",
+  "registrationStatus": "Status",
+  "paymentStatus": "Payment Status",
+  "paymentMethod": "Payment Method",
+  "paymentDate": "Payment Date",
+  "totalAmount": "Total Amount",
+  "paidAmount": "Paid Amount",
+  "remainingAmount": "Remaining Amount",
+  "viewReceipt": "View Receipt",
+  "downloadReceipt": "Download Receipt",
+  "cancelRegistration": "Cancel Registration",
+  "noRegistrations": "No registrations yet",
+  "pending": "Pending",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "cancelled": "Cancelled",
+  "completed": "Completed",
+  "paid": "Paid",
+  "unpaid": "Unpaid",
+  "partiallyPaid": "Partially Paid",
+  "news": "News",
+  "latestNews": "Latest News",
+  "newsDetails": "News Details",
+  "newsTitle": "Title",
+  "newsContent": "Content",
+  "publishedOn": "Published On",
+  "readMore": "Read More",
+  "noNews": "No news available",
+  "searchNews": "Search news",
+  "gallery": "Gallery",
+  "photoGallery": "Photo Gallery",
+  "videoGallery": "Video Gallery",
+  "albums": "Albums",
+  "allPhotos": "All Photos",
+  "allVideos": "All Videos",
+  "viewPhoto": "View Photo",
+  "viewVideo": "View Video",
+  "downloadPhoto": "Download",
+  "sharePhoto": "Share",
+  "noPhotos": "No photos available",
+  "noVideos": "No videos available",
+  "photos": "photos",
+  "videos": "videos",
+  "notifications": "Notifications",
+  "allNotifications": "All",
+  "unreadNotifications": "Unread",
+  "readNotifications": "Read",
+  "markAsRead": "Mark as Read",
+  "markAllAsRead": "Mark All as Read",
+  "deleteNotification": "Delete",
+  "deleteAllNotifications": "Delete All",
+  "noNotifications": "No notifications",
+  "notificationSettings": "Notification Settings",
+  "enableNotifications": "Enable Notifications",
+  "pushNotifications": "Push Notifications",
+  "emailNotifications": "Email Notifications",
+  "smsNotifications": "SMS Notifications",
+  "chat": "Chat",
+  "chats": "Chats",
+  "messages": "Messages",
+  "newMessage": "New Message",
+  "sendMessage": "Send",
+  "typeMessage": "Type a message...",
+  "noMessages": "No messages yet",
+  "online": "Online",
+  "offline": "Offline",
+  "typing": "typing...",
+  "lastSeen": "Last seen",
+  "attachFile": "Attach File",
+  "attachPhoto": "Attach Photo",
+  "attachVideo": "Attach Video",
+  "voiceMessage": "Voice Message",
+  "viewAll": "View All",
+  "seeMore": "See More",
+  "seeLess": "See Less",
+  "showMore": "Show More",
+  "showLess": "Show Less",
+  "noData": "No data available",
+  "noResults": "No results found",
+  "searchResults": "Search Results",
+  "search": "Search",
+  "filter": "Filter",
+  "sort": "Sort",
+  "apply": "Apply",
+  "reset": "Reset",
+  "clear": "Clear",
+  "done": "Done",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "edit": "Edit",
+  "update": "Update",
+  "add": "Add",
+  "remove": "Remove",
+  "upload": "Upload",
+  "download": "Download",
+  "share": "Share",
+  "copy": "Copy",
+  "requirements": "Requirements",
+  "certificate": "Certificate",
+  "certified": "Certified",
+  "instructor": "Instructor",
+  "duration": "Duration",
+  "level": "Level",
+  "capacity": "Capacity",
+  "available": "Available",
+  "notAvailable": "Not Available"
 }

@@ -52,7 +52,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   }
 
   Widget _buildDefaultErrorWidget(BuildContext context, AppError error) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     return Scaffold(
       body: Center(

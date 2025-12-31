@@ -491,6 +491,7 @@ mixin _$OtpChannelModel {
   bool get enabled => throw _privateConstructorUsedError;
   bool get isDefault => throw _privateConstructorUsedError;
   int get priority => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -510,7 +511,8 @@ abstract class $OtpChannelModelCopyWith<$Res> {
       String displayName,
       bool enabled,
       bool isDefault,
-      int priority});
+      int priority,
+      String? description});
 }
 
 /// @nodoc
@@ -532,6 +534,7 @@ class _$OtpChannelModelCopyWithImpl<$Res, $Val extends OtpChannelModel>
     Object? enabled = null,
     Object? isDefault = null,
     Object? priority = null,
+    Object? description = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -558,6 +561,10 @@ class _$OtpChannelModelCopyWithImpl<$Res, $Val extends OtpChannelModel>
           ? _value.priority
           : priority // ignore: cast_nullable_to_non_nullable
               as int,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -576,7 +583,8 @@ abstract class _$$OtpChannelModelImplCopyWith<$Res>
       String displayName,
       bool enabled,
       bool isDefault,
-      int priority});
+      int priority,
+      String? description});
 }
 
 /// @nodoc
@@ -596,6 +604,7 @@ class __$$OtpChannelModelImplCopyWithImpl<$Res>
     Object? enabled = null,
     Object? isDefault = null,
     Object? priority = null,
+    Object? description = freezed,
   }) {
     return _then(_$OtpChannelModelImpl(
       id: null == id
@@ -622,20 +631,26 @@ class __$$OtpChannelModelImplCopyWithImpl<$Res>
           ? _value.priority
           : priority // ignore: cast_nullable_to_non_nullable
               as int,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$OtpChannelModelImpl implements _OtpChannelModel {
+class _$OtpChannelModelImpl extends _OtpChannelModel {
   const _$OtpChannelModelImpl(
       {required this.id,
       required this.name,
       required this.displayName,
       required this.enabled,
       required this.isDefault,
-      required this.priority});
+      required this.priority,
+      this.description})
+      : super._();
 
   factory _$OtpChannelModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$OtpChannelModelImplFromJson(json);
@@ -652,10 +667,12 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
   final bool isDefault;
   @override
   final int priority;
+  @override
+  final String? description;
 
   @override
   String toString() {
-    return 'OtpChannelModel(id: $id, name: $name, displayName: $displayName, enabled: $enabled, isDefault: $isDefault, priority: $priority)';
+    return 'OtpChannelModel(id: $id, name: $name, displayName: $displayName, enabled: $enabled, isDefault: $isDefault, priority: $priority, description: $description)';
   }
 
   @override
@@ -671,13 +688,15 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
             (identical(other.isDefault, isDefault) ||
                 other.isDefault == isDefault) &&
             (identical(other.priority, priority) ||
-                other.priority == priority));
+                other.priority == priority) &&
+            (identical(other.description, description) ||
+                other.description == description));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, name, displayName, enabled, isDefault, priority);
+  int get hashCode => Object.hash(runtimeType, id, name, displayName, enabled,
+      isDefault, priority, description);
 
   @JsonKey(ignore: true)
   @override
@@ -694,14 +713,16 @@ class _$OtpChannelModelImpl implements _OtpChannelModel {
   }
 }
 
-abstract class _OtpChannelModel implements OtpChannelModel {
+abstract class _OtpChannelModel extends OtpChannelModel {
   const factory _OtpChannelModel(
       {required final String id,
       required final String name,
       required final String displayName,
       required final bool enabled,
       required final bool isDefault,
-      required final int priority}) = _$OtpChannelModelImpl;
+      required final int priority,
+      final String? description}) = _$OtpChannelModelImpl;
+  const _OtpChannelModel._() : super._();
 
   factory _OtpChannelModel.fromJson(Map<String, dynamic> json) =
       _$OtpChannelModelImpl.fromJson;
@@ -718,6 +739,8 @@ abstract class _OtpChannelModel implements OtpChannelModel {
   bool get isDefault;
   @override
   int get priority;
+  @override
+  String? get description;
   @override
   @JsonKey(ignore: true)
   _$$OtpChannelModelImplCopyWith<_$OtpChannelModelImpl> get copyWith =>

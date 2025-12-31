@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -8,9 +7,8 @@ import 'package:file_picker/file_picker.dart' show PlatformFile;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
-import '../../core/constants/app_constants.dart';
 import '../../core/constants/api_constants.dart';
-import '../../services/storage_service.dart';
+import '../../services/platform_storage_service.dart';
 
 /// Upload file types
 enum FileType {
@@ -142,7 +140,7 @@ class FileUploadService {
       debugPrint('📤 File type: $fileType');
 
       // Get authentication token
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         return FileUploadResult.error('Authentication token not found');
       }
@@ -202,7 +200,7 @@ class FileUploadService {
       final options = Options(
         headers: {
           'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
+          // لا نضع Content-Type هنا، دع Dio يتعامل معه تلقائياً
         },
       );
 
@@ -289,7 +287,7 @@ class FileUploadService {
     try {
       debugPrint('🗑️ FileUploadService: Deleting file: $fileUrl');
 
-      final token = await StorageService.instance.getToken();
+      final token = await PlatformStorageService.instance.getAccessToken();
       if (token == null) {
         debugPrint('❌ FileUploadService: Authentication token not found');
         return false;
@@ -364,3 +362,5 @@ class FileUploadService {
     }
   }
 }
+
+

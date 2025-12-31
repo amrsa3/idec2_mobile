@@ -61,7 +61,7 @@ async function runTests() {
   await testEndpoint(
     'Health Check (Fixed Path)',
     'GET',
-    '/api/v1/health'
+    '/health'
   );
   console.log('');
 

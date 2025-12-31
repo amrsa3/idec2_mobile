@@ -7,12 +7,12 @@ class SkeletonLoader extends StatefulWidget {
   final EdgeInsets? margin;
 
   const SkeletonLoader({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.borderRadius,
     this.margin,
-  }) : super(key: key);
+  });
 
   @override
   State<SkeletonLoader> createState() => _SkeletonLoaderState();
@@ -91,11 +91,11 @@ class SkeletonText extends StatelessWidget {
   final EdgeInsets? margin;
 
   const SkeletonText({
-    Key? key,
+    super.key,
     this.width,
     this.height = 16,
     this.margin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,10 +113,10 @@ class SkeletonAvatar extends StatelessWidget {
   final EdgeInsets? margin;
 
   const SkeletonAvatar({
-    Key? key,
+    super.key,
     this.size = 40,
     this.margin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -135,11 +135,11 @@ class SkeletonCard extends StatelessWidget {
   final EdgeInsets? margin;
 
   const SkeletonCard({
-    Key? key,
+    super.key,
     this.width,
     this.height = 120,
     this.margin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -66,6 +66,7 @@ _$OtpChannelModelImpl _$$OtpChannelModelImplFromJson(
       enabled: json['enabled'] as bool,
       isDefault: json['isDefault'] as bool,
       priority: (json['priority'] as num).toInt(),
+      description: json['description'] as String?,
     );
 
 Map<String, dynamic> _$$OtpChannelModelImplToJson(
@@ -77,6 +78,7 @@ Map<String, dynamic> _$$OtpChannelModelImplToJson(
       'enabled': instance.enabled,
       'isDefault': instance.isDefault,
       'priority': instance.priority,
+      'description': instance.description,
     };
 
 _$OtpChannelSelectionImpl _$$OtpChannelSelectionImplFromJson(

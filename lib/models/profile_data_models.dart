@@ -11,6 +11,7 @@ class QualificationModel with _$QualificationModel {
     required String id,
     required String nameAr,
     required String nameEn,
+    required String categoryId, // الفئة الرئيسية التي ينتمي إليها المؤهل
     @Default(false) bool? requiresDocument,
     @Default(true) bool? isActive,
     String? description,

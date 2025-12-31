@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -9,6 +10,7 @@ import '../../../providers/registration_provider.dart';
 import '../../../services/course_category_service.dart';
 import '../../../services/event_service.dart';
 import '../../../services/registration_service.dart';
+import '../../../services/platform_storage_service.dart';
 import '../../../shared/widgets/authenticated_image_widget.dart';
 import '../../registrations/presentation/my_registrations_screen.dart';
 import '../../schedule/presentation/event_details_screen.dart';
@@ -75,6 +77,31 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadViewMode();
+  }
+
+  Future<void> _loadViewMode() async {
+    try {
+      final savedMode = await PlatformStorageService.instance.read('courses_view_mode');
+      if (savedMode != null && mounted) {
+        setState(() {
+          _viewMode = ViewMode.values.firstWhere(
+            (e) => e.toString() == savedMode,
+            orElse: () => ViewMode.grid,
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading view mode: $e');
+    }
+  }
+
+  Future<void> _saveViewMode(ViewMode mode) async {
+    try {
+      await PlatformStorageService.instance.write('courses_view_mode', mode.toString());
+    } catch (e) {
+      debugPrint('Error saving view mode: $e');
+    }
   }
 
   void _onScroll() {
@@ -155,12 +182,13 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final providerKey = '1|100|${_searchQuery ?? ''}|';
     final coursesAsync = ref.watch(coursesProvider(providerKey));
     final categoriesAsync = ref.watch(courseCategoriesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: coursesAsync.when(
         data: (data) {
           final allEvents = (data['data'] as List<EventModel>);
@@ -184,7 +212,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                   _buildSliverTabs(availableTypes),
                   if (availableTypes.isNotEmpty &&
                       _currentTabIndex < availableTypes.length &&
-                      availableTypes[_currentTabIndex] == 'COURSE')
+                      availableTypes[_currentTabIndex] == 'COURSE' &&
+                      categoriesAsync.hasValue &&
+                      categoriesAsync.value!.isNotEmpty)
                     _buildSliverCategoryFilter(categoriesAsync),
                   _buildSliverViewModeSelector(),
                 ];
@@ -260,7 +290,10 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   _buildSliverAppBar(availableTypes),
-                  if (availableTypes.isNotEmpty && availableTypes.first == 'COURSE')
+                  if (availableTypes.isNotEmpty &&
+                      availableTypes.first == 'COURSE' &&
+                      categoriesAsync.hasValue &&
+                      categoriesAsync.value!.isNotEmpty)
                     _buildSliverCategoryFilter(categoriesAsync),
                   _buildSliverViewModeSelector(),
                   if (filteredEvents.isEmpty)
@@ -290,7 +323,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   PreferredSizeWidget _buildCompactAppBar() {
     return AppBar(
       elevation: 0,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       title: ShaderMask(
         shaderCallback: (bounds) => LinearGradient(
           colors: [AppColors.primary, AppColors.primaryLight],
@@ -316,23 +349,23 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
       toolbarHeight: kToolbarHeight,
       pinned: true,
       floating: false,
-        elevation: 0,
-      backgroundColor: AppColors.surface,
+      elevation: 0,
+      backgroundColor: context.colors.surface,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
         title: Container(
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
           ),
-            child: TextField(
-              controller: _searchController,
-            style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(fontSize: 14),
+            decoration: InputDecoration(
               hintText: 'ابحث في الفعاليات...',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: context.colors.textSecondary.withOpacity(0.6),
                 fontSize: 13,
               ),
               prefixIcon: Icon(
@@ -341,16 +374,17 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                 size: 18,
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               isDense: true,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.isEmpty ? null : value;
-                });
-              },
             ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.isEmpty ? null : value;
+              });
+            },
           ),
+        ),
         centerTitle: false,
       ),
     );
@@ -378,12 +412,12 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                   borderRadius: BorderRadius.circular(16),
                   border: isSelected
                       ? null
-                      : Border.all(color: AppColors.border, width: 1),
+                      : Border.all(color: context.colors.border, width: 1),
                 ),
                 child: Text(
                   _eventTypeLabels[type] ?? type,
                           style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    color: isSelected ? Colors.white : context.colors.textSecondary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 12,
                   ),
@@ -392,7 +426,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             );
           }).toList(),
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
+          unselectedLabelColor: context.colors.textSecondary,
           indicatorColor: Colors.transparent,
           indicatorSize: TabBarIndicatorSize.tab,
           isScrollable: availableTypes.length > 2,
@@ -426,6 +460,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           setState(() {
             _viewMode = mode;
           });
+          _saveViewMode(mode);
         },
       ),
     );
@@ -452,9 +487,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
       physics: const AlwaysScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.82,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        childAspectRatio: 0.70, // Taller cards
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: events.length,
                     itemBuilder: (context, index) {
@@ -502,9 +537,9 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.82,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              childAspectRatio: 0.70, // Taller cards
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildGridCard(context, events[index], index),
@@ -691,7 +726,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   }
 
   Widget _buildGridCard(BuildContext context, EventModel course, int index) {
-    final speakerName = _getSpeakerName(course);
+    final speakerNames = _getAllSpeakersNames(course);
     final description = course.description;
     final typeColor = _getTypeColor(course.type ?? '');
     final isFree = course.price == null || course.price! <= 0;
@@ -705,7 +740,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.scale(
-          scale: 0.8 + (0.2 * value),
+          scale: 0.9 + (0.1 * value),
           child: Opacity(opacity: value, child: child),
         );
       },
@@ -716,27 +751,27 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           borderRadius: BorderRadius.circular(16),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: typeColor.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: context.colors.shadow, // Softer shadow
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-                  child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Image section
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      child: Container(
-                        width: double.infinity,
-                        height: 82,
+                // Image section (Increased height)
+                SizedBox(
+                  height: 110, 
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         child: course.firstPromotionalImage != null
                             ? AuthenticatedImageWidget(
                                 imageUrl: course.firstPromotionalImage!,
@@ -744,294 +779,202 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                               )
                             : Container(
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      typeColor.withOpacity(0.3),
-                                      typeColor.withOpacity(0.1),
-                                    ],
-                                  ),
+                                  color: typeColor.withOpacity(0.1),
                                 ),
                                 child: Icon(
-                                  Icons.event,
-                                  size: 36,
-                                  color: typeColor.withOpacity(0.5),
+                                  Icons.image_not_supported_outlined,
+                                  color: typeColor.withOpacity(0.4),
+                                  size: 40,
                                 ),
                               ),
                       ),
-                    ),
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.3),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [typeColor, typeColor.withOpacity(0.8)],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                              _getTypeIcon(course.type ?? ''),
-                              color: Colors.white,
-                              size: 9,
-                            ),
-                            const SizedBox(width: 2),
-                      Text(
-                              course.typeLabel,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isFree
-                                ? [AppColors.success, AppColors.success.withOpacity(0.8)]
-                                : [AppColors.primary, AppColors.primaryLight],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_getCourseLevelLabel(course.courseLevel) != null)
+                      // Type Badge
                       Positioned(
-                        top: 6,
-                        left: 6,
+                        top: 8,
+                        right: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white.withOpacity(0.2), width: 0.5),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.trending_up,
-                                color: Colors.white,
-                                size: 8,
+                                _getTypeIcon(course.type ?? ''),
+                                color: typeColor,
+                                size: 10,
                               ),
-                              const SizedBox(width: 3),
-                      Text(
-                                _getCourseLevelLabel(course.courseLevel)!,
-                                style: const TextStyle(
+                              const SizedBox(width: 4),
+                              Text(
+                                course.typeLabel,
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                  ],
+                      // Price Badge
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isFree ? AppColors.success : AppColors.primary,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                
                 // Content section
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Title
                         Text(
                           course.title,
-                          style: const TextStyle(
-                          fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                            height: 1.2,
+                          style: TextStyle(
+                            fontSize: 13, // Slightly bigger
+                            fontWeight: FontWeight.w700,
+                            color: context.colors.textPrimary,
+                            height: 1.25,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (speakerName != null && speakerName.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+                        
+                        const SizedBox(height: 6),
+                        
+                        // Speakers
+                        if (speakerNames.isNotEmpty) ...[
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 10,
-                                color: AppColors.primary,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 12,
+                                  color: AppColors.primary,
+                                ),
                               ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  speakerName,
+                                  speakerNames,
                                   style: TextStyle(
-                                    fontSize: 9,
-                          color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10,
+                                    color: context.colors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 1, // Keep to 1 line to save space, or 2?
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                      ),
-                    ],
-                  ),
-                        ],
-                        if (description != null && description.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            description,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textSecondary.withOpacity(0.8),
-                              height: 1.3,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 6),
                         ],
+
                         const Spacer(),
+                        
+                        // Date
                         Row(
                           children: [
-                            Expanded(
-                              child: _buildInfoChip(
-                                icon: Icons.calendar_today_outlined,
-                                text: DateFormat('d MMM', 'ar').format(course.localStartTime),
-                                color: AppColors.primary,
-                                size: 'small',
+                             Icon(
+                                Icons.calendar_today_outlined,
+                                size: 10,
+                                color: context.colors.textSecondary,
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: _buildInfoChip(
-                                icon: Icons.access_time,
-                                text: DateFormat('HH:mm', 'ar').format(course.localStartTime),
-                                color: AppColors.warning,
-                                size: 'small',
+                              const SizedBox(width: 4),
+                              Text(
+                                DateFormat('d MMM yyyy', 'ar').format(course.localStartTime),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: context.colors.textSecondary,
+                                ),
                               ),
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        // Only show registration button if event status is REGISTRATION_OPEN or ONGOING
-                        if (_shouldShowRegistrationButton(course))
-                          registrationStatusAsync.when(
-                            data: (status) {
-                              final buttonInfo = _getRegistrationButtonInfo(status, course);
-                              if (buttonInfo['show'] == false) {
-                                return const SizedBox.shrink();
-                              }
-
-                              final isProcessing = _processingRegistrations[course.id] ?? false;
-                              return Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-      child: InkWell(
-                                    onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 6),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          if (isProcessing)
-                                            const SizedBox(
-                                              width: 12,
-                                              height: 12,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            )
-                                          else
-                                            Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 12),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            buttonInfo['text'] as String,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-            ),
-          );
-        },
-                            loading: () => Container(
+                        
+                        const SizedBox(height: 10),
+                        
+                        // Action Button
+                        registrationStatusAsync.when(
+                          data: (status) {
+                            final buttonInfo = _getRegistrationButtonInfo(status, course);
+                            if (buttonInfo['show'] == false) {
+                              return const SizedBox.shrink(); // Takes up space in Column if empty? No, height 0.
+                            }
+                            // Reserve space for button
+                            final isProcessing = _processingRegistrations[course.id] ?? false;
+                            
+                            return SizedBox(
                               width: double.infinity,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [AppColors.primary, AppColors.primaryLight],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
+                              height: 32,
+                              child: ElevatedButton(
+                                onPressed: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: buttonInfo['color'],
+                                  padding: EdgeInsets.zero,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
+                                child: isProcessing
+                                    ? const SizedBox(
+                                        width: 14, height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : Text(
+                                        buttonInfo['text'],
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                               ),
-                            ),
-                            error: (_, __) => const SizedBox.shrink(),
+                            );
+                          },
+                          loading: () => const SizedBox(
+                            height: 32, 
+                            child: Center(
+                               child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                            )
                           ),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
                       ],
                     ),
                   ),
@@ -1045,7 +988,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
   }
 
   Widget _buildListCard(BuildContext context, EventModel course, int index) {
-    final speakerName = _getSpeakerName(course);
+    final speakerNames = _getAllSpeakersNames(course);
     final description = course.description;
     final typeColor = _getTypeColor(course.type ?? '');
     final isFree = course.price == null || course.price! <= 0;
@@ -1070,11 +1013,11 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: context.colors.shadow,
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -1144,7 +1087,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                   const SizedBox(width: 3),
                                   Text(
                                     course.typeLabel,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -1166,7 +1109,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                               ),
                               child: Text(
                                 isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)} ${course.currency ?? 'ريال'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
@@ -1178,16 +1121,16 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                         const SizedBox(height: 8),
                     Text(
                       course.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                             fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                             height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                        if (speakerName != null && speakerName.isNotEmpty) ...[
+                        if (speakerNames.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Row(
                             children: [
@@ -1199,10 +1142,10 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  speakerName,
+                                  speakerNames,
                                   style: TextStyle(
                                     fontSize: 11,
-                          color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
@@ -1218,7 +1161,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                             description,
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.textSecondary.withOpacity(0.8),
+                              color: context.colors.textSecondary.withOpacity(0.8),
                               height: 1.4,
                         ),
                         maxLines: 2,
@@ -1291,7 +1234,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                                     : Icon(buttonInfo['icon'] as IconData, size: 14),
                                 label: Text(
                                   buttonInfo['text'] as String,
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: buttonInfo['color'] as Color,
@@ -1352,11 +1295,11 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
           borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: context.colors.shadow,
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -1430,7 +1373,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                         ),
                           child: Text(
                           isFree ? 'مجاناً' : '${course.price!.toStringAsFixed(0)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                             color: Colors.white,
                             fontSize: 7,
                             fontWeight: FontWeight.bold,
@@ -1441,122 +1384,126 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
                   ],
                 ),
                 // Content
-                Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                          Text(
-                        course.title,
-                            style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                          height: 1.2,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          course.title,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: context.colors.textPrimary,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 8,
-                              color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 2),
-                          Expanded(
-                            child: Text(
-                              DateFormat('d MMM', 'ar').format(course.localStartTime),
-                              style: TextStyle(
-                                fontSize: 7,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      registrationStatusAsync.when(
-                        data: (status) {
-                          final buttonInfo = _getRegistrationButtonInfo(status, course);
-                          if (buttonInfo['show'] == false) {
-                            return const SizedBox.shrink();
-                          }
+                        
+                        const Spacer(),
 
-                          final isProcessing = _processingRegistrations[course.id] ?? false;
-                          return Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 8,
+                              color: context.colors.textSecondary,
                             ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(
+                                DateFormat('d MMM', 'ar').format(course.localStartTime),
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: context.colors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        registrationStatusAsync.when(
+                          data: (status) {
+                            final buttonInfo = _getRegistrationButtonInfo(status, course);
+                            if (buttonInfo['show'] == false) {
+                              return const SizedBox.shrink();
+                            }
+
+                            final isProcessing = _processingRegistrations[course.id] ?? false;
+                            return Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [buttonInfo['color'] as Color, (buttonInfo['color'] as Color).withOpacity(0.8)],
+                                ),
                                 borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                                      if (isProcessing)
-                                        const SizedBox(
-                                          width: 8,
-                                          height: 8,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 1.5,
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: isProcessing ? null : () => _handleRegistrationButtonTap(context, course, buttonInfo),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (isProcessing)
+                                          const SizedBox(
+                                            width: 8,
+                                            height: 8,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.5,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        else
+                                          Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 8),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          buttonInfo['text'] as String,
+                                          style: TextStyle(
                                             color: Colors.white,
+                                            fontSize: 7,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        )
-                                      else
-                                        Icon(buttonInfo['icon'] as IconData, color: Colors.white, size: 8),
-                                      const SizedBox(width: 2),
-                          Text(
-                                        buttonInfo['text'] as String,
-                            style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 7,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
+                            );
+                          },
+                          loading: () => Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [AppColors.primary, AppColors.primaryLight],
+                              ),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          );
-                        },
-                        loading: () => Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.primary, AppColors.primaryLight],
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Center(
-                            child: SizedBox(
-                              width: 8,
-                              height: 8,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: Colors.white,
+                            child: const Center(
+                              child: SizedBox(
+                                width: 8,
+                                height: 8,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
+                          error: (_, __) => const SizedBox.shrink(),
                         ),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1567,36 +1514,42 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
     );
   }
 
-  String? _getSpeakerName(EventModel course) {
-    // Try to get from speakers list first
+  String _getAllSpeakersNames(EventModel course) {
+    Set<String> names = {};
+    
+    // 1. Try speakers list
     if (course.speakers != null && course.speakers!.isNotEmpty) {
-      final firstSpeaker = course.speakers!.first;
-      // Check different possible structures
-      if (firstSpeaker['speaker'] != null && firstSpeaker['speaker'] is Map) {
-        final speaker = firstSpeaker['speaker'] as Map<String, dynamic>;
-        final name = speaker['name'] as String?;
-        if (name != null && name.isNotEmpty) {
-          return name;
+      for (var speakerData in course.speakers!) {
+        String? name;
+        if (speakerData['speaker'] != null && speakerData['speaker'] is Map) {
+          name = speakerData['speaker']['name']?.toString();
+        } else if (speakerData['name'] != null) {
+          name = speakerData['name']?.toString();
         }
-      }
-      // Direct access to name field
-      if (firstSpeaker['name'] != null) {
-        final name = firstSpeaker['name'] as String?;
-        if (name != null && name.isNotEmpty) {
-          return name;
+        
+        if (name != null && name.trim().isNotEmpty) {
+          names.add(name.trim());
         }
       }
     }
-    // Try instructor if available
+    
+    // 2. Try instructor
     if (course.instructor != null) {
-      final instructor = course.instructor as Map<String, dynamic>;
-      final name = instructor['name'] as String?;
-      if (name != null && name.isNotEmpty) {
-        return name;
+      String? name;
+      if (course.instructor is Map) {
+        name = (course.instructor as Map)['name']?.toString();
+      } else if (course.instructor is String) { // Just in case
+         // ...
+      }
+      if (name != null && name.trim().isNotEmpty) {
+        names.add(name.trim());
       }
     }
-    return null;
+
+    if (names.isEmpty) return '';
+    return names.join(' | ');
   }
+
 
   String? _getCourseLevelLabel(String? courseLevel) {
     if (courseLevel == null || courseLevel.isEmpty) return null;
@@ -1721,7 +1674,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -1729,7 +1682,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             'تحقق مرة أخرى لاحقاً',
             style: TextStyle(
               fontSize: 14,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
@@ -1751,7 +1704,7 @@ class _CoursesScreenState extends ConsumerState<CoursesScreen> with SingleTicker
             'جاري التحميل...',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],
@@ -1825,7 +1778,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: tabBar,
     );
@@ -1857,7 +1810,7 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: categoriesAsync.when(
         data: (categories) {
@@ -1872,6 +1825,7 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: _buildCategoryChip(
+                    context,
                     label: 'الكل',
                     isSelected: isSelected,
                     onTap: () => onCategorySelected(null),
@@ -1883,6 +1837,7 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _buildCategoryChip(
+                  context,
                   label: category.nameAr,
                   isSelected: isSelected,
                   onTap: () => onCategorySelected(isSelected ? null : category.id),
@@ -1897,7 +1852,8 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Widget _buildCategoryChip({
+  Widget _buildCategoryChip(
+    BuildContext context, {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
@@ -1914,11 +1870,11 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
                   colors: [AppColors.primary, AppColors.primaryLight],
                 )
               : null,
-          color: isSelected ? null : AppColors.surfaceVariant,
+          color: isSelected ? null : context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(18),
           border: isSelected
               ? null
-              : Border.all(color: AppColors.border, width: 1),
+              : Border.all(color: context.colors.border, width: 1),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -1932,7 +1888,7 @@ class _SliverCategoryFilterDelegate extends SliverPersistentHeaderDelegate {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : context.colors.textPrimary,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 12,
           ),
@@ -1966,7 +1922,7 @@ class _SliverViewModeSelectorDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: [
@@ -1974,24 +1930,27 @@ class _SliverViewModeSelectorDelegate extends SliverPersistentHeaderDelegate {
             'طريقة العرض:',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
           const Spacer(),
           _buildModeButton(
+            context,
             icon: Icons.grid_view,
             mode: ViewMode.grid,
             label: 'شبكة',
           ),
           const SizedBox(width: 8),
           _buildModeButton(
+            context,
             icon: Icons.view_list,
             mode: ViewMode.list,
             label: 'قائمة',
           ),
           const SizedBox(width: 8),
           _buildModeButton(
+            context,
             icon: Icons.view_module,
             mode: ViewMode.compact,
             label: 'مدمج',
@@ -2001,7 +1960,8 @@ class _SliverViewModeSelectorDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Widget _buildModeButton({
+  Widget _buildModeButton(
+    BuildContext context, {
     required IconData icon,
     required ViewMode mode,
     required String label,
@@ -2018,11 +1978,11 @@ class _SliverViewModeSelectorDelegate extends SliverPersistentHeaderDelegate {
                   colors: [AppColors.primary, AppColors.primaryLight],
                 )
               : null,
-          color: isSelected ? null : AppColors.surfaceVariant,
+          color: isSelected ? null : context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(10),
           border: isSelected
               ? null
-              : Border.all(color: AppColors.border, width: 1),
+              : Border.all(color: context.colors.border, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2030,14 +1990,14 @@ class _SliverViewModeSelectorDelegate extends SliverPersistentHeaderDelegate {
             Icon(
               icon,
               size: 14,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
+              color: isSelected ? Colors.white : context.colors.textSecondary,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected ? Colors.white : context.colors.textSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

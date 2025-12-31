@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../providers/enhanced_auth_provider.dart';
+import '../../../core/auth/auth.dart';
 import '../../../providers/language_provider.dart';
 import '../../../services/language_service.dart';
 
@@ -133,7 +133,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       // Check authentication status with error handling
       String nextRoute;
       try {
-        final authState = ref.read(enhancedAuthProvider);
+        final authState = ref.read(authProvider);
 
         // Check first-time flags with timeout
         final isLanguageFirstTime = await LanguageService.isLanguageFirstTime()
@@ -143,9 +143,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 .timeout(const Duration(seconds: 5), onTimeout: () => false);
 
         // Determine next route based on app state
-        final authProvider = ref.read(enhancedAuthProvider.notifier);
+        final isAuthenticated = authState.isAuthenticated;
 
-        if (authProvider.isAuthenticated) {
+        if (isAuthenticated) {
           // User is logged in - go to main screen
           nextRoute = AppRoutes.main;
         } else {

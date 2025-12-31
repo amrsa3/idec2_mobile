@@ -52,6 +52,26 @@ class _ImageCarouselState extends State<ImageCarousel> {
   }
 
   @override
+  void didUpdateWidget(ImageCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_areListsEqual(oldWidget.images, widget.images)) {
+      _currentIndex = 0;
+      _timer?.cancel();
+      if (widget.autoPlay && widget.images.length > 1) {
+        _startAutoPlay();
+      }
+    }
+  }
+
+  bool _areListsEqual(List<String> list1, List<String> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i] != list2[i]) return false;
+    }
+    return true;
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
@@ -95,9 +115,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
             },
             itemCount: widget.images.length,
             itemBuilder: (context, index) {
-              return AuthenticatedImageWidget(
-                imageUrl: widget.images[index],
-                fit: widget.fit,
+              return _KeepAliveImage(
+                child: AuthenticatedImageWidget(
+                  imageUrl: widget.images[index],
+                  fit: widget.fit,
+                ),
               );
             },
           ),
@@ -130,3 +152,22 @@ class _ImageCarouselState extends State<ImageCarousel> {
   }
 }
 
+class _KeepAliveImage extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveImage({required this.child});
+
+  @override
+  State<_KeepAliveImage> createState() => _KeepAliveImageState();
+}
+
+class _KeepAliveImageState extends State<_KeepAliveImage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
+  }
+}

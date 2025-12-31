@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/api_constants.dart';
-import '../../services/compatible_auth_service.dart';
+import '../../core/auth/auth.dart';
 import '../../services/unified_token_manager.dart';
 import 'chat_page.dart';
 
@@ -52,7 +52,7 @@ class _ChatWrapperPageState extends ConsumerState<ChatWrapperPage> {
   
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     
     debugPrint('🔐 [ChatWrapperPage] Auth state: isAuthenticated=${authState.isAuthenticated}, user=${authState.user?.phone}');
     

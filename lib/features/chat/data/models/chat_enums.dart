@@ -8,6 +8,7 @@ enum ChatConversationType {
   event,
   group,
   broadcast,
+  direct,
 }
 
 extension ChatConversationTypeX on ChatConversationType {
@@ -23,6 +24,8 @@ extension ChatConversationTypeX on ChatConversationType {
         return 'GROUP';
       case ChatConversationType.broadcast:
         return 'BROADCAST';
+      case ChatConversationType.direct:
+        return 'DIRECT';
     }
   }
 
@@ -38,6 +41,8 @@ extension ChatConversationTypeX on ChatConversationType {
         return ChatConversationType.group;
       case 'BROADCAST':
         return ChatConversationType.broadcast;
+      case 'DIRECT':
+        return ChatConversationType.direct;
       default:
         return ChatConversationType.marketplace;
     }
@@ -55,6 +60,8 @@ extension ChatConversationTypeX on ChatConversationType {
         return 'مجموعة';
       case ChatConversationType.broadcast:
         return 'إعلانات';
+      case ChatConversationType.direct:
+        return 'محادثة شخصية';
     }
   }
 
@@ -70,6 +77,8 @@ extension ChatConversationTypeX on ChatConversationType {
         return 'Group';
       case ChatConversationType.broadcast:
         return 'Broadcast';
+      case ChatConversationType.direct:
+        return 'Direct';
     }
   }
 }

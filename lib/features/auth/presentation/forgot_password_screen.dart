@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
 
@@ -34,7 +34,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Clear any previous errors
-    ref.read(compatibleAuthProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearError();
 
     try {
       final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
@@ -42,41 +42,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       debugPrint(
           'ForgotPasswordScreen: Sending reset OTP for $fullPhoneNumber');
 
-      final success = await ref
-          .read(compatibleAuthProvider.notifier)
+      final result = await ref
+          .read(authProvider.notifier)
           .requestPasswordReset(fullPhoneNumber);
 
       if (mounted) {
-        if (success) {
+        if (result.isSuccess || result.type == AuthResultType.otpSent) {
           debugPrint('ForgotPasswordScreen: Reset OTP sent successfully');
 
           // استخدام الرسالة من الخادم إذا كانت متوفرة
-          final authState = ref.read(compatibleAuthProvider);
           String successTitle = 'إعادة تعيين كلمة المرور';
-          String successMessage =
+          final locale = Localizations.localeOf(context);
+          String successMessage = result.getLocalizedMessage(locale.languageCode) ??
               'تم إرسال رمز التحقق إلى رقم $fullPhoneNumber';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                successMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                successMessage = messageEn;
-              }
-            } else if (response.containsKey('message')) {
-              successMessage = response['message'] as String? ?? successMessage;
-            }
-          }
 
           await NotificationService.showSuccess(
             title: successTitle,
@@ -88,36 +66,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             '${AppRoutes.resetPasswordOtp}?phone=${Uri.encodeComponent(fullPhoneNumber)}',
           );
         } else {
-          final authState = ref.read(compatibleAuthProvider);
           String errorTitle = 'خطأ في إعادة تعيين كلمة المرور';
-          String errorMessage = 'فشل في إرسال رمز التحقق';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                errorMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                errorMessage = messageEn;
-              }
-            } else if (response.containsKey('message')) {
-              errorMessage = response['message'] as String? ?? errorMessage;
-            }
-          }
-
-          // استخدام رسالة الخطأ من authState إذا كانت متوفرة
-          if (authState.error != null && authState.error!.isNotEmpty) {
-            errorMessage = authState.error!;
-          }
+          final locale = Localizations.localeOf(context);
+          String errorMessage = result.getLocalizedMessage(locale.languageCode) ??
+              'فشل في إرسال رمز التحقق';
 
           await NotificationService.showError(
             title: errorTitle,
@@ -158,7 +110,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
     return ProfessionalLoadingOverlay(
@@ -168,14 +120,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildMainContent(dynamic authState, bool isLoading) {
+  Widget _buildMainContent(AuthState authState, bool isLoading) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.colors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -195,11 +147,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.card,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadow,
+                          color: context.colors.shadow,
                           blurRadius: 20,
                           offset: Offset(0, 8),
                         ),
@@ -219,7 +171,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 Text(
                   'نسيت كلمة المرور؟',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                   textAlign: TextAlign.center,
@@ -231,7 +183,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 Text(
                   'أدخل رقم هاتفك وسنرسل لك رمز التحقق لإعادة تعيين كلمة المرور',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -241,9 +193,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 // Phone number field with country code
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   child: Row(
                     children: [
@@ -255,19 +207,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           });
                         },
                         initialSelection: 'YE', // Yemen
-                        favorite: const ['+967', 'YE'],
+                        favorite: ['+967', 'YE'],
                         showCountryOnly: false,
                         showOnlyCountryWhenClosed: false,
                         alignLeft: false,
-                        textStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        textStyle: TextStyle(
+                          color: context.colors.textPrimary,
                           fontSize: 16,
                         ),
-                        dialogTextStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        dialogTextStyle: TextStyle(
+                          color: context.colors.textPrimary,
                         ),
-                        searchStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        searchStyle: TextStyle(
+                          color: context.colors.textPrimary,
                         ),
                         flagWidth: 25,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -277,7 +229,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       Container(
                         height: 30,
                         width: 1,
-                        color: AppColors.border,
+                        color: context.colors.border,
                       ),
 
                       // Phone number input
@@ -287,7 +239,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.done,
                           validator: _validatePhone,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'رقم الهاتف',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
@@ -295,11 +247,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                               vertical: 16,
                             ),
                             hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: context.colors.textPrimary,
                             fontSize: 16,
                           ),
                           onFieldSubmitted: (_) => _sendResetOtp(),

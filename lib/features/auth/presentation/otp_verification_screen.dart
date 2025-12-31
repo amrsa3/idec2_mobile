@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
 
@@ -82,45 +82,25 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
 
     // Clear any previous errors
-    ref.read(compatibleAuthProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearError();
 
     try {
       debugPrint('OtpVerificationScreen: Verifying OTP for ${widget.phone}');
 
-      final success = await ref.read(compatibleAuthProvider.notifier).verifyOtp(
+      final result = await ref.read(authProvider.notifier).verifyOtp(
             widget.phone,
             otp,
             isLogin: widget.isLogin,
           );
 
       if (mounted) {
-        if (success) {
+        if (result.isSuccess) {
           debugPrint('OtpVerificationScreen: OTP verification successful');
 
           // استخدام الرسالة من الخادم إذا كانت متوفرة
-          final authState = ref.read(compatibleAuthProvider);
           String successTitle = 'التحقق';
-          String successMessage = 'تم التحقق بنجاح';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                successMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                successMessage = messageEn;
-              }
-            }
-          }
+          final locale = Localizations.localeOf(context);
+          String successMessage = result.getLocalizedMessage(locale.languageCode) ?? 'تم التحقق بنجاح';
 
           await NotificationService.showSuccess(
             title: successTitle,
@@ -133,31 +113,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             context.go(AppRoutes.main);
           }
         } else {
-          final authState = ref.read(compatibleAuthProvider);
           String errorTitle = 'خطأ في التحقق';
-          String errorMessage = 'رمز التحقق غير صحيح';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                errorMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                errorMessage = messageEn;
-              }
-            }
-          } else if (authState.error != null && authState.error!.isNotEmpty) {
-            errorMessage = authState.error!;
-          }
+          final locale = Localizations.localeOf(context);
+          String errorMessage = result.getLocalizedMessage(locale.languageCode) ?? 'رمز التحقق غير صحيح';
 
           await NotificationService.showError(
             title: errorTitle,
@@ -191,33 +149,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     });
 
     try {
-      await ref.read(compatibleAuthProvider.notifier).resendOtp(widget.phone);
+      final result = await ref.read(authProvider.notifier).resendOtp(widget.phone);
 
       if (mounted) {
         // استخدام الرسالة من الخادم إذا كانت متوفرة
-        final authState = ref.read(compatibleAuthProvider);
         String successTitle = 'إعادة الإرسال';
-        String successMessage = 'تم إرسال رمز التحقق مرة أخرى';
-
-        // محاولة استخراج الرسالة من استجابة الخادم
-        if (authState.lastResponse != null) {
-          final response = authState.lastResponse!;
-          if (response.containsKey('messageAr') &&
-              response.containsKey('messageEn')) {
-            final messageAr = response['messageAr'] as String?;
-            final messageEn = response['messageEn'] as String?;
-
-            // اختيار الرسالة حسب لغة التطبيق
-            final locale = Localizations.localeOf(context);
-            if (locale.languageCode == 'ar' &&
-                messageAr != null &&
-                messageAr.isNotEmpty) {
-              successMessage = messageAr;
-            } else if (messageEn != null && messageEn.isNotEmpty) {
-              successMessage = messageEn;
-            }
-          }
-        }
+        final locale = Localizations.localeOf(context);
+        String successMessage = result.getLocalizedMessage(locale.languageCode) ?? 'تم إرسال رمز التحقق مرة أخرى';
 
         await NotificationService.showSuccess(
           title: successTitle,
@@ -328,7 +266,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
 
     return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading || _isResendingOtp,

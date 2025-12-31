@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
@@ -7,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../models/file_model.dart';
-import '../../../../services/compatible_auth_service.dart';
+import '../../../../core/auth/auth.dart';
 import '../../../../services/enhanced_dio_service_v2.dart';
 import '../../../../services/image_cache_service.dart';
 import '../../../../services/authenticated_image_service.dart';
@@ -44,7 +45,7 @@ class _UserDocumentsViewerScreenState
   /// إجبار إعادة تحميل المستندات
   Future<void> _forceRefreshDocuments() async {
     try {
-      final authState = ref.read(compatibleAuthProvider);
+      final authState = ref.read(authProvider);
       if (authState.isAuthenticated) {
         debugPrint('🔄 UserDocumentsViewerScreen: Force refreshing documents on init...');
         // إلغاء provider لإجبار إعادة التحميل
@@ -64,8 +65,8 @@ class _UserDocumentsViewerScreenState
 
   /// الاستماع لتغييرات المصادقة لإعادة تحميل المستندات
   void _listenToAuthChanges() {
-    ref.listen<CompatibleAuthState>(
-      compatibleAuthProvider,
+    ref.listen<AuthState>(
+      authProvider,
       (previous, next) {
         // إذا تم تسجيل الدخول (من غير مصادق إلى مصادق)، أعد تحميل المستندات
         if ((previous == null || !previous.isAuthenticated) && next.isAuthenticated) {
@@ -106,30 +107,31 @@ class _UserDocumentsViewerScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final documentsAsync = ref.watch(userDocumentsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        title: const Text(
-          'مستنداتي',
+        title: Text(
+          l10n.myDocuments,
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+            icon: Icon(Icons.menu, color: context.colors.textPrimary),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            icon: Icon(Icons.arrow_back, color: context.colors.textPrimary),
             onPressed: () => Navigator.pop(context),
           ),
           IconButton(
@@ -185,11 +187,11 @@ class _UserDocumentsViewerScreenState
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -213,10 +215,10 @@ class _UserDocumentsViewerScreenState
                   children: [
                     Text(
                       document.displayName ?? document.originalName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: context.colors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -226,7 +228,7 @@ class _UserDocumentsViewerScreenState
                       _getFileTypeLabel(document.mimeType),
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -234,7 +236,7 @@ class _UserDocumentsViewerScreenState
                       _formatFileSize(document.fileSize),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: context.colors.textTertiary,
                       ),
                     ),
                   ],
@@ -255,6 +257,7 @@ class _UserDocumentsViewerScreenState
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -262,15 +265,15 @@ class _UserDocumentsViewerScreenState
           Icon(
             Icons.folder_outlined,
             size: 80,
-            color: Colors.grey.shade300,
+            color: context.colors.surfaceVariant,
           ),
           const SizedBox(height: 20),
           Text(
-            'لا توجد مستندات',
+            l10n.noDocuments,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -278,7 +281,7 @@ class _UserDocumentsViewerScreenState
             'قم برفع المستندات أولاً',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: context.colors.textTertiary,
             ),
           ),
         ],
@@ -312,7 +315,7 @@ class _UserDocumentsViewerScreenState
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -320,7 +323,7 @@ class _UserDocumentsViewerScreenState
               error.toString(),
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey.shade600,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -330,7 +333,7 @@ class _UserDocumentsViewerScreenState
                 ref.invalidate(userDocumentsProvider);
               },
               icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              label: Text('إعادة المحاولة'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -432,7 +435,7 @@ class _UserDocumentsViewerScreenState
     if (isImage) {
       // للصور: عرض الصورة المصغرة باستخدام Dio مع authentication
       // استخدام key فريد لإجبار إعادة البناء عند تغيير المستخدم
-      final authState = ref.read(compatibleAuthProvider);
+      final authState = ref.read(authProvider);
       final userKey = authState.user?.id ?? 'unknown';
       return _ThumbnailImage(
         key: ValueKey('${document.id}_$userKey'),
@@ -508,7 +511,7 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
 
       // 🔥 IMPORTANT: التحقق من أن fileId يعود للمستخدم الحالي
       // الحصول على userId الحالي
-      final authService = CompatibleAuthService.instance;
+      final authService = AuthService.instance;
       final currentUser = authService.user;
       
       if (currentUser == null || currentUser.id.isEmpty) {
@@ -565,12 +568,13 @@ class _ThumbnailImageState extends State<_ThumbnailImage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return Container(
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: context.colors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
@@ -687,6 +691,7 @@ class _ImageFullScreenViewerState extends State<_ImageFullScreenViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -698,7 +703,7 @@ class _ImageFullScreenViewerState extends State<_ImageFullScreenViewer> {
         ),
         title: Text(
           widget.document.displayName ?? widget.document.originalName,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -729,13 +734,13 @@ class _ImageFullScreenViewerState extends State<_ImageFullScreenViewer> {
             const SizedBox(height: 16),
             Text(
               _error!,
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _loadImage,
-              child: const Text('إعادة المحاولة'),
+              child: Text('إعادة المحاولة'),
             ),
           ],
         ),

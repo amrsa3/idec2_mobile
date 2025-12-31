@@ -55,6 +55,7 @@ dependencies:
   image_picker: ^1.0.4
   permission_handler: ^11.0.1
   file_picker: ^8.1.6
+  local_auth: ^2.1.8
 
   # UI Components
   cached_network_image: ^3.3.0
@@ -106,6 +107,9 @@ dependencies:
   image: ^4.3.0
 
   cupertino_icons: ^1.0.8
+
+  # Date Formatting
+  timeago: ^3.6.1
 
 dev_dependencies:
   flutter_test:

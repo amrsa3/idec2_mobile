@@ -8,7 +8,7 @@ import '../../../features/profile/presentation/screens/profile_main_screen.dart'
 import '../../../features/sessions/presentation/sessions_screen.dart';
 import '../../../features/speakers/presentation/speakers_screen.dart';
 import '../../../services/back_button_service.dart';
-import '../../home/presentation/home_screen_old.dart';
+import '../../home/presentation/home_screen.dart';
 import '../providers/bottom_navigation_provider.dart';
 
 class MainScreen extends ConsumerWidget {

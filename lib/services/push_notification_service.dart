@@ -16,9 +16,9 @@ import '../core/constants/firebase_constants.dart';
 import '../core/utils/storage_helper.dart';
 import '../features/notifications/providers/push_topics_provider.dart';
 import '../firebase_options.dart';
-import '../models/auth_models.dart';
+import '../models/auth_models.dart' hide AuthState;
 import '../core/router/deep_link_handler.dart';
-import '../providers/enhanced_auth_provider_v2.dart';
+import '../core/auth/auth.dart';
 import '../providers/registration_provider.dart';
 import '../providers/conference_provider.dart';
 import '../providers/notification_provider.dart';
@@ -26,7 +26,7 @@ import '../features/profile/providers/profile_provider.dart';
 import '../features/registrations/presentation/my_registrations_screen.dart';
 import '../features/registrations/presentation/registration_detail_screen.dart';
 import '../models/profile_model.dart';
-import '../services/compatible_auth_service.dart';
+
 import '../services/navigation_service.dart';
 import 'notification_service.dart';
 import 'push_api_service.dart';
@@ -102,7 +102,6 @@ class PushNotificationService {
   bool _initialized = false;
   String? _currentToken;
   ProviderSubscription<AuthState>? _authSubscription;
-  ProviderSubscription<CompatibleAuthState>? _compatAuthSubscription;
   WidgetRef? _ref;
   bool _isSyncingToken = false; // ✅ Guard لمنع الاستدعاءات المكررة
   
@@ -343,59 +342,26 @@ class PushNotificationService {
     
     // ✅ إصلاح: تسجيل listeners أولاً، ثم sync مرة واحدة فقط
     _authSubscription = ref.listenManual<AuthState>(
-      enhancedAuthProvider,
+      authProvider,
       (previous, next) async {
         // Only sync token when user becomes authenticated
-        if (next.maybeWhen(authenticated: (_) => true, orElse: () => false)) {
+        if (next.isAuthenticated) {
           await _syncTokenWithServer();
         } 
         // Only unregister token when user explicitly logs out (transition from authenticated to unauthenticated)
-        // Don't unregister if previous state was also unauthenticated (e.g., app restart before auth is restored)
-        else if (next.maybeWhen(
-            unauthenticated: () => true, orElse: () => false)) {
-          // Check if previous state was authenticated - only then should we unregister
-          final wasAuthenticated = previous?.maybeWhen(
-            authenticated: (_) => true,
-            orElse: () => false,
-          ) ?? false;
-          
-          if (wasAuthenticated) {
-            // User explicitly logged out - unregister token
-            await _unregisterCurrentToken();
-          }
-          // If previous state was not authenticated, this is likely app initialization
-          // Don't unregister token in this case
-        }
-      },
-    );
-
-    _compatAuthSubscription = ref.listenManual<CompatibleAuthState>(
-      compatibleAuthProvider,
-      (previous, next) async {
-        // Only sync token when user becomes authenticated
-        if (next.isAuthenticated == true) {
-          await _syncTokenWithServer();
-        } 
-        // Only unregister token when user explicitly logs out (transition from authenticated to unauthenticated)
-        // Don't unregister if previous state was also unauthenticated (e.g., app restart before auth is restored)
-        else if (next.isAuthenticated == false) {
-          // Check if previous state was authenticated - only then should we unregister
+        else {
           final wasAuthenticated = previous?.isAuthenticated ?? false;
           
           if (wasAuthenticated) {
-            // User explicitly logged out - unregister token
             await _unregisterCurrentToken();
           }
-          // If previous state was not authenticated, this is likely app initialization
-          // Don't unregister token in this case
         }
       },
     );
 
-    // ✅ إصلاح: sync مرة واحدة فقط بعد تسجيل جميع listeners
-    final currentState = ref.read(enhancedAuthProvider);
-    if (currentState.maybeWhen(
-        authenticated: (_) => true, orElse: () => false)) {
+
+    final currentState = ref.read(authProvider);
+    if (currentState.isAuthenticated) {
       await _syncTokenWithServer();
     }
 
@@ -407,14 +373,7 @@ class PushNotificationService {
     if (subscription != null) {
       await Future.sync(() => subscription.close());
     }
-    final compatSubscription = _compatAuthSubscription;
-    if (compatSubscription != null) {
-      await Future.sync(() => compatSubscription.close());
-    }
     _authSubscription = null;
-    // إغلاق Stream Controller
-    await _notificationReceivedController.close();
-    _compatAuthSubscription = null;
     _ref = null;
     _initialized = false;
   }
@@ -1001,13 +960,8 @@ class PushNotificationService {
         return;
       }
 
-      final enhancedState = container.read(enhancedAuthProvider);
-      final compatibleState = container.read(compatibleAuthProvider);
-      final isAuthenticated = enhancedState.maybeWhen(
-            authenticated: (_) => true,
-            orElse: () => false,
-          ) ||
-          compatibleState.isAuthenticated;
+      final authState = container.read(authProvider);
+      final isAuthenticated = authState.isAuthenticated;
       
       if (!isAuthenticated) {
         return;
@@ -1037,13 +991,8 @@ class PushNotificationService {
         return;
       }
 
-      final enhancedState = container.read(enhancedAuthProvider);
-      final compatibleState = container.read(compatibleAuthProvider);
-      final isAuthenticated = enhancedState.maybeWhen(
-            authenticated: (_) => true,
-            orElse: () => false,
-          ) ||
-          compatibleState.isAuthenticated;
+      final authState = container.read(authProvider);
+      final isAuthenticated = authState.isAuthenticated;
       
       if (!isAuthenticated) {
         return;
@@ -1135,13 +1084,8 @@ class PushNotificationService {
       return;
     }
 
-    final enhancedState = container.read(enhancedAuthProvider);
-    final compatibleState = container.read(compatibleAuthProvider);
-    final isAuthenticated = enhancedState.maybeWhen(
-          authenticated: (_) => true,
-          orElse: () => false,
-        ) ||
-        compatibleState.isAuthenticated;
+    final authState = container.read(authProvider);
+    final isAuthenticated = authState.isAuthenticated;
     
     if (!isAuthenticated) {
       return;

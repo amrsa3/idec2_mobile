@@ -16,9 +16,10 @@ import 'core/theme/app_theme.dart';
 import 'features/profile/presentation/widgets/verification_notification_banner.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
-import 'models/auth_models.dart';
-import 'providers/enhanced_auth_provider_v2.dart';
+import 'models/auth_models.dart' hide AuthState;
+import 'core/auth/auth.dart';
 import 'providers/language_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/analytics_service.dart';
 import 'services/enhanced_dio_service_v2.dart';
 import 'services/enhanced_session_manager.dart';
@@ -343,7 +344,7 @@ class _IDECAppState extends ConsumerState<IDECApp> {
 
     // Sync analytics identity with authentication state
     _authSubscription = ref.listenManual<AuthState>(
-      enhancedAuthProvider,
+      authProvider,
       (previous, next) {
         AnalyticsService.instance.handleAuthStateChange(previous, next);
       },
@@ -356,7 +357,7 @@ class _IDECAppState extends ConsumerState<IDECApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AnalyticsService.instance.handleAuthStateChange(
         null,
-        ref.read(enhancedAuthProvider),
+        ref.read(authProvider),
       );
       _initializeServices();
     });
@@ -414,11 +415,8 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       if (kIsWeb) {
         Future.delayed(const Duration(seconds: 2), () async {
           try {
-            final authState = ref.read(enhancedAuthProvider);
-            final isAuthenticated = authState.maybeWhen(
-              authenticated: (_) => true,
-              orElse: () => false,
-            );
+            final authState = ref.read(authProvider);
+            final isAuthenticated = authState.isAuthenticated;
             
             if (isAuthenticated) {
               debugPrint('🔄 [MAIN] Checking web notification status...');
@@ -478,7 +476,8 @@ class _IDECAppState extends ConsumerState<IDECApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(currentLocaleProvider);
-    final authProvider = ref.watch(enhancedAuthProvider.notifier);
+    final authState = ref.watch(authProvider);
+    final themeMode = ref.watch(currentThemeModeProvider);
 
     return MaterialApp.router(
       title: 'IDEC',
@@ -487,10 +486,10 @@ class _IDECAppState extends ConsumerState<IDECApp> {
       // ScaffoldMessenger configuration
       scaffoldMessengerKey: NotificationService.scaffoldMessengerKey,
 
-      // Theme configuration - Using system fonts for web compatibility
+      // Theme configuration - Dynamic dark mode support
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
 
       // Localization configuration
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -512,8 +511,8 @@ class _IDECAppState extends ConsumerState<IDECApp> {
               children: [
                 child ?? const SizedBox.shrink(),
                 // Show verification notification banner for unverified users
-                if (authProvider.user != null &&
-                    !authProvider.user!
+                if (authState.user != null &&
+                    !authState.user!
                         .phoneVerified) // Use phoneVerified instead of isVerified
                   const Positioned(
                     top: 0,

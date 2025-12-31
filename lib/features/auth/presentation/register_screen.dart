@@ -9,7 +9,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/language_provider.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
@@ -172,10 +172,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final fullPhoneNumber = '$_countryCode$normalizedDigits';
 
     // Clear any previous errors
-    ref.read(compatibleAuthProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearError();
 
-    final success =
-        await ref.read(compatibleAuthProvider.notifier).registerWithPhone(
+    final result =
+        await ref.read(authProvider.notifier).registerWithPhone(
               fullPhoneNumber,
               _passwordController.text,
               _fullNameController.text.trim(),
@@ -187,33 +187,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (!mounted) return;
 
-    if (success) {
+    if (result.isSuccess || result.type == AuthResultType.otpSent) {
       // Registration successful - show success message and navigate to OTP verification
       // استخدام الرسالة من الخادم إذا كانت متوفرة
-      final authState = ref.read(compatibleAuthProvider);
       String successTitle = 'تم التسجيل بنجاح';
-      String successMessage =
+      final locale = Localizations.localeOf(context);
+      String successMessage = result.getLocalizedMessage(locale.languageCode) ??
           'تم إنشاء الحساب بنجاح، يرجى التحقق من رمز التأكيد';
-
-      // محاولة استخراج الرسالة من استجابة الخادم
-      if (authState.lastResponse != null) {
-        final response = authState.lastResponse!;
-        if (response.containsKey('messageAr') &&
-            response.containsKey('messageEn')) {
-          final messageAr = response['messageAr'] as String?;
-          final messageEn = response['messageEn'] as String?;
-
-          // اختيار الرسالة حسب لغة التطبيق
-          final locale = Localizations.localeOf(context);
-          if (locale.languageCode == 'ar' &&
-              messageAr != null &&
-              messageAr.isNotEmpty) {
-            successMessage = messageAr;
-          } else if (messageEn != null && messageEn.isNotEmpty) {
-            successMessage = messageEn;
-          }
-        }
-      }
 
       await NotificationService.showSuccess(
         title: successTitle,
@@ -229,53 +209,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } else {
       // Registration failed - show enhanced error message
-      final authState = ref.read(compatibleAuthProvider);
       String errorTitle = 'خطأ في التسجيل';
-      String errorMessage = 'فشل في التسجيل. يرجى المحاولة مرة أخرى.';
+      final locale = Localizations.localeOf(context);
+      String errorMessage = result.getLocalizedMessage(locale.languageCode) ??
+          'فشل في التسجيل. يرجى المحاولة مرة أخرى.';
 
-      // محاولة استخراج الرسالة من استجابة الخادم
-      if (authState.lastResponse != null) {
-        final response = authState.lastResponse!;
-        if (response.containsKey('messageAr') &&
-            response.containsKey('messageEn')) {
-          final messageAr = response['messageAr'] as String?;
-          final messageEn = response['messageEn'] as String?;
-
-          // اختيار الرسالة حسب لغة التطبيق
-          final locale = Localizations.localeOf(context);
-          if (locale.languageCode == 'ar' &&
-              messageAr != null &&
-              messageAr.isNotEmpty) {
-            errorMessage = messageAr;
-          } else if (messageEn != null && messageEn.isNotEmpty) {
-            errorMessage = messageEn;
-          }
-        }
-      } else if (authState.error != null) {
-        // استخدام رسالة الخطأ من الحالة إذا لم تكن هناك استجابة من الخادم
-        errorMessage = authState.error!;
-
-        // تطبيق رسائل احتياطية لأخطاء محددة
-        if (authState.error!.contains('already exists') ||
-            authState.error!.contains('duplicate') ||
-            authState.error!.contains('phone already registered')) {
-          errorMessage =
-              'رقم الهاتف مسجل مسبقاً، يرجى استخدام رقم آخر أو تسجيل الدخول';
-        } else if (authState.error!.contains('invalid phone') ||
-            authState.error!.contains('phone format')) {
-          errorMessage = 'رقم الهاتف غير صحيح، يرجى التحقق من الرقم';
-        } else if (authState.error!.contains('weak password') ||
-            authState.error!.contains('password too short')) {
-          errorMessage = 'كلمة المرور ضعيفة، يرجى استخدام كلمة مرور أقوى';
-        } else if (authState.error!.contains('Network error') ||
-            authState.error!.contains('connection')) {
-          errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
-        } else if (authState.error!.contains('timeout')) {
-          errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
-        } else if (authState.error!.contains('server error') ||
-            authState.error!.contains('500')) {
-          errorMessage = 'خطأ في الخادم، يرجى المحاولة لاحقاً';
-        }
+      // تطبيق رسائل احتياطية لأخطاء محددة
+      if (errorMessage.contains('already exists') ||
+          errorMessage.contains('duplicate') ||
+          errorMessage.contains('phone already registered')) {
+        errorMessage =
+            'رقم الهاتف مسجل مسبقاً، يرجى استخدام رقم آخر أو تسجيل الدخول';
+      } else if (errorMessage.contains('invalid phone') ||
+          errorMessage.contains('phone format')) {
+        errorMessage = 'رقم الهاتف غير صحيح، يرجى التحقق من الرقم';
+      } else if (errorMessage.contains('weak password') ||
+          errorMessage.contains('password too short')) {
+        errorMessage = 'كلمة المرور ضعيفة، يرجى استخدام كلمة مرور أقوى';
+      } else if (errorMessage.contains('Network error') ||
+          errorMessage.contains('connection')) {
+        errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
+      } else if (errorMessage.contains('timeout')) {
+        errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
+      } else if (errorMessage.contains('server error') ||
+          errorMessage.contains('500')) {
+        errorMessage = 'خطأ في الخادم، يرجى المحاولة لاحقاً';
       }
 
       await NotificationService.showError(
@@ -372,21 +330,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     final isRTL = ref.watch(isRTLProvider);
 
     return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading,
       message: 'جاري إنشاء الحساب...',
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             isRTL ? Icons.arrow_forward : Icons.arrow_back,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
           onPressed: () {
             if (context.canPop()) {
@@ -413,11 +371,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.card,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadow,
+                          color: context.colors.shadow,
                           blurRadius: 20,
                           offset: Offset(0, 8),
                         ),
@@ -437,7 +395,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(
                   l10n.register,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                   textAlign: TextAlign.center,
@@ -449,7 +407,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(
                   l10n.createAccount,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -545,14 +503,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Gender selection field
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedGender,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'الجنس',
                       hintText: 'اختر الجنس',
                       border: InputBorder.none,
@@ -567,7 +525,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
                       ),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'MALE',
                         child: Text(
@@ -575,6 +533,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ),
@@ -585,6 +544,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ),
@@ -602,16 +562,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       }
                       return null;
                     },
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.colors.textPrimary,
                       fontSize: 16,
                       fontFamily: 'Cairo',
                       fontFamilyFallback: ['Cairo', 'NotoSansArabic', 'Tahoma'],
                     ),
-                    dropdownColor: Colors.white,
-                    icon: const Icon(
+                    dropdownColor: context.colors.card,
+                    icon: Icon(
                       Icons.arrow_drop_down,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -621,9 +581,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Phone number field with country code
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   child: Row(
                     children: [
@@ -635,21 +595,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           });
                         },
                         initialSelection: 'YE', // Yemen
-                        favorite: const ['+967', 'YE'],
+                        favorite: ['+967', 'YE'],
                         showCountryOnly: false,
                         showOnlyCountryWhenClosed: false,
                         alignLeft: false,
-                        textStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        textStyle: TextStyle(
+                          color: context.colors.textPrimary,
                           fontSize: 16,
                         ),
-                        dialogTextStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        dialogTextStyle: TextStyle(
+                          color: context.colors.textPrimary,
                         ),
-                        searchStyle: const TextStyle(
-                          color: AppColors.textPrimary,
+                        searchStyle: TextStyle(
+                          color: context.colors.textPrimary,
                         ),
                         flagWidth: 25,
+                        dialogBackgroundColor: context.colors.surface,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         enabled: _registrationEnabled &&
                             !_isCheckingRegistrationSettings,
@@ -659,7 +620,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Container(
                         height: 30,
                         width: 1,
-                        color: AppColors.border,
+                        color: context.colors.border,
                       ),
 
                       // Phone number input
@@ -671,7 +632,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: _validatePhone,
                           enabled: _registrationEnabled &&
                               !_isCheckingRegistrationSettings,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'رقم الهاتف',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(
@@ -679,11 +640,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               vertical: 16,
                             ),
                             hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
+                          style: TextStyle(
+                            color: context.colors.textPrimary,
                             fontSize: 16,
                           ),
                         ),
@@ -710,7 +671,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       _obscurePassword
                           ? Icons.visibility
                           : Icons.visibility_off,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -738,7 +699,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       _obscureConfirmPassword
                           ? Icons.visibility
                           : Icons.visibility_off,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                     onPressed: () {
                       setState(() {
@@ -781,8 +742,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           padding: const EdgeInsets.only(top: 12),
                           child: RichText(
                             text: TextSpan(
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: context.colors.textSecondary,
                                 fontSize: 14,
                                 fontFamily: 'NotoSansArabic',
                                 fontFamilyFallback: ['NotoSansArabic', 'Cairo', 'Tahoma'],
@@ -820,7 +781,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 24),
 
                 // Error message
-                if (authState.error != null)
+                if (authState.errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 16),
@@ -840,7 +801,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            authState.error!,
+                            authState.errorMessage!,
                             style: const TextStyle(
                               color: AppColors.error,
                               fontSize: 14,
@@ -870,8 +831,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     Text(
                       '${l10n.alreadyHaveAccount} ',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     TextButton(

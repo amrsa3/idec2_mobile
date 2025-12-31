@@ -11,7 +11,7 @@ import '../../../models/profile_model.dart';
 import '../../../models/verification_request_model.dart';
 import '../../../providers/profile_rules_provider.dart';
 import '../../../services/authenticated_image_service.dart';
-import '../../../services/compatible_auth_service.dart' show CompatibleAuthService, CompatibleAuthState, compatibleAuthProvider;
+import '../../../core/auth/auth.dart';
 import '../../../services/image_cache_service.dart';
 import '../../../shared/services/notification_service.dart';
 import '../services/profile_service.dart';
@@ -122,7 +122,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     // Small delay to ensure auth state is ready
     await Future.delayed(const Duration(milliseconds: 500));
     
-    final authState = ref.read(compatibleAuthProvider);
+    final authState = ref.read(authProvider);
     if (authState.isAuthenticated && state.currentProfile == null) {
       debugPrint('🔄 ProfileProvider: User already authenticated, loading profile on init');
       
@@ -173,8 +173,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   /// Listen to authentication state changes to auto-reload profile
   void _listenToAuthChanges() {
     // Use ref.listen to listen to auth state changes
-    ref.listen<CompatibleAuthState>(
-      compatibleAuthProvider,
+    ref.listen<AuthState>(
+      authProvider,
       (previous, next) {
         // If user logged out, clear profile state
         if (previous?.isAuthenticated == true && !next.isAuthenticated) {
@@ -712,12 +712,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
 
       // Initial authentication check - استخدام compatibleAuthProvider بدلاً من enhancedAuthProvider
-      final authState = ref.read(compatibleAuthProvider);
+      final authState = ref.read(authProvider);
 
       // If AuthProvider is still loading, wait a bit more
       if (authState.isLoading && retryCount < maxRetries) {
         await Future.delayed(const Duration(milliseconds: 1000));
-        final updatedAuthState = ref.read(compatibleAuthProvider);
+        final updatedAuthState = ref.read(authProvider);
         if (!updatedAuthState.isAuthenticated) {
           debugPrint(
               '❌ ProfileProvider: User not authenticated after loading, cannot load profile');
@@ -740,7 +740,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
       }
 
       // Check if session has expired
-      if (authState.sessionExpired) {
+      if (authState.isSessionExpired) {
         debugPrint('❌ ProfileProvider: Session expired, cannot load profile');
         _safeUpdateState(() => state.copyWith(
               isLoading: false,
@@ -827,13 +827,13 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         await Future.delayed(const Duration(milliseconds: 300));
 
         // Re-check authentication status after delay
-        final updatedAuthState = ref.read(compatibleAuthProvider);
+        final updatedAuthState = ref.read(authProvider);
         debugPrint(
-            '👤 ProfileProvider: Updated auth state - isAuthenticated: ${updatedAuthState.isAuthenticated}, sessionExpired: ${updatedAuthState.sessionExpired}');
+            '👤 ProfileProvider: Updated auth state - isAuthenticated: ${updatedAuthState.isAuthenticated}, sessionExpired: ${updatedAuthState.isSessionExpired}');
 
         // If still authenticated and we haven't exceeded retry limit, try again
         if (updatedAuthState.isAuthenticated &&
-            !updatedAuthState.sessionExpired &&
+            !updatedAuthState.isSessionExpired &&
             retryCount < maxRetries) {
           debugPrint(
               '🔄 ProfileProvider: Retrying profile load after auth error (attempt ${retryCount + 1})');
@@ -843,7 +843,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         }
 
         // If session is actually expired or max retries reached
-        if (updatedAuthState.sessionExpired) {
+        if (updatedAuthState.isSessionExpired) {
           debugPrint(
               '❌ ProfileProvider: Session confirmed expired after retry');
           state = state.copyWith(
@@ -861,7 +861,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
           // Clear session expiration state and show generic auth error
           debugPrint(
               '🔄 ProfileProvider: Clearing session expiration and showing auth error');
-          ref.read(compatibleAuthProvider.notifier).clearError();
+          ref.read(authProvider.notifier).clearError();
 
           state = state.copyWith(
             isLoading: false,

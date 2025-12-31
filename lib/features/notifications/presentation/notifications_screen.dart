@@ -1,265 +1,331 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/theme/app_colors.dart';
+import '../providers/notification_provider.dart';
 import 'push_topics_screen.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() =>
-      _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   String _selectedFilter = 'الكل';
   final List<String> _filters = ['الكل', 'مهم', 'تذكير', 'تحديث', 'عام'];
   bool _showUnreadOnly = false;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    timeago.setLocaleMessages('ar', ArMessages()); // Register Arabic locale
+    _scrollController.addListener(_onScroll);
+    // Refresh notifications on enter
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationProvider.notifier).loadNotifications(refresh: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      ref.read(notificationProvider.notifier).loadNotifications();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final notifications = _getNotifications();
+    final l10n = AppLocalizations.of(context);
+    final notificationState = ref.watch(notificationProvider);
+    final notifications = notificationState.notifications;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 160,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.tune),
-                tooltip: 'تفضيلات الإشعارات',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PushTopicsScreen(),
-                    ),
-                  );
-                },
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                  ),
+      backgroundColor: context.colors.background,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(notificationProvider.notifier).loadNotifications(refresh: true);
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // App Bar
+            SliverAppBar(
+              expandedHeight: 160,
+              floating: false,
+              pinned: true,
+              backgroundColor: AppColors.primary,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.tune),
+                  tooltip: 'تفضيلات الإشعارات',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PushTopicsScreen(),
+                      ),
+                    );
+                  },
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'الإشعارات',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(
-                              '${notifications.length} إشعار',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 14,
-                              ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primary, AppColors.primaryDark],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            l10n.notifications,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 16),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Text(
-                                'تحديد الكل كمقروء',
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '${notifications.length} إشعار',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
-                                  decoration: TextDecoration.underline,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 16),
+                              GestureDetector(
+                                onTap: () {
+                                  ref.read(notificationProvider.notifier).markAllAsRead();
+                                },
+                                child: Text(
+                                  'تحديد الكل كمقروء',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 14,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Filter Section
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Filter Pills
-                  SizedBox(
-                    height: 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _filters.length,
-                      itemBuilder: (context, index) {
-                        final filter = _filters[index];
-                        final isSelected = filter == _selectedFilter;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Text(
-                                filter,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppColors.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
+            // Filter Section
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.colors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: context.colors.shadow,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Filter Pills
+                    SizedBox(
+                      height: 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _filters.length,
+                        itemBuilder: (context, index) {
+                          final filter = _filters[index];
+                          final isSelected = filter == _selectedFilter;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedFilter = filter;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : context.colors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  filter,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : context.colors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Toggle Unread Only
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showUnreadOnly = !_showUnreadOnly;
+                        });
                       },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Toggle Unread Only
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _showUnreadOnly = !_showUnreadOnly;
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            border:
-                                Border.all(color: AppColors.primary, width: 2),
-                            borderRadius: BorderRadius.circular(4),
-                            color: _showUnreadOnly
-                                ? AppColors.primary
-                                : Colors.transparent,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              border:
+                                  Border.all(color: AppColors.primary, width: 2),
+                              borderRadius: BorderRadius.circular(4),
+                              color: _showUnreadOnly
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                            ),
+                            child: _showUnreadOnly
+                                ? Icon(Icons.check,
+                                    size: 14, color: Colors.white)
+                                : null,
                           ),
-                          child: _showUnreadOnly
-                              ? const Icon(Icons.check,
-                                  size: 14, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'عرض غير المقروء فقط',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(width: 8),
+                          Text(
+                            'عرض غير المقروء فقط',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: context.colors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Notifications List
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (_showUnreadOnly && notifications[index]['read'] == true) {
-                  return const SizedBox.shrink();
-                }
-                if (_selectedFilter != 'الكل' &&
-                    notifications[index]['category'] != _selectedFilter) {
-                  return const SizedBox.shrink();
-                }
-                return _buildNotificationCard(context, notifications[index]);
-              },
-              childCount: notifications.length,
-            ),
-          ),
-        ],
+            // Notifications List
+            if (notificationState.isLoading && notifications.isEmpty)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (notifications.isEmpty)
+               const SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text('لا توجد إشعارات', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index >= notifications.length) {
+                       return notificationState.isLoading ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())) : const SizedBox.shrink();
+                    }
+                    
+                    final notification = notifications[index];
+                    final isRead = notification['readAt'] != null || notification['isRead'] == true;
+                    // Filter logic
+                    if (_showUnreadOnly && isRead) {
+                      return const SizedBox.shrink();
+                    }
+                     // TODO: Add Category filtering if backend supports it in list or map client side
+                    // if (_selectedFilter != l10n.allNotifications && notification['category'] != _selectedFilter) {
+                    //   return const SizedBox.shrink();
+                    // }
+
+                    return _buildNotificationCard(context, notification);
+                  },
+                  childCount: notifications.length + (notificationState.isLoading ? 1 : 0),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNotificationCard(
-      BuildContext context, Map<String, dynamic> notification) {
-    final isUnread = notification['read'] == false;
+      BuildContext context, dynamic notification) {
+    if (notification is! Map) return const SizedBox.shrink();
+
+    final isRead = notification['readAt'] != null || notification['isRead'] == true;
+    final title = notification['title'] ?? 'إشعار جديد';
+    final message = notification['body'] ?? notification['message'] ?? '';
+    final createdAt = notification['createdAt'] != null 
+        ? DateTime.tryParse(notification['createdAt'].toString()) 
+        : DateTime.now();
+    final timeStr = createdAt != null ? timeago.format(createdAt, locale: 'ar') : '';
+    final id = notification['_id']?.toString() ?? notification['id']?.toString() ?? '';
+
+    // Determine category styling
+    final category = notification['type'] ?? 'general';
     final IconData icon;
     final Color iconColor;
 
-    switch (notification['category']) {
-      case 'مهم':
+    if (category.toString().contains('alert') || title.toString().contains('مهم')) {
         icon = Icons.error_outline;
         iconColor = Colors.red;
-        break;
-      case 'تذكير':
+    } else if (category.toString().contains('reminder')) {
         icon = Icons.notifications_active;
         iconColor = Colors.orange;
-        break;
-      case 'تحديث':
-        icon = Icons.update;
-        iconColor = Colors.blue;
-        break;
-      default:
+    } else {
         icon = Icons.info_outline;
-        iconColor = Colors.grey;
+        iconColor = Colors.blue;
     }
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isRead ? context.colors.card : AppColors.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border:
-            isUnread ? Border.all(color: AppColors.primary, width: 2) : null,
-        boxShadow: const [
+        border: isRead ? null : Border.all(color: AppColors.primary, width: 1),
+        boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: context.colors.shadow,
             blurRadius: 4,
             offset: Offset(0, 2),
           ),
@@ -267,7 +333,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Handle notification tap
+          ref.read(notificationProvider.notifier).markAsRead(id);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -295,18 +361,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            notification['title'],
+                            title,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight:
-                                  isUnread ? FontWeight.bold : FontWeight.w600,
-                              color: AppColors.textPrimary,
+                                  !isRead ? FontWeight.bold : FontWeight.w600,
+                              color: context.colors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isUnread)
+                        if (!isRead)
                           Container(
                             width: 8,
                             height: 8,
@@ -319,10 +385,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      notification['message'],
-                      style: const TextStyle(
+                      message,
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.4,
                       ),
                       maxLines: 2,
@@ -331,35 +397,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.access_time,
+                        Icon(Icons.access_time,
                             size: 12, color: AppColors.textTertiary),
                         const SizedBox(width: 4),
                         Text(
-                          notification['time'],
-                          style: const TextStyle(
+                          timeStr,
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textTertiary,
+                            color: context.colors.textTertiary,
                           ),
                         ),
-                        if (notification['action'] != null) ...[
-                          const SizedBox(width: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              notification['action'],
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ],
@@ -367,10 +414,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ),
               // Delete Button
               IconButton(
-                icon: const Icon(Icons.close,
-                    size: 20, color: AppColors.textTertiary),
+                icon: Icon(Icons.close,
+                    size: 20, color: context.colors.textTertiary),
                 onPressed: () {
-                  _showDeleteConfirmation(context, notification['id']);
+                   _showDeleteConfirmation(context, id);
                 },
               ),
             ],
@@ -380,86 +427,49 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, int id) {
+  void _showDeleteConfirmation(BuildContext context, String id) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('حذف الإشعار'),
-        content: const Text('هل أنت متأكد من حذف هذا الإشعار؟'),
+        title: Text('حذف الإشعار'),
+        content: Text('هل أنت متأكد من حذف هذا الإشعار؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implement delete functionality
+              ref.read(notificationProvider.notifier).deleteNotification(id);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('تم حذف الإشعار')),
               );
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text('حذف', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
+}
 
-  List<Map<String, dynamic>> _getNotifications() {
-    return [
-      {
-        'id': 1,
-        'title': 'تذكير: دورة قادمة',
-        'message': 'دورة تبييض الأسنان ستبدأ خلال ساعة واحدة',
-        'category': 'تذكير',
-        'read': false,
-        'time': 'منذ 5 دقائق',
-        'action': 'فتح الدورة',
-      },
-      {
-        'id': 2,
-        'title': 'تحديث مهم',
-        'message': 'تم تحديث جدول المؤتمر. يرجى مراجعة التغييرات',
-        'category': 'مهم',
-        'read': false,
-        'time': 'منذ 15 دقيقة',
-        'action': 'عرض الجدول',
-      },
-      {
-        'id': 3,
-        'title': 'تأكيد التسجيل',
-        'message': 'تم تأكيد تسجيلك في دورة التقنيات الحديثة بنجاح',
-        'category': 'عام',
-        'read': true,
-        'time': 'منذ ساعة',
-      },
-      {
-        'id': 4,
-        'title': 'مقابلة متحدث',
-        'message': 'هل تريد مقابلة د. أحمد محمد بعد الجلسة؟',
-        'category': 'عام',
-        'read': false,
-        'time': 'منذ ساعتين',
-        'action': 'إرسال طلب',
-      },
-      {
-        'id': 5,
-        'title': 'تحديث المكان',
-        'message': 'تم نقل الجلسة 2 إلى القاعة الكبرى',
-        'category': 'تحديث',
-        'read': true,
-        'time': 'منذ 3 ساعات',
-      },
-      {
-        'id': 6,
-        'title': 'تذكير: ورشة عمل',
-        'message': 'ورشة عمل اليدوية تبدأ غداً الساعة 9 صباحاً',
-        'category': 'تذكير',
-        'read': true,
-        'time': 'منذ 5 ساعات',
-      },
-    ];
-  }
+class ArMessages implements timeago.LookupMessages {
+  @override String prefixAgo() => 'منذ';
+  @override String prefixFromNow() => 'بعد';
+  @override String suffixAgo() => '';
+  @override String suffixFromNow() => '';
+  @override String lessThanOneMinute(int seconds) => 'الآن';
+  @override String aboutAMinute(int minutes) => 'دقيقة';
+  @override String minutes(int minutes) => '$minutes دقائق';
+  @override String aboutAnHour(int minutes) => 'ساعة';
+  @override String hours(int hours) => '$hours ساعات';
+  @override String aDay(int hours) => 'يوم';
+  @override String days(int days) => '$days أيام';
+  @override String aboutAMonth(int days) => 'شهر';
+  @override String months(int months) => '$months أشهر';
+  @override String aboutAYear(int year) => 'سنة';
+  @override String years(int years) => '$years سنوات';
+  @override String wordSeparator() => ' ';
 }

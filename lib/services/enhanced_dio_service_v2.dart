@@ -46,7 +46,6 @@ class EnhancedDioServiceV2 {
       baseUrl: ApiConstants.baseUrl,
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 300),
-      sendTimeout: const Duration(seconds: 300),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -149,11 +148,11 @@ class EnhancedDioServiceV2 {
   /// Create logging interceptor
   Interceptor _createLoggingInterceptor() {
     return LogInterceptor(
-      requestBody: kDebugMode,
-      responseBody: kDebugMode,
-      requestHeader: kDebugMode,
+      requestBody: false, // Disabled to reduce noise and hide sensitive data (OTP)
+      responseBody: false, // Disabled to reduce noise
+      requestHeader: false,
       responseHeader: false,
-      error: true,
+      error: true, // Keep errors only
       logPrint: (object) {
         if (kDebugMode) {
           debugPrint('📡 [DIO_LOG] $object');

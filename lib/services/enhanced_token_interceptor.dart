@@ -616,6 +616,7 @@ class EnhancedTokenInterceptor extends Interceptor {
       '/auth/resend-otp',
       '/auth/forgot-password',
       '/auth/reset-password',
+      '/auth/request-password-reset', // تمت إضافته
     ];
     
     return authPaths.any((authPath) => path.contains(authPath));

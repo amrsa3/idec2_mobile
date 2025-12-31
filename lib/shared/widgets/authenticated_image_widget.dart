@@ -147,7 +147,12 @@ class _AuthenticatedImageWidgetState extends State<AuthenticatedImageWidget> {
         }
       }
     } catch (e) {
-      debugPrint('❌ AuthenticatedImageWidget: Error loading image: $e');
+      if (e.toString().contains('400') || e.toString().contains('Bad Request')) {
+          debugPrint('❌ AuthenticatedImageWidget: 400 Bad Request for URL: ${widget.imageUrl} - Stopping retries.');
+          // Do not retry for 400 errors
+      } else {
+        debugPrint('❌ AuthenticatedImageWidget: Error loading image: $e');
+      }
       if (mounted) {
         setState(() {
           _isLoading = false;

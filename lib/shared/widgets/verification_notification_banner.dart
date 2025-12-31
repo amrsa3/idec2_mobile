@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/profile_model.dart';
 import '../../models/user_model.dart';
-import '../../services/compatible_auth_service.dart';
+import '../../core/auth/auth.dart';
 import '../../features/profile/providers/profile_provider.dart';
 import '../../features/profile/presentation/screens/profile_edit_screen.dart';
 
@@ -14,7 +14,7 @@ class VerificationNotificationBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     
     // استخراج المستخدم من auth state
     final user = authState.user;

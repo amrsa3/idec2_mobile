@@ -517,6 +517,32 @@ class MockOfflineStorageService extends _i1.Mock
       ) as _i4.Future<Map<String, dynamic>>);
 
   @override
+  _i4.Future<void> set(
+    String? key,
+    String? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #set,
+          [
+            key,
+            value,
+          ],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<String?> get(String? key) => (super.noSuchMethod(
+        Invocation.method(
+          #get,
+          [key],
+        ),
+        returnValue: _i4.Future<String?>.value(),
+      ) as _i4.Future<String?>);
+
+  @override
   _i4.Future<void> dispose() => (super.noSuchMethod(
         Invocation.method(
           #dispose,

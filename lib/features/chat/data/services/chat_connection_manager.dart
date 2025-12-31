@@ -17,7 +17,7 @@ class ChatConnectionManager {
   
   // Streams
   final _connectionStateController = StreamController<ConnectionState>.broadcast();
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
   
   // Callbacks
   VoidCallback? onConnectionRestored;
@@ -54,9 +54,9 @@ class ChatConnectionManager {
     }
   }
 
-  void _updateConnectionState(List<ConnectivityResult> results) {
+  void _updateConnectionState(ConnectivityResult result) {
     final wasOnline = _isOnline;
-    _isOnline = results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    _isOnline = result != ConnectivityResult.none;
     
     if (_isOnline != wasOnline) {
       if (_isOnline) {

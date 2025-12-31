@@ -14,10 +14,14 @@ import '../../features/language/presentation/language_selection_screen.dart';
 import '../../features/main/presentation/main_screen.dart';
 import '../../features/notifications/presentation/notifications_page.dart';
 import '../../features/notifications/presentation/notifications_test_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart'; // Added
 import '../../features/notifications/presentation/enhanced_notifications_screen.dart';
 import '../../features/notifications/presentation/professional_notifications_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_main_screen.dart';
+import '../../features/cart/presentation/cart_screen.dart';
+import '../../features/favorites/presentation/favorites_screen.dart';
+import '../../features/schedule/presentation/personal_schedule_screen.dart';
 // Import screens
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/schedule/presentation/event_details_screen.dart';
@@ -28,7 +32,7 @@ import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/gallery/presentation/gallery_album_view.dart';
 import '../../features/chat/chat_wrapper_page.dart';
 import '../../services/analytics_service.dart';
-import '../../services/compatible_auth_service.dart';
+import '../../core/auth/auth.dart';
 
 // Route names
 class AppRoutes {
@@ -59,6 +63,9 @@ class AppRoutes {
   static const String gallery = '/gallery';
   static const String galleryAlbum = '/gallery/album/:id';
   static const String chat = '/chat';
+  static const String cart = '/cart';
+  static const String favorites = '/favorites';
+  static const String mySchedule = '/my-schedule';
 }
 
 // Auth change notifier for GoRouter
@@ -67,7 +74,7 @@ class AuthChangeNotifier extends ChangeNotifier {
 
   AuthChangeNotifier(this.ref) {
     // Listen to auth state changes
-    ref.listen(compatibleAuthProvider, (previous, next) {
+    ref.listen(authProvider, (previous, next) {
       notifyListeners();
     });
   }
@@ -87,7 +94,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Deep linking configuration
       redirect: (context, state) {
         try {
-          final authState = ref.read(compatibleAuthProvider);
+          final authState = ref.read(authProvider);
           final isAuthenticated = authState.isAuthenticated;
           final isLoading = authState.isLoading;
           final currentRoute = state.uri.path;
@@ -256,7 +263,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: AppRoutes.notifications,
           name: 'notifications',
-          builder: (context, state) => const ProfessionalNotificationsScreen(),
+          builder: (context, state) => const NotificationsScreen(), // Switched to optimized screen
         ),
 
         GoRoute(
@@ -351,6 +358,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.chat,
           name: 'chat',
           builder: (context, state) => const ChatWrapperPage(),
+        ),
+        
+        // New Feature Routes
+        GoRoute(
+          path: AppRoutes.cart,
+          name: 'cart',
+          builder: (context, state) => const CartScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.favorites,
+          name: 'favorites',
+          builder: (context, state) => const FavoritesScreen(),
+        ),
+
+        GoRoute(
+          path: AppRoutes.mySchedule,
+          name: 'my-schedule',
+          builder: (context, state) => const PersonalScheduleScreen(),
         ),
       ],
 

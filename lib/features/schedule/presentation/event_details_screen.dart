@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../models/auth_models.dart';
+import '../../../core/auth/auth.dart';
 import '../../../models/event_model.dart';
 import '../../../models/payment_gateway_model.dart';
 import '../../../models/payment_instruction_model.dart';
 import '../../../models/transaction_model.dart';
-import '../../../providers/enhanced_auth_provider.dart';
+
 import '../../../providers/registration_provider.dart';
 import '../../../services/event_service.dart';
 import '../../../services/payment_service.dart';
@@ -21,6 +22,7 @@ import '../../registrations/presentation/my_registrations_screen.dart';
 import '../../registrations/widgets/payment_gateway_selector.dart';
 import '../../registrations/widgets/payment_input_dialog.dart';
 import '../../speakers/presentation/speaker_details_screen.dart';
+import '../../gamification/presentation/screens/live_interaction_screen.dart';
 
 // Provider for event details
 final eventDetailsProvider = FutureProvider.family<EventModel, String>((ref, eventId) async {
@@ -54,9 +56,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.invalidate(eventRegistrationStatusProvider(widget.eventId));
-    });
   }
 
   @override
@@ -69,21 +68,23 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      ref.invalidate(eventRegistrationStatusProvider(widget.eventId));
+      // Optional: Refresh only if needed, or leave it to manual refresh
+       // ref.invalidate(eventRegistrationStatusProvider(widget.eventId));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final eventAsync = ref.watch(eventDetailsProvider(widget.eventId));
     final speakersAsync = ref.watch(eventSpeakersProvider(widget.eventId));
     final registrationStatusAsync = ref.watch(eventRegistrationStatusProvider(widget.eventId));
-    final authState = ref.watch(enhancedAuthProvider);
+    final authState = ref.watch(authProvider);
 
     return ProfessionalLoadingOverlay(
       isLoading: _isProcessingRegistration || _isProcessingPayment,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
         body: eventAsync.when(
           data: (event) => RefreshIndicator(
             onRefresh: () async {
@@ -108,7 +109,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -165,8 +166,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                 // Content Section
                 SliverToBoxAdapter(
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.background,
+                    decoration: BoxDecoration(
+                      color: context.colors.background,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(30),
                         topRight: Radius.circular(30),
@@ -186,10 +187,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                           if (event.title.isNotEmpty) ...[
                             Text(
                               event.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: context.colors.textPrimary,
                                 height: 1.3,
                               ),
                             ),
@@ -198,10 +199,16 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                           // Quick Info Section
                           _buildQuickInfoSection(event),
                           const SizedBox(height: 24),
+                          
+                          // Live Interaction
+                          if (event.isOngoing && _hasValidRegistration(registrationStatusAsync.value)) ...[
+                             _buildLiveInteractionCard(context, event),
+                             const SizedBox(height: 24),
+                          ],
                           // Description
                           if (_hasContent(event.description)) ...[
                             _buildSection(
-                              title: 'الوصف',
+                              title: l10n.courseDescription,
                               icon: Icons.description_outlined,
                               content: event.description!,
                             ),
@@ -210,7 +217,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                           // Course Details
                           if (_hasContent(event.courseDetails)) ...[
                             _buildSection(
-                              title: 'تفاصيل الدورة',
+                              title: l10n.courseDetails,
                               icon: Icons.info_outline_rounded,
                               content: event.courseDetails!,
                             ),
@@ -219,7 +226,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                           // Requirements
                           if (_hasContent(event.requirements)) ...[
                             _buildSection(
-                              title: 'المتطلبات',
+                              title: l10n.requirements,
                               icon: Icons.checklist_rtl_outlined,
                               content: event.requirements!,
                             ),
@@ -240,17 +247,34 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                             _buildCertificateBadge(),
                             const SizedBox(height: 24),
                           ],
-                          // Instructor/Speaker Card Section
+                          // Speakers/Instructors Section
                           speakersAsync.when(
-                            data: (speakers) => speakers.isNotEmpty
-                                ? Column(
-                                    children: [
-                                      _buildInstructorCard(speakers[0]),
-                                      const SizedBox(height: 24),
-                                    ],
-                                  )
-                                : const SizedBox.shrink(),
-                            loading: () => const SizedBox.shrink(),
+                            data: (speakers) {
+                              if (speakers.isEmpty) return const SizedBox.shrink();
+                              
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: _buildSectionHeader(
+                                      title: 'المتحدثون والمدربون',
+                                      icon: Icons.people_outline_rounded,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  if (speakers.length == 1)
+                                    _buildInstructorCard(speakers[0])
+                                  else
+                                    _buildSpeakersList(speakers),
+                                  const SizedBox(height: 24),
+                                ],
+                              );
+                            },
+                            loading: () => const Center(child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            )),
                             error: (_, __) => const SizedBox.shrink(),
                           ),
                           // Bottom padding for fixed bottom bar
@@ -268,7 +292,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           ),
           error: (error, stack) => Scaffold(
             appBar: AppBar(
-              title: const Text('تفاصيل الدورة'),
+              title: Text(l10n.courseDetails),
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
@@ -285,8 +309,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => ref.invalidate(eventDetailsProvider(widget.eventId)),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('إعادة المحاولة'),
+                    icon: Icon(Icons.refresh),
+                    label: Text('إعادة المحاولة'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -309,14 +333,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
 
   // Check if user is authenticated
   bool _isUserAuthenticated(AuthState authState) {
-    return authState.when(
-      initial: () => false,
-      loading: (message) => false,
-      authenticated: (user) => true,
-      unauthenticated: () => false,
-      registered: () => false,
-      error: (message) => false,
-    );
+    return authState.isAuthenticated;
   }
 
   // Loading Bottom Bar
@@ -329,10 +346,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
         if (!canShowBar) return null;
         return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -393,10 +410,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
         if (!canShowBar) return null;
         return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -409,7 +426,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: context.colors.surfaceVariant,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -423,7 +440,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -453,10 +470,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -496,7 +513,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                   icon: Icon(statusInfo['icon'] as IconData, size: 24),
                   label: Text(
                     statusInfo['text'] as String,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -538,10 +555,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Icon(Icons.add_circle_outline, size: 24),
+                          : Icon(Icons.add_circle_outline, size: 24),
                       label: Text(
                         _isProcessingRegistration ? 'جاري التسجيل...' : 'اشترك الآن',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -621,8 +638,8 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                     height: 56,
                     child: ElevatedButton.icon(
                       onPressed: () => _handleRegistration(context, event),
-                      icon: const Icon(Icons.add_circle_outline, size: 24),
-                      label: const Text(
+                      icon: Icon(Icons.add_circle_outline, size: 24),
+                      label: Text(
                         'اشترك الآن',
                         style: TextStyle(
                           fontSize: 18,
@@ -733,15 +750,69 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
     );
   }
 
+  bool _hasValidRegistration(Map<String, dynamic>? status) {
+      if (status == null) return false;
+      final s = (status['status'] as String? ?? '').toUpperCase();
+      return ['APPROVED', 'CONFIRMED', 'COMPLETED', 'PAID'].contains(s);
+  }
+
+  Widget _buildLiveInteractionCard(BuildContext context, EventModel event) {
+      return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.purple.shade700, Colors.deepPurple]),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                  BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: Offset(0, 4))
+              ]
+          ),
+          child: Column(
+              children: [
+                   const Icon(Icons.live_tv, color: Colors.white, size: 32),
+                   const SizedBox(height: 8),
+                   const Text(
+                       'Live Interaction Active',
+                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                   ),
+                   const Text(
+                       'Join Q&A and Polls now!',
+                       style: TextStyle(color: Colors.white70),
+                   ),
+                   const SizedBox(height: 16),
+                   ElevatedButton(
+                       onPressed: () {
+                           Navigator.push(
+                               context,
+                               MaterialPageRoute(
+                                   builder: (context) => LiveInteractionScreen(
+                                       sessionId: event.id,
+                                       sessionTitle: event.title,
+                                   )
+                               )
+                           );
+                       },
+                       style: ElevatedButton.styleFrom(
+                           backgroundColor: Colors.white,
+                           foregroundColor: Colors.purple,
+                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+                       ),
+                       child: const Text('Join Session'),
+                   )
+              ],
+          ),
+      );
+  }
+
   Widget _buildQuickInfoSection(EventModel event) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -755,7 +826,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             value: DateFormat('EEEE، d MMMM yyyy', 'ar').format(event.localStartTime),
             color: AppColors.info,
           ),
-          const Divider(height: 24),
+          Divider(height: 24),
           _buildInfoRow(
             icon: Icons.access_time_rounded,
             label: 'الوقت',
@@ -763,7 +834,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             color: AppColors.primary,
           ),
           if (_hasContent(event.location)) ...[
-            const Divider(height: 24),
+            Divider(height: 24),
             _buildInfoRow(
               icon: Icons.location_on_rounded,
               label: 'المكان',
@@ -772,7 +843,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             ),
           ],
           if (event.duration != null && event.duration! > 0) ...[
-            const Divider(height: 24),
+            Divider(height: 24),
             _buildInfoRow(
               icon: Icons.timer_outlined,
               label: 'المدة',
@@ -783,7 +854,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           if (event.courseLevel != null &&
               event.courseLevel!.isNotEmpty &&
               event.courseLevel != 'NOT_SPECIFIED') ...[
-            const Divider(height: 24),
+            Divider(height: 24),
             _buildInfoRow(
               icon: Icons.school_outlined,
               label: 'المستوى',
@@ -792,7 +863,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             ),
           ],
           if (event.capacity != null && event.capacity! > 0) ...[
-            const Divider(height: 24),
+            Divider(height: 24),
             _buildInfoRow(
               icon: Icons.people_outline,
               label: 'السعة',
@@ -830,16 +901,16 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.textPrimary,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -865,11 +936,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.card,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: context.colors.shadow,
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -877,9 +948,9 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           ),
           child: Text(
             content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               height: 1.7,
             ),
           ),
@@ -905,10 +976,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
           ),
         ),
       ],
@@ -938,7 +1009,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: AppColors.success,
               ),
             ),
           ),
@@ -969,11 +1040,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: context.colors.shadow,
               blurRadius: 15,
               offset: const Offset(0, 4),
             ),
@@ -1041,7 +1112,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                         'المدرب',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1051,10 +1122,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                   // Instructor Name
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                       height: 1.3,
                     ),
                     maxLines: 2,
@@ -1067,7 +1138,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                       title,
                       style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
@@ -1081,7 +1152,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             Icon(
               Icons.arrow_back_ios_new,
               size: 18,
-              color: AppColors.textSecondary.withOpacity(0.5),
+              color: context.colors.textSecondary.withOpacity(0.5),
             ),
           ],
         ),
@@ -1091,7 +1162,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
 
   Widget _buildSpeakersList(List<Map<String, dynamic>> speakers) {
     return SizedBox(
-      height: 120,
+      height: 160,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -1140,11 +1211,11 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                               fit: BoxFit.cover,
                             )
                           : Container(
-                              color: AppColors.surfaceVariant,
+                              color: context.colors.surfaceVariant,
                               child: Icon(
                                 Icons.person,
                                 size: 40,
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                     ),
@@ -1153,10 +1224,10 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
                 const SizedBox(height: 8),
                 Text(
                   speakerData['name'] as String? ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
@@ -1326,12 +1397,12 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error, color: Colors.white),
+                Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     errorMessage,
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
               ],
@@ -1464,7 +1535,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error, color: Colors.white),
+                  Icon(Icons.error, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(confirmedTransaction.errorMessage ?? 'فشل عملية الدفع'),
@@ -1486,7 +1557,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> with Wi
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error, color: Colors.white),
+                Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text('فشل عملية الدفع: ${e.toString()}'),

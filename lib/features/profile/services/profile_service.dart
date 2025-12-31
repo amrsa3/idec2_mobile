@@ -952,11 +952,24 @@ class LocalProfileService {
       // Get current user ID from CompatibleAuthService
       final compatibleAuthService = CompatibleAuthService.instance;
       final currentUser = compatibleAuthService.user;
+      String userId;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
-        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        debugPrint('⚠️ ProfileService: Current user is null, trying fallback...');
+        try {
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('User data not found');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
       }
-      final userId = currentUser.id;
       debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
@@ -1161,11 +1174,24 @@ class LocalProfileService {
       // Get current user ID from CompatibleAuthService
       final compatibleAuthService = CompatibleAuthService.instance;
       final currentUser = compatibleAuthService.user;
+      String userId;
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
-        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        debugPrint('⚠️ ProfileService: Current user is null, trying fallback...');
+        try {
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('User data not found');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
       }
-      final userId = currentUser.id;
       debugPrint('👤 ProfileService: Current user ID: $userId');
 
       // Determine the correct content type based on file extension
@@ -1718,13 +1744,30 @@ class LocalProfileService {
         }
 
         // الحصول على معرف المستخدم من CompatibleAuthService
+        // الحصول على معرف المستخدم
         final compatibleAuthService = CompatibleAuthService.instance;
-        final currentUser = compatibleAuthService.user;
+        var currentUser = compatibleAuthService.user;
+        String userId;
+
         if (currentUser == null || currentUser.id.isEmpty) {
-          debugPrint('❌ ProfileService: No current user found');
-          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+          debugPrint('⚠️ ProfileService: Current user is null in auth service, trying to fetch profile...');
+          try {
+            // محاولة جلب البروفايل للحصول على المعرف
+            final profile = await getProfile(useRecentCache: true);
+            if (profile != null && profile.userId.isNotEmpty) {
+              userId = profile.userId;
+              debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+            } else {
+              throw Exception('لم يتم العثور على بيانات المستخدم');
+            }
+          } catch (e) {
+            debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+            throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+          }
+        } else {
+          userId = currentUser.id;
         }
-        final userId = currentUser.id;
+
         debugPrint('👤 ProfileService: Current user ID: $userId');
 
         final formData = FormData.fromMap({
@@ -1918,12 +1961,28 @@ class LocalProfileService {
 
       // الحصول على معرف المستخدم من CompatibleAuthService (مثل uploadDocumentFileWithRetry)
       final compatibleAuthService = CompatibleAuthService.instance;
-      final currentUser = compatibleAuthService.user;
+      var currentUser = compatibleAuthService.user;
+      String userId;
+
       if (currentUser == null || currentUser.id.isEmpty) {
-        debugPrint('❌ ProfileService: No current user found');
-        throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        debugPrint('⚠️ ProfileService: Current user is null in auth service, trying to fetch profile...');
+        try {
+          // محاولة جلب البروفايل للحصول على المعرف
+          final profile = await getProfile(useRecentCache: true);
+          if (profile != null && profile.userId.isNotEmpty) {
+            userId = profile.userId;
+            debugPrint('✅ ProfileService: Retrieved userId from profile: $userId');
+          } else {
+             throw Exception('لم يتم العثور على بيانات المستخدم');
+          }
+        } catch (e) {
+          debugPrint('❌ ProfileService: Failed to retrieve user info: $e');
+          throw Exception('لم يتم العثور على بيانات المستخدم الحالي');
+        }
+      } else {
+        userId = currentUser.id;
       }
-      final userId = currentUser.id;
+      
       debugPrint('👤 ProfileService: Current user ID: $userId');
 
       final formData = FormData.fromMap({

@@ -163,7 +163,7 @@ class ApiConstants {
   static const String logoutEndpoint = '$authEndpoint/logout';
   static const String verifyPhoneEndpoint = '$authEndpoint/verify-otp';
   static const String resendOtpEndpoint = '$authEndpoint/resend-otp';
-  static const String forgotPasswordEndpoint = '$authEndpoint/forgot-password';
+  static const String forgotPasswordEndpoint = '$authEndpoint/request-password-reset';
   static const String resetPasswordEndpoint = '$authEndpoint/reset-password';
   static const String changePasswordEndpoint = '$authEndpoint/change-password';
 
@@ -175,6 +175,16 @@ class ApiConstants {
   // Other endpoints
   static const String uploadsEndpoint = '/api/v1/uploads';
   static const String notificationsEndpoint = '/api/v1/notifications';
+  
+  // Events endpoints
+  static const String eventsEndpoint = '/api/v1/events';
+  static const String featuredEventsEndpoint = '/api/v1/events?isFeatured=true';
+  
+  // Speakers endpoints
+  static const String speakersEndpoint = '/api/v1/speakers';
+  
+  // Exhibitors endpoints
+  static const String exhibitorsEndpoint = '/api/v1/exhibitors';
 
   // Full URLs with validation
   static String get loginUrl {

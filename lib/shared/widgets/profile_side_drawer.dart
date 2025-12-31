@@ -8,8 +8,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/profile_model.dart';
-import '../../services/compatible_auth_service.dart'
-    show compatibleAuthProvider;
+import '../../core/auth/auth.dart';
 import '../../features/main/providers/bottom_navigation_provider.dart';
 import '../widgets/profile_image_widget.dart';
 import '../../../features/profile/presentation/screens/profile_edit_screen.dart';
@@ -31,7 +30,7 @@ class ProfileSideDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     final user = authState.user;
     
     // الحصول على profile من provider إذا لم يتم تمريره
@@ -351,7 +350,7 @@ class ProfileSideDrawer extends ConsumerWidget {
       );
 
       // تسجيل الخروج
-      await ref.read(compatibleAuthProvider.notifier).logout();
+      await ref.read(authProvider.notifier).logout();
 
       // إغلاق مؤشر التحميل والانتقال إلى صفحة تسجيل الدخول
       if (context.mounted) {

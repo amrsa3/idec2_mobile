@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
 
@@ -70,48 +70,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Clear any previous errors
-    ref.read(compatibleAuthProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearError();
 
     try {
       debugPrint('ResetPasswordScreen: Resetting password for ${widget.phone}');
 
-      final success =
-          await ref.read(compatibleAuthProvider.notifier).resetPassword(
-                widget.phone,
-                _otpCode,
-                _passwordController.text,
+      final result =
+          await ref.read(authProvider.notifier).resetPassword(
+                phone: widget.phone,
+                otp: _otpCode,
+                newPassword: _passwordController.text,
               );
 
       if (mounted) {
-        if (success) {
+        if (result.isSuccess) {
           debugPrint('ResetPasswordScreen: Password reset successful');
 
           // استخدام الرسالة من الخادم إذا كانت متوفرة
-          final authState = ref.read(compatibleAuthProvider);
           String successTitle = 'إعادة تعيين كلمة المرور';
-          String successMessage = 'تم إعادة تعيين كلمة المرور بنجاح';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                successMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                successMessage = messageEn;
-              }
-            } else if (response.containsKey('message')) {
-              successMessage = response['message'] as String? ?? successMessage;
-            }
-          }
+          final locale = Localizations.localeOf(context);
+          String successMessage = result.getLocalizedMessage(locale.languageCode) ??
+              'تم إعادة تعيين كلمة المرور بنجاح';
 
           await NotificationService.showSuccess(
             title: successTitle,
@@ -121,35 +100,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           // Navigate to login screen
           context.go(AppRoutes.login);
         } else {
-          final authState = ref.read(compatibleAuthProvider);
           String errorTitle = 'خطأ في إعادة تعيين كلمة المرور';
-          String errorMessage = 'فشل في إعادة تعيين كلمة المرور';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                errorMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                errorMessage = messageEn;
-              }
-            } else if (response.containsKey('message')) {
-              errorMessage = response['message'] as String? ?? errorMessage;
-            }
-          }
-
-          if (authState.error != null && authState.error!.isNotEmpty) {
-            errorMessage = authState.error!;
-          }
+          final locale = Localizations.localeOf(context);
+          String errorMessage = result.getLocalizedMessage(locale.languageCode) ??
+              'فشل في إعادة تعيين كلمة المرور';
 
           await NotificationService.showError(
             title: errorTitle,
@@ -177,7 +131,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     });
 
     try {
-      await ref.read(compatibleAuthProvider.notifier).resendOtp(widget.phone);
+      await ref.read(authProvider.notifier).resendOtp(widget.phone);
 
       if (mounted) {
         await NotificationService.showSuccess(
@@ -232,12 +186,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _focusNodes[index].hasFocus
               ? AppColors.primary
-              : AppColors.border,
+              : context.colors.border,
           width: _focusNodes[index].hasFocus ? 2.5 : 1.5,
         ),
         boxShadow: _focusNodes[index].hasFocus
@@ -263,10 +217,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           textAlign: TextAlign.center,
           textDirection: TextDirection.ltr,
           keyboardType: TextInputType.number,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             height: 1.5,
           ),
           inputFormatters: [
@@ -297,14 +251,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildMainContent(dynamic authState, bool isLoading) {
+  Widget _buildMainContent(AuthState authState, bool isLoading) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: context.colors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -324,11 +278,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.card,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadow,
+                          color: context.colors.shadow,
                           blurRadius: 20,
                           offset: Offset(0, 8),
                         ),
@@ -348,7 +302,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 Text(
                   'إعادة تعيين كلمة المرور',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                   textAlign: TextAlign.center,
@@ -360,7 +314,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 Text(
                   'أدخل رمز التحقق المرسل إلى\n${widget.phone} وكلمة المرور الجديدة',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                   textAlign: TextAlign.center,
                 ),
@@ -387,7 +341,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _validateOtp() ?? '',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.error,
                         fontSize: 12,
                       ),
@@ -400,9 +354,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 // Password field
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   child: TextFormField(
                     controller: _passwordController,
@@ -416,19 +370,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         horizontal: 16,
                         vertical: 16,
                       ),
-                      hintStyle: const TextStyle(
-                        color: AppColors.textSecondary,
+                      hintStyle: TextStyle(
+                        color: context.colors.textSecondary,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
                               ? Icons.visibility
                               : Icons.visibility_off,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         onPressed: () {
                           setState(() {
@@ -437,8 +391,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         },
                       ),
                     ),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.colors.textPrimary,
                       fontSize: 16,
                     ),
                   ),
@@ -449,9 +403,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 // Confirm Password field
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   child: TextFormField(
                     controller: _confirmPasswordController,
@@ -465,19 +419,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         horizontal: 16,
                         vertical: 16,
                       ),
-                      hintStyle: const TextStyle(
-                        color: AppColors.textSecondary,
+                      hintStyle: TextStyle(
+                        color: context.colors.textSecondary,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.lock_outline,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
                               ? Icons.visibility
                               : Icons.visibility_off,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         onPressed: () {
                           setState(() {
@@ -486,8 +440,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         },
                       ),
                     ),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: context.colors.textPrimary,
                       fontSize: 16,
                     ),
                     onFieldSubmitted: (_) => _resetPassword(),
@@ -594,10 +548,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     onPressed: () {
                       context.go(AppRoutes.login);
                     },
-                    child: const Text(
+                    child: Text(
                       'العودة لتسجيل الدخول',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -612,7 +566,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
     return ProfessionalLoadingOverlay(

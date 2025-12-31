@@ -2,7 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../models/auth_models.dart';
+import '../core/auth/auth.dart';
 import '../models/user_model.dart';
 
 /// Centralizes Google Analytics (Firebase Analytics) interactions.
@@ -63,35 +63,31 @@ class AnalyticsService {
     });
   }
 
-  /// Logs user sign-in or sign-out transitions.
   Future<void> handleAuthStateChange(
     AuthState? previous,
     AuthState next,
   ) async {
-    await next.maybeWhen(
-      authenticated: (user) async {
-        await _setUserIdentity(user);
-        await logEvent('login_success', parameters: {
-          'user_id': user.id,
-          'phone_verified': user.phoneVerified,
-          'roles': user.roles.join(','),
-        });
-      },
-      unauthenticated: () async {
-        await _clearUserIdentity();
-        await logEvent('logout', parameters: {
-          'reason': previous?.maybeWhen(
-                error: (message) => message,
-                orElse: () => 'user_action',
-              ) ??
-              'user_action',
-        });
-      },
-      error: (message) async {
-        await logEvent('auth_error', parameters: {'message': message});
-      },
-      orElse: () async {},
-    );
+    // User authenticated
+    if (next.isAuthenticated && next.user != null) {
+      final user = next.user!;
+      await _setUserIdentity(user);
+      await logEvent('login_success', parameters: {
+        'user_id': user.id,
+        'phone_verified': user.phoneVerified,
+        'roles': user.roles.join(','),
+      });
+    }
+    // User logged out
+    else if (!next.isAuthenticated && (previous?.isAuthenticated ?? false)) {
+      await _clearUserIdentity();
+      await logEvent('logout', parameters: {
+        'reason': next.errorMessage ?? 'user_action',
+      });
+    }
+    // Error occurred
+    else if (next.errorMessage != null) {
+      await logEvent('auth_error', parameters: {'message': next.errorMessage!});
+    }
   }
 
   Future<void> _setUserIdentity(UserModel user) async {

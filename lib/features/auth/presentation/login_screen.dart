@@ -8,7 +8,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
+import '../../../services/biometric_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../shared/widgets/professional_loading_overlay.dart';
 import '../../connectivity/presentation/connection_test_screen.dart';
@@ -26,6 +27,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   String _countryCode = '+967'; // Default to Yemen
+  bool _isBiometricLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize biometric service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(biometricProvider.notifier).refresh();
+      // Try auto biometric login if enabled
+      _tryBiometricLogin();
+    });
+  }
 
   @override
   void dispose() {
@@ -34,60 +47,109 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _tryBiometricLogin() async {
+    final biometricState = ref.read(biometricProvider);
+    if (!biometricState.isAvailable || !biometricState.isEnabled || biometricState.isLoading) {
+      return;
+    }
+    
+    // Auto-prompt for biometric login
+    await _loginWithBiometric();
+  }
+
+  Future<void> _loginWithBiometric() async {
+    setState(() => _isBiometricLoading = true);
+    
+    try {
+      final biometricNotifier = ref.read(biometricProvider.notifier);
+      final authenticated = await biometricNotifier.authenticateAndGetCredentials();
+      
+      if (!authenticated) {
+        setState(() => _isBiometricLoading = false);
+        return;
+      }
+      
+      final credentials = await biometricNotifier.getCredentials();
+      if (credentials == null) {
+        if (mounted) {
+          await NotificationService.showError(
+            title: 'خطأ',
+            message: 'لم يتم العثور على بيانات الاعتماد المحفوظة',
+          );
+        }
+        setState(() => _isBiometricLoading = false);
+        return;
+      }
+      
+      // Login with saved credentials
+      final result = await ref.read(authProvider.notifier).loginWithPhone(
+        credentials['phone']!,
+        credentials['password']!,
+      );
+      
+      if (mounted) {
+        if (result.isSuccess) {
+          await NotificationService.showSuccess(
+            title: 'تسجيل الدخول',
+            message: 'تم تسجيل الدخول بنجاح',
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            context.go(AppRoutes.main);
+          }
+        } else {
+          await NotificationService.showError(
+            title: 'خطأ في تسجيل الدخول',
+            message: result.message ?? 'فشل في تسجيل الدخول',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Biometric login error: $e');
+      if (mounted) {
+        await NotificationService.showError(
+          title: 'خطأ',
+          message: 'حدث خطأ أثناء تسجيل الدخول بالبصمة',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isBiometricLoading = false);
+      }
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     // Clear any previous errors
-    ref.read(compatibleAuthProvider.notifier).clearError();
+    ref.read(authProvider.notifier).clearError();
 
     try {
       final fullPhoneNumber = '$_countryCode${_phoneController.text.trim()}';
 
       debugPrint('LoginScreen: Attempting login for $fullPhoneNumber');
 
-      final success =
-          await ref.read(compatibleAuthProvider.notifier).loginWithPhone(
+      final result =
+          await ref.read(authProvider.notifier).loginWithPhone(
                 fullPhoneNumber,
                 _passwordController.text.trim(),
               );
 
       if (mounted) {
-        if (success) {
+        if (result.isSuccess) {
           debugPrint('LoginScreen: Login successful, checking auth state...');
 
           // Check auth state after successful login
-          final authState = ref.read(compatibleAuthProvider);
+          final authState = ref.read(authProvider);
           debugPrint(
               'LoginScreen: Auth state - isAuthenticated: ${authState.isAuthenticated}');
-          debugPrint(
-              'LoginScreen: Auth state - user: ${authState.user?.phone}');
-          debugPrint(
-              'LoginScreen: Auth state - isLoading: ${authState.isLoading}');
 
           // إرسال إشعار نجاح عبر النظام المركزي
           // استخدام الرسالة من الخادم إذا كانت متوفرة
           String successTitle = 'تسجيل الدخول';
-          String successMessage = 'تم تسجيل الدخول بنجاح';
-
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                successMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                successMessage = messageEn;
-              }
-            }
-          }
+          final locale = Localizations.localeOf(context);
+          String successMessage = result.getLocalizedMessage(locale.languageCode) ?? 'تم تسجيل الدخول بنجاح';
 
           await NotificationService.showSuccess(
             title: successTitle,
@@ -98,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await Future.delayed(const Duration(milliseconds: 500));
 
           // Double check auth state before navigation
-          final finalAuthState = ref.read(compatibleAuthProvider);
+          final finalAuthState = ref.read(authProvider);
           debugPrint(
               'LoginScreen: Final auth state - isAuthenticated: ${finalAuthState.isAuthenticated}');
 
@@ -117,10 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
         } else {
           // Check if the error is related to unverified phone number
-          final authState = ref.read(compatibleAuthProvider);
-
-          if (authState.error == 'phone_not_verified' &&
-              authState.unverifiedPhoneNumber != null) {
+          if (result.type == AuthResultType.phoneNotVerified && result.phone != null) {
             // Redirect to phone verification screen
             if (mounted) {
               // Show informative message first
@@ -135,26 +194,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // First send OTP automatically
               try {
-                final otpSent = await ref.read(compatibleAuthProvider.notifier).resendOtp(
-                      authState.unverifiedPhoneNumber!,
+                final otpResult = await ref.read(authProvider.notifier).resendOtp(
+                      result.phone!,
                     );
 
-                if (otpSent && mounted) {
+                if (otpResult.isSuccess && mounted) {
                   // Navigate to OTP verification screen
                   context.go(
-                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(result.phone!)}&isLogin=true',
                   );
 
                   await NotificationService.showSuccess(
                     title: 'تم إرسال رمز التحقق',
                     message:
-                        'تم إرسال رمز التحقق إلى رقم ${authState.unverifiedPhoneNumber}. يرجى إدخال الرمز للتحقق من حسابك.',
+                        'تم إرسال رمز التحقق إلى رقم ${result.phone}. يرجى إدخال الرمز للتحقق من حسابك.',
                   );
                 } else {
                   // If OTP sending failed, still navigate to OTP screen so user can resend
                   if (mounted) {
                     context.go(
-                      '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                      '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(result.phone!)}&isLogin=true',
                     );
                     
                     await NotificationService.showInfo(
@@ -170,7 +229,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Still navigate to OTP screen so user can manually resend
                 if (mounted) {
                   context.go(
-                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(authState.unverifiedPhoneNumber!)}&isLogin=true',
+                    '${AppRoutes.otpVerification}?phone=${Uri.encodeComponent(result.phone!)}&isLogin=true',
                   );
                   
                   await NotificationService.showInfo(
@@ -186,40 +245,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Show error message using central notification system
           String errorTitle = 'خطأ في تسجيل الدخول';
-          String errorMessage = 'فشل في تسجيل الدخول';
+          final locale = Localizations.localeOf(context);
+          String errorMessage = result.getLocalizedMessage(locale.languageCode) ?? 'فشل في تسجيل الدخول';
 
-          // محاولة استخراج الرسالة من استجابة الخادم
-          if (authState.lastResponse != null) {
-            final response = authState.lastResponse!;
-            if (response.containsKey('messageAr') &&
-                response.containsKey('messageEn')) {
-              final messageAr = response['messageAr'] as String?;
-              final messageEn = response['messageEn'] as String?;
-
-              // اختيار الرسالة حسب لغة التطبيق
-              final locale = Localizations.localeOf(context);
-              if (locale.languageCode == 'ar' &&
-                  messageAr != null &&
-                  messageAr.isNotEmpty) {
-                errorMessage = messageAr;
-              } else if (messageEn != null && messageEn.isNotEmpty) {
-                errorMessage = messageEn;
-              }
-            }
-          } else if (authState.error != null && authState.error!.isNotEmpty) {
-            // استخدام رسالة الخطأ من الحالة إذا لم تكن هناك استجابة من الخادم
-            errorMessage = authState.error!;
-
-            // تطبيق رسائل احتياطية لأخطاء الشبكة
-            if (authState.error!.contains('Network error') ||
-                authState.error!.contains('SocketException') ||
-                authState.error!.contains('connection refused') ||
-                authState.error!.contains('No route to host')) {
-              errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
-            } else if (authState.error!.contains('timeout') ||
-                authState.error!.contains('TimeoutException')) {
-              errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
-            }
+          // تطبيق رسائل احتياطية لأخطاء الشبكة
+          if (errorMessage.contains('Network error') ||
+              errorMessage.contains('SocketException') ||
+              errorMessage.contains('connection refused') ||
+              errorMessage.contains('No route to host')) {
+            errorMessage = 'خطأ في الاتصال، يرجى التحقق من الإنترنت';
+          } else if (errorMessage.contains('timeout') ||
+              errorMessage.contains('TimeoutException')) {
+            errorMessage = 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
           }
 
           debugPrint(
@@ -286,13 +323,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final authState = ref.watch(compatibleAuthProvider);
+    final authState = ref.watch(authProvider);
 
     return ProfessionalLoadingOverlay(
       isLoading: authState.isLoading,
       message: 'جاري تسجيل الدخول...',
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -309,11 +346,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.colors.card,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: AppColors.shadow,
+                            color: context.colors.shadow,
                             blurRadius: 20,
                             offset: Offset(0, 8),
                           ),
@@ -333,7 +370,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Text(
                     l10n.login,
                     style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: context.colors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                     textAlign: TextAlign.center,
@@ -345,7 +382,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Text(
                     l10n.welcome,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -355,9 +392,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Phone number field with country code
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.card,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.colors.border),
                     ),
                     child: Row(
                       children: [
@@ -369,19 +406,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             });
                           },
                           initialSelection: 'YE', // Yemen
-                          favorite: const ['+967', 'YE'],
+                          favorite: ['+967', 'YE'],
                           showCountryOnly: false,
                           showOnlyCountryWhenClosed: false,
                           alignLeft: false,
-                          textStyle: const TextStyle(
-                            color: AppColors.textPrimary,
+                          textStyle: TextStyle(
+                            color: context.colors.textPrimary,
                             fontSize: 16,
                           ),
-                          dialogTextStyle: const TextStyle(
-                            color: AppColors.textPrimary,
+                          dialogTextStyle: TextStyle(
+                            color: context.colors.textPrimary,
                           ),
-                          searchStyle: const TextStyle(
-                            color: AppColors.textPrimary,
+                          searchStyle: TextStyle(
+                            color: context.colors.textPrimary,
                           ),
                           flagWidth: 25,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -391,7 +428,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Container(
                           height: 30,
                           width: 1,
-                          color: AppColors.border,
+                          color: context.colors.border,
                         ),
 
                         // Phone number input
@@ -401,7 +438,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             keyboardType: TextInputType.phone,
                             textInputAction: TextInputAction.next,
                             validator: _validatePhone,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'رقم الهاتف',
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
@@ -409,11 +446,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 vertical: 16,
                               ),
                               hintStyle: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
+                            style: TextStyle(
+                              color: context.colors.textPrimary,
                               fontSize: 16,
                             ),
                           ),
@@ -427,9 +464,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Password field without label
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.card,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.colors.border),
                     ),
                     child: TextFormField(
                       controller: _passwordController,
@@ -443,19 +480,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           horizontal: 16,
                           vertical: 16,
                         ),
-                        hintStyle: const TextStyle(
-                          color: AppColors.textSecondary,
+                        hintStyle: TextStyle(
+                          color: context.colors.textSecondary,
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.lock_outline,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
                                 ? Icons.visibility
                                 : Icons.visibility_off,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           onPressed: () {
                             setState(() {
@@ -464,8 +501,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           },
                         ),
                       ),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontSize: 16,
                       ),
                       onFieldSubmitted: (_) => _login(),
@@ -524,6 +561,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
 
+                  // Biometric login button
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final biometricState = ref.watch(biometricProvider);
+                      
+                      if (!biometricState.isAvailable || !biometricState.isEnabled || biometricState.isLoading) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      final biometricService = BiometricService.instance;
+                      final biometricIcon = biometricService.getBiometricIcon(biometricState.availableTypes);
+                      final biometricName = biometricService.getBiometricTypeName(biometricState.availableTypes, isArabic: true);
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: (_isBiometricLoading || authState.isLoading) ? null : _loginWithBiometric,
+                            icon: _isBiometricLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Icon(biometricIcon, color: AppColors.primary),
+                            label: Text(
+                              _isBiometricLoading ? 'جاري التحقق...' : 'الدخول بـ$biometricName',
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
                   const SizedBox(height: 24),
 
                   // Forgot password
@@ -547,21 +630,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Divider
                   Row(
                     children: [
-                      const Expanded(
-                        child: Divider(color: AppColors.border),
+                      Expanded(
+                        child: Divider(color: context.colors.border),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           l10n.or,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: context.colors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
                       ),
-                      const Expanded(
-                        child: Divider(color: AppColors.border),
+                      Expanded(
+                        child: Divider(color: context.colors.border),
                       ),
                     ],
                   ),
@@ -623,15 +706,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: () {
                         context.go(AppRoutes.languageSelection);
                       },
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.language,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         size: 20,
                       ),
                       label: Text(
                         l10n.selectLanguage,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ),

@@ -7,7 +7,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/language_provider.dart';
-import '../../../services/compatible_auth_service.dart';
+import '../../../core/auth/auth.dart';
 import '../../../services/language_service.dart';
 
 class LanguageSelectionScreen extends ConsumerStatefulWidget {
@@ -81,8 +81,7 @@ class _LanguageSelectionScreenState
     if (!mounted) return;
 
     // Check if user is authenticated
-    final isAuthenticated =
-        ref.read(compatibleAuthProvider.notifier).isAuthenticated;
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
 
     if (isAuthenticated) {
       context.go(AppRoutes.main);
@@ -97,7 +96,7 @@ class _LanguageSelectionScreenState
     final languageState = ref.watch(languageProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -105,7 +104,7 @@ class _LanguageSelectionScreenState
             end: Alignment.bottomCenter,
             colors: [
               AppColors.primary.withOpacity(0.1),
-              AppColors.background,
+              context.colors.background,
             ],
           ),
         ),
@@ -129,11 +128,11 @@ class _LanguageSelectionScreenState
                           width: 100,
                           height: 100,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.colors.card,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: AppColors.shadow,
+                                color: context.colors.shadow,
                                 blurRadius: 20,
                                 offset: Offset(0, 8),
                               ),
@@ -155,7 +154,7 @@ class _LanguageSelectionScreenState
                               .textTheme
                               .headlineMedium
                               ?.copyWith(
-                                color: AppColors.textPrimary,
+                                color: context.colors.textPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                           textAlign: TextAlign.center,
@@ -168,7 +167,7 @@ class _LanguageSelectionScreenState
                           'اختر لغتك المفضلة',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                   ),
                           textAlign: TextAlign.center,
                         ),
@@ -221,17 +220,15 @@ class _LanguageSelectionScreenState
                         const SizedBox(height: 16),
 
                         // Skip button (if user is already authenticated)
-                        if (ref
-                            .watch(compatibleAuthProvider.notifier)
-                            .isAuthenticated)
+                        if (ref.watch(isAuthenticatedProvider))
                           TextButton(
                             onPressed: () {
                               context.go(AppRoutes.main);
                             },
-                            child: const Text(
+                            child: Text(
                               'Skip for now',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ),
@@ -281,15 +278,15 @@ class _LanguageOption extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary.withOpacity(0.1)
-                  : Colors.white,
+                  : context.colors.card,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.border,
+                color: isSelected ? AppColors.primary : context.colors.border,
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow,
+                  color: context.colors.shadow,
                   blurRadius: isSelected ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -302,7 +299,7 @@ class _LanguageOption extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: context.colors.background,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -325,7 +322,7 @@ class _LanguageOption extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.textPrimary,
+                                  : context.colors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                       ),
@@ -333,7 +330,7 @@ class _LanguageOption extends StatelessWidget {
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -372,7 +369,7 @@ class _LanguageOption extends StatelessWidget {
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.colors.border),
                       shape: BoxShape.circle,
                     ),
                   ),

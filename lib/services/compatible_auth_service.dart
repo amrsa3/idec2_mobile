@@ -1326,7 +1326,10 @@ class CompatibleAuthService {
               debugPrint('⚠️ [COMPATIBLE_AUTH] Error in fallback clear: $clearError');
             }
           }
+        } catch (e) {
+          debugPrint('⚠️ [COMPATIBLE_AUTH] Web cleanup error: $e');
         }
+      }
       
       // مسح جميع البيانات المخزنة محلياً بشكل شامل (يتم بعد تنظيف الويب)
       debugPrint('🔐 [COMPATIBLE_AUTH] Clearing all cached data...');

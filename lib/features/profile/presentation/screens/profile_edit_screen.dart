@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../../../../l10n/app_localizations.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -579,6 +580,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final profileState = ref.watch(profileProvider);
     final profileRulesState = ref.watch(profileRulesProvider);
 
@@ -607,9 +609,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
 
     return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
         appBar: AppBar(
-          title: const Text('تعديل الملف الشخصي'),
+          title: Text(l10n.editProfile),
           leading: Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
@@ -719,12 +721,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   : null,
               child: Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: isEditable ? Colors.grey : Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                  color: isEditable ? null : Colors.grey.shade100,
-                ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isEditable
+                            ? context.colors.border
+                            : context.colors.border.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(8),
+                    color: isEditable ? null : context.colors.surfaceVariant,
+                  ),
                 child: Row(
                   children: [
                     Expanded(
@@ -733,18 +737,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             ? '${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}'
                             : 'اختر تاريخ الميلاد',
                         style: TextStyle(
-                          color: _selectedBirthDate != null
-                              ? (isEditable
-                                  ? Colors.black
-                                  : Colors.grey.shade600)
-                              : Colors.grey,
-                        ),
-                      ),
+                      color: _selectedBirthDate != null
+                          ? (isEditable
+                              ? context.colors.textPrimary
+                              : context.colors.textSecondary)
+                          : context.colors.textSecondary,
                     ),
-                    Icon(
-                      Icons.calendar_today,
-                      color: isEditable ? null : Colors.grey.shade400,
-                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.calendar_today,
+                  color: isEditable ? null : context.colors.textTertiary,
+                ),
                   ],
                 ),
               ),
@@ -1213,7 +1217,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
@@ -1238,7 +1242,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
           // Widget جديد لاختيار الملفات
           DocumentPickerWidget(
             selectedDocuments: _selectedDocuments,
@@ -2433,11 +2436,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -2458,6 +2461,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 title,
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ],

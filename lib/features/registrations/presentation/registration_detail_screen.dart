@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -50,6 +51,7 @@ class _RegistrationDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final registrationAsync =
         ref.watch(registrationDetailProvider(widget.registrationId));
     final timelineAsync =
@@ -59,9 +61,9 @@ class _RegistrationDetailScreenState
       isLoading: _isProcessingPayment,
       message: 'جاري معالجة الدفع...',
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: context.colors.background,
         appBar: AppBar(
-          title: const Text('تفاصيل الاشتراك'),
+          title: Text(l10n.registrationDetails),
           centerTitle: true,
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -125,7 +127,7 @@ class _RegistrationDetailScreenState
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -134,7 +136,7 @@ class _RegistrationDetailScreenState
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -242,11 +244,11 @@ class _RegistrationDetailScreenState
   Widget _buildStatusCard(RegistrationModel registration) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -342,11 +344,11 @@ class _RegistrationDetailScreenState
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: context.colors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -357,19 +359,20 @@ class _RegistrationDetailScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.payment,
                   color: AppColors.primary,
                   size: 24,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(
                   'معلومات الدفع',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: context.colors.textPrimary,
                   ),
                 ),
               ],
@@ -386,7 +389,7 @@ class _RegistrationDetailScreenState
                 Expanded(
                   child: _CompactInfoItem(
                     icon: Icons.calendar_today,
-                    iconColor: Colors.grey,
+                    iconColor: context.colors.textSecondary,
                     label: 'تاريخ الاشتراك',
                     value:
                         '${dateFormat.format(registration.createdAt)}\n${timeFormat.format(registration.createdAt)}',
@@ -396,11 +399,11 @@ class _RegistrationDetailScreenState
                 Expanded(
                   child: _CompactInfoItem(
                     icon: Icons.update,
-                    iconColor: Colors.grey,
+                    iconColor: context.colors.textSecondary,
                     label: 'آخر تحديث',
                     value: updatedValue,
                     valueColor:
-                        updatedAt != null ? Colors.grey[800] : Colors.grey[500],
+                        updatedAt != null ? context.colors.textPrimary : context.colors.textTertiary,
                   ),
                 ),
               ],
@@ -458,8 +461,8 @@ class _RegistrationDetailScreenState
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isProcessingPayment 
-                    ? Colors.grey 
-                    : Colors.green,
+                    ? context.colors.surfaceVariant 
+                    : AppColors.success,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -553,11 +556,11 @@ class _RegistrationDetailScreenState
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.card,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: context.colors.shadow,
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -604,7 +607,7 @@ class _RegistrationDetailScreenState
       loading: () => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Center(
@@ -1049,6 +1052,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -1092,6 +1096,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1100,13 +1105,13 @@ class _InfoRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (iconColor ?? Colors.grey[600])!.withOpacity(0.1),
+              color: (iconColor ?? context.colors.textSecondary).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
               size: 20,
-              color: iconColor ?? Colors.grey[600],
+              color: iconColor ?? context.colors.textSecondary,
             ),
           ),
           const SizedBox(width: 12),
@@ -1118,7 +1123,7 @@ class _InfoRow extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: context.colors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1128,7 +1133,7 @@ class _InfoRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: valueColor ?? Colors.grey[800],
+                    color: valueColor ?? context.colors.textPrimary,
                   ),
                 ),
               ],
@@ -1158,13 +1163,14 @@ class _CompactInfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: context.colors.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey[200]!,
+          color: context.colors.border,
           width: 1,
         ),
       ),
@@ -1176,7 +1182,7 @@ class _CompactInfoItem extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: iconColor ?? Colors.grey[600],
+                color: iconColor ?? context.colors.textSecondary,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -1184,7 +1190,7 @@ class _CompactInfoItem extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: context.colors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -1199,7 +1205,7 @@ class _CompactInfoItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? Colors.grey[800],
+              color: valueColor ?? context.colors.textPrimary,
               height: 1.3,
             ),
             maxLines: 2,
@@ -1224,14 +1230,15 @@ class _AmountHighlightBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.grey[50]!,
-            Colors.grey[100]!,
+            context.colors.surfaceVariant,
+            context.colors.surface,
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -1239,7 +1246,7 @@ class _AmountHighlightBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: context.colors.shadow,
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1252,7 +1259,7 @@ class _AmountHighlightBox extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.grey[700],
+              color: context.colors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -1264,10 +1271,10 @@ class _AmountHighlightBox extends StatelessWidget {
             children: [
               Text(
                 amount,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
+                  color: AppColors.success,
                   height: 1,
                 ),
                 textAlign: TextAlign.center,
@@ -1275,10 +1282,10 @@ class _AmountHighlightBox extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 currency,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.green,
+                  color: AppColors.success,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1444,6 +1451,7 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
     final timeFormat = DateFormat('hh:mm a', 'ar');
     final timestamp = DateTime.parse(item['timestamp']);
@@ -1476,7 +1484,7 @@ class _TimelineItem extends StatelessWidget {
               Container(
                 width: 2,
                 height: 60,
-                color: Colors.grey[300],
+                color: context.colors.border,
                 margin: const EdgeInsets.symmetric(vertical: 4),
               ),
           ],
@@ -1490,10 +1498,10 @@ class _TimelineItem extends StatelessWidget {
               children: [
                 Text(
                   _translateTimelineDescription(item['description'] ?? ''),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black87,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 if (_isPaymentEvent && invoiceReference != null) ...[
@@ -1503,7 +1511,7 @@ class _TimelineItem extends StatelessWidget {
                       Icon(
                         Icons.receipt_long,
                         size: 14,
-                        color: Colors.grey[700],
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -1511,7 +1519,7 @@ class _TimelineItem extends StatelessWidget {
                           'رقم الفاتورة: $invoiceReference',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[700],
+                            color: context.colors.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1526,14 +1534,14 @@ class _TimelineItem extends StatelessWidget {
                       Icon(
                         Icons.account_balance_wallet,
                         size: 14,
-                        color: Colors.grey[600],
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         paymentMethodLabel,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: context.colors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1546,14 +1554,14 @@ class _TimelineItem extends StatelessWidget {
                     Icon(
                       Icons.access_time,
                       size: 14,
-                      color: Colors.grey[600],
+                      color: context.colors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${dateFormat.format(timestamp)} ${timeFormat.format(timestamp)}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],

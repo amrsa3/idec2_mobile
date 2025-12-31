@@ -68,7 +68,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
           // Hero Image with Sliver App Bar
@@ -142,13 +142,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                 // Course Header
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: context.colors.card,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.shadow,
+                        color: context.colors.shadow,
                         blurRadius: 8,
-                        offset: Offset(0, 2),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -177,10 +177,10 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                       // Course Title
                       Text(
                         widget.courseTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: context.colors.textPrimary,
                           height: 1.3,
                         ),
                       ),
@@ -199,20 +199,20 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'المدرب',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textTertiary,
+                                  color: context.colors.textTertiary,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 widget.instructor,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
                             ],
@@ -284,7 +284,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.6,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -343,7 +343,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                             color: AppColors.primary, size: 40),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -352,27 +352,27 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: context.colors.textPrimary,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
                               'خبيرة في طب الأسنان التجميلي',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.star, color: Colors.amber, size: 16),
-                                SizedBox(width: 4),
+                                const Icon(Icons.star, color: Colors.amber, size: 16),
+                                const SizedBox(width: 4),
                                 Text(
                                   '4.8 (120 تقييم)',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -426,7 +426,7 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 0,
-                        disabledBackgroundColor: Colors.grey,
+                        disabledBackgroundColor: context.colors.surfaceVariant,
                       ),
                     ),
                   ),
@@ -449,13 +449,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: context.colors.shadow,
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -465,18 +465,18 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textTertiary,
+              color: context.colors.textTertiary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
         ],
@@ -488,13 +488,13 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.colors.card,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: context.colors.shadow,
             blurRadius: 4,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -503,10 +503,10 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -538,9 +538,9 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -570,24 +570,24 @@ class _CourseDetailsScreenState extends ConsumerState<CourseDetailsScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: context.colors.surfaceVariant,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               duration,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),

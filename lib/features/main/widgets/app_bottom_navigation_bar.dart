@@ -19,12 +19,12 @@ class AppBottomNavigationBar extends ConsumerWidget {
         currentIndexOverride ?? ref.watch(bottomNavIndexProvider);
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow,
+            color: context.colors.shadow,
             blurRadius: 20,
-            offset: Offset(0, -5),
+            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -41,9 +41,9 @@ class AppBottomNavigationBar extends ConsumerWidget {
           GoRouter.of(context).go(AppRoutes.main);
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surface,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textTertiary,
+        unselectedItemColor: context.colors.textTertiary,
         selectedFontSize: 12,
         unselectedFontSize: 12,
         elevation: 0,

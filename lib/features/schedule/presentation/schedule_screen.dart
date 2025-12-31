@@ -59,16 +59,16 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
     final conferenceAsync = ref.watch(activeConferenceProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text(
           'الجدول الزمني',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
@@ -82,7 +82,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                   decoration: InputDecoration(
                     hintText: 'ابحث عن فعالية...',
                     prefixIcon: const Icon(Icons.search,
-                        color: AppColors.textSecondary),
+                        color: context.colors.textSecondary),
                     filled: true,
                     fillColor: AppColors.surfaceVariant,
                     border: OutlineInputBorder(
@@ -104,7 +104,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
               TabBar(
                 controller: _tabController,
                 labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textSecondary,
+                unselectedLabelColor: context.colors.textSecondary,
                 indicatorColor: AppColors.primary,
                 onTap: (index) {
                   setState(() {
@@ -146,14 +146,14 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                   Icon(
                     Icons.event_busy,
                     size: 80,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'لا يوجد مؤتمر نشط',
                     style: TextStyle(
                       fontSize: 18,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -183,14 +183,14 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                       Icon(
                         Icons.event_note,
                         size: 80,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'لا توجد فعاليات متاحة',
                         style: TextStyle(
                           fontSize: 18,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -325,14 +325,14 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   Text(
                     monthName,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -411,7 +411,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -422,7 +422,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                       event.description!,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -433,25 +433,25 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                   Row(
                     children: [
                       Icon(Icons.access_time,
-                          size: 18, color: AppColors.textSecondary),
+                          size: 18, color: context.colors.textSecondary),
                       const SizedBox(width: 8),
                       Text(
                         event.formattedTime,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                       if (event.duration != null) ...[
                         const SizedBox(width: 16),
                         Icon(Icons.timer,
-                            size: 18, color: AppColors.textSecondary),
+                            size: 18, color: context.colors.textSecondary),
                         const SizedBox(width: 8),
                         Text(
                           '${event.duration!.toStringAsFixed(1)} ساعة',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -462,13 +462,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                     Row(
                       children: [
                         Icon(Icons.attach_money,
-                            size: 18, color: AppColors.textSecondary),
+                            size: 18, color: context.colors.textSecondary),
                         const SizedBox(width: 8),
                         Text(
                           '${event.price!.toStringAsFixed(0)} ${event.currency ?? 'ريال'}',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -479,13 +479,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen>
                     Row(
                       children: [
                         Icon(Icons.person,
-                            size: 18, color: AppColors.textSecondary),
+                            size: 18, color: context.colors.textSecondary),
                         const SizedBox(width: 8),
                         Text(
                           '${event.speakersCount} متحدث',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],

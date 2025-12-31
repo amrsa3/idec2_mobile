@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_colors.dart';
 
 import '../../../features/main/providers/bottom_navigation_provider.dart';
 import '../../../features/main/widgets/app_bottom_navigation_bar.dart';
@@ -44,11 +47,12 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final registrationsAsync = ref.watch(myRegistrationsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('اشتراكاتي'),
+        title: Text(l10n.myRegistrations),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
@@ -85,20 +89,20 @@ class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
                   Icon(
                     Icons.event_note_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: context.colors.textTertiary,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'لا توجد تسجيلات',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.grey[600],
+                          color: context.colors.textSecondary,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'لم تقم بالتسجيل في أي مؤتمر أو فعالية بعد',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[500],
+                          color: context.colors.textTertiary,
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -237,7 +241,9 @@ class _RegistrationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Card(
+      color: context.colors.card,
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -259,9 +265,10 @@ class _RegistrationCard extends StatelessWidget {
                       children: [
                         Text(
                           registration.entityTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -301,23 +308,23 @@ class _RegistrationCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.payments, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.payments, size: 16, color: context.colors.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     '${registration.calculatedPrice.toStringAsFixed(0)} ${registration.currency ?? 'YER'}',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const Spacer(),
-                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.calendar_today, size: 16, color: context.colors.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     '${registration.createdAt.day}/${registration.createdAt.month}/${registration.createdAt.year}',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -328,7 +335,7 @@ class _RegistrationCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
+                    color: Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -341,7 +348,7 @@ class _RegistrationCard extends StatelessWidget {
                           'مهلة الدفع: ${registration.paymentDeadline!.day}/${registration.paymentDeadline!.month}/${registration.paymentDeadline!.year}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.orange[900],
+                            color: Colors.orange,
                           ),
                         ),
                       ),

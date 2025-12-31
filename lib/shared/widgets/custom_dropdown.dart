@@ -58,9 +58,9 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
           validator: widget.validator,
           decoration: _buildInputDecoration(),
           style: AppTextStyles.bodyMedium.copyWith(
-            color: widget.enabled ? AppColors.textPrimary : AppColors.textSecondary,
+            color: widget.enabled ? context.colors.textPrimary : context.colors.textSecondary,
           ),
-          dropdownColor: Colors.white,
+          dropdownColor: context.colors.surface,
           elevation: 8,
           borderRadius: BorderRadius.circular(12),
           menuMaxHeight: widget.maxHeight ?? 300,
@@ -156,7 +156,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
     return InputDecoration(
       hintText: widget.hint,
       hintStyle: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       prefixIcon: widget.prefixIcon,
       suffixIcon: widget.suffixIcon,
@@ -166,8 +166,8 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
       ),
       filled: true,
       fillColor: widget.enabled 
-          ? Colors.white 
-          : AppColors.surfaceVariant,
+          ? context.colors.surface 
+          : context.colors.surfaceVariant,
       border: _buildBorder(),
       enabledBorder: _buildBorder(),
       focusedBorder: _buildBorder(isFocused: true),

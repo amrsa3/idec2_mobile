@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -43,22 +44,23 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     // Create a unique key for the provider based on filters
     // This ensures the provider refreshes when search query changes
     final providerKey = '1|100|${_searchQuery ?? ''}';
     final speakersAsync = ref.watch(speakersProvider(providerKey));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        title: const Text(
-          'المتحدثون',
+        title: Text(
+          l10n.speakers,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         elevation: 0,
       ),
       body: Column(
@@ -66,15 +68,15 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
           // Search bar
           Container(
             padding: const EdgeInsets.all(16),
-            color: AppColors.surface,
+            color: context.colors.surface,
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'ابحث عن متحدث...',
                 prefixIcon:
-                    const Icon(Icons.search, color: AppColors.textSecondary),
+                    Icon(Icons.search, color: context.colors.textSecondary),
                 filled: true,
-                fillColor: AppColors.surfaceVariant,
+                fillColor: context.colors.surfaceVariant,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -104,14 +106,14 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         Icon(
                           Icons.people_outline,
                           size: 80,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'لا يوجد متحدثون',
                           style: TextStyle(
                             fontSize: 18,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                         ),
                       ],
@@ -166,7 +168,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         error.toString(),
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -175,7 +177,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         onPressed: () {
                           ref.invalidate(speakersProvider(providerKey));
                         },
-                        child: const Text('إعادة المحاولة'),
+                        child: Text('إعادة المحاولة'),
                       ),
                     ],
                   ),
@@ -231,7 +233,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         child: Icon(
                           Icons.person,
                           size: 60,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
               ),
@@ -249,10 +251,10 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                     // Name (Arabic only, without title)
                     Text(
                       speaker.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -263,9 +265,9 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                       const SizedBox(height: 4),
                       Text(
                         speaker.title!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -277,9 +279,9 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                       const SizedBox(height: 4),
                       Text(
                         speaker.organization!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: AppColors.textTertiary,
+                          color: context.colors.textTertiary,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -292,14 +294,14 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.event,
-                              size: 12, color: AppColors.textSecondary),
+                              size: 12, color: context.colors.textSecondary),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               '${speaker.eventsCountValue} فعالية',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,

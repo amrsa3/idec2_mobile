@@ -765,7 +765,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get replaceDocument => 'Replace Document';
 
   @override
-  String get uploadedOn => 'Uploaded on';
+  String get uploadedOn => 'Uploaded On';
 
   @override
   String get selectImageSource => 'Select Image Source';
@@ -859,7 +859,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rejected => 'Rejected';
 
   @override
-  String get registrationStatus => 'Registration Status';
+  String get registrationStatus => 'Status';
 
   @override
   String get selectPaymentGateway => 'Select Payment Gateway';
@@ -953,4 +953,601 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productionMode => 'Production Mode';
+
+  @override
+  String get myDocuments => 'My Documents';
+
+  @override
+  String get noDocuments => 'No documents uploaded yet';
+
+  @override
+  String get uploadDocument => 'Upload Document';
+
+  @override
+  String get documentName => 'Document Name';
+
+  @override
+  String get documentType => 'Document Type';
+
+  @override
+  String get fileSize => 'File Size';
+
+  @override
+  String get viewDocument => 'View Document';
+
+  @override
+  String get downloadDocument => 'Download Document';
+
+  @override
+  String get shareDocument => 'Share Document';
+
+  @override
+  String get myProfile => 'My Profile';
+
+  @override
+  String get personalInfo => 'Personal Information';
+
+  @override
+  String get fullNameAr => 'Full Name (Arabic)';
+
+  @override
+  String get fullNameEn => 'Full Name (English)';
+
+  @override
+  String get nationalId => 'National ID';
+
+  @override
+  String get dateOfBirth => 'Date of Birth';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get male => 'Male';
+
+  @override
+  String get female => 'Female';
+
+  @override
+  String get city => 'City';
+
+  @override
+  String get address => 'Address';
+
+  @override
+  String get workplace => 'Workplace';
+
+  @override
+  String get jobTitle => 'Job Title';
+
+  @override
+  String get graduationYear => 'Graduation Year';
+
+  @override
+  String get specialization => 'Specialization';
+
+  @override
+  String get profilePhoto => 'Profile Photo';
+
+  @override
+  String get changePhoto => 'Change Photo';
+
+  @override
+  String get removePhoto => 'Remove Photo';
+
+  @override
+  String get courses => 'Courses';
+
+  @override
+  String get allCourses => 'All Courses';
+
+  @override
+  String get myCourses => 'My Courses';
+
+  @override
+  String get availableCourses => 'Available Courses';
+
+  @override
+  String get registeredCourses => 'Registered Courses';
+
+  @override
+  String get completedCourses => 'Completed Courses';
+
+  @override
+  String get upcomingCourses => 'Upcoming Courses';
+
+  @override
+  String get courseDetails => 'Course Details';
+
+  @override
+  String get courseName => 'Course Name';
+
+  @override
+  String get courseDescription => 'Course Description';
+
+  @override
+  String get courseInstructor => 'Instructor';
+
+  @override
+  String get courseDuration => 'Duration';
+
+  @override
+  String get courseLevel => 'Level';
+
+  @override
+  String get coursePrice => 'Price';
+
+  @override
+  String get courseCapacity => 'Capacity';
+
+  @override
+  String get courseLocation => 'Location';
+
+  @override
+  String get courseDate => 'Date';
+
+  @override
+  String get courseTime => 'Time';
+
+  @override
+  String get registerForCourse => 'Register for Course';
+
+  @override
+  String get viewCourseDetails => 'View Details';
+
+  @override
+  String get noCourses => 'No courses available';
+
+  @override
+  String get searchCourses => 'Search courses';
+
+  @override
+  String get filterCourses => 'Filter';
+
+  @override
+  String get sortBy => 'Sort By';
+
+  @override
+  String get newest => 'Newest';
+
+  @override
+  String get oldest => 'Oldest';
+
+  @override
+  String get priceHighToLow => 'Price: High to Low';
+
+  @override
+  String get priceLowToHigh => 'Price: Low to High';
+
+  @override
+  String get free => 'Free';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get beginner => 'Beginner';
+
+  @override
+  String get intermediate => 'Intermediate';
+
+  @override
+  String get advanced => 'Advanced';
+
+  @override
+  String get hours => 'hours';
+
+  @override
+  String get seats => 'seats';
+
+  @override
+  String get seatsAvailable => 'seats available';
+
+  @override
+  String get fullyBooked => 'Fully Booked';
+
+  @override
+  String get allSpeakers => 'All Speakers';
+
+  @override
+  String get featuredSpeakers => 'Featured Speakers';
+
+  @override
+  String get speakerDetails => 'Speaker Details';
+
+  @override
+  String get speakerName => 'Name';
+
+  @override
+  String get speakerTitle => 'Title';
+
+  @override
+  String get speakerBio => 'Biography';
+
+  @override
+  String get speakerSessions => 'Sessions';
+
+  @override
+  String get noSpeakers => 'No speakers available';
+
+  @override
+  String get searchSpeakers => 'Search speakers';
+
+  @override
+  String get viewProfile => 'View Profile';
+
+  @override
+  String get sessions => 'Sessions';
+
+  @override
+  String get allSessions => 'All Sessions';
+
+  @override
+  String get mySessions => 'My Sessions';
+
+  @override
+  String get upcomingSessions => 'Upcoming Sessions';
+
+  @override
+  String get pastSessions => 'Past Sessions';
+
+  @override
+  String get sessionDetails => 'Session Details';
+
+  @override
+  String get sessionTitle => 'Session Title';
+
+  @override
+  String get sessionDescription => 'Description';
+
+  @override
+  String get sessionSpeaker => 'Speaker';
+
+  @override
+  String get sessionDate => 'Date';
+
+  @override
+  String get sessionTime => 'Time';
+
+  @override
+  String get sessionLocation => 'Location';
+
+  @override
+  String get sessionDuration => 'Duration';
+
+  @override
+  String get joinSession => 'Join Session';
+
+  @override
+  String get addToCalendar => 'Add to Calendar';
+
+  @override
+  String get noSessions => 'No sessions available';
+
+  @override
+  String get searchSessions => 'Search sessions';
+
+  @override
+  String get live => 'Live';
+
+  @override
+  String get upcoming => 'Upcoming';
+
+  @override
+  String get ended => 'Ended';
+
+  @override
+  String get myRegistrations => 'My Registrations';
+
+  @override
+  String get activeRegistrations => 'Active';
+
+  @override
+  String get pendingRegistrations => 'Pending';
+
+  @override
+  String get completedRegistrations => 'Completed';
+
+  @override
+  String get cancelledRegistrations => 'Cancelled';
+
+  @override
+  String get registrationDetails => 'Registration Details';
+
+  @override
+  String get registrationDate => 'Registration Date';
+
+  @override
+  String get paymentStatus => 'Payment Status';
+
+  @override
+  String get paymentDate => 'Payment Date';
+
+  @override
+  String get totalAmount => 'Total Amount';
+
+  @override
+  String get paidAmount => 'Paid Amount';
+
+  @override
+  String get remainingAmount => 'Remaining Amount';
+
+  @override
+  String get viewReceipt => 'View Receipt';
+
+  @override
+  String get downloadReceipt => 'Download Receipt';
+
+  @override
+  String get cancelRegistration => 'Cancel Registration';
+
+  @override
+  String get noRegistrations => 'No registrations yet';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get approved => 'Approved';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get unpaid => 'Unpaid';
+
+  @override
+  String get partiallyPaid => 'Partially Paid';
+
+  @override
+  String get news => 'News';
+
+  @override
+  String get latestNews => 'Latest News';
+
+  @override
+  String get newsDetails => 'News Details';
+
+  @override
+  String get newsTitle => 'Title';
+
+  @override
+  String get newsContent => 'Content';
+
+  @override
+  String get publishedOn => 'Published On';
+
+  @override
+  String get readMore => 'Read More';
+
+  @override
+  String get noNews => 'No news available';
+
+  @override
+  String get searchNews => 'Search news';
+
+  @override
+  String get photoGallery => 'Photo Gallery';
+
+  @override
+  String get videoGallery => 'Video Gallery';
+
+  @override
+  String get albums => 'Albums';
+
+  @override
+  String get allPhotos => 'All Photos';
+
+  @override
+  String get allVideos => 'All Videos';
+
+  @override
+  String get viewPhoto => 'View Photo';
+
+  @override
+  String get viewVideo => 'View Video';
+
+  @override
+  String get downloadPhoto => 'Download';
+
+  @override
+  String get sharePhoto => 'Share';
+
+  @override
+  String get noPhotos => 'No photos available';
+
+  @override
+  String get noVideos => 'No videos available';
+
+  @override
+  String get photos => 'photos';
+
+  @override
+  String get videos => 'videos';
+
+  @override
+  String get allNotifications => 'All';
+
+  @override
+  String get unreadNotifications => 'Unread';
+
+  @override
+  String get readNotifications => 'Read';
+
+  @override
+  String get markAsRead => 'Mark as Read';
+
+  @override
+  String get markAllAsRead => 'Mark All as Read';
+
+  @override
+  String get deleteNotification => 'Delete';
+
+  @override
+  String get deleteAllNotifications => 'Delete All';
+
+  @override
+  String get noNotifications => 'No notifications';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get enableNotifications => 'Enable Notifications';
+
+  @override
+  String get pushNotifications => 'Push Notifications';
+
+  @override
+  String get emailNotifications => 'Email Notifications';
+
+  @override
+  String get smsNotifications => 'SMS Notifications';
+
+  @override
+  String get chat => 'Chat';
+
+  @override
+  String get chats => 'Chats';
+
+  @override
+  String get messages => 'Messages';
+
+  @override
+  String get newMessage => 'New Message';
+
+  @override
+  String get sendMessage => 'Send';
+
+  @override
+  String get typeMessage => 'Type a message...';
+
+  @override
+  String get noMessages => 'No messages yet';
+
+  @override
+  String get online => 'Online';
+
+  @override
+  String get offline => 'Offline';
+
+  @override
+  String get typing => 'typing...';
+
+  @override
+  String get lastSeen => 'Last seen';
+
+  @override
+  String get attachFile => 'Attach File';
+
+  @override
+  String get attachPhoto => 'Attach Photo';
+
+  @override
+  String get attachVideo => 'Attach Video';
+
+  @override
+  String get voiceMessage => 'Voice Message';
+
+  @override
+  String get viewAll => 'View All';
+
+  @override
+  String get seeMore => 'See More';
+
+  @override
+  String get seeLess => 'See Less';
+
+  @override
+  String get showMore => 'Show More';
+
+  @override
+  String get showLess => 'Show Less';
+
+  @override
+  String get noData => 'No data available';
+
+  @override
+  String get noResults => 'No results found';
+
+  @override
+  String get searchResults => 'Search Results';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get sort => 'Sort';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get update => 'Update';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get requirements => 'Requirements';
+
+  @override
+  String get certificate => 'Certificate';
+
+  @override
+  String get certified => 'Certified';
+
+  @override
+  String get instructor => 'Instructor';
+
+  @override
+  String get duration => 'Duration';
+
+  @override
+  String get level => 'Level';
+
+  @override
+  String get capacity => 'Capacity';
+
+  @override
+  String get notAvailable => 'Not Available';
 }

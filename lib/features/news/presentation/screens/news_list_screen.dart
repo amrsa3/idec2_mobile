@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -115,13 +116,14 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final newsAsync = ref.watch(newsListProvider(_filters));
     final categoriesAsync = ref.watch(newsCategoriesProvider);
     final featuredAsync = ref.watch(featuredNewsProvider);
     final breakingAsync = ref.watch(breakingNewsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: newsAsync.when(
         data: (data) {
           final articles = (data['data'] as List<NewsArticleModel>);
@@ -184,12 +186,12 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'آخر الأخبار',
+                              Text(
+                                l10n.latestNews,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
                             ],
@@ -198,7 +200,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                             '$total مقال',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
@@ -267,11 +269,11 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       elevation: 0,
-      backgroundColor: AppColors.surface,
-      title: const Text(
+      backgroundColor: context.colors.surface,
+      title: Text(
         'الأخبار',
         style: TextStyle(
-          color: AppColors.textPrimary,
+          color: context.colors.textPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
@@ -284,16 +286,16 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
     return SliverAppBar(
       expandedHeight: 100,
       pinned: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
         title: Container(
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
+            color: context.colors.surfaceVariant,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: context.colors.border, width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.shadowLight,
@@ -303,17 +305,17 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
             ],
           ),
           child: TextField(
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(fontSize: 14),
             decoration: InputDecoration(
               hintText: 'ابحث في الأخبار...',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: context.colors.textSecondary.withOpacity(0.6),
                 fontSize: 14,
               ),
-              prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+              prefixIcon: Icon(Icons.search, color: AppColors.primary, size: 20),
               suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
+                      icon: Icon(Icons.clear, size: 18),
                       onPressed: () {
                         setState(() {
                           _searchQuery = null;
@@ -369,7 +371,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                 // Icon on the right
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: const Icon(Icons.whatshot, color: Colors.white, size: 20),
+                  child: Icon(Icons.whatshot, color: Colors.white, size: 20),
                 ),
                 // Scrolling text
                 Expanded(
@@ -379,7 +381,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                       final textPainter = TextPainter(
                         text: TextSpan(
                           text: text,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -400,7 +402,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                         return Center(
                           child: Text(
                             text,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -430,7 +432,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                 width: textWidth,
                                 child: Text(
                                   text,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -498,19 +500,19 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.star,
                         color: Colors.white,
                         size: 18,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'الأخبار المميزة',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -595,7 +597,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                         shape: BoxShape.circle,
                         color: _currentFeaturedIndex == index
                             ? AppColors.primary
-                            : AppColors.border,
+                            : context.colors.border,
                       ),
                     ),
                   ),
@@ -634,7 +636,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                   imageUrl: article.mainImage!,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     child: const Center(child: CircularProgressIndicator()),
                   ),
                   errorWidget: (context, url, error) => Container(
@@ -730,7 +732,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                             ),
                             child: Text(
                               article.category.displayName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -749,7 +751,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                           children: [
                             Text(
                               article.displayTitle,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -775,7 +777,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.white.withOpacity(0.9),
-                                    shadows: const [
+                                    shadows: [
                                       Shadow(
                                         offset: Offset(0, 1),
                                         blurRadius: 2,
@@ -792,7 +794,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.white.withOpacity(0.9),
-                                    shadows: const [
+                                    shadows: [
                                       Shadow(
                                         offset: Offset(0, 1),
                                         blurRadius: 2,
@@ -1041,14 +1043,14 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                 color: AppColors.error.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.error_outline,
                 size: 64,
                 color: AppColors.error,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'حدث خطأ في تحميل الأخبار',
               style: TextStyle(
                 fontSize: 20,
@@ -1071,8 +1073,8 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
               onPressed: () {
                 ref.invalidate(newsListProvider(_filters));
               },
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              icon: Icon(Icons.refresh),
+              label: Text('إعادة المحاولة'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -1185,7 +1187,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                 ),
                                 child: Text(
                                   article.category.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
@@ -1204,7 +1206,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                                 ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.whatshot, color: Colors.white, size: 10),
+                              child: Icon(Icons.whatshot, color: Colors.white, size: 10),
                             ),
                           ],
                         ],
@@ -1213,7 +1215,7 @@ class _NewsListScreenState extends ConsumerState<NewsListScreen>
                       // Title
                       Text(
                         article.displayTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,

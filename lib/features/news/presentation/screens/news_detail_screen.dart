@@ -47,7 +47,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     final newsAsync = ref.watch(newsDetailProvider(widget.articleId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: newsAsync.when(
         data: (article) {
           // Update local state from article to sync with server state
@@ -86,21 +86,21 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         },
         loading: () => Scaffold(
           appBar: AppBar(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             elevation: 0,
           ),
           body: const Center(child: CircularProgressIndicator()),
         ),
         error: (error, stack) => Scaffold(
           appBar: AppBar(
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             elevation: 0,
           ),
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   'حدث خطأ في تحميل الخبر',
@@ -111,7 +111,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   onPressed: () {
                     ref.invalidate(newsDetailProvider(widget.articleId));
                   },
-                  child: const Text('إعادة المحاولة'),
+                  child: Text('إعادة المحاولة'),
                 ),
               ],
             ),
@@ -125,7 +125,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       flexibleSpace: FlexibleSpaceBar(
         background: article.mainImage != null
             ? CachedNetworkImage(
@@ -137,18 +137,18 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported),
+                  child: Icon(Icons.image_not_supported),
                 ),
               )
-            : Container(color: AppColors.surfaceVariant),
+            : Container(color: context.colors.surfaceVariant),
       ),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.share, color: Colors.white),
+          icon: Icon(Icons.share, color: Colors.white),
           onPressed: () => _shareArticle(article),
         ),
       ],
@@ -174,7 +174,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   ),
                   child: Text(
                     article.category.displayName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -235,10 +235,10 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               article.displayTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
           ),
@@ -248,18 +248,18 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Icon(Icons.person, size: 16, color: AppColors.textSecondary),
+                Icon(Icons.person, size: 16, color: context.colors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   article.authorName ?? 'مؤلف',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 14, color: context.colors.textSecondary),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
+                Icon(Icons.access_time, size: 16, color: context.colors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   article.timeAgo,
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 14, color: context.colors.textSecondary),
                 ),
               ],
             ),
@@ -273,7 +273,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 article.displaySummary,
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   height: 1.6,
                 ),
               ),
@@ -286,7 +286,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               article.displayContent,
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
                 height: 1.6,
               ),
             ),
@@ -331,7 +331,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                               ),
                               errorWidget: (context, url, error) => Container(
                                 color: Colors.grey[200],
-                                child: const Icon(Icons.image_not_supported),
+                                child: Icon(Icons.image_not_supported),
                               ),
                             ),
                           ),
@@ -380,8 +380,8 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             _buildActionButton(
               icon: isLiked ? Icons.favorite : Icons.favorite_border,
               label: '${article.likes}',
-              color: isLiked ? Colors.red : AppColors.textSecondary,
-              iconColor: isLiked ? Colors.red : AppColors.textSecondary,
+              color: isLiked ? Colors.red : context.colors.textSecondary,
+              iconColor: isLiked ? Colors.red : context.colors.textSecondary,
               isLiked: isLiked,
               onTap: () => _toggleLike(article.id),
               isLoading: _isLoadingLike,
@@ -389,14 +389,14 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             _buildActionButton(
               icon: _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               label: 'حفظ',
-              color: _isBookmarked ? AppColors.primary : AppColors.textSecondary,
+              color: _isBookmarked ? AppColors.primary : context.colors.textSecondary,
               onTap: () => _toggleBookmark(article.id),
               isLoading: _isLoadingBookmark,
             ),
             _buildActionButton(
               icon: Icons.share,
               label: 'مشاركة',
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               onTap: () => _shareArticle(article),
             ),
             // Hide comments button if comments are hidden
@@ -404,7 +404,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               _buildActionButton(
                 icon: Icons.comment,
                 label: '${article.commentsCount}',
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 onTap: () {
                   _scrollController.animateTo(
                     _scrollController.position.maxScrollExtent,
@@ -492,17 +492,17 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Divider(height: 32),
+              Divider(height: 32),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'التعليقات',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -511,7 +511,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         '${comments.length}',
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                       loading: () => const SizedBox.shrink(),
@@ -542,7 +542,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: const Icon(Icons.send, color: AppColors.primary),
+                        icon: Icon(Icons.send, color: AppColors.primary),
                         onPressed: () => _addComment(),
                       ),
                     ],
@@ -559,7 +559,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                       child: Center(
                         child: Text(
                           'لا توجد تعليقات بعد',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: context.colors.textSecondary),
                         ),
                       ),
                     );

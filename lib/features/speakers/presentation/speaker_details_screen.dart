@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -49,11 +50,12 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final speakerAsync = ref.watch(speakerDetailsProvider(widget.speakerId));
     final eventsAsync = ref.watch(speakerEventsProvider(widget.speakerId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       bottomNavigationBar: const AppBottomNavigationBar(),
       body: speakerAsync.when(
         data: (speaker) => RefreshIndicator(
@@ -96,10 +98,10 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                         // Name (Arabic only, without title)
                         Text(
                           speaker.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -107,9 +109,9 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                         if (speaker.title != null && speaker.title!.isNotEmpty)
                           Text(
                             speaker.title!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         // Organization
@@ -117,13 +119,13 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              Icon(Icons.business, size: 18, color: AppColors.textSecondary),
+                              Icon(Icons.business, size: 18, color: context.colors.textSecondary),
                               const SizedBox(width: 8),
                               Text(
                                 speaker.organization!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  color: AppColors.textSecondary,
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -138,12 +140,12 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                   delegate: _SliverAppBarDelegate(
                     TabBar(
                       controller: _tabController,
-                      tabs: const [
+                      tabs: [
                         Tab(text: 'نبذة'),
                         Tab(text: 'الفعاليات'),
                       ],
                       labelColor: AppColors.primary,
-                      unselectedLabelColor: AppColors.textSecondary,
+                      unselectedLabelColor: context.colors.textSecondary,
                       indicatorColor: AppColors.primary,
                     ),
                   ),
@@ -167,7 +169,7 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
         ),
         error: (error, stack) => Scaffold(
           appBar: AppBar(
-            title: const Text('تفاصيل المتحدث'),
+            title: Text(l10n.speakerDetails),
           ),
           body: Center(
             child: Column(
@@ -197,14 +199,14 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.textSecondary),
+        Icon(icon, size: 20, color: context.colors.textSecondary),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ),
@@ -220,20 +222,20 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
         children: [
           // Bio
           if (speaker.bio != null && speaker.bio!.isNotEmpty) ...[
-            const Text(
+            Text(
               'نبذة عن المتحدث',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               speaker.bio!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 height: 1.6,
               ),
             ),
@@ -241,12 +243,12 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
           ],
           // Contact info
           if (speaker.email != null || speaker.phone != null) ...[
-            const Text(
+            Text(
               'معلومات الاتصال',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -279,14 +281,14 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                 Icon(
                   Icons.event_busy,
                   size: 64,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'لا توجد فعاليات',
                   style: TextStyle(
                     fontSize: 18,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -325,7 +327,7 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                 ),
                 title: Text(
                   itemTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -333,11 +335,11 @@ class _SpeakerDetailsScreenState extends ConsumerState<SpeakerDetailsScreen> wit
                   isEvent 
                       ? (itemType != null ? _getEventTypeLabel(itemType) : 'فعالية')
                       : 'جلسة',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: context.colors.textSecondary,
                   ),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                trailing: Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () {
                   if (isEvent) {
                     Navigator.push(
@@ -415,7 +417,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       child: tabBar,
     );
   }

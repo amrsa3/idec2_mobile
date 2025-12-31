@@ -27,21 +27,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       titleKey: 'onboarding_title_1',
       descriptionKey: 'onboarding_description_1',
       color: AppColors.primary,
-      backgroundColor: AppColors.background,
     ),
     const OnboardingPage(
       icon: Icons.groups,
       titleKey: 'onboarding_title_2',
       descriptionKey: 'onboarding_description_2',
       color: Colors.blue,
-      backgroundColor: Colors.white,
     ),
     const OnboardingPage(
       icon: Icons.business_center,
       titleKey: 'onboarding_title_3',
       descriptionKey: 'onboarding_description_3',
       color: Colors.green,
-      backgroundColor: Colors.white,
     ),
   ];
 
@@ -95,7 +92,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final isRTL = ref.watch(isRTLProvider);
 
     return Scaffold(
-      backgroundColor: _pages[_currentPage].backgroundColor,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -106,17 +103,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Logo
-                  Container(
+                    Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.colors.surface,
                       borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadow,
+                          color: context.colors.shadow,
                           blurRadius: 8,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -133,10 +130,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     child: Text(
                       l10n.skip,
                       style: TextStyle(
-                        color:
-                            _pages[_currentPage].backgroundColor == Colors.white
-                                ? Colors.black54
-                                : AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -195,18 +189,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               side: BorderSide(
-                                  color: _pages[_currentPage].backgroundColor ==
-                                          Colors.white
-                                      ? Colors.black26
-                                      : AppColors.border),
+                                  color: context.colors.border),
                             ),
                             child: Text(
                               l10n.previous,
                               style: TextStyle(
-                                color: _pages[_currentPage].backgroundColor ==
-                                        Colors.white
-                                    ? Colors.black54
-                                    : AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ),
@@ -256,14 +244,12 @@ class OnboardingPage {
   final String titleKey;
   final String descriptionKey;
   final Color color;
-  final Color backgroundColor;
 
   const OnboardingPage({
     required this.icon,
     required this.titleKey,
     required this.descriptionKey,
     required this.color,
-    required this.backgroundColor,
   });
 }
 
@@ -297,13 +283,6 @@ class _OnboardingPageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine text colors based on background
-    final isWhiteBackground = page.backgroundColor == Colors.white;
-    final titleColor =
-        isWhiteBackground ? Colors.black87 : AppColors.textPrimary;
-    final descriptionColor =
-        isWhiteBackground ? Colors.black54 : AppColors.textSecondary;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32.0),
       child: Column(
@@ -330,7 +309,7 @@ class _OnboardingPageWidget extends StatelessWidget {
           Text(
             _getLocalizedText(page.titleKey),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: titleColor,
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.bold,
                 ),
             textAlign: TextAlign.center,
@@ -342,7 +321,7 @@ class _OnboardingPageWidget extends StatelessWidget {
           Text(
             _getLocalizedText(page.descriptionKey),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: descriptionColor,
+                  color: context.colors.textSecondary,
                   height: 1.5,
                 ),
             textAlign: TextAlign.center,

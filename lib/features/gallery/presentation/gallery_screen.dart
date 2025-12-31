@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -60,13 +61,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final category = _categoryMap[_selectedTabIndex];
     final albumsAsync = category == null
         ? ref.watch(galleryAlbumsProvider)
         : ref.watch(galleryAlbumsByCategoryProvider(category));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       body: CustomScrollView(
         slivers: [
           // Custom App Bar
@@ -110,8 +112,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'معرض الصور',
+                                  Text(
+                                    l10n.photoGallery,
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 28,
@@ -175,15 +177,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
           // Category Filter Tabs
           SliverToBoxAdapter(
             child: Container(
-              color: Colors.white,
+              color: context.colors.surface,
               child: TabBar(
                 controller: _tabController,
                 isScrollable: true,
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
                 labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textSecondary,
-                labelStyle: const TextStyle(
+                unselectedLabelColor: context.colors.textSecondary,
+                labelStyle: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -210,18 +212,18 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                             _isOffline
                                 ? 'لا توجد ألبومات محفوظة محلياً'
                                 : 'لا توجد ألبومات',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
-                              color: AppColors.textSecondary,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                           if (_isOffline) ...[
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'يرجى الاتصال بالإنترنت لعرض الألبومات',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                           ],
@@ -254,11 +256,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                   children: [
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'جاري تحميل الألبومات...',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -286,9 +288,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                     const SizedBox(height: 8),
                     Text(
                       error.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -298,7 +300,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                         ref.invalidate(galleryAlbumsProvider);
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('إعادة المحاولة'),
+                      label: Text('إعادة المحاولة'),
                     ),
                   ],
                 ),
@@ -322,13 +324,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
+              color: context.colors.shadow,
               blurRadius: 8,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -391,7 +393,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                           const SizedBox(width: 4),
                           Text(
                             '${album.photoCount}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -415,10 +417,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                   children: [
                     Text(
                       album.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -427,9 +429,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen>
                     Expanded(
                       child: Text(
                         album.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

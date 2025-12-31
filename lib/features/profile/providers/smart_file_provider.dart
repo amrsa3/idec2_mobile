@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
 import '../../../core/constants/api_constants.dart';
+import '../../../core/auth/auth.dart';
 import '../../../models/file_model.dart';
 import '../../../services/enhanced_dio_service_v2.dart';
 import '../../../services/compatible_auth_service.dart';
@@ -72,16 +73,15 @@ final userDocumentsProvider =
   final dio = EnhancedDioServiceV2.instance.dio;
 
   try {
-    // الحصول على userId الحالي من auth service
-    final authService = CompatibleAuthService.instance;
-    final currentUser = authService.user;
+    // الحصول على userId الحالي من authProvider
+    final authState = ref.watch(authProvider);
     
-    if (currentUser == null || currentUser.id.isEmpty) {
+    if (!authState.isAuthenticated || authState.user == null) {
       debugPrint('❌ [USER_DOCUMENTS] No authenticated user found');
       return [];
     }
     
-    final currentUserId = currentUser.id;
+    final currentUserId = authState.user!.id;
     debugPrint('🔍 [USER_DOCUMENTS] جلب جميع مستندات المستخدم (userId: $currentUserId)...');
 
     // إضافة timestamp لإجبار إعادة التحميل ومنع استخدام الكاش القديم
@@ -127,7 +127,7 @@ final userDocumentsProvider =
       debugPrint('📋 [USER_DOCUMENTS] === نهاية تفاصيل الملفات ===');
 
       // 🔥 IMPORTANT: فلترة الملفات حسب الشروط التالية:
-      // 1. entityType == 'USER_DOCUMENT' فقط (بدون شرط fileCategory)
+      // 1. entityType == 'USER_DOCUMENT' (كما في قاعدة البيانات)
       // 2. uploadedBy أو entityId يتطابق مع userId الحالي
       // 3. التحقق case-insensitive و null-safe
       final userFiles = allFiles.where((file) {
@@ -140,7 +140,7 @@ final userDocumentsProvider =
         // التحقق من أن entityType = USER_DOCUMENT (case-insensitive)
         final entityTypeUpper = file.entityType!.toUpperCase().trim();
         if (entityTypeUpper != 'USER_DOCUMENT') {
-          debugPrint('⚠️ [USER_DOCUMENTS] Skipping file ${file.id} - entityType is not USER_DOCUMENT: "${file.entityType}" (uppercase: "$entityTypeUpper")');
+          debugPrint('⚠️ [USER_DOCUMENTS] Skipping file ${file.id} - entityType is not USER_DOCUMENT: "${file.entityType}"');
           return false;
         }
         
@@ -151,14 +151,12 @@ final userDocumentsProvider =
         
         if (!belongsToUser) {
           debugPrint('⚠️ [USER_DOCUMENTS] Skipping file ${file.id} - does not belong to user');
-          debugPrint('   - uploadedBy: "${file.uploadedBy}" vs currentUserId: "$currentUserId" (match: ${file.uploadedBy == currentUserId})');
-          debugPrint('   - entityId: "${file.entityId}" vs currentUserId: "$currentUserId" (match: ${file.entityId == currentUserId})');
-          debugPrint('   - entityType: ${file.entityType}, fileCategory: ${file.fileCategory}');
+          debugPrint('   - uploadedBy: "${file.uploadedBy}" vs currentUserId: "$currentUserId"');
+          debugPrint('   - entityId: "${file.entityId}" vs currentUserId: "$currentUserId"');
         } else {
           debugPrint('✅ [USER_DOCUMENTS] Including file ${file.id}');
           debugPrint('   - originalName: ${file.originalName}');
-          debugPrint('   - uploadedBy: ${file.uploadedBy}, entityId: ${file.entityId}');
-          debugPrint('   - fileCategory: ${file.fileCategory}');
+          debugPrint('   - entityType: ${file.entityType}');
         }
         
         return belongsToUser;

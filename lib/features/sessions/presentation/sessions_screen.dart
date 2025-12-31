@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -32,16 +33,16 @@ class SessionsScreen extends ConsumerWidget {
     final conferenceAsync = ref.watch(activeConferenceForSessionsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'الجلسات',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         elevation: 0,
       ),
       body: conferenceAsync.when(
@@ -54,14 +55,14 @@ class SessionsScreen extends ConsumerWidget {
                   Icon(
                     Icons.event_busy,
                     size: 80,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'لا يوجد مؤتمر نشط',
                     style: TextStyle(
                       fontSize: 18,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -83,14 +84,14 @@ class SessionsScreen extends ConsumerWidget {
                       Icon(
                         Icons.event_note,
                         size: 80,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'لا توجد جلسات متاحة',
                         style: TextStyle(
                           fontSize: 18,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -150,7 +151,7 @@ class SessionsScreen extends ConsumerWidget {
                       error.toString(),
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -161,7 +162,7 @@ class SessionsScreen extends ConsumerWidget {
                           ref.invalidate(conferenceSessionsProvider(conference.id));
                         }
                       },
-                      child: const Text('إعادة المحاولة'),
+                      child: Text('إعادة المحاولة'),
                     ),
                   ],
                 ),
@@ -195,7 +196,7 @@ class SessionsScreen extends ConsumerWidget {
                   error.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -204,7 +205,7 @@ class SessionsScreen extends ConsumerWidget {
                   onPressed: () {
                     ref.invalidate(activeConferenceForSessionsProvider);
                   },
-                  child: const Text('إعادة المحاولة'),
+                  child: Text('إعادة المحاولة'),
                 ),
               ],
             ),
@@ -242,7 +243,7 @@ class SessionsScreen extends ConsumerWidget {
                 ),
                 child: Text(
                   dayNumber.toString(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -255,17 +256,17 @@ class SessionsScreen extends ConsumerWidget {
                 children: [
                   Text(
                     dayName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   Text(
                     monthName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -295,10 +296,10 @@ class SessionsScreen extends ConsumerWidget {
             // Title
             Text(
               session.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.colors.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -307,9 +308,9 @@ class SessionsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 session.description!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -320,13 +321,13 @@ class SessionsScreen extends ConsumerWidget {
             Row(
               children: [
                 Icon(Icons.access_time,
-                    size: 18, color: AppColors.textSecondary),
+                    size: 18, color: context.colors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
                   session.formattedTime,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -336,14 +337,14 @@ class SessionsScreen extends ConsumerWidget {
               Row(
                 children: [
                   Icon(Icons.location_on,
-                      size: 18, color: AppColors.textSecondary),
+                      size: 18, color: context.colors.textSecondary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       session.location!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -356,13 +357,13 @@ class SessionsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.person, size: 18, color: AppColors.textSecondary),
+                  Icon(Icons.person, size: 18, color: context.colors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
                     '${session.speakersCountValue} متحدث',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -372,13 +373,13 @@ class SessionsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.people, size: 18, color: AppColors.textSecondary),
+                  Icon(Icons.people, size: 18, color: context.colors.textSecondary),
                   const SizedBox(width: 8),
                   Text(
                     'السعة: ${session.capacity} شخص',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -399,7 +400,7 @@ class SessionsScreen extends ConsumerWidget {
                     const SizedBox(width: 4),
                     Text(
                       session.event!['title'] as String? ?? '',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.info,
                         fontWeight: FontWeight.w500,
